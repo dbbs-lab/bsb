@@ -334,6 +334,7 @@ class NeuronAdapter(SimulatorAdapter):
         self.result = SimulationResult()
         if self.pc_id == 0:
             # Record the time
+            self.h.time
             self.result.create_recorder(
                 lambda: tuple(["time"]),
                 lambda: np.array(self.h.time),
@@ -753,4 +754,4 @@ class TargetLocation:
 class SpikeRecorder(LocationRecorder):
     def get_data(self):
         recording = np.array(self.recorder)
-        return np.vstack((np.ones(recording.shape) * self.id, recording))
+        return np.vstack((np.ones(recording.shape) * self.id, recording)).T

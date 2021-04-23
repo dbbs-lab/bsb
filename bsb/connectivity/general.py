@@ -1,6 +1,8 @@
-import numpy as np
+import numpy as np, itertools
 from .strategy import ConnectionStrategy, TouchingConvergenceDivergence
 from ..helpers import DistributionConfiguration
+from ..reporting import warn
+from ..exceptions import *
 from sklearn.neighbors import KDTree
 
 
@@ -88,6 +90,86 @@ class DistanceBased(ConnectionStrategy):
             alloc[ptr : ptr + len(selected), 0] = from_ids[from_i]
             alloc[ptr : ptr + len(selected), 1] = selected
             ptr += len(selected)
+        self.scaffold.connect_cells(self, alloc[:ptr])
+
+
+class DegreeAndDistanceBased(ConnectionStrategy):
+    """
+    Create connections using a distance based statistical distribution.
+    """
+
+    casts = {
+        "indegree": DistributionConfiguration.cast,
+        "outdegree": DistributionConfiguration.cast,
+        "distance": DistributionConfiguration.cast,
+        "cdf_cutoff": float,
+        "pdf_norm": float,
+        "max": float,
+    }
+
+    defaults = {"cdf_cutoff": 0.95, "max": None, "pdf_norm": 1.0}
+
+    def validate(self):
+        print("Distr max?", self.max)
+        if self.distr.distribution is None and self.max is None:
+            raise ConfigurationError(
+                "DegreeAndDistanceBased connectivity requires either a non-uniform"
+                + " distribution and a `cdf_cutoff` or a set `max` distance to"
+                + " determine the maximum search radius."
+            )
+        if self.max is None:
+            self.max = self.distr.distribution.ppf(self.cdf_cutoff)
+            print("Distr max, calculated", self.max)
+        indegree = self.indegree.distribution
+        max_survivor = indegree.ppf(cdf_cutoff)
+        self.survivor_table = np.diff(np.fromiter(map(indegree.cdf, range(max_survivor + 1)))
+
+    def connect(self):
+        rng = np.random.default_rng()
+        from_type = self.from_cell_types[0]
+        to_type = self.to_cell_types[0]
+        from_cells = self.from_cells[from_type.name]
+        from_ids = from_cells[:, 0]
+        to_cells = self.to_cells[to_type.name]
+        to_ids = to_cells[:, 0]
+        tree = KDTree(to_cells[:, 2:5])
+        # Look up all candidate cells within the max search radius, for each cell.
+        candidates, distances = tree.query_radius(
+            from_cells[:, 2:5], r=self.max, return_distance=True
+        )
+        # Draw n samples from the outdegree distribution.
+        outdegrees = self.outdegree.draw(len(from_cells))
+        n_dist_candidates = sum(map(len, candidates)) - len(candidates)
+        if outdegrees < n_dist_candidates:
+            # Warn in case of funky inputs
+            warn("Outdegree exceeds candidates found within search distance.", ConnectivityWarning)
+        indegrees = np.zeros(len(to_cells), dtype=int)
+        alloc = np.empty((len(from_cells) * len(to_cells), 2))
+        ptr = 0
+        for i, cand, dist, out in zip(range(len(from_cells)), candidates, distances, outdegrees):
+            # Skip self
+            cand = cand[1:]
+            dist = dist[1:]
+            if not len(cand):
+                continue
+            # Lookup the candidate indegrees
+            inds = indegrees[cand]
+            # Find the probabilities for transitions of `indegree` to `indegree + 1` and
+            # returns 0 for cells already at max indegree; survivors near max indegree
+            # should yield close-to-zero probabilities anyway.
+            ind_probs = np.where(inds < max_survivor, self.survivor_table, 0)
+            # Lookup the distance based probabilities
+            dist_probs = self.distance.distribution.pdf(dist)
+            probs = ind_probs * dist_probs
+            # Choose `outdegree` candidates based on probabilities, unless all candidates
+            # are max indegree candidates (all 0 prob), then use equal probabilities.
+            targets = rng.choice(cand, size=out, p=probs if sum(probs) else None)
+            # Update the target indegrees
+            indegrees[targets] += 1
+            # Fill in connectivity matrix for this from_cell to its targets.
+            alloc[ptr : ptr + len(targets), 0] = from_ids[i]
+            alloc[ptr : ptr + len(targets), 1] = to_ids[targets]
+            ptr += len(targets)
         self.scaffold.connect_cells(self, alloc[:ptr])
 
 

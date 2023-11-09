@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bsb"
+description = "Black-box component framework for multiscale neural modeling"
+authors = [{ name = "Robin De Schepper", email = "robingilbert.deschepper@unipv.it" }]
+readme = "README.md"
+license = { file = "LICENSE" }
+classifiers = ["License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"]
+version = "4.0.0b1"
+dependencies = [
+    "bsb-core==4.0.0b0",
+    "bsb-json==0.0.0b0",
+    "bsb-yaml==0.0.0b1",
+    "bsb-hdf5==1.0.0b1"
+]
+
+[project.optional-dependencies]
+mpi = ["bsb-core[mpi]"]
+plot = ["bsb-plotting==0.0.0b0"]
+neuron = ["bsb-neuron==0.0.0b0"]
+nest = ["bsb-nest==0.0.0b0"]
+arbor = ["bsb-arbor==0.0.0b0"]
+
+[tool.setuptools]
+packages = []

@@ -23,6 +23,28 @@ plot = ["bsb-plotting==0.0.0b0"]
 neuron = ["bsb-neuron==0.0.0b0"]
 nest = ["bsb-nest==0.0.0b0"]
 arbor = ["bsb-arbor==0.0.0b0"]
+test = ["tox~=4.0"]
 
 [tool.setuptools]
 packages = []
+
+[tool.tox]
+legacy_tox_ini = """
+    [tox]
+    min_version = 4.0
+    env_list =
+        py{39,310,311}-{serial,parallel}-{noarb,arb}-{nonest,nest}-{nonnrn,nrn}
+
+    [testenv]
+    deps =
+        pytest~=7.0
+        parallel: mpi4py~=3.0
+    extras =
+        arb: arbor
+        nest: nest
+        nrn: neuron
+        parallel: parallel
+    commands =
+        serial: pytest tests
+        parallel: mpirun -n 2 pytest tests
+"""

@@ -32,11 +32,13 @@ packages = []
 legacy_tox_ini = """
     [tox]
     min_version = 4.0
+    skip_missing_interpreters=false
     env_list =
         py{39,310,311}-{serial,parallel}
         py311-{arb,nest,neuron}-parallel
 
     [testenv]
+    allowlist_externals=mpirun
     deps =
         pytest~=7.0
         parallel: mpi4py~=3.0
@@ -46,6 +48,6 @@ legacy_tox_ini = """
         nrn: neuron
         parallel: parallel
     commands =
-        serial: pytest tests
-        parallel: mpirun -n 2 pytest tests
+        serial: python -m unittest discover -v -s ./tests
+        parallel: mpirun -n 2 python -m unittest discover -v -s ./tests
 """

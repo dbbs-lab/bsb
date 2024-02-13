@@ -33,7 +33,8 @@ legacy_tox_ini = """
     [tox]
     min_version = 4.0
     env_list =
-        py{39,310,311}-{serial,parallel}-{noarb,arb}-{nonest,nest}-{nonnrn,nrn}
+        py{39,310,311}-{serial,parallel}
+        py311-{arb,nest,neuron}-parallel
 
     [testenv]
     deps =

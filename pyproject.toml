@@ -11,16 +11,16 @@ license = { file = "LICENSE" }
 classifiers = ["License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"]
 version = "4.0.0b3"
 dependencies = [
-    "bsb-core==4.0.0b3",
-    "bsb-json==0.0.0b3",
-    "bsb-yaml==0.0.0b1",
+    "bsb-core==4.0.0b9",
+    "bsb-json==0.0.0b5",
+    "bsb-yaml==0.0.0b4",
     "bsb-hdf5==1.0.0b1"
 ]
 
 [project.optional-dependencies]
 parallel = ["bsb-core[parallel]"]
 plot = ["bsb-plotting==0.0.0b0"]
-neuron = ["bsb-neuron==0.0.0b0"]
+neuron = ["bsb-neuron==0.0.0b3"]
 nest = ["bsb-nest==0.0.0b0"]
 arbor = ["bsb-arbor==0.0.0b0"]
 test = ["tox~=4.0"]
@@ -32,13 +32,13 @@ packages = []
 legacy_tox_ini = """
     [tox]
     min_version = 4.0
-    skip_missing_interpreters=false
+    skip_missing_interpreters = True
     env_list =
-        py{39,310,311}-{serial,parallel}
+        py{39,310,311}-{serial,parallel}-{noarb,arb}-{nonest,nest}-{noneuron,neuron}
         py311-{arb,nest,neuron}-parallel
 
     [testenv]
-    allowlist_externals=mpirun
+    allowlist_externals = mpirun
     deps =
         pytest~=7.0
         parallel: mpi4py~=3.0
@@ -48,6 +48,6 @@ legacy_tox_ini = """
         nrn: neuron
         parallel: parallel
     commands =
-        serial: python -m unittest discover -v -s ./tests
-        parallel: mpirun -n 2 python -m unittest discover -v -s ./tests
+        serial: pytest
+        parallel: mpirun -n 2 pytest
 """

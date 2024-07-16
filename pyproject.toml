@@ -9,9 +9,9 @@ authors = [{ name = "Robin De Schepper", email = "robingilbert.deschepper@unipv.
 readme = "README.md"
 license = { file = "LICENSE" }
 classifiers = ["License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"]
-version = "4.1.0"
+version = "4.2.0"
 dependencies = [
-    "bsb-core==4.1.1",
+    "bsb-core==4.2",
     "bsb-json==4.1.0",
     "bsb-yaml==4.1.0",
     "bsb-hdf5==4.0.0"

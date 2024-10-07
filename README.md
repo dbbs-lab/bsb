@@ -75,21 +75,23 @@ This plugin is installed by default with the `bsb` package.
 Useful links:
 [GitHub repo](https://github.com/dbbs-lab/bsb-nest).
 
-This project allows the user to simulate their brain model as point-neuron networks with the NEST simulator.
+This project allows the user to simulate their brain model as point-neuron networks with the 
+[NEST simulator](https://www.nest-simulator.org/).
 This plugin is not installed by default with the `bsb` package. To install it, you can run the following command:
 
 ```shell
 pip install bsb[nest]
 ```
-[!WARNING]
-The NEST simulator is not installed with the bsb-nest package and should be installed separately.
+> [!WARNING]
+> The NEST simulator is not installed with the bsb-nest package and should be installed separately.
 
 ### bsb-neuron
 
 Useful links:
 [GitHub repo](https://github.com/dbbs-lab/bsb-neuron).
 
-This project allows the user to simulate their brain model as detailed neural circuits with the NEURON simulator.
+This project allows the user to simulate their brain model as detailed neural circuits with the 
+[NEURON simulator](https://www.neuron.yale.edu/neuron/).
 This plugin is not installed by default with the `bsb` package. To install it, you can run the following command:
 ```shell
 pip install bsb[neuron]
@@ -100,7 +102,8 @@ pip install bsb[neuron]
 Useful links:
 [GitHub repo](https://github.com/dbbs-lab/bsb-arbor).
 
-This project allows the user to simulate their brain model as detailed neural circuits with the ARBOR simulator.
+This project allows the user to simulate their brain model as detailed neural circuits with the 
+[ARBOR simulator](https://arbor-sim.org/).
 This plugin is not installed by default with the `bsb` package. To install it, you can run the following command:
 ```shell
 pip install bsb[arbor]

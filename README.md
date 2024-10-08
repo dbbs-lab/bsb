@@ -16,7 +16,6 @@ BSB is decomposed into several repositories:
 - [bsb-nest](#bsb-nest) — Simulate brain models as point-neuron networks with the NEST simulator.
 - [bsb-neuron](#bsb-neuron) — Simulate brain models as detailed neuron networks with the NEURON simulator.
 - [bsb-arbor](#bsb-arbor) — Simulate brain models as detailed neuron networks with the ARBOR simulator.
-- [bsb-plotting](#bsb-plotting) — Plot the results of the reconstruction and simulation of the brain model.
 
 ## Installation
 This repository contains the metadata for the `bsb` package.
@@ -107,17 +106,6 @@ This project allows the user to simulate their brain model as detailed neural ci
 This plugin is not installed by default with the `bsb` package. To install it, you can run the following command:
 ```shell
 pip install bsb[arbor]
-```
-
-### bsb-plotting
-
-Useful links:
-[GitHub repo](https://github.com/dbbs-lab/bsb-plotting).
-
-This project allows the user to plot their brain model after reconstruction and simulation.
-This plugin is not installed by default with the `bsb` package. To install it, you can run the following command:
-```shell
-pip install bsb[plotting]
 ```
 
 ## Running bsb reconstructions and simulations

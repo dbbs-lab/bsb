@@ -11,10 +11,10 @@ license = { file = "LICENSE" }
 classifiers = ["License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"]
 version = "4.4.0"
 dependencies = [
-    "bsb-core==4.5.0",
-    "bsb-json==4.2.0",
-    "bsb-yaml==4.2.0",
-    "bsb-hdf5==4.1.0"
+    "bsb-core~=4.5.3",
+    "bsb-json~=4.2.1",
+    "bsb-yaml~=4.2.1",
+    "bsb-hdf5~=4.1.1"
 ]
 
 [project.optional-dependencies]

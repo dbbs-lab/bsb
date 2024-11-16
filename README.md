@@ -1,4 +1,4 @@
-[![Build Status](https://github.com/dbbs-lab/bsb/actions/workflows/build.yml/badge.svg)](https://github.com/dbbs-lab/bsb/actions/workflows/build.yml)
+[![Build Status](https://github.com/dbbs-lab/bsb/actions/workflows/main.yml/badge.svg)](https://github.com/dbbs-lab/bsb/actions/workflows/main.yml)
 # Brain Scaffold Builder suite
 Developed by the Department of Brain and Behavioral Sciences at the University of Pavia, 
 the Brain Scaffold Builder (BSB) is a component framework for neural modelling, which focuses on component 

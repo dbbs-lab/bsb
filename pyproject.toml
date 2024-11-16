@@ -1,15 +1,17 @@
 [build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
 
 [project]
 name = "bsb"
 description = "Black-box component framework for multiscale neural modeling"
-authors = [{ name = "Robin De Schepper", email = "robingilbert.deschepper@unipv.it" }]
+authors = [{ name = "Robin De Schepper" }]
+maintainers = [{ name = "Dimitri Rodarie", email = "dimitri.rodarie@unipv.it" }]
 readme = "README.md"
 license = { file = "LICENSE" }
 classifiers = ["License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"]
-version = "4.4.0"
+requires-python = ">=3.9"
+dynamic = ["version"]
 dependencies = [
     "bsb-core~=4.5.3",
     "bsb-json~=4.2.1",
@@ -23,8 +25,11 @@ neuron = ["bsb-neuron==4.0.3"]
 nest = ["bsb-nest==4.3.0"]
 arbor = ["bsb-arbor==4.1.0"]
 
-[tool.setuptools]
-packages = []
+[project.urls]
+Home = "https://github.com/dbbs-lab/bsb"
+Documentation = "https://bsb.readthedocs.io/"
+"Bug Tracker" = "https://github.com/dbbs-lab/bsb/issues/"
+"Source Code" = "https://github.com/dbbs-lab/bsb/"
 
 [tool.bumpversion]
 current_version = "4.4.0"

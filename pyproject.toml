@@ -1,28 +1,53 @@
 [build-system]
-requires = ["setuptools"]
-build-backend = "setuptools.build_meta"
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
 
 [project]
 name = "bsb"
 description = "Black-box component framework for multiscale neural modeling"
-authors = [{ name = "Robin De Schepper", email = "robingilbert.deschepper@unipv.it" }]
+authors = [{ name = "Robin De Schepper" }]
+maintainers = [{ name = "Dimitri Rodarie", email = "dimitri.rodarie@unipv.it" }]
 readme = "README.md"
 license = { file = "LICENSE" }
 classifiers = ["License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"]
-version = "4.2.0"
+requires-python = ">=3.9"
+dynamic = ["version"]
 dependencies = [
-    "bsb-core==4.2",
-    "bsb-json==4.1.0",
-    "bsb-yaml==4.1.0",
-    "bsb-hdf5==4.0.0"
+    "bsb-core~=4.5.3",
+    "bsb-json~=4.2.1",
+    "bsb-yaml~=4.2.1",
+    "bsb-hdf5~=4.1.1"
 ]
 
 [project.optional-dependencies]
 parallel = ["bsb-core[parallel]"]
-plot = ["bsb-plotting==0.0.0b0"]
-neuron = ["bsb-neuron==4.0.2"]
-nest = ["bsb-nest==4.1.0"]
-arbor = ["bsb-arbor==4.0.0"]
+neuron = ["bsb-neuron==4.0.3"]
+nest = ["bsb-nest==4.3.0"]
+arbor = ["bsb-arbor==4.1.0"]
 
-[tool.setuptools]
-packages = []
+[project.urls]
+Home = "https://github.com/dbbs-lab/bsb"
+Documentation = "https://bsb.readthedocs.io/"
+"Bug Tracker" = "https://github.com/dbbs-lab/bsb/issues/"
+"Source Code" = "https://github.com/dbbs-lab/bsb/"
+
+[tool.bumpversion]
+current_version = "4.4.0"
+parse = "(?P<major>\\d+)\\.(?P<minor>\\d+)\\.(?P<patch>\\d+)"
+serialize = ["{major}.{minor}.{patch}"]
+search = "{current_version}"
+replace = "{new_version}"
+regex = false
+ignore_missing_version = false
+tag = true
+sign_tags = false
+tag_name = "v{new_version}"
+tag_message = "Bump version: {current_version} → {new_version}"
+allow_dirty = false
+commit = true
+message = "docs: bump version: {current_version} → {new_version} [skip ci]"
+commit_args = "--no-verify"
+
+[tool.bumpversion.parts.pre_l]
+values = ["dev", "a", "b", "rc", "final"]
+optional_value = "final"

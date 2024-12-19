@@ -1,0 +1,39 @@
+{
+    "@context": "https://doi.org/10.5063/schema/codemeta-2.0",
+    "type": "SoftwareSourceCode",
+    "name": "Brain Scaffold Builder",
+    "license": "https://spdx.org/licenses/GPL-3.0-or-later",
+    "codeRepository": "git+https://github.com/dbbs-lab/bsb.git",
+    "downloadUrl": "https://github.com/dbbs-lab/bsb/archive/refs/tags/v4.3.1.tar.gz",
+    "referencePublication": "https://doi.org/10.1038/s42003-022-04213-y",
+    "dateCreated": "2019-07-19",
+    "datePublished": "2020-12-09",
+    "dateModified": "2024-11-16",
+    "version": "4.3.1",
+    "releaseNotes": "https://github.com/dbbs-lab/bsb/releases/tag/v4.3.1",
+    "funding": "785907 (Human Brain Project SGA2), 945539 (Human Brain Project SGA3), 101147319 (EBRAINS 2.0 Project) and 800858 (ICEI project)",
+    "funder": {
+        "type": "Organization",
+        "name": "European Commission"
+    },
+    "description": "Developed by the Department of Brain and Behavioral Sciences at the University of Pavia, the Brain Scaffold Builder (BSB) is a component framework for neural modelling, which focuses on component declarations to piece together a brain model. The component declarations can be made in any supported configuration language, or using the library functions in Python. It offers parallel reconstruction and simulation of any network topology, placement and/or connectivity strategy.",
+    "keywords": [
+        "brain",
+        "scaffold",
+        "bsb",
+        "modelling",
+        "simulation"
+    ],
+    "operatingSystem": [
+        "Linux",
+        "Windows",
+        "macOS"
+    ],
+    "programmingLanguage": ["Python"],
+    "developmentStatus": "active",
+    "softwareRequirements": ["Python (version 3.9+)"],
+    "relatedLink": ["https://bsb.readthedocs.io/en/latest/"],
+    "applicationCategory": "neuroscience",
+    "issueTracker": "https://github.com/dbbs-lab/bsb/issues",
+    "contIntegration": "https://github.com/dbbs-lab/bsb/actions"
+}

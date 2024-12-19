@@ -21,7 +21,7 @@ dependencies = [
 
 [project.optional-dependencies]
 parallel = ["bsb-core[parallel]"]
-neuron = ["bsb-neuron==4.0.3"]
+neuron = ["bsb-neuron==4.2.1"]
 nest = ["bsb-nest==4.3.1"]
 arbor = ["bsb-arbor==4.1.0"]
 

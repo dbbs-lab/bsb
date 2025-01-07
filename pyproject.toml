@@ -13,10 +13,10 @@ classifiers = ["License :: OSI Approved :: GNU General Public License v3 or late
 requires-python = ">=3.9"
 version = "4.3.1"
 dependencies = [
-    "bsb-core~=4.5.3",
+    "bsb-core~=5.0.0",
     "bsb-json~=4.2.1",
     "bsb-yaml~=4.2.1",
-    "bsb-hdf5~=4.1.1"
+    "bsb-hdf5~=5.0.0"
 ]
 
 [project.optional-dependencies]

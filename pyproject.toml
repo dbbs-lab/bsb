@@ -13,17 +13,17 @@ classifiers = ["License :: OSI Approved :: GNU General Public License v3 or late
 requires-python = ">=3.9"
 version = "4.3.1"
 dependencies = [
-    "bsb-core~=5.0.0",
-    "bsb-json~=4.2.1",
-    "bsb-yaml~=4.2.1",
-    "bsb-hdf5~=5.0.0"
+    "bsb-core~=5.0.1",
+    "bsb-json~=4.2.2",
+    "bsb-yaml~=4.2.2",
+    "bsb-hdf5~=5.0.2"
 ]
 
 [project.optional-dependencies]
 parallel = ["bsb-core[parallel]"]
-neuron = ["bsb-neuron~=4.2.1"]
-nest = ["bsb-nest~=4.3.1"]
-arbor = ["bsb-arbor~=4.1.0"]
+neuron = ["bsb-neuron~=4.2.2"]
+nest = ["bsb-nest~=4.3.2"]
+arbor = ["bsb-arbor~=4.1.1"]
 
 [project.urls]
 Home = "https://github.com/dbbs-lab/bsb"

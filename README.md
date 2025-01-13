@@ -125,3 +125,7 @@ We acknowledge the use of EBRAINS platform and Fenix Infrastructure resources, w
 partially funded from the European Union’s Horizon 2020 research and innovation
 programme under the Specific Grant Agreement No. 101147319 (EBRAINS 2.0 Project) and 
 through the ICEI project under the grant agreement No. 800858 respectively.
+
+### Supported by
+
+[![JetBrains logo](https://resources.jetbrains.com/storage/products/company/brand/logos/jetbrains.svg)](https://jb.gg/OpenSourceSupport)

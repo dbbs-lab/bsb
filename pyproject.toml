@@ -37,8 +37,8 @@ packages = []
 current_version = "4.4.1"
 parse = "(?P<major>\\d+)\\.(?P<minor>\\d+)\\.(?P<patch>\\d+)"
 serialize = ["{major}.{minor}.{patch}"]
-search = "{current_version}"
-replace = "{new_version}"
+search = 'version = "{current_version}"'
+replace = 'version = "{new_version}"'
 regex = false
 ignore_missing_version = false
 tag = true
@@ -56,6 +56,8 @@ optional_value = "final"
 
 [[tool.bumpversion.files]]
 filename = "codemeta.json"
+search = '"version": "{current_version}"'
+replace = '"version": "{new_version}"'
 
 [[tool.bumpversion.files]]
 filename = "codemeta.json"

@@ -120,3 +120,7 @@ Project SGA2) and from Centro Fermi project “Local Neuronal Microcircuits” t
 acknowledge the use of EBRAINS platform and Fenix Infrastructure resources, which are
 partially funded from the European Union’s Horizon 2020 research and innovation
 programme through the ICEI project under the grant agreement No. 800858
+
+### Supported by
+
+[![JetBrains logo](https://resources.jetbrains.com/storage/products/company/brand/logos/jetbrains.svg)](https://jb.gg/OpenSourceSupport)

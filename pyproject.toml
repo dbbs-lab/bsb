@@ -13,17 +13,17 @@ classifiers = ["License :: OSI Approved :: GNU General Public License v3 or late
 requires-python = ">=3.9"
 version = "4.3.2"
 dependencies = [
-    "bsb-core~=4.5.3",
-    "bsb-json~=4.2.1",
-    "bsb-yaml~=4.2.1",
-    "bsb-hdf5~=4.1.1"
+    "bsb-core~=5.0.2",
+    "bsb-json~=4.2.2",
+    "bsb-yaml~=4.2.2",
+    "bsb-hdf5~=5.0.2"
 ]
 
 [project.optional-dependencies]
 parallel = ["bsb-core[parallel]"]
-neuron = ["bsb-neuron==4.0.3"]
-nest = ["bsb-nest==4.3.2"]
-arbor = ["bsb-arbor==4.1.0"]
+neuron = ["bsb-neuron~=4.2.2"]
+nest = ["bsb-nest~=4.3.2"]
+arbor = ["bsb-arbor~=4.1.1"]
 
 [project.urls]
 Home = "https://github.com/dbbs-lab/bsb"
@@ -53,3 +53,12 @@ commit_args = "--no-verify"
 [tool.bumpversion.parts.pre_l]
 values = ["dev", "a", "b", "rc", "final"]
 optional_value = "final"
+
+[[tool.bumpversion.files]]
+filename = "codemeta.json"
+
+[[tool.bumpversion.files]]
+filename = "codemeta.json"
+search = '"dateModified": "\d{{4}}-\d{{2}}-\d{{2}}"'
+replace = '"dateModified": "{now:%Y-%m-%d}"'
+regex = true

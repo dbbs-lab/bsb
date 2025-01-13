@@ -11,7 +11,7 @@ readme = "README.md"
 license = { file = "LICENSE" }
 classifiers = ["License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"]
 requires-python = ">=3.9"
-version = "4.4.0"
+version = "4.4.1"
 dependencies = [
     "bsb-core~=5.0.2",
     "bsb-json~=4.2.2",
@@ -34,7 +34,7 @@ Documentation = "https://bsb.readthedocs.io/"
 [tool.setuptools]
 packages = []
 [tool.bumpversion]
-current_version = "4.4.0"
+current_version = "4.4.1"
 parse = "(?P<major>\\d+)\\.(?P<minor>\\d+)\\.(?P<patch>\\d+)"
 serialize = ["{major}.{minor}.{patch}"]
 search = "{current_version}"

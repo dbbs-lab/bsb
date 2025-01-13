@@ -22,7 +22,7 @@ dependencies = [
 [project.optional-dependencies]
 parallel = ["bsb-core[parallel]"]
 neuron = ["bsb-neuron~=4.2.2"]
-nest = ["bsb-nest~=4.4.0"]
+nest = ["bsb-nest~=4.3.2"]
 arbor = ["bsb-arbor~=4.1.1"]
 
 [project.urls]

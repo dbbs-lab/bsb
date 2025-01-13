@@ -64,7 +64,7 @@ jobs:
           oldv="${{ needs.bump.outputs.old_tag }}"
           newv="${{needs.bump.outputs.tag}}"
           # Bump the version, dropping the leading `v` with `${x:1}`
-          bump-my-version replace --current-version=${oldv:1} --new-version=${newv:1} pyproject.toml
+          bump-my-version replace --search='version = "{current_version}"' --replace='version = "{new_version}"' --current-version=${oldv:1} --new-version=${newv:1} pyproject.toml
 
       - name: Commit & Push version change
         uses: stefanzweifel/git-auto-commit-action@v5

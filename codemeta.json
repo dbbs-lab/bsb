@@ -8,8 +8,8 @@
     "referencePublication": "https://doi.org/10.1038/s42003-022-04213-y",
     "dateCreated": "2019-07-19",
     "datePublished": "2020-12-09",
-    "dateModified": "2024-11-16",
-    "version": "4.3.2",
+    "dateModified": "2025-01-13",
+    "version": "4.4.0",
     "releaseNotes": "https://github.com/dbbs-lab/bsb/releases/tag/v4.3.1",
     "funding": "785907 (Human Brain Project SGA2), 945539 (Human Brain Project SGA3), 101147319 (EBRAINS 2.0 Project) and 800858 (ICEI project), 101137289 (Virtual Brain Twin Project)",
     "funder": {

@@ -2,7 +2,7 @@
   "name": "bsb-core",
   "$schema": "../../node_modules/nx/schemas/project-schema.json",
   "projectType": "library",
-  "sourceRoot": "packages/bsb-core/bsb_core",
+  "sourceRoot": "packages/bsb-core/bsb",
   "targets": {
     "lock": {
       "executor": "@nxlv/python:lock",

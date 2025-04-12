@@ -1,0 +1,10 @@
+*
+!.gitignore
+!__init__.py
+!test_*
+!data
+!data/configs
+!data/configs/*
+!data/morphologies
+!data/morphologies/*
+*.pyc

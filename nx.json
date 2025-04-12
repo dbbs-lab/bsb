@@ -1,0 +1,21 @@
+{
+  "installation": {
+    "version": "20.7.2",
+    "plugins": {
+      "@nxlv/python": "20.12.4"
+    }
+  },
+  "plugins": [
+    {
+      "plugin": "@nxlv/python",
+      "options": {
+        "packageManager": "uv"
+      }
+    }
+  ],
+  "release": {
+    "projects": [
+      "*"
+    ]
+  }
+}

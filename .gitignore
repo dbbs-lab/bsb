@@ -162,3 +162,7 @@ cython_debug/
 .idea/
 
 .python-version
+
+.nx/installation
+.nx/cache
+.nx/workspace-data

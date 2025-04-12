@@ -26,20 +26,21 @@ indent-width = 4
   fixable = [ "ALL" ]
   unfixable = [ ]
 
-[tool.uv]
-sources = { }
+[[tool.uv.index]]
+name = "testpypi"
+url = "https://test.pypi.org/simple/"
+publish-url = "https://test.pypi.org/legacy/"
 
-  [[tool.uv.index]]
-  name = "testpypi"
-  url = "https://test.pypi.org/simple/"
-  publish-url = "https://test.pypi.org/legacy/"
+[tool.uv.sources.bsb-test]
+path = "../bsb-test"
+editable = true
 
 [tool.flit.module]
 name = "bsb"
 
 [project]
 name = "bsb-core"
-version = "1.0.4"
+version = "1.0.5"
 readme = "README.md"
 requires-python = ">=3.9,<4"
 description = """
@@ -91,7 +92,8 @@ dev = [
   "pytest>=8.3.4",
   "pytest-sugar>=1.0.0",
   "pytest-cov>=6.0.0",
-  "pytest-html>=4.1.1"
+  "pytest-html>=4.1.1",
+  "bsb-test"
 ]
 
 [build-system]

@@ -17,5 +17,18 @@
     "projects": [
       "*"
     ]
+  },
+  "generators": {
+    "@nxlv/python:uv-project": {
+      "projectType": "library",
+      "pyprojectPythonDependency": ">=3.9",
+      "pyenvPythonVersion": "3.9.22",
+      "publishable": true,
+      "buildBundleLocalDependencies": false,
+      "buildLockedVersions": false,
+      "linter": "ruff",
+      "unitTestRunner": "pytest",
+      "codeCoverage": true
+    }
   }
 }

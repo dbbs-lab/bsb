@@ -41,9 +41,6 @@ name = "bsb"
 name = "bsb-core"
 version = "1.0.4"
 readme = "README.md"
-classifiers = [
-  "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"
-]
 requires-python = ">=3.9,<4"
 description = """
 `bsb-core` is the backbone package contain the essential code of the BSB: A component
@@ -52,6 +49,9 @@ framework for multiscale bottom-up neural modelling.
 `bsb-core` is usually installed alongside a bundle of desired bsb plugins.
 First time users are recommended to install the `bsb` package instead.
 """
+classifiers = [
+  "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"
+]
 dependencies = [
   "numpy~=1.19",
   "scipy~=1.5",
@@ -75,7 +75,11 @@ dependencies = [
 
   [[project.authors]]
   name = "Robin De Schepper"
-  email = "robingilbert.deschepper@unipv.it"
+  email = "robin@alexandria.sc"
+
+  [[project.authors]]
+  name = "Dimitri Rodarie"
+  email = "dimitri.rodarie@unipv.it"
 
   [project.license]
   file = "LICENSE"

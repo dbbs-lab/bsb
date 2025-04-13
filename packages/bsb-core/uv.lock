@@ -139,10 +139,14 @@ dev = [
 
 [[package]]
 name = "bsb-test"
-version = "1.0.1"
+version = "1.0.5"
 source = { editable = "../bsb-test" }
+dependencies = [
+    { name = "bsb-core" },
+]
 
 [package.metadata]
+requires-dist = [{ name = "bsb-core", editable = "." }]
 
 [package.metadata.requires-dev]
 dev = [

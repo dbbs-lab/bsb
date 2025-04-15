@@ -12,7 +12,9 @@ class A(PlacementStrategy):
 
 class TestComponentPlugins(unittest.TestCase):
     @spoof_plugin(
-        "components", "super", {"bsb.placement.strategy.PlacementStrategy": {"__a__": A}}
+        "components",
+        "super",
+        {"bsb.placement.strategy.PlacementStrategy": {"__a__": A}},
     )
     def test_classmap_dict(self):
         a = PlacementStrategy(strategy="__a__", cell_types=[], partitions=[])

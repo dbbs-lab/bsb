@@ -54,7 +54,20 @@ class TestSelectors(RandomStorageFixture, unittest.TestCase, engine_name="hdf5")
         all = spoof_combo("B", "A", "B", "*", "-", "0", "\\", "|", '"', ".*", "\\.")
         all += spoof("", "B")
         ns.validate(all)
-        exp = ["BA", "BB", "B*", "B-", "B0", "B\\", "B|", 'B"', "B.*", "B\\.", "BB", "B"]
+        exp = [
+            "BA",
+            "BB",
+            "B*",
+            "B-",
+            "B0",
+            "B\\",
+            "B|",
+            'B"',
+            "B.*",
+            "B\\.",
+            "BB",
+            "B",
+        ]
         self.assertPicked(exp, ns, all, "Exact match to name expected")
         none = spoof()
         with self.assertRaises(MissingMorphologyError):

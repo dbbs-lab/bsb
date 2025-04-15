@@ -52,7 +52,9 @@ class TestCore(
         # fixme: https://github.com/dbbs-lab/bsb-core/issues/812
         self.network.topology.children.append(self.network.regions.region)
         self.network.resize(x=500, y=500, z=500)
-        self.assertEqual(500, self.network.network.x, "resize didnt update network node")
+        self.assertEqual(
+            500, self.network.network.x, "resize didnt update network node"
+        )
         self.assertEqual(
             500, self.network.partitions.layer.data.width, "didnt resize layer"
         )

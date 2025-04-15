@@ -94,7 +94,11 @@ def single_vox_placement(network, voxels):
     )
     dud_cell2 = CellType(
         name="cell_rel_dens_key",
-        spatial={"relative_to": "cell_density_key", "density_ratio": 2.0, "radius": 5.6},
+        spatial={
+            "relative_to": "cell_density_key",
+            "density_ratio": 2.0,
+            "radius": 5.6,
+        },
     )
     dud_cell3 = CellType(
         name="cell_rel_dens_no_ratio",
@@ -201,9 +205,9 @@ class TestIndicators(
                 <= np.ceil(ratio_dud3)
             )
         )
-        self.placement2.overrides.cell_rel_dens_key.relative_to = self.network.cell_types[
-            "cell_w_count"
-        ]
+        self.placement2.overrides.cell_rel_dens_key.relative_to = (
+            self.network.cell_types["cell_w_count"]
+        )
         with self.assertRaises(PlacementRelationError):
             # Cannot estimate relative to an estimate without density key
             dud3_ind.guess()
@@ -214,9 +218,9 @@ class TestIndicators(
         self.assertEqual(
             0.1 * self.voxels.loc_data.size * 100**3, indicators["cell_w_dens"].guess()
         )
-        self.placement2.overrides.cell_rel_dens_key.relative_to = self.network.cell_types[
-            "cell_w_dens"
-        ]
+        self.placement2.overrides.cell_rel_dens_key.relative_to = (
+            self.network.cell_types["cell_w_dens"]
+        )
         self.assertEqual(0.2 * self.voxels.loc_data.size * 100**3, dud3_ind.guess())
 
         self.placement2.overrides.cell_density_key.density_key = "bla"
@@ -369,8 +373,12 @@ class TestPlacementStrategies(
         ps = network.get_placement_set("test_cell")
         self.assertEqual(39, len(ps), "fixed count parallel array placement broken")
         pos = ps.load_positions()
-        self.assertAll(pos[:, 1] <= cfg.partitions.test_layer.data.mdc[1], "not in layer")
-        self.assertAll(pos[:, 1] >= cfg.partitions.test_layer.data.ldc[1], "not in layer")
+        self.assertAll(
+            pos[:, 1] <= cfg.partitions.test_layer.data.mdc[1], "not in layer"
+        )
+        self.assertAll(
+            pos[:, 1] >= cfg.partitions.test_layer.data.ldc[1], "not in layer"
+        )
 
     def test_packed_arrays(self):
         cfg = get_test_config("single")
@@ -442,7 +450,9 @@ class TestVoxelDensities(RandomStorageFixture, unittest.TestCase, engine_name="h
     def test_particle_vd(self):
         cfg = Configuration.default(
             cell_types=dict(
-                test_cell=CellType(spatial=dict(radius=2, density=2, density_key="inhib"))
+                test_cell=CellType(
+                    spatial=dict(radius=2, density=2, density_key="inhib")
+                )
             ),
             regions=dict(test_region=dict(children=["test_part"])),
             partitions=dict(test_part=dict(type="test")),
@@ -461,7 +471,9 @@ class TestVoxelDensities(RandomStorageFixture, unittest.TestCase, engine_name="h
         )
         self.assertEqual(4, len(counts), "should have vector of counts per voxel")
         # test rounded down values
-        self.assertTrue(np.allclose([78, 15, 7, 26], counts, atol=1), "densities incorr")
+        self.assertTrue(
+            np.allclose([78, 15, 7, 26], counts, atol=1), "densities incorr"
+        )
         network.compile(clear=True)
         ps = network.get_placement_set("test_cell")
         self.assertGreater(len(ps), 125)  # rounded down values -1

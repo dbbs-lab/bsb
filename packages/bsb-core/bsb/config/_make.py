@@ -199,7 +199,9 @@ def compile_isc(node_cls, dynamic_config):
 
 def _snake_case(s):
     return "_".join(
-        sub("([A-Z][a-z]+)", r" \1", sub("([A-Z]+)", r" \1", s.replace("-", " "))).split()
+        sub(
+            "([A-Z][a-z]+)", r" \1", sub("([A-Z]+)", r" \1", s.replace("-", " "))
+        ).split()
     ).lower()
 
 
@@ -465,7 +467,7 @@ def _get_dynamic_class(node_cls, kwargs):
         loaded_cls_name = dynamic_attr.default or node_cls.__name__
     module_path = ["__main__", node_cls.__module__]
     classmap = get_classmap(node_cls)
-    interface = getattr(node_cls, "_config_dynamic_root")
+    interface = node_cls._config_dynamic_root
     try:
         dynamic_cls = _load_class(
             loaded_cls_name, module_path, interface=interface, classmap=classmap
@@ -473,11 +475,7 @@ def _get_dynamic_class(node_cls, kwargs):
     except DynamicClassInheritanceError:
         mapped_class_msg = _get_mapped_class_msg(loaded_cls_name, classmap)
         raise UnfitClassCastError(
-            "'{}'{} is not a valid class as it does not inherit from {}".format(
-                loaded_cls_name,
-                mapped_class_msg,
-                node_cls.__name__,
-            )
+            f"'{loaded_cls_name}'{mapped_class_msg} is not a valid class as it does not inherit from {node_cls.__name__}"
         ) from None
     except DynamicClassError:
         mapped_class_msg = _get_mapped_class_msg(loaded_cls_name, classmap)
@@ -491,15 +489,12 @@ def _get_pluggable_class(node_cls, kwargs):
     plugin_label = node_cls._config_plugin_name or node_cls.__name__
     if node_cls._config_plugin_key not in kwargs:
         raise CastError(
-            "Pluggable node must contain a '{}' attribute to select a {}".format(
-                node_cls._config_plugin_key,
-                plugin_label,
-            )
+            f"Pluggable node must contain a '{node_cls._config_plugin_key}' attribute to select a {plugin_label}"
         )
     plugin_name = kwargs[node_cls._config_plugin_key]
     plugins = node_cls.__plugins__()
     if plugin_name not in plugins:
-        raise PluginError("Unknown {} '{}'".format(plugin_label, plugin_name))
+        raise PluginError(f"Unknown {plugin_label} '{plugin_name}'")
     plugin_cls = plugins[plugin_name]
     # TODO: Enforce class inheritance
     return plugin_cls
@@ -507,7 +502,7 @@ def _get_pluggable_class(node_cls, kwargs):
 
 def _get_mapped_class_msg(loaded_cls_name, classmap):
     if classmap and loaded_cls_name in classmap:
-        return " (mapped to '{}')".format(classmap[loaded_cls_name])
+        return f" (mapped to '{classmap[loaded_cls_name]}')"
     else:
         return ""
 
@@ -527,9 +522,7 @@ def _load_class(cfg_classname, module_path, interface=None, classmap=None):
 
     if interface and not issubclass(class_ref, interface):
         raise DynamicClassInheritanceError(
-            "Dynamic class '{}' must derive from {}".format(
-                class_name, qualname(interface)
-            )
+            f"Dynamic class '{class_name}' must derive from {qualname(interface)}"
         )
     return class_ref
 

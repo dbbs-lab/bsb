@@ -71,8 +71,7 @@ class CsvImportConnectivity(ImportConnectivity):
 
             def make_maps(pre_chunks, post_chunks):
                 def flush(pre_block, post_block, other_block):
-                    with pre.chunk_context(pre_chunks):
-                        with post.chunk_context(post_chunks):
+                    with pre.chunk_context(pre_chunks),     post.chunk_context(post_chunks):
                             self.connect_cells(pre, post, pre_block, post_block)
 
                 return lambda x: x, lambda x: x, flush
@@ -98,13 +97,12 @@ class CsvImportConnectivity(ImportConnectivity):
             for pre_chunks, post_chunks in passover_iter:
                 mappers = make_maps(pre_chunks, post_chunks)
                 flush = mappers[2]
-                i = 0
                 if self.progress_bar:
                     reader = tqdm(reader, desc="imported", unit=" lines")
                 pre_block = []
                 post_block = []
                 other_block = []
-                for line in reader:
+                for i, line in enumerate(reader):
                     ids = [map_(_safe_int(line[c])) for c, map_ in zip(cols, mappers)]
                     other = [_safe_float(line[c]) for c in other_cols]
                     if ids[0] > -1 and ids[1] > -1:
@@ -119,7 +117,6 @@ class CsvImportConnectivity(ImportConnectivity):
                             pre_block = []
                             post_block = []
                             other_block = []
-                    i += 1
                 flush(pre_block, post_block, other_block)
 
     def _passover(self, pre: PlacementSet, pre_chunks, post: PlacementSet, post_chunks):
@@ -131,8 +128,7 @@ class CsvImportConnectivity(ImportConnectivity):
             post_map = {m: i for i, m in enumerate(data)}.get
 
         def flush(pre_block, post_block, other_block):
-            with pre.chunk_context(pre_chunks):
-                with post.chunk_context(post_chunks):
+            with pre.chunk_context(pre_chunks), post.chunk_context(post_chunks):
                     self.connect_cells(pre, post, pre_block, post_block)
 
         return pre_map, post_map, flush

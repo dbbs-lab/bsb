@@ -36,7 +36,9 @@ def report(*message, level=2, ongoing=False, nodes=None, all_nodes=False):
     message = " ".join(map(str, message))
     rank = MPI.get_rank()
     if (
-        (not rank and nodes is None) or all_nodes or (nodes is not None and rank in nodes)
+        (not rank and nodes is None)
+        or all_nodes
+        or (nodes is not None and rank in nodes)
     ) and options.verbosity >= level:
         print(message, end="\n" if not ongoing else "\r", flush=True)
 

@@ -31,11 +31,15 @@ class ZScale(BsbOption, name="z", cli=("z",), env=("BSB_CONFIG_NETWORK_Z",)):
     pass
 
 
-class Skip(BsbOption, name="skip", cli=("skip",), env=("BSB_SELECTION_SKIP",), list=True):
+class Skip(
+    BsbOption, name="skip", cli=("skip",), env=("BSB_SELECTION_SKIP",), list=True
+):
     pass
 
 
-class Only(BsbOption, name="only", cli=("only",), env=("BSB_SELECTION_ONLY",), list=True):
+class Only(
+    BsbOption, name="only", cli=("only",), env=("BSB_SELECTION_ONLY",), list=True
+):
     pass
 
 
@@ -45,7 +49,9 @@ class Append(
     pass
 
 
-class Redo(BsbOption, name="redo", cli=("redo", "r"), env=("BSB_REDO_MODE",), flag=True):
+class Redo(
+    BsbOption, name="redo", cli=("redo", "r"), env=("BSB_REDO_MODE",), flag=True
+):
     pass
 
 

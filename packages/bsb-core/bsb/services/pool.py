@@ -452,7 +452,9 @@ class Job(abc.ABC):
 
     def cancel(self, reason: typing.Optional[str] = None):
         self.change_status(JobStatus.CANCELLED)
-        self._error = JobCancelledError() if reason is None else JobCancelledError(reason)
+        self._error = (
+            JobCancelledError() if reason is None else JobCancelledError(reason)
+        )
         if self._future:
             if not self._future.cancel():
                 warnings.warn(f"Could not cancel {self}, the job is already running.")
@@ -547,12 +549,12 @@ class JobPool:
         self._comm = scaffold._comm
         self._unhandled_errors = []
         self._running_futures: list[concurrent.futures.Future] = []
-        self._mpipool: typing.Optional["MPIExecutor"] = None
+        self._mpipool: typing.Optional[MPIExecutor] = None
         self._job_queue: list[Job] = []
         self._listeners = []
         self._max_wait = 60
         self._status: PoolStatus = None
-        self._progress_notifications: list["PoolProgress"] = []
+        self._progress_notifications: list[PoolProgress] = []
         self._workers_raise_unhandled = False
         self._fail_fast = fail_fast
         self._workflow = workflow
@@ -682,7 +684,9 @@ class JobPool:
 
         future = concurrent.futures.Future()
         self._schedulers.append(future)
-        thread = threading.Thread(target=self._schedule, args=(future, nodes, scheduler))
+        thread = threading.Thread(
+            target=self._schedule, args=(future, nodes, scheduler)
+        )
         thread.start()
 
     @property
@@ -867,8 +871,12 @@ class JobPool:
         for notification in self._progress_notifications:
             job = getattr(notification, "job", None)
             job_error = getattr(job, "error", None)
-            has_error = job_error is not None and type(job_error) is not JobCancelledError
-            handled_error = [bool(listener(notification)) for listener in self._listeners]
+            has_error = (
+                job_error is not None and type(job_error) is not JobCancelledError
+            )
+            handled_error = [
+                bool(listener(notification)) for listener in self._listeners
+            ]
             if has_error and not any(handled_error):
                 self._unhandled_errors.append(job)
         if self._fail_fast:
@@ -891,7 +899,7 @@ class JobPool:
                 errors.append(e)
         self._unhandled_errors = []
         raise WorkflowError(
-            f"Your workflow encountered errors.",
+            "Your workflow encountered errors.",
             errors,
         )
 

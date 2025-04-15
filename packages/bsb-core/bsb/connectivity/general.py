@@ -31,8 +31,11 @@ class AllToAll(ConnectionStrategy):
     All to all connectivity between two neural populations
     """
 
-    affinity: float = config.attr(type=types.float(0.0, 1.0), required=False, default=1.0)
-    """Probability for each individual connection to be, default is 1 i.e. all connected."""
+    affinity: float = config.attr(
+        type=types.float(0.0, 1.0), required=False, default=1.0
+    )
+    """Probability for each individual connection to be, default is 1, 
+    i.e. all connected."""
 
     def connect(self, pre, post):
         for from_ps in pre.placement:
@@ -61,11 +64,11 @@ def _connect_fixed_degree(self, pre, post, degree, is_in):
             f"required degree value {degree} for connection strategy {self.name}"
         )
     for ps in ps_fixed:
-        l = len(ps)
-        counted_targets = np.full((l * degree, 3), -1)
-        fixed_targets = np.full((l * degree, 3), -1)
+        l_ = len(ps)
+        counted_targets = np.full((l_ * degree, 3), -1)
+        fixed_targets = np.full((l_ * degree, 3), -1)
         ptr = 0
-        for i in range(l):
+        for i in range(l_):
             fixed_targets[ptr : ptr + degree, 0] = i
             counted_targets[ptr : ptr + degree, 0] = rng.choice(
                 high, degree, replace=False

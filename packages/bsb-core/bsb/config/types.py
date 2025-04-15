@@ -114,13 +114,11 @@ def or_(*type_args):
             else:
                 return v
         type_errors = "\n".join(
-            "- Casting to '{}' raised:\n{}".format(n, e) for n, e in type_errors.items()
+            f"- Casting to '{n}' raised:\n{e}" for n, e in type_errors.items()
         )
         # Use a CastError instead of a TypeError so that the message is passed along as is
         # by upstream error handlers.
-        raise CastError(
-            "Couldn't cast {} into {}.\n{}".format(value, handler_name, type_errors)
-        )
+        raise CastError(f"Couldn't cast {value} into {handler_name}.\n{type_errors}")
 
     type_handler.__name__ = handler_name
     return type_handler
@@ -180,7 +178,9 @@ class class_(object_):
             return value
         obj = super().__call__(value)
         if not inspect.isclass(obj):
-            raise TypeError(f"'{value}' is not a class, got {builtins.type(obj)} instead")
+            raise TypeError(
+                f"'{value}' is not a class, got {builtins.type(obj)} instead"
+            )
         return obj
 
     def __inv__(self, value):
@@ -234,7 +234,9 @@ class method(function_):
         except AttributeError as e:
             raise TypeError(builtins.str(e)) from None
         if not callable(obj):
-            raise TypeError(f"Could not import '{value}' as a method of `{self._class}`.")
+            raise TypeError(
+                f"Could not import '{value}' as a method of `{self._class}`."
+            )
         return obj
 
     def __inv__(self, value):
@@ -299,7 +301,9 @@ def str(strip=False, lower=False, upper=False, safe=True):
     """
     handler_name = "str"
     # Compile a custom function to sanitize the string according to args
-    safety_check = "\n if not isinstance(s, str):\n  raise TypeError()\n" if safe else ""
+    safety_check = (
+        "\n if not isinstance(s, str):\n  raise TypeError()\n" if safe else ""
+    )
     fstr = f"def f(s):{safety_check} return str(s)"
     for add, mod in zip((strip, lower, upper), ("strip", "lower", "upper")):
         if add:
@@ -330,11 +334,11 @@ def int(min=None, max=None):
     """
     handler_name = "int"
     if min is not None and max is not None:
-        handler_name += " between [{}, {}]".format(min, max)
+        handler_name += f" between [{min}, {max}]"
     elif min is not None:
-        handler_name += " >= {}".format(min)
+        handler_name += f" >= {min}"
     elif max is not None:
-        handler_name += " <= {}".format(max)
+        handler_name += f" <= {max}"
 
     def type_handler(value):
         try:
@@ -343,9 +347,7 @@ def int(min=None, max=None):
                 raise Exception()
             return v
         except Exception:
-            raise TypeError(
-                "Could not cast {} to an {}.".format(value, handler_name)
-            ) from None
+            raise TypeError(f"Could not cast {value} to an {handler_name}.") from None
 
     type_handler.__name__ = handler_name
     return type_handler
@@ -369,11 +371,11 @@ def float(min=None, max=None):
     """
     handler_name = "float"
     if min is not None and max is not None:
-        handler_name += " between [{}, {}]".format(min, max)
+        handler_name += f" between [{min}, {max}]"
     elif min is not None:
-        handler_name += " >= {}".format(min)
+        handler_name += f" >= {min}"
     elif max is not None:
-        handler_name += " <= {}".format(max)
+        handler_name += f" <= {max}"
 
     def type_handler(value):
         try:
@@ -382,7 +384,7 @@ def float(min=None, max=None):
                 raise Exception()
             return v
         except Exception:
-            raise TypeError("Could not cast {} to an {}.".format(value, handler_name))
+            raise TypeError(f"Could not cast {value} to an {handler_name}.")
 
     type_handler.__name__ = handler_name
     return type_handler
@@ -403,11 +405,11 @@ def number(min=None, max=None):
     """
     handler_name = "number"
     if min is not None and max is not None:
-        handler_name += " between [{}, {}]".format(min, max)
+        handler_name += f" between [{min}, {max}]"
     elif min is not None:
-        handler_name += " >= {}".format(min)
+        handler_name += f" >= {min}"
     elif max is not None:
-        handler_name += " <= {}".format(max)
+        handler_name += f" <= {max}"
 
     def type_handler(value):
         try:
@@ -421,7 +423,7 @@ def number(min=None, max=None):
                     raise Exception()
             return v
         except Exception:
-            raise TypeError("Could not cast {} to a {}.".format(value, handler_name))
+            raise TypeError(f"Could not cast {value} to a {handler_name}.")
 
     type_handler.__name__ = handler_name
     return type_handler
@@ -522,16 +524,14 @@ def list(type=builtins.str, size=None):
                 v[i] = type(e)
         except Exception:
             raise TypeError(
-                "Couldn't cast element {} of {} into {}".format(i, value, type.__name__)
+                f"Couldn't cast element {i} of {value} into {type.__name__}"
             )
         if size is not None and len(v) != size:
-            raise ValueError(
-                "Couldn't cast {} into a {} element list".format(value, size)
-            )
+            raise ValueError(f"Couldn't cast {value} into a {size} element list")
         return v
 
     type_handler.__name__ = "list{} of {}".format(
-        "[{}]".format(size) if size is not None else "", type.__name__
+        f"[{size}]" if size is not None else "", type.__name__
     )
     return type_handler
 
@@ -554,12 +554,10 @@ def dict(type=builtins.str):
             for k, e in v.items():
                 v[k] = type(e)
         except Exception:
-            raise TypeError(
-                "Couldn't cast {} of {} into {}".format(k, value, type.__name__)
-            )
+            raise TypeError(f"Couldn't cast {k} of {value} into {type.__name__}")
         return v
 
-    type_handler.__name__ = "dict of {}".format(type.__name__)
+    type_handler.__name__ = f"dict of {type.__name__}"
     return type_handler
 
 
@@ -575,7 +573,7 @@ def fraction():
     def type_handler(value):
         v = _float(value)
         if v < 0.0 or v > 1.0:
-            raise ValueError("{} is out of the 0-1 range for a fraction.".format(value))
+            raise ValueError(f"{value} is out of the 0-1 range for a fraction.")
         return v
 
     type_handler.__name__ = "fraction [0.; 1.]"
@@ -608,7 +606,9 @@ class distribution(TypeHandler):
     def __call__(self, value, _key=None, _parent=None):
         from ._distributions import Distribution
 
-        if not isinstance(value, builtins.list) and not isinstance(value, builtins.dict):
+        if not isinstance(value, builtins.list) and not isinstance(
+            value, builtins.dict
+        ):
             value = {"distribution": "constant", "constant": value}
 
         return Distribution(**value, _key=_key, _parent=_parent)
@@ -665,7 +665,9 @@ class evaluation(TypeHandler):
         vid = id(value)
         # Create a set of references from our stored weak references that are still alive.
         if vid not in self._references:
-            raise InvalidReferenceError(f"No evaluation reference found for {vid}", value)
+            raise InvalidReferenceError(
+                f"No evaluation reference found for {vid}", value
+            )
         return self._references[vid]
 
     def __inv__(self, value):

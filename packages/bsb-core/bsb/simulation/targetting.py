@@ -200,9 +200,9 @@ class CylindricalTargetting(
 
     origin: np.ndarray[float] = config.attr(type=types.ndarray(shape=(2,), dtype=float))
     """Coordinates of the base of the cylinder for each non main axis"""
-    axis: typing.Union[typing.Literal["x"], typing.Literal["y"], typing.Literal["z"]] = (
-        config.attr(type=types.in_(["x", "y", "z"]), default="y")
-    )
+    axis: typing.Union[
+        typing.Literal["x"], typing.Literal["y"], typing.Literal["z"]
+    ] = config.attr(type=types.in_(["x", "y", "z"]), default="y")
     """Main axis of the cylinder"""
     radius: float = config.attr(type=float, required=True)
     """Radius of the cylinder"""
@@ -238,7 +238,9 @@ class SphericalTargettingCellTypes(
     Targets all cell types in a sphere.
     """
 
-    origin: list[float] = config.attr(type=types.list(type=float, size=3), required=True)
+    origin: list[float] = config.attr(
+        type=types.list(type=float, size=3), required=True
+    )
     radius: float = config.attr(type=float, required=True)
 
     @FractionFilter.filter
@@ -268,7 +270,9 @@ class SphericalTargetting(
     Targets all cells in a sphere.
     """
 
-    origin: list[float] = config.attr(type=types.list(type=float, size=3), required=True)
+    origin: list[float] = config.attr(
+        type=types.list(type=float, size=3), required=True
+    )
     radius: float = config.attr(type=float, required=True)
 
     @FractionFilter.filter

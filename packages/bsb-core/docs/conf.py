@@ -5,7 +5,7 @@ import sys
 bsb_folder = os.path.join(os.path.dirname(__file__), "..", "bsb")
 bsb_init_file = os.path.join(bsb_folder, "__init__.py")
 _findver = "__version__ = "
-with open(bsb_init_file, "r") as f:
+with open(bsb_init_file) as f:
     for line in f:
         if "__version__ = " in line:
             f = line.find(_findver)

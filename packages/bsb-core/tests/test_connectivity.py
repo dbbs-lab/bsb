@@ -55,17 +55,23 @@ class TestAllToAll(
                 self.assertClose(np.arange(0, 25), np.sort(u))
                 self.assertClose(25, c)
                 ids = conns[1][:, 0]
-                self.assertEqual((625,), ids.shape, "625 global_locs per block expected")
+                self.assertEqual(
+                    (625,), ids.shape, "625 global_locs per block expected"
+                )
                 u, c = np.unique(ids, return_counts=True)
                 self.assertEqual(25, len(u), "expected exactly 25 global cells")
                 self.assertClose(np.arange(0, 25), np.sort(u))
                 self.assertClose(25, c)
-        self.assertEqual(100 * 100, len(self.network.get_connectivity_set("all_to_all")))
+        self.assertEqual(
+            100 * 100, len(self.network.get_connectivity_set("all_to_all"))
+        )
 
     def test_per_local(self):
         cs = self.network.get_connectivity_set("all_to_all")
         for lchunk in cs.get_local_chunks(direction="out"):
-            local_locs, gchunk_ids, global_locs = cs.load_local_connections("out", lchunk)
+            local_locs, gchunk_ids, global_locs = cs.load_local_connections(
+                "out", lchunk
+            )
             ids = local_locs[:, 0]
             self.assertEqual((2500,), ids.shape, "2500 conns per chunk expected")
             u, c = np.unique(ids, return_counts=True)
@@ -78,7 +84,9 @@ class TestAllToAll(
             self.assertEqual(25, len(u), "expected exactly 25 global cells")
             self.assertClose(np.arange(0, 25), np.sort(u))
             self.assertClose(100, c, "expected 25 local sources per global cell")
-        self.assertEqual(100 * 100, len(self.network.get_connectivity_set("all_to_all")))
+        self.assertEqual(
+            100 * 100, len(self.network.get_connectivity_set("all_to_all"))
+        )
 
     def test_affinity(self):
         # test selection is bernoulli with p=affinity
@@ -95,7 +103,8 @@ class TestAllToAll(
         n = 100 * 100
         # apply central limit theorem to compare to N(0,1). Threshold rejection is 0.05
         self.assertLess(
-            np.abs(nb_conn - n * affinity), 1.96 * np.sqrt(n * affinity * (1 - affinity))
+            np.abs(nb_conn - n * affinity),
+            1.96 * np.sqrt(n * affinity * (1 - affinity)),
         )
 
 
@@ -173,7 +182,9 @@ class TestConnectivitySet(
                             "`nested_iter_connections` return value should be unpackable"
                         )
                     except ValueError:
-                        self.fail("`nested_iter_connections` should return 2 data values")
+                        self.fail(
+                            "`nested_iter_connections` should return 2 data values"
+                        )
                     self.assertClose(625, len(locals_), "expected 625 local locs")
                     self.assertClose(625, len(globals_), "expected 625 global locs")
                 self.assertEqual(4, len(gchunks), "expected 4 global chunks")
@@ -330,14 +341,18 @@ class TestConnWithLabels(
         self.network.compile(append=True, skip_placement=True)
         cs = self.network.get_connectivity_set("all_to_all")
         allcon = cs.load_connections().all()[0]
-        self.assertEqual(300, len(allcon), "should have 3 x 100 cells with from_X label")
+        self.assertEqual(
+            300, len(allcon), "should have 3 x 100 cells with from_X label"
+        )
 
     def test_to_label(self):
         self.network.connectivity.all_to_all.postsynaptic.labels = ["from_X"]
         self.network.compile(append=True, skip_placement=True)
         cs = self.network.get_connectivity_set("all_to_all")
         allcon = cs.load_connections().all()[0]
-        self.assertEqual(300, len(allcon), "should have 100 x 3 cells with from_X label")
+        self.assertEqual(
+            300, len(allcon), "should have 100 x 3 cells with from_X label"
+        )
 
     def test_dupe_from_labels(self):
         self.network.connectivity.all_to_all.presynaptic.labels = [
@@ -389,7 +404,9 @@ class TestConnWithSubCellLabels(
             "self_intersect",
             dict(
                 strategy="bsb.connectivity.VoxelIntersection",
-                presynaptic=dict(cell_types=["test_cell"], morphology_labels=["tag_21"]),
+                presynaptic=dict(
+                    cell_types=["test_cell"], morphology_labels=["tag_21"]
+                ),
                 postsynaptic=dict(
                     cell_types=["test_cell"],
                     morphology_labels=["tag_16", "tag_17", "tag_18"],
@@ -459,7 +476,9 @@ class TestConnWithSubCellLabels(
             mset = ps.load_morphologies()
             mids = mset.get_indices(copy=False)[sloc[:, 0]]
             morphos = [*mset.iter_morphologies(unique=True, hard_cache=True)]
-            PC = [i for i, m in enumerate(morphos) if m.meta["name"] == "PurkinjeCell"][0]
+            PC = [i for i, m in enumerate(morphos) if m.meta["name"] == "PurkinjeCell"][
+                0
+            ]
             self.assertClose(
                 [PC],
                 np.unique(mids),
@@ -587,12 +606,18 @@ class TestVoxelIntersection(
         self.assertClose(0, pre_chunks, "expected only conns in base chunk")
         self.assertClose(0, post_chunks, "expected only conns in base chunk")
         self.assertEqual(2, len(pre_locs), "expected 2 connections")
-        if not (pre_locs[0].tolist() == [0, 0, 3] and post_locs[0].tolist() == [0, 0, 3]):
+        if not (
+            pre_locs[0].tolist() == [0, 0, 3] and post_locs[0].tolist() == [0, 0, 3]
+        ):
             self.fail("expected touching morphologies at their tips in (0,3), (0,3)")
         if not (
             (pre_locs[1].tolist() == [1, 0, 0] and post_locs[1].tolist() == [0, 0, 3])
-            or (pre_locs[1].tolist() == [1, 0, 2] and post_locs[1].tolist() == [0, 0, 2])
-            or (pre_locs[1].tolist() == [1, 0, 3] and post_locs[1].tolist() == [0, 0, 0])
+            or (
+                pre_locs[1].tolist() == [1, 0, 2] and post_locs[1].tolist() == [0, 0, 2]
+            )
+            or (
+                pre_locs[1].tolist() == [1, 0, 3] and post_locs[1].tolist() == [0, 0, 0]
+            )
         ):
             self.fail("expected specific overlap")
 
@@ -608,7 +633,9 @@ class TestVoxelIntersection(
         self.assertClose(0, pre_chunks, "expected only conns in base chunk")
         self.assertClose(0, post_chunks, "expected only conns in base chunk")
         self.assertEqual(1, len(pre_locs), "expected 1 connection")
-        if not (pre_locs[0].tolist() == [0, 0, 3] and post_locs[0].tolist() == [0, 0, 3]):
+        if not (
+            pre_locs[0].tolist() == [0, 0, 3] and post_locs[0].tolist() == [0, 0, 3]
+        ):
             self.fail("expected touching morphologies at their tips in (0,3), (0,3)")
 
     def test_single_voxel_label404(self):
@@ -628,7 +655,9 @@ class TestVoxelIntersection(
         self.assertClose(0, pre_chunks, "expected only conns in base chunk")
         self.assertClose(0, post_chunks, "expected only conns in base chunk")
         self.assertEqual(1, len(pre_locs), "expected 1 connection")
-        if not (pre_locs[0].tolist() == [0, 0, 3] and post_locs[0].tolist() == [0, 0, 3]):
+        if not (
+            pre_locs[0].tolist() == [0, 0, 3] and post_locs[0].tolist() == [0, 0, 3]
+        ):
             self.fail("expected touching morphologies at their tips in (0,3), (0,3)")
 
     def test_contacts(self):
@@ -928,7 +957,9 @@ class TestOutputNamingMultiExpl(unittest.TestCase):
                     postsynaptic=dict(cell_types=["C", "D", "E"]),
                     output_naming=dict(
                         A=dict(C="x_A_to_C", D="A_to_D"),
-                        B=dict(C=["B_to_C:type_1", "B_to_C:type_2", "anomalies"], D=None),
+                        B=dict(
+                            C=["B_to_C:type_1", "B_to_C:type_2", "anomalies"], D=None
+                        ),
                     ),
                 )
             ),
@@ -1033,7 +1064,9 @@ class TestOutputNamingConnect(
                     postsynaptic=dict(cell_types=["C", "D", "E"]),
                     output_naming=dict(
                         A=dict(C="x_A_to_C", D="A_to_D"),
-                        B=dict(C=["B_to_C:type_1", "B_to_C:type_2", "anomalies"], D=None),
+                        B=dict(
+                            C=["B_to_C:type_1", "B_to_C:type_2", "anomalies"], D=None
+                        ),
                     ),
                 )
             ),

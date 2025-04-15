@@ -36,9 +36,11 @@ def _is_uri(url):
 
 def _uri_to_path(uri):
     parsed = _up.urlparse(uri)
-    host = "{0}{0}{mnt}{0}".format(_os.path.sep, mnt=parsed.netloc)
+    host = f"{_os.path.sep}{_os.path.sep}{parsed.netloc}{_os.path.sep}"
     return _os.path.relpath(
-        _os.path.normpath(_os.path.join(host, _ur.url2pathname(_up.unquote(parsed.path))))
+        _os.path.normpath(
+            _os.path.join(host, _ur.url2pathname(_up.unquote(parsed.path)))
+        )
     )
 
 
@@ -57,7 +59,7 @@ class FileDependency:
             path = _pl.Path(source).absolute()
             self._uri: str = path.as_uri()
             ext = ext or path.suffix[1:] or None
-        self._scheme: "FileScheme" = _get_scheme(_up.urlparse(self._uri).scheme)
+        self._scheme: FileScheme = _get_scheme(_up.urlparse(self._uri).scheme)
         self.file_store = file_store
         self.extension = ext
         self.cache = cache
@@ -297,17 +299,21 @@ class NeuroMorphoScheme(UrlScheme):
         name = file.uri[idx : (idx + len(name))]
         with self.create_session() as session:
             try:
-                res = session.get(self._nm_url + self._meta + name, verify=_cert.where())
-            except Exception as e:
+                res = session.get(
+                    self._nm_url + self._meta + name, verify=_cert.where()
+                )
+            except Exception:
                 return {"archive": "none", "neuron_name": "none"}
             if res.status_code == 404:
                 res = session.get(self._nm_url, verify=_cert.where())
                 if res.status_code != 200 or "Service Interruption Notice" in res.text:
-                    warn(f"NeuroMorpho.org is down, can't retrieve morphology '{name}'.")
+                    warn(
+                        f"NeuroMorpho.org is down, can't retrieve morphology '{name}'."
+                    )
                     return {"archive": "none", "neuron_name": "none"}
-                raise IOError(f"'{name}' is not a valid NeuroMorpho name.")
+                raise OSError(f"'{name}' is not a valid NeuroMorpho name.")
             elif res.status_code != 200:
-                raise IOError("NeuroMorpho API error: " + res.text)
+                raise OSError("NeuroMorpho API error: " + res.text)
         return res.json()
 
     def get_base_url(self):
@@ -436,7 +442,7 @@ class CodeDependencyNode(FileDependencyNode):
     def __inv__(self):
         if not isinstance(self, CodeDependencyNode):
             return self
-        res = {"module": getattr(self, "module")}
+        res = {"module": self.module}
         if self.attr is not None:
             res["attr"] = self.attr
         return res

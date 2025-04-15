@@ -40,7 +40,9 @@ class Distribution:
             self._distr = getattr(_distributions, self.distribution)(**self.parameters)
         except Exception as e:
             errr.wrap(
-                DistributionCastError, e, prepend=f"Can't cast to '{self.distribution}': "
+                DistributionCastError,
+                e,
+                prepend=f"Can't cast to '{self.distribution}': ",
             )
 
     def draw(self, n):

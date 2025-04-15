@@ -34,7 +34,8 @@ class FileStore(IFileStore):
 
     def all(self):
         return {
-            id: self.get_meta(id) for id in map(_path_to_id, os.listdir(self.file_path()))
+            id: self.get_meta(id)
+            for id in map(_path_to_id, os.listdir(self.file_path()))
         }
 
     def store(self, content, id=None, meta=None, encoding=None, overwrite=False):
@@ -137,7 +138,7 @@ class FileStore(IFileStore):
         """
         Must return the metadata of the given id.
         """
-        with open(self.id_to_meta_path(id), "r") as f:
+        with open(self.id_to_meta_path(id)) as f:
             return json.load(f)
 
     def get_meta(self, id) -> typing.Mapping[str, typing.Any]:

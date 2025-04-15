@@ -7,7 +7,6 @@ from bsb import (
     AllenApiError,
     AllenStructure,
     Configuration,
-    ConfigurationError,
     LayoutError,
     Scaffold,
     topology,
@@ -24,8 +23,12 @@ def single_layer():
 class TestCreateTopology(unittest.TestCase):
     def test_single(self):
         r = topology.Region(name="R", children=[])
-        t = topology.create_topology([r], np.array([0, 0, 0]), np.array([100, 100, 100]))
-        self.assertEqual(r, t, "Topology with 1 root region should be the region itself")
+        t = topology.create_topology(
+            [r], np.array([0, 0, 0]), np.array([100, 100, 100])
+        )
+        self.assertEqual(
+            r, t, "Topology with 1 root region should be the region itself"
+        )
 
     def test_unrelated(self):
         r = topology.Region(children=[])

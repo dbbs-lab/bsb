@@ -33,4 +33,11 @@ def register_service(attr, provider):
     globals()[attr] = provider
 
 
-__all__ = ["MPI", "MPILock", "JobPool", "register_service", "WorkflowError", "pool_cache"]
+__all__ = [
+    "MPI",
+    "MPILock",
+    "JobPool",
+    "register_service",
+    "WorkflowError",
+    "pool_cache",
+]

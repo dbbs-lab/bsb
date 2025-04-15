@@ -276,9 +276,7 @@ class Storage:
     def assert_support(self, feature):
         if not self.supports(feature):
             raise NotImplementedError(
-                "The '{}' engine lacks support for the '{}' feature.".format(
-                    self._engine._format, feature
-                )
+                f"The '{self._engine._format}' engine lacks support for the '{feature}' feature."
             )
 
     def get_placement_set(self, type, chunks=None, labels=None, morphology_labels=None):
@@ -395,9 +393,9 @@ def open_storage(root, comm=None):
     else:
         for name, engine in engines.items():
             if engine.peek_exists(root):
-                raise IOError(
+                raise OSError(
                     f"Storage `{root}` not recognized as any installed format: "
-                    + ", ".join(f"'{n}'" for n in engines.keys())
+                    + ", ".join(f"'{n}'" for n in engines)
                 )
         else:
             raise FileNotFoundError(f"Storage `{root}` does not exist.")

@@ -25,7 +25,9 @@ class TestSingleTypeCompilation(
 
     def test_cells_placed(self):
         self.assertEqual(
-            40, len(self.network.get_placement_set("test_cell")), "should place 40 cells"
+            40,
+            len(self.network.get_placement_set("test_cell")),
+            "should place 40 cells",
         )
         self.assertNotEqual(
             0, len(self.network.get_placement_set("test_cell")), "No cells placed"
@@ -185,12 +187,16 @@ class TestRedoCompilation(
         self.assertClose(
             connections,
             np.array(
-                self.network.get_connectivity_set("cell_to_cell").load_connections().all()
+                self.network.get_connectivity_set("cell_to_cell")
+                .load_connections()
+                .all()
             ),
             "Redoing placement on cell2 should not affect cell1 connectivity",
             atol=1e-5,
         )
-        new_positions = self.network.cell_types.cell2.get_placement_set().load_positions()
+        new_positions = (
+            self.network.cell_types.cell2.get_placement_set().load_positions()
+        )
         self.assertAll(positions2 != new_positions)
         positions2 = np.copy(positions)
         # test redo layer_placement should affect everything else

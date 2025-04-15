@@ -31,7 +31,7 @@ if typing.TYPE_CHECKING:
 
 class _backref_property(property):
     def __backref__(self, instance, value):
-        setattr(instance, "_region", value)
+        instance._region = value
 
 
 @config.dynamic(
@@ -289,9 +289,9 @@ class Layer(Rhomboid, classmap_entry="layer"):
     dimensions = config.unset()
     thickness: float = config.attr(type=float, required=True)
     """Thickness of the layer along its axis"""
-    axis: typing.Union[typing.Literal["x"], typing.Literal["y"], typing.Literal["z"]] = (
-        config.attr(type=types.in_(["x", "y", "z"]), default="z")
-    )
+    axis: typing.Union[
+        typing.Literal["x"], typing.Literal["y"], typing.Literal["z"]
+    ] = config.attr(type=types.in_(["x", "y", "z"]), default="z")
     """Axis along which the layer will be limited."""
 
     def get_layout(self, hint):
@@ -470,7 +470,9 @@ class NrrdVoxels(Voxels, classmap_entry="nrrd"):
         source_headers = {s: s.get_header() for s in self._src}
         all_headers = mask_headers.copy()
         all_headers.update(source_headers)
-        dim_probs = [(s, d) for s, h in all_headers.items() if (d := h["dimension"]) != 3]
+        dim_probs = [
+            (s, d) for s, h in all_headers.items() if (d := h["dimension"]) != 3
+        ]
         if dim_probs:
             summ = ", ".join(f"'{s}' has {d}" for s, d in dim_probs)
             raise ConfigurationError(f"NRRD voxels must contain 3D arrays; {summ}")
@@ -491,7 +493,7 @@ class NrrdVoxels(Voxels, classmap_entry="nrrd"):
             )
         elif np.any(mask_shape > src_shape):
             raise ConfigurationError(
-                f"NRRD mask too big; it may select OOB source voxels:"
+                "NRRD mask too big; it may select OOB source voxels:"
                 + f" {mask_shape} > {src_shape}"
             )
         return mask_shape
@@ -687,7 +689,7 @@ def _safe_hread(s):
     try:
         return nrrd.read_header(s)
     except StopIteration:
-        raise IOError(f"Empty NRRD file '{s}' could not be read.") from None
+        raise OSError(f"Empty NRRD file '{s}' could not be read.") from None
 
 
 def _repeat_first():

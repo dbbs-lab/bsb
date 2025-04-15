@@ -57,7 +57,9 @@ class TestEnvOption(unittest.TestCase):
 
     def test_env_get(self):
         for opt in self.opt.values():
-            self.assertFalse(type(opt).env.is_set(opt), "No BSB env vars should be set.")
+            self.assertFalse(
+                type(opt).env.is_set(opt), "No BSB env vars should be set."
+            )
 
     def test_env_set(self):
         v_opt = self.opt["verbosity"]
@@ -77,7 +79,9 @@ class TestEnvOption(unittest.TestCase):
         self.assertEqual("ON", os.environ["BSB_FOOTGUN_MODE"], "env opt not rev parsed")
         self.assertTrue(self.opt["force"].env is True, "env opt not parsed")
         self.opt["force"].env = False
-        self.assertEqual("OFF", os.environ["BSB_FOOTGUN_MODE"], "env opt rev parsed bad")
+        self.assertEqual(
+            "OFF", os.environ["BSB_FOOTGUN_MODE"], "env opt rev parsed bad"
+        )
 
 
 class TestProjectOption(unittest.TestCase):
@@ -171,7 +175,9 @@ class TestProjectOption(unittest.TestCase):
             {"config": "hello.json"}, options.read_option(), "read all failed"
         )
         opt = options.get_option_descriptors()["config"]
-        self.assertTrue(type(opt).project.is_set(opt), "written and read but not is_set")
+        self.assertTrue(
+            type(opt).project.is_set(opt), "written and read but not is_set"
+        )
         del opt.project
         self.assertEqual(None, options.read_option("config"), "not deleted")
 
@@ -193,7 +199,9 @@ class TestScriptOption(unittest.TestCase):
     def test_script_isset(self):
         script = type(self.opt["version"]).script
         self.opt["version"]
-        self.assertFalse(script.is_set(self.opt["version"]), "script def counts as isset")
+        self.assertFalse(
+            script.is_set(self.opt["version"]), "script def counts as isset"
+        )
 
     def test_script_set(self):
         self.opt["force"].script = True

@@ -90,7 +90,7 @@ def _get_linked_config(storage=None):
     else:
         path = cfg._meta.get("path", None)
     if path and os.path.exists(path):
-        with open(path, "r") as f:
+        with open(path) as f:
             cfg = bsb.config.parse_configuration_file(f, path=path)
             return cfg
     else:
@@ -138,7 +138,7 @@ class Scaffold:
         :rtype: :class:`~.core.Scaffold`
         """
         self._pool_cache: dict[int, typing.Callable[[], None]] = {}
-        self._pool_listeners: list[tuple[typing.Callable[[list["Job"]], None], float]] = (
+        self._pool_listeners: list[tuple[typing.Callable[[list[Job]], None], float]] = (
             []
         )
         self._configuration = None
@@ -154,7 +154,9 @@ class Scaffold:
         file = os.path.abspath(self.storage.root)
         cells_placed = len(self.cell_types)
         n_types = len(self.connectivity)
-        return f"'{file}' with {cells_placed} cell types, and {n_types} connection_types"
+        return (
+            f"'{file}' with {cells_placed} cell types, and {n_types} connection_types"
+        )
 
     def is_main_process(self) -> bool:
         return not self._comm.get_rank()
@@ -181,7 +183,9 @@ class Scaffold:
             # No storage given, create one.
             report("Creating storage from config.", level=4)
             storage = Storage(
-                config.storage.engine, config.storage.root, self._comm.get_communicator()
+                config.storage.engine,
+                config.storage.root,
+                self._comm.get_communicator(),
             )
         else:
             # Override MPI comm of storage to match the scaffold's
@@ -420,7 +424,9 @@ class Scaffold:
                 self._workflow.next_phase()
             if not skip_connectivity:
                 connectivity_todo = ", ".join(s.name for s in c_strats)
-                report(f"Starting connectivity strategies: {connectivity_todo}", level=2)
+                report(
+                    f"Starting connectivity strategies: {connectivity_todo}", level=2
+                )
                 self.run_connectivity(c_strats, fail_fast=fail_fast, pipelines=False)
                 self._workflow.next_phase()
             if not skip_after_connectivity:
@@ -606,7 +612,8 @@ class Scaffold:
         return [
             ct
             for ct in conntype_filtered
-            if (only is None or ct.name in only) and (skip is None or ct.name not in skip)
+            if (only is None or ct.name in only)
+            and (skip is None or ct.name not in skip)
         ]
 
     def get_connectivity_sets(self) -> typing.List["ConnectivitySet"]:
@@ -642,7 +649,9 @@ class Scaffold:
             try:
                 tag = f"{pre.name}_to_{post.name}"
             except Exception:
-                raise ValueError("Supply either `tag` or a valid pre and post cell type.")
+                raise ValueError(
+                    "Supply either `tag` or a valid pre and post cell type."
+                )
         return self._load_cs_types(self.storage.get_connectivity_set(tag), pre, post)
 
     def get_cell_types(self) -> typing.List["CellType"]:
@@ -781,7 +790,8 @@ class Scaffold:
             )
         if post and post.name != cs.post_type_name:
             raise ValueError(
-                "Given and stored type mismatch:" + f" {post.name} vs {cs.post_type_name}"
+                "Given and stored type mismatch:"
+                + f" {post.name} vs {cs.post_type_name}"
             )
         try:
             cs.pre_type = self.cell_types[cs.pre_type_name]
@@ -795,7 +805,10 @@ class Scaffold:
     def create_job_pool(self, fail_fast=None, quiet=False):
         id_pool = self._comm.bcast(int(time.time()), root=0)
         pool = JobPool(
-            id_pool, self, fail_fast=fail_fast, workflow=getattr(self, "_workflow", None)
+            id_pool,
+            self,
+            fail_fast=fail_fast,
+            workflow=getattr(self, "_workflow", None),
         )
         try:
             # Check whether stdout is a TTY, and that it is larger than 0x0

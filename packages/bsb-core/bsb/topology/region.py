@@ -9,7 +9,6 @@ import numpy as np
 
 from .. import config
 from ..config import refs, types
-from ..exceptions import ConfigurationError
 from ..reporting import warn
 from ._layout import Layout
 
@@ -43,9 +42,6 @@ class Region(abc.ABC):
 
     def get_dependencies(self):
         return self.children.copy()
-
-    def __boot__(self):
-        pass
 
     def get_layout(self, hint):
         layouts = [dep.get_layout(hint) for dep in self.get_dependencies()]
@@ -95,9 +91,9 @@ class Stack(RegionGroup, classmap_entry="stack"):
     Stack components on top of each other and adjust its own height accordingly.
     """
 
-    axis: typing.Union[typing.Literal["x"], typing.Literal["y"], typing.Literal["z"]] = (
-        config.attr(type=types.in_(["x", "y", "z"]), default="z")
-    )
+    axis: typing.Union[
+        typing.Literal["x"], typing.Literal["y"], typing.Literal["z"]
+    ] = config.attr(type=types.in_(["x", "y", "z"]), default="z")
     """Axis along which the stack's children will be stacked"""
     anchor: typing.Union["Region", "Partition"] = config.ref(refs.regional_ref)
     """Reference to one child of the stack, which origin will become the origin of the stack"""
@@ -127,7 +123,9 @@ class Stack(RegionGroup, classmap_entry="stack"):
         cumul_offset = self._resolve_anchor_offset(layout.children, axis_idx)
         for child in layout.children:
             if child.data is None:
-                warn(f"Skipped layout arrangement of {child._owner.name} in {self.name}")
+                warn(
+                    f"Skipped layout arrangement of {child._owner.name} in {self.name}"
+                )
                 continue
             translation = (
                 layout.data.ldc[axis_idx] + cumul_offset - child.data.ldc

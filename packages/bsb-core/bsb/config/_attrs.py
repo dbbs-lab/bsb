@@ -281,7 +281,9 @@ def provide(value):
     prop = property(value)
 
     def provided(self, instance, value):
-        raise AttributeError(f"Can't set attribute, class provides the value '{value}'.")
+        raise AttributeError(
+            f"Can't set attribute, class provides the value '{value}'."
+        )
 
     # Create a callable object that invokes `provided` when called, and whose `bool()`
     # returns `False`. Later in `_is_settable_attr`, we use this to trick the short
@@ -624,7 +626,7 @@ class cfglist(builtins.list):
             item = self._elem_type(item, _parent=self, _key=index)
             try:
                 item._config_index = index
-            except Exception as e:
+            except Exception:
                 pass
             return item
         except (RequirementError, CastError) as e:
@@ -695,7 +697,7 @@ class ConfigurationListAttribute(ConfigurationAttribute):
 
         # Expose children __inv__ function if it exists
         if hasattr(self.child_type, "__inv__"):
-            setattr(wrapper, "__inv__", self.child_type.__inv__)
+            wrapper.__inv__ = self.child_type.__inv__
         return wrapper
 
     def tree(self, instance):
@@ -720,7 +722,7 @@ class cfgdict(builtins.dict):
             return self[name]
         except KeyError:
             raise AttributeError(
-                self.get_node_name() + " object has no attribute '{}'".format(name)
+                self.get_node_name() + f" object has no attribute '{name}'"
             )
 
     def __setitem__(self, key, value):
@@ -736,9 +738,7 @@ class cfgdict(builtins.dict):
             import traceback
 
             raise CastError(
-                "Couldn't cast {}.{} from '{}' into a {}".format(
-                    self.get_node_name(), key, value, self._elem_type.__name__
-                )
+                f"Couldn't cast {self.get_node_name()}.{key} from '{value}' into a {self._elem_type.__name__}"
                 + "\n"
                 + traceback.format_exc()
             )
@@ -855,7 +855,7 @@ class ConfigurationDictAttribute(ConfigurationAttribute):
 
         # Expose children __inv__ function if it exists
         if hasattr(self.child_type, "__inv__"):
-            setattr(wrapper, "__inv__", self.child_type.__inv__)
+            wrapper.__inv__ = self.child_type.__inv__
         return wrapper
 
     def tree(self, instance):
@@ -949,11 +949,7 @@ class ConfigurationReferenceAttribute(ConfigurationAttribute):
     def resolve_reference(self, instance, remote, key):
         if key not in remote:
             raise CfgReferenceError(
-                "Reference '{}' of {} does not exist in {}".format(
-                    key,
-                    self.get_node_name(instance),
-                    remote.get_node_name(),
-                )
+                f"Reference '{key}' of {self.get_node_name(instance)} does not exist in {remote.get_node_name()}"
             )
         value = remote[key]
         if self.populate:
@@ -1001,9 +997,7 @@ class ConfigurationReferenceListAttribute(ConfigurationReferenceAttribute):
             remote_keys = builtins.list(iter(value))
         except TypeError:
             raise CfgReferenceError(
-                "Reference list '{}' of {} is not iterable.".format(
-                    value, self.get_node_name(instance)
-                )
+                f"Reference list '{value}' of {self.get_node_name(instance)} is not iterable."
             )
         # Store the referring values to the references key.
         setattr(instance, self.get_ref_key(), remote_keys)

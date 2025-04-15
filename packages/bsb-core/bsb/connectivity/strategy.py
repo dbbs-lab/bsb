@@ -54,7 +54,7 @@ class Hemitype:
         Get the list of all chunks where the cell types were placed
 
         :return: List of Chunks
-        :rtype: List[bsb.storage._chunks.Chunk]
+        :rtype: list[bsb.storage._chunks.Chunk]
         """
         return [
             c for ct in self.cell_types for c in ct.get_placement_set().get_all_chunks()
@@ -62,10 +62,10 @@ class Hemitype:
 
     @cache
     def _get_rect_ext(self, chunk_size):
-        # Returns the lower and upper boundary Chunk of the box containing the cell type population,
-        # based on the cell type's morphology if it exists.
+        # Returns the lower and upper boundary Chunk of the box containing the cell type
+        # population, based on the cell type's morphology if it exists.
         # This box is centered on the Chunk [0., 0., 0.].
-        # If no morphologies are associated to the cell types then the bounding box size is 0.
+        # If no morphologies are associated to the cell types, the bounding box size is 0.
         types = self.cell_types
         loader = self.morpho_loader
         ps_list = [ct.get_placement_set() for ct in types]
@@ -88,7 +88,7 @@ class HemitypeCollection:
     and over its cell types.
     """
 
-    def __init__(self, hemitype: Hemitype, roi: typing.List[Chunk]):
+    def __init__(self, hemitype: Hemitype, roi: list[Chunk]):
         self.hemitype = hemitype
         self.roi = roi
 
@@ -102,7 +102,7 @@ class HemitypeCollection:
         morphology labels and list of chunks.
 
 
-        :rtype: List[bsb.storage.interfaces.PlacementSet]
+        :rtype: list[bsb.storage.interfaces.PlacementSet]
         """
         return [
             ct.get_placement_set(
@@ -125,22 +125,23 @@ class ConnectionStrategy(abc.ABC, HasDependencies):
     """Postsynaptic (target) neuron population"""
     depends_on: list["ConnectionStrategy"] = config.reflist(refs.connectivity_ref)
     """The list of strategies that must run before this one"""
-    output_naming: typing.Union[str, None, dict[str, dict[str, str, None, list[str]]]] = (
-        config.attr(
-            type=types.or_(
-                types.str(),
-                types.dict(
-                    type=types.dict(
-                        type=types.or_(
-                            types.str(), types.list(type=types.str()), types.none()
-                        )
+    output_naming: typing.Union[
+        str, None, dict[str, dict[str, str, None, list[str]]]
+    ] = config.attr(
+        type=types.or_(
+            types.str(),
+            types.dict(
+                type=types.dict(
+                    type=types.or_(
+                        types.str(), types.list(type=types.str()), types.none()
                     )
-                ),
-                types.list(type=types.str()),
-            )
+                )
+            ),
+            types.list(type=types.str()),
         )
     )
-    """Specifies how to name the output ConnectivitySets in which the connections between cell type pairs are stored."""
+    """Specifies how to name the output ConnectivitySets in which the connections between
+    cell type pairs are stored."""
 
     def __init_subclass__(cls, **kwargs):
         super(cls, cls).__init_subclass__(**kwargs)
@@ -187,17 +188,20 @@ class ConnectionStrategy(abc.ABC, HasDependencies):
 
     def connect_cells(self, pre_set, post_set, src_locs, dest_locs, tag=None):
         """
-        Connect cells from a presynaptic placement set to cells of a postsynaptic placement set,
-        and produce a unique name to describe their connectivity set.
-        The description of the hemitype (source or target cell population) `connection location`
-        is stored as a list of 3 ids: the cell index (in the placement set), morphology branch
-        index, and the morphology branch section index.
-        If no morphology is attached to the hemitype, then the morphology indexes can be set to -1.
+        Connect cells from a presynaptic placement set to cells of a postsynaptic
+        placement set, and produce a unique name to describe their connectivity set.
+        The description of the hemitype (source or target cell population)
+        `connection location` is stored as a list of 3 ids: the cell index (in the
+        placement set), morphology branch index, and the morphology branch section index.
+        If no morphology is attached to the hemitype, then the morphology indexes can be
+        set to -1.
 
         :param bsb.storage.interfaces.PlacementSet pre_set: presynaptic placement set
         :param bsb.storage.interfaces.PlacementSet post_set: postsynaptic placement set
-        :param List[List[int, int, int]] src_locs: list of the presynaptic `connection location`.
-        :param List[List[int, int, int]] dest_locs: list of the postsynaptic `connection location`.
+        :param list[list[int, int, int]] src_locs: list of the presynaptic
+            `connection location`.
+        :param list[list[int, int, int]] dest_locs: list of the postsynaptic
+            `connection location`.
         """
         names = self.get_output_names(pre_set.cell_type, post_set.cell_type)
         between_msg = f"between {pre_set.cell_type.name} and {post_set.cell_type.name}"
@@ -215,7 +219,8 @@ class ConnectionStrategy(abc.ABC, HasDependencies):
             names_msg = f"{between_msg} (names: {', '.join(names)})."
             if tag is None:
                 raise ConnectivityError(
-                    f"No tag was given to decide between multiple output names {names_msg}"
+                    f"No tag was given to decide between the available "
+                    f"output names {names_msg}"
                 )
             elif tag not in names:
                 raise ConnectivityError(
@@ -228,13 +233,13 @@ class ConnectionStrategy(abc.ABC, HasDependencies):
 
     def get_region_of_interest(self, chunk):
         """
-        Returns the list of chunks containing the potential postsynaptic neurons, based on a
-        chunk containing the presynaptic neurons.
+        Returns the list of chunks containing the potential postsynaptic neurons, based on
+        a chunk containing the presynaptic neurons.
 
         :param chunk: Presynaptic chunk
         :type chunk: bsb.storage._chunks.Chunk
         :returns: List of postsynaptic chunks
-        :rtype: List[bsb.storage._chunks.Chunk]
+        :rtype: list[bsb.storage._chunks.Chunk]
         """
         pass
 
@@ -269,7 +274,7 @@ class ConnectionStrategy(abc.ABC, HasDependencies):
                 f"in '{self.name}'."
             )
         for chunk, roi in rois.items():
-            job = pool.queue_connectivity(self, [chunk], roi, deps=dep_jobs)
+            pool.queue_connectivity(self, [chunk], roi, deps=dep_jobs)
 
     def get_cell_types(self):
         return set(self.presynaptic.cell_types) | set(self.postsynaptic.cell_types)
@@ -292,12 +297,14 @@ class ConnectionStrategy(abc.ABC, HasDependencies):
             or post not in self.postsynaptic.cell_types
         ):
             raise ValueError(
-                f"'{pre.name}' and '{post.name}' are not a valid cell pair type for this connectivity strategy."
+                f"'{pre.name}' and '{post.name}' are not a valid cell pair type "
+                f"for this connectivity strategy."
             )
         if self.output_naming is None or isinstance(self.output_naming, str):
             return self._infer_output_name(self.output_naming or self.name, pre, post)
         elif isinstance(self.output_naming, list):
-            # Call `_infer_output_name` for each given `base` in the list, and chain them together
+            # Call `_infer_output_name` for each given `base` in the list,
+            # and chain them together
             return [
                 *ichain(
                     self._infer_output_name(base, pre, post)
@@ -308,7 +315,10 @@ class ConnectionStrategy(abc.ABC, HasDependencies):
             return self._get_output_name(pre, post)
 
     def _infer_output_name(self, base, pre, post):
-        if len(self.presynaptic.cell_types) > 1 or len(self.postsynaptic.cell_types) > 1:
+        if (
+            len(self.presynaptic.cell_types) > 1
+            or len(self.postsynaptic.cell_types) > 1
+        ):
             if pre is None:
                 # All output names
                 return [

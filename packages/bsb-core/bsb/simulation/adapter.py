@@ -50,8 +50,9 @@ class SimulationData:
     def __init__(self, simulation: "Simulation", result=None):
         self.chunks = None
         self.populations = dict()
-        self.placement: dict["CellModel", "PlacementSet"] = {
-            model: model.get_placement_set() for model in simulation.cell_models.values()
+        self.placement: dict[CellModel, PlacementSet] = {
+            model: model.get_placement_set()
+            for model in simulation.cell_models.values()
         }
         self.connections = dict()
         self.devices = dict()
@@ -67,7 +68,7 @@ class SimulatorAdapter(abc.ABC):
           will participate in the simulation. The first node will idle as the main node.
         """
         self._progress_listeners = []
-        self.simdata: dict["Simulation", "SimulationData"] = dict()
+        self.simdata: dict[Simulation, SimulationData] = dict()
         self.comm = MPIService(comm)
 
     def simulate(self, *simulations, post_prepare=None):

@@ -110,7 +110,7 @@ class PlacementStrategy(abc.ABC, HasDependencies):
 
         distr = self.distribute._curry(self.partitions, indicator, positions)
         additional.update(
-            {prop: distr(prop) for prop in self.distribute.properties.keys()}
+            {prop: distr(prop) for prop in self.distribute.properties}
         )
         self.scaffold.place_cells(
             indicator.cell_type,

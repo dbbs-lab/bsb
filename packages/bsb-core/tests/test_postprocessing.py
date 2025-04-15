@@ -41,7 +41,7 @@ class TestAfterConnectivityHook(
             for filename in os.listdir():
                 if filename.startswith("test_after_conn_"):
                     count_files += 1
-                    with open(filename, "r") as f:
+                    with open(filename) as f:
                         lines = f.readlines()
                         self.assertEqual(
                             len(lines), 1, "The postprocess should be called only once."
@@ -51,7 +51,9 @@ class TestAfterConnectivityHook(
             self.assertEqual(count_files, 1)
 
 
-class TestAfterPlacementHook(RandomStorageFixture, unittest.TestCase, engine_name="hdf5"):
+class TestAfterPlacementHook(
+    RandomStorageFixture, unittest.TestCase, engine_name="hdf5"
+):
     def setUp(self):
         super().setUp()
 
@@ -77,7 +79,7 @@ class TestAfterPlacementHook(RandomStorageFixture, unittest.TestCase, engine_nam
             for filename in os.listdir():
                 if filename.startswith("test_after_place_"):
                     count_files += 1
-                    with open(filename, "r") as f:
+                    with open(filename) as f:
                         lines = f.readlines()
                         self.assertEqual(
                             len(lines), 1, "The postprocess should be called only once."

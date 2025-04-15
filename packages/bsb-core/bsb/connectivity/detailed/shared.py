@@ -33,7 +33,8 @@ class Intersectional:
             )
         if not self._occ_chunks:
             warn(
-                f"No {', '.join(ps.tag for ps in post_ps)} were placed, skipping {self.name}",
+                f"No {', '.join(ps.tag for ps in post_ps)} were placed, "
+                f"skipping {self.name}",
                 ConnectivityWarning,
             )
             return []
@@ -47,7 +48,7 @@ class Intersectional:
         ]
         for cset in candidate_coll.placement:
             box_tree = cset.load_box_tree()
-            for ttype, tset, tboxes in target_cache:
+            for _ttype, tset, tboxes in target_cache:
                 yield (tset, cset, self._affinity_filter(box_tree.query(tboxes)))
 
     def _affinity_filter(self, query):

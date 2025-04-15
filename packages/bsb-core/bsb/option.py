@@ -89,7 +89,12 @@ class EnvOptionDescriptor(OptionDescriptor, slug="env"):
 
     def _parse(self, value):
         if self.flag:
-            if value is True or str(value).strip().upper() in ("ON", "TRUE", "1", "YES"):
+            if value is True or str(value).strip().upper() in (
+                "ON",
+                "TRUE",
+                "1",
+                "YES",
+            ):
                 return True
             else:
                 return False
@@ -247,7 +252,9 @@ class BsbOption:
         :type action: boolean
         """
         if name is None:
-            raise OptionError("Options must be given a name in the class argument list.")
+            raise OptionError(
+                "Options must be given a name in the class argument list."
+            )
         cls.name = name
         cls.env = EnvOptionDescriptor(*env, flag=flag)
         cls.project = ProjectOptionDescriptor(*project)
@@ -377,7 +384,7 @@ def _pyproject_path():
 def _pyproject_content():
     path = _pyproject_path()
     if path:
-        with open(path, "r") as f:
+        with open(path) as f:
             return path.resolve(), toml.load(f)
     else:
         return None, {}  # pragma: nocover

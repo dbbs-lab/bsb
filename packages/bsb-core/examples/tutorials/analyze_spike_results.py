@@ -19,7 +19,7 @@ for i, spike_t in enumerate(my_spiketrains):  # Iterate over all spike trains
     spike_times = spike_t.magnitude  # Retrieve the spike times
     ax[i].scatter(spike_times, cell_list, c=f"C{i}")
     ax[i].set_xlabel(f"Time ({spike_t.times.units.dimensionality.string})")
-    ax[i].set_ylabel(f"Neuron ID")
+    ax[i].set_ylabel("Neuron ID")
     ax[i].set_title(f"Spikes from {name}")
 plt.tight_layout()
 plt.savefig("simulation-results/raster_plot.png", dpi=200)

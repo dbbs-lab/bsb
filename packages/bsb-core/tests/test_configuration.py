@@ -67,7 +67,9 @@ class TestConfiguration(
                 except AssertionError:
                     pass
                 else:
-                    self.fail(f"Unknown configuration attributes detected: {cm.warning}")
+                    self.fail(
+                        f"Unknown configuration attributes detected: {cm.warning}"
+                    )
 
     def test_unknown_attributes(self):
         tree = Configuration.default().__tree__()
@@ -92,9 +94,7 @@ class TestConfigAttrs(unittest.TestCase):
         ]
         for a in t:
             with self.subTest(check=a):
-                self.assertTrue(
-                    hasattr(config, a), "Missing {} in config module".format(a)
-                )
+                self.assertTrue(hasattr(config, a), f"Missing {a} in config module")
 
     def test_empty_test_node(self):
         @config.node
@@ -425,7 +425,9 @@ class TestConfigRef(unittest.TestCase):
         class Resolver:
             test = config.attr(type=Test, required=True)
 
-        r = Resolver({"test": {"name": "Johnny", "name_ref": "name", "type_ref": "name"}})
+        r = Resolver(
+            {"test": {"name": "Johnny", "name_ref": "name", "type_ref": "name"}}
+        )
         self.assertEqual(r.test.name_ref, "Johnny")
         self.assertEqual(r.test.name_ref_reference, "name")
 
@@ -518,7 +520,9 @@ class TestPopulate(unittest.TestCase):
         pop_root = PopRoot(
             {"lists": {}, "referrers": {"ref_cfg": "lists", "ref": "lists"}}
         )
-        self.assertEqual(1, len(pop_root.lists.cfglist), "`populate` config.list failure")
+        self.assertEqual(
+            1, len(pop_root.lists.cfglist), "`populate` config.list failure"
+        )
         self.assertEqual(
             pop_root.referrers,
             pop_root.lists.cfglist[0],
@@ -577,7 +581,9 @@ class TestPopulate(unittest.TestCase):
         pop_root = PopRoot(
             {"lists": {}, "referrers": {"reflist": ["lists", "lists", "lists"]}}
         )
-        self.assertEqual(1, len(pop_root.lists.list), "Reflist did not populate uniquely")
+        self.assertEqual(
+            1, len(pop_root.lists.list), "Reflist did not populate uniquely"
+        )
         self.assertEqual(pop_root.referrers, pop_root.lists.list[0])
 
     def test_no_unique_reflist_populate(self):
@@ -714,7 +720,9 @@ class TestDynamic(unittest.TestCase):
     def test_dynamic_requirements(self):
         with self.assertRaisesRegex(RequirementError, "must contain a 'cls' attribute"):
             DynamicBase({})
-        with self.assertRaisesRegex(RequirementError, "must contain a 'test' attribute"):
+        with self.assertRaisesRegex(
+            RequirementError, "must contain a 'test' attribute"
+        ):
             DynamicAttrBase({})
 
     def test_dynamic(self):
@@ -1448,7 +1456,9 @@ class TestDictScripting(RandomStorageFixture, unittest.TestCase, engine_name="fs
         self.assertEqual(1, len(cfg.cell_types), "add failed")
         self.assertEqual(["test"], list(cfg.cell_types.keys()), "wrong key")
         self.assertEqual("test", ct.name, "wrong name")
-        self.assertEqual("{root}.cell_types.test", ct.get_node_name(), "wrong node name")
+        self.assertEqual(
+            "{root}.cell_types.test", ct.get_node_name(), "wrong node name"
+        )
         # Check that the `scaffold` attribute gets set.
         self.assertIs(ct.scaffold, netw, "not booted")
         with self.assertRaises(KeyError):
@@ -1520,7 +1530,9 @@ class TestDictScripting(RandomStorageFixture, unittest.TestCase, engine_name="fs
         n2.regions.add("test2", children=[])
         n2.regions.add("test", children=[], type="stack")
         n1.regions |= n2.regions
-        self.assertEqual(["test", "test2"], list(n1.regions.keys()), "merge right failed")
+        self.assertEqual(
+            ["test", "test2"], list(n1.regions.keys()), "merge right failed"
+        )
         self.assertEqual("stack", n1.regions.test.type, "merge right failed")
 
 
@@ -1562,11 +1574,15 @@ class TestListScripting(RandomStorageFixture, unittest.TestCase, engine_name="fs
         prev = list(self.list[1:4])
         self.list[1:4] = [{"names": []}]
         self.assertList(3, prev)
-        self.assertEqual("{removed}", prev[0].get_node_name(), "removed node name failed")
+        self.assertEqual(
+            "{removed}", prev[0].get_node_name(), "removed node name failed"
+        )
 
     def test_append(self):
         item = self.list.append({"names": []})
-        self.assertEqual("NameSelector", type(item).__name__, "Expected cast to default.")
+        self.assertEqual(
+            "NameSelector", type(item).__name__, "Expected cast to default."
+        )
         self.assertEqual(1, len(self.list), "append failed")
         self.assertEqual(0, item._config_index, "weird index")
         with self.assertRaises(RequirementError):
@@ -1707,9 +1723,13 @@ class TestNodeComposition(unittest.TestCase):
         assert type(self.tested.attrC == config.ConfigurationAttribute)
 
 
-class TestPackageRequirements(RandomStorageFixture, unittest.TestCase, engine_name="fs"):
+class TestPackageRequirements(
+    RandomStorageFixture, unittest.TestCase, engine_name="fs"
+):
     def test_basic_version(self):
-        self.assertIsNone(get_missing_requirement_reason("bsb-core==" + bsb.__version__))
+        self.assertIsNone(
+            get_missing_requirement_reason("bsb-core==" + bsb.__version__)
+        )
 
     def test_invalid_requirement(self):
         self.assertIsNotNone(
@@ -1729,7 +1749,9 @@ class TestPackageRequirements(RandomStorageFixture, unittest.TestCase, engine_na
             Configuration.default(packages=["bsb-core-soup==4.0"])
 
     def test_installed_package(self):
-        self.assertIsNone(get_missing_requirement_reason(f"bsb-core~={bsb.__version__}"))
+        self.assertIsNone(
+            get_missing_requirement_reason(f"bsb-core~={bsb.__version__}")
+        )
         # Should produce no warnings
         cfg = Configuration.default(packages=[f"bsb-core~={bsb.__version__}"])
         # Checking that the config with package requirements can be saved in storage

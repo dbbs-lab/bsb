@@ -1,5 +1,4 @@
 import typing
-from time import time
 
 from .. import config
 from ..config import types as cfgtypes

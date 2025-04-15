@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import abc
-from typing import List, Tuple
 
 import numpy as np
 from scipy.interpolate import interp1d
@@ -31,7 +30,7 @@ def rotate_3d_mesh_by_vec(
     :param numpy.ndarray[float] rot_versor: vector representing rotation versor
     :param float angle: rotation angle in radian
     :return: Rotated x, y, z coordinate points
-    :rtype: Tuple[numpy.ndarray[numpy.ndarray[float]]
+    :rtype: tuple[numpy.ndarray[numpy.ndarray[float]]
     """
 
     # Arrange point coordinates in shape (N, 3) for vectorized processing
@@ -56,7 +55,7 @@ def translate_3d_mesh_by_vec(
     :param numpy.ndarray[numpy.ndarray[float]] z: z coordinate points of the meshgrid
     :param numpy.ndarray[float] t_vec: translation vector
     :return: Translated x, y, z coordinate points
-    :rtype: Tuple[numpy.ndarray[numpy.ndarray[float]]
+    :rtype: tuple[numpy.ndarray[numpy.ndarray[float]]
     """
 
     # Arrange point coordinates in shape (N, 3) for vectorized processing
@@ -77,7 +76,7 @@ def rotate_3d_mesh_by_rot_mat(
     :param numpy.ndarray[numpy.ndarray[float]] z: z coordinate points of the meshgrid
     :param numpy.ndarray[numpy.ndarray[float]] rot_mat: rotation matrix, shape (3,3)
     :return: Rotated x, y, z coordinate points
-    :rtype: Tuple[numpy.ndarray[numpy.ndarray[float]]
+    :rtype: tuple[numpy.ndarray[numpy.ndarray[float]]
     """
 
     # Arrange point coordinates in shape (N, 3) for vectorized processing
@@ -163,8 +162,8 @@ def uniform_surface_wireframe(
     precision=25,
 ):
     """
-    Uniform-like meshgrid of size (n_point_1, n_points_2) of polar coordinates based on surface
-    estimation.
+    Uniform-like meshgrid of size (n_point_1, n_points_2) of polar coordinates based on
+    surface estimation.
     This meshgrid is useful on elliptic surfaces (e.g. sphere).
     Algorithm based on https://github.com/maxkapur/param_tools
 
@@ -184,20 +183,22 @@ def uniform_surface_wireframe(
     return surface_function(sampled_t, sampled_u)
 
 
-def _get_prod_angle_vector(hv, z_versor=np.array([0, 0, 1])):
+def _get_prod_angle_vector(hv, z_versor=None):
     """
     Calculate the cross product and the arc cosines angle between two vectors.
 
     :param numpy.ndarray hv: vector to rotate
     :param numpy.ndarray z_versor: reference vector
     :return: cross product and arc cosines angle
-    :rtype: Tuple[numpy.ndarray, numpy.ndarray]
+    :rtype: tuple[numpy.ndarray, numpy.ndarray]
     """
 
+    if z_versor is None:
+        z_versor = np.array([0, 0, 1])
     return np.cross(z_versor, hv), np.arccos(np.dot(hv, z_versor))
 
 
-def _get_rotation_vector(hv, z_versor=np.array([0, 0, 1]), positive_angle=True):
+def _get_rotation_vector(hv, z_versor=None, positive_angle=True):
     """
     Calculate the rotation vector between two vectors.
 
@@ -208,6 +209,8 @@ def _get_rotation_vector(hv, z_versor=np.array([0, 0, 1]), positive_angle=True):
     :rtype: scipy.spatial.transform.Rotation
     """
 
+    if z_versor is None:
+        z_versor = np.array([0, 0, 1])
     perp, angle = _get_prod_angle_vector(hv, z_versor)
     angle = angle if positive_angle else -angle
     rot = R.from_rotvec(perp * angle)
@@ -246,8 +249,8 @@ def inside_mbox(
         minimal bounding box.
     :param numpy.ndarray mbb_max: 3D point representing the highest coordinate of the
         minimal bounding box.
-    :return: A bool np.ndarray specifying whether each point of the input array is inside the
-        minimal bounding box or not.
+    :return: A bool np.ndarray specifying whether each point of the input array is inside
+        the minimal bounding box or not.
     :rtype: numpy.ndarray[bool]
     """
     inside = (
@@ -286,8 +289,8 @@ class GeometricShape(abc.ABC):
         Check if the points given in input are inside the minimal bounding box.
 
         :param numpy.ndarray points: A cloud of points.
-        :return: A bool np.ndarray specifying whether each point of the input array is inside the
-            minimal bounding box or not.
+        :return: A bool np.ndarray specifying whether each point of the input array is
+            inside the minimal bounding box or not.
         :rtype: numpy.ndarray
         """
         return inside_mbox(points, self.mbb_min, self.mbb_max)
@@ -313,8 +316,8 @@ class GeometricShape(abc.ABC):
     @abc.abstractmethod
     def rotate(self, r_versor: np.ndarray[float], angle: float):  # pragma: no cover
         """
-        Rotate all the shapes around r_versor, which is a versor passing through the origin,
-        by the specified angle.
+        Rotate all the shapes around r_versor, which is a versor passing through the
+        origin, by the specified angle.
 
         :param r_versor: A versor specifying the rotation axis.
         :type r_versor: numpy.ndarray[float]
@@ -341,8 +344,8 @@ class GeometricShape(abc.ABC):
         Check if the points given in input are inside the geometric shape.
 
         :param numpy.ndarray points: A cloud of points.
-        :return: A bool array with same length as points, containing whether the -ith point is
-            inside the geometric shape or not.
+        :return: A bool array with same length as points, containing whether the -ith
+            point is inside the geometric shape or not.
         :rtype: numpy.ndarray
         """
         pass
@@ -351,13 +354,13 @@ class GeometricShape(abc.ABC):
     def wireframe_points(self, nb_points_1=30, nb_points_2=30):  # pragma: no cover
         """
         Generate a wireframe to plot the geometric shape.
-        If a sampling of points is needed (e.g. for sphere), the wireframe is based on a grid
-        of shape (nb_points_1, nb_points_2).
+        If a sampling of points is needed (e.g. for sphere), the wireframe is based on a
+        grid of shape (nb_points_1, nb_points_2).
 
         :param int nb_points_1: number of points sampled along the first dimension
         :param int nb_points_2: number of points sampled along the second dimension
         :return: Coordinate components of the wireframe
-        :rtype: Tuple[numpy.ndarray[numpy.ndarray[float]]
+        :rtype: tuple[numpy.ndarray[numpy.ndarray[float]]
         """
         pass
 
@@ -365,8 +368,8 @@ class GeometricShape(abc.ABC):
 @config.node
 class ShapesComposition:
     """
-    A collection of geometric shapes, which can be labelled to distinguish different parts of a
-    neuron.
+    A collection of geometric shapes, which can be labelled to distinguish different parts
+    of a neuron.
     """
 
     shapes = config.list(
@@ -382,8 +385,8 @@ class ShapesComposition:
     )
     """List of lists of labels associated to each geometric shape."""
     voxel_size = config.attr(type=float, required=False, default=1.0)
-    """Dimension of the side of a voxel, used to determine how many points must be generated
-    to represent the geometric shape."""
+    """Dimension of the side of a voxel, used to determine how many points must be 
+    generated to represent the geometric shape."""
 
     def __init__(self, **kwargs):
         # The two corners individuating the minimal bounding box.
@@ -392,12 +395,12 @@ class ShapesComposition:
 
         self.find_mbb()
 
-    def add_shape(self, shape: GeometricShape, labels: List[str]):
+    def add_shape(self, shape: GeometricShape, labels: list[str]):
         """
         Add a geometric shape to the collection
 
         :param GeometricShape shape: A GeometricShape to add to the collection.
-        :param List[str] labels: A list of labels for the geometric shape to add.
+        :param list[str] labels: A list of labels for the geometric shape to add.
         """
         # Update mbb
         if len(self._shapes) == 0:
@@ -409,15 +412,19 @@ class ShapesComposition:
         self._shapes.append(shape)
         self._labels.append(labels)
 
-    def filter_by_labels(self, labels: List[str]) -> ShapesComposition:
+    def filter_by_labels(self, labels: list[str]) -> ShapesComposition:
         """
-        Filter the collection of shapes, returning only the ones corresponding the given labels.
+        Filter the collection of shapes, returning only the ones corresponding to the
+        given labels.
 
-        :param List[str] labels: A list of labels.
-        :return: A new ShapesComposition object containing only the shapes labelled as specified.
+        :param list[str] labels: A list of labels.
+        :return: A new ShapesComposition object containing only the shapes labelled as
+            specified.
         :rtype: ShapesComposition
         """
-        result = ShapesComposition(dict(voxel_size=self.voxel_size, labels=[], shapes=[]))
+        result = ShapesComposition(
+            dict(voxel_size=self.voxel_size, labels=[], shapes=[])
+        )
         selected_id = np.where(np.isin(labels, self._labels))[0]
         result._shapes = [self._shapes[i].__copy__() for i in selected_id]
         result._labels = [self._labels[i].copy() for i in selected_id]
@@ -426,8 +433,8 @@ class ShapesComposition:
 
     def translate(self, t_vec: np.ndarray[float]):
         """
-        Translate all the shapes in the collection by the vector t_vec. It also automatically
-        translate the minimal bounding box.
+        Translate all the shapes in the collection by the vector t_vec. It also
+        automatically translate the minimal bounding box.
 
         :param numpy.ndarray t_vec: The displacement vector.
         """
@@ -436,38 +443,43 @@ class ShapesComposition:
         self._mbb_min += t_vec
         self._mbb_max += t_vec
 
-    def get_volumes(self) -> List[float]:
+    def get_volumes(self) -> list[float]:
         """
         Compute the volumes of all the shapes.
 
-        :rtype: List[float]
+        :rtype: list[float]
         """
         return [shape.get_volume() for shape in self._shapes]
 
     def get_mbb_min(self):
         """
-        Returns the bottom corner of the minimum bounding box containing the collection of shapes.
+        Returns the bottom corner of the minimum bounding box containing the collection of
+        shapes.
 
-        :return: The bottom corner individuating the minimal bounding box of the shapes collection.
+        :return: The bottom corner individuating the minimal bounding box of the shapes
+            collection.
         :rtype: numpy.ndarray[float]
         """
         return self._mbb_min
 
     def get_mbb_max(self):
         """
-        Returns the top corner of the minimum bounding box containing the collection of shapes.
+        Returns the top corner of the minimum bounding box containing the collection of
+        shapes.
 
-        :return: The top corner individuating the minimal bounding box of the shapes collection.
+        :return: The top corner individuating the minimal bounding box of the shapes
+            collection.
         :rtype: numpy.ndarray[float]
         """
         return self._mbb_max
 
-    def find_mbb(self) -> Tuple[np.ndarray[float], np.ndarray[float]]:
+    def find_mbb(self) -> tuple[np.ndarray[float], np.ndarray[float]]:
         """
         Compute the minimal bounding box containing the collection of shapes.
 
-        :return: The two corners individuating the minimal bounding box of the shapes collection.
-        :rtype: Tuple(numpy.ndarray[float], numpy.ndarray[float])
+        :return: The two corners individuating the minimal bounding box of the shapes
+            collection.
+        :rtype: tuple(numpy.ndarray[float], numpy.ndarray[float])
         """
         mins = np.empty([len(self._shapes), 3])
         maxs = np.empty([len(self._shapes), 3])
@@ -478,10 +490,10 @@ class ShapesComposition:
         self._mbb_max = np.max(maxs, axis=0) if len(self._shapes) > 0 else np.zeros(3)
         return self._mbb_min, self._mbb_max
 
-    def compute_n_points(self) -> List[int]:
+    def compute_n_points(self) -> list[int]:
         """
-        Compute the number of points to generate in a point cloud, using the dimension of the voxel
-        specified in self._voxel_size.
+        Compute the number of points to generate in a point cloud, using the dimension of
+        the voxel specified in self._voxel_size.
 
         :return: The number of points to generate.
         :rtype: numpy.ndarray[int]
@@ -490,11 +502,11 @@ class ShapesComposition:
 
     def generate_point_cloud(self) -> np.ndarray[float] | None:
         """
-        Generate a point cloud. The number of points to generate is determined automatically using
-        the voxel size.
+        Generate a point cloud. The number of points to generate is determined
+        automatically using the voxel size.
 
-        :return: A numpy.ndarray containing the 3D points of the cloud. If there are no shapes in
-            the collection, it returns None.
+        :return: A numpy.ndarray containing the 3D points of the cloud. If there are no
+            shapes in the collection, it returns None.
         :rtype: numpy.ndarray[float] | None
         """
         if len(self._shapes) != 0:
@@ -511,24 +523,24 @@ class ShapesComposition:
         self,
         nb_points_1=30,
         nb_points_2=30,
-    ) -> Tuple[List, List, List] | None:
+    ) -> tuple[list, list, list] | None:
         """
         Generate the wireframes of a collection of shapes.
-        If a sampling of points is needed for certain shapes (e.g. for sphere), their wireframe
-        is based on a grid of shape (nb_points_1, nb_points_2).
+        If a sampling of points is needed for certain shapes (e.g. for sphere), their
+        wireframe is based on a grid of shape (nb_points_1, nb_points_2).
 
         :param int nb_points_1: number of points sampled along the first dimension
         :param int nb_points_2: number of points sampled along the second dimension
         :return: The x,y,z coordinates of the wireframe of each shape.
-        :rtype: Tuple[List[numpy.ndarray[numpy.ndarray[float]]]] | None
+        :rtype: tuple[list[numpy.ndarray[numpy.ndarray[float]]]] | None
         """
         if len(self._shapes) != 0:
             x = []
             y = []
             z = []
             for shape in self._shapes:
-                # For each shape, the shape of the wireframe is different, so we need to append them
-                # manually
+                # For each shape, the shape of the wireframe is different, so we need to
+                # append them manually
                 xt, yt, zt = shape.wireframe_points(
                     nb_points_1=nb_points_1, nb_points_2=nb_points_2
                 )
@@ -540,11 +552,12 @@ class ShapesComposition:
 
     def inside_mbox(self, points: np.ndarray[float]) -> np.ndarray[bool]:
         """
-        Check if the points given in input are inside the minimal bounding box of the collection.
+        Check if the points given in input are inside the minimal bounding box of the
+        collection.
 
         :param numpy.ndarray points: An array of 3D points.
-        :return: A bool np.ndarray specifying whether each point of the input array is inside the
-            minimal bounding box of the collection.
+        :return: A bool np.ndarray specifying whether each point of the input array is
+            inside the minimal bounding box of the collection.
         :rtype: numpy.ndarray[bool]
         """
         return inside_mbox(points, self._mbb_min, self._mbb_max)
@@ -555,8 +568,8 @@ class ShapesComposition:
         collection.
 
         :param numpy.ndarray points: An array of 3D points.
-        :return: A bool numpy.ndarray specifying whether each point of the input array is inside the
-            collection of shapes or not.
+        :return: A bool numpy.ndarray specifying whether each point of the input array is
+            inside the collection of shapes or not.
         :rtype: numpy.ndarray[bool]
         """
         if len(self._shapes) != 0:
@@ -686,7 +699,9 @@ class Ellipsoid(GeometricShape, classmap_entry="ellipsoid"):
 
     def wireframe_points(self, nb_points_1=30, nb_points_2=30):
         # Generate an ellipse orientated along x,y,z
-        x, y, z = uniform_surface_wireframe(nb_points_1, nb_points_2, self.surface_point)
+        x, y, z = uniform_surface_wireframe(
+            nb_points_1, nb_points_2, self.surface_point
+        )
         # Rotate the ellipse
         rmat = np.array([self.v0, self.v1, self.v2]).T
         x, y, z = rotate_3d_mesh_by_rot_mat(x, y, z, rmat)
@@ -784,7 +799,9 @@ class Cone(GeometricShape, classmap_entry="cone"):
 
         # Find the angle between the points and the apex
         apex_angles = np.arccos(
-            np.dot((rot_pts / np.linalg.norm(rot_pts, axis=1)[..., np.newaxis]), h_vector)
+            np.dot(
+                (rot_pts / np.linalg.norm(rot_pts, axis=1)[..., np.newaxis]), h_vector
+            )
         )
         # Compute the cone angle
         cone_angle = np.arctan(self.radius / height)
@@ -1154,8 +1171,8 @@ class Cuboid(GeometricShape, classmap_entry="cuboid"):
 @config.node
 class Parallelepiped(GeometricShape, classmap_entry="parallelepiped"):
     """
-    A generic parallelepiped, described by the vectors (following the right-hand orientation) of the
-    sides in cartesian coordinates
+    A generic parallelepiped, described by the vectors (following the right-hand
+    orientation) of the sides in cartesian coordinates
     """
 
     origin = config.attr(
@@ -1165,18 +1182,18 @@ class Parallelepiped(GeometricShape, classmap_entry="parallelepiped"):
     side_vector_1 = config.attr(
         type=types.ndarray(shape=(3,), dtype=float), required=True, hint=[1.0, 0.0, 0.0]
     )
-    """The first vector identifying the parallelepiped (using the right-hand orientation: the 
-        thumb)."""
+    """The first vector identifying the parallelepiped (using the right-hand orientation:
+        the thumb)."""
     side_vector_2 = config.attr(
         type=types.ndarray(shape=(3,), dtype=float), required=True, hint=[0.0, 1.0, 0.0]
     )
-    """The second vector identifying the parallelepiped (using the right-hand orientation: the 
-        index)."""
+    """The second vector identifying the parallelepiped (using the right-hand orientation:
+        the index)."""
     side_vector_3 = config.attr(
         type=types.ndarray(shape=(3,), dtype=float), required=True, hint=[0.0, 0.0, 1.0]
     )
-    """The third vector identifying the parallelepiped (using the right-hand orientation: the 
-        middle finger)."""
+    """The third vector identifying the parallelepiped (using the right-hand orientation:
+        the middle finger)."""
 
     def find_mbb(self):
         extrema = np.vstack(
@@ -1190,7 +1207,9 @@ class Parallelepiped(GeometricShape, classmap_entry="parallelepiped"):
         return minima, maxima
 
     def get_volume(self):
-        vol = np.dot(self.side_vector_3, np.cross(self.side_vector_1, self.side_vector_2))
+        vol = np.dot(
+            self.side_vector_3, np.cross(self.side_vector_1, self.side_vector_2)
+        )
         return vol
 
     def translate(self, t_vector: np.ndarray[float]):
@@ -1236,8 +1255,8 @@ class Parallelepiped(GeometricShape, classmap_entry="parallelepiped"):
         v3_norm = np.linalg.norm(self.side_vector_3)
         comp3 = rot_pts.dot(self.side_vector_3) / v3_norm
 
-        # The points are inside the parallelepiped if and only if all the Fourier components
-        # are between 0 and the norm of sides of the parallelepiped
+        # The points are inside the parallelepiped if and only if all the Fourier
+        # components are between 0 and the norm of sides of the parallelepiped
         inside_points = (
             (comp1 > 0.0)
             & (comp1 < v1_norm)
@@ -1288,3 +1307,16 @@ class Parallelepiped(GeometricShape, classmap_entry="parallelepiped"):
         )
 
         return x + self.origin[0], y + self.origin[1], z + self.origin[2]
+
+
+__all__ = [
+    "GeometricShape",
+    "ShapesComposition",
+    "Ellipsoid",
+    "Cone",
+    "Cylinder",
+    "Sphere",
+    "Cuboid",
+    "Parallelepiped",
+    "inside_mbox",
+]

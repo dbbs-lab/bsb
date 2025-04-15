@@ -108,7 +108,9 @@ class MorphologyToShapeIntersection(ConnectionStrategy):
                                     [
                                         1,
                                         int(
-                                            np.floor(self.affinity * len(local_selection))
+                                            np.floor(
+                                                self.affinity * len(local_selection)
+                                            )
                                         ),
                                     ]
                                 )
@@ -119,7 +121,9 @@ class MorphologyToShapeIntersection(ConnectionStrategy):
 
                             selected_count = len(local_selection)
                             if selected_count > 0:
-                                tmp_pre_selection[ptr : ptr + selected_count, 0] = pre_id
+                                tmp_pre_selection[ptr : ptr + selected_count, 0] = (
+                                    pre_id
+                                )
                                 tmp_post_selection[ptr : ptr + selected_count, 0] = (
                                     post_id
                                 )
@@ -140,3 +144,6 @@ class MorphologyToShapeIntersection(ConnectionStrategy):
             to_connect_post = to_connect_post[ids_to_select]
 
         self.connect_cells(pre_ps, post_ps, to_connect_pre, to_connect_post)
+
+
+__all__ = ["MorphologyToShapeIntersection"]

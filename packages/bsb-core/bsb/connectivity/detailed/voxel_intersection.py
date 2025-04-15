@@ -18,7 +18,8 @@ class VoxelIntersection(Intersectional, ConnectionStrategy):
     """
     This strategy finds overlap between voxelized morphologies.
 
-    :param contacts: number or distribution determining the amount of synaptic contacts one cell will form on another
+    :param contacts: number or distribution determining the amount of synaptic contacts
+        one cell will form on another
     :param voxel_pre: the number of voxels into which the morphology will be subdivided.
     :param voxel_post: the number of voxels into which the morphology will be subdivided.
     :param favor_cache: choose whether to cache the pre or post morphology.

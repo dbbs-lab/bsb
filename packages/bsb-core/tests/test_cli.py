@@ -17,10 +17,12 @@ class TestCLI(unittest.TestCase):
         our_version = bytes(f"bsb {bsb.__version__}", encoding="utf-8")
         # Split on newlines to ignore any prepended spammy output in case of environment
         # specific warnings when running BSB commands.
-        cli_version = subprocess.check_output("bsb --version".split()).split(b"\n")[-2]
+        cli_version = subprocess.check_output(["bsb", "--version"]).split(b"\n")[-2]
         # Remove \r on Windows
         cli_version = cli_version.replace(b"\r", b"")
-        self.assertEqual(our_version, cli_version, "Could not access the BSB through CLI")
+        self.assertEqual(
+            our_version, cli_version, "Could not access the BSB through CLI"
+        )
 
     def test_defaults(self):
         import bsb.options
@@ -37,7 +39,9 @@ class TestCLI(unittest.TestCase):
         import bsb.options
         from bsb import BsbOption
 
-        class TestOption(BsbOption, name="_test_", env=("GRZLGRK",), script=("GRZLGRK",)):
+        class TestOption(
+            BsbOption, name="_test_", env=("GRZLGRK",), script=("GRZLGRK",)
+        ):
             pass
 
         TestOption.register()

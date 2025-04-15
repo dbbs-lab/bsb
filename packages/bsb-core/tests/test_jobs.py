@@ -189,7 +189,7 @@ class TestSerialAndParallelScheduler(
         """
         with self.network.create_job_pool(quiet=True) as pool:
             t = time.time()
-            job: "Job" = pool.queue(sleep_y, (5, 2))
+            job: Job = pool.queue(sleep_y, (5, 2))
             job.cancel("Test")
             pool.execute()
         # Confirm the cancellation error
@@ -352,7 +352,9 @@ class TestParallelScheduler(
             results = pool.execute(return_results=True)
 
         if pool.is_main():
-            self.assertTrue(outcome, "A job with unfinished dependencies was scheduled.")
+            self.assertTrue(
+                outcome, "A job with unfinished dependencies was scheduled."
+            )
             self.assertEqual(4, results[job_without_dep])
             self.assertEqual(5, results[job_with_dep])
 
@@ -633,7 +635,7 @@ class TestPoolCache(RandomStorageFixture, unittest.TestCase, engine_name="hdf5")
 
         for filename in os.listdir():
             if filename.startswith(f"test_cache_{MPI.get_rank()}"):
-                with open(filename, "r") as f:
+                with open(filename) as f:
                     lines = f.readlines()
                     self.assertEqual(
                         len(lines), 1, "The free function should be called only once."

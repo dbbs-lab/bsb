@@ -85,9 +85,7 @@ class SpoofDetails(AfterConnectivityHook):
             to_morphologies = to_type.list_all_morphologies()
             if len(to_morphologies) == 0:
                 raise MorphologyDataError(
-                    "Can't spoof detailed connection without morphologies for '{}'".format(
-                        to_type.name
-                    )
+                    f"Can't spoof detailed connection without morphologies for '{to_type.name}'"
                 )
         # If they are entities or relays, steal the first morphology of the other cell type.
         # Under no circumstances should entities or relays be represented as actual
@@ -118,7 +116,9 @@ class SpoofDetails(AfterConnectivityHook):
         compartments = np.column_stack(
             (
                 axons[np.random.randint(0, len(axons), len(connectivity_matrix))],
-                dendrites[np.random.randint(0, len(dendrites), len(connectivity_matrix))],
+                dendrites[
+                    np.random.randint(0, len(dendrites), len(connectivity_matrix))
+                ],
             )
         )
         # Erase previous connection data so that `.connect_cells` can overwrite it.
@@ -132,11 +132,7 @@ class SpoofDetails(AfterConnectivityHook):
             morpho_map=morpho_map,
         )
         report(
-            "Spoofed details of {} connections between {} and {}".format(
-                len(connectivity_matrix),
-                connection_type.presynaptic.type.name,
-                connection_type.postsynaptic.type.name,
-            ),
+            f"Spoofed details of {len(connectivity_matrix)} connections between {connection_type.presynaptic.type.name} and {connection_type.postsynaptic.type.name}",
             level=2,
         )
 

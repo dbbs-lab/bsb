@@ -29,8 +29,8 @@ class ShapeHemitype(Hemitype):
         :type chunks: List[bsb.storage._chunks.Chunk]
         :param chunk_dimension: Size of a chunk
         :type chunk_dimension: float
-        :return: List of bounding boxes in the form [min_x, min_y, min_z, max_x, max_y, max_z]
-            for each chunk containing cells.
+        :return: List of bounding boxes in the form
+            [min_x, min_y, min_z, max_x, max_y, max_z] for each chunk containing cells.
         :rtype: List[numpy.ndarray[float, float, float, float, float, float]]
         """
         return [
@@ -126,7 +126,8 @@ class ShapeToShapeIntersection(ConnectionStrategy):
                         def sizemod(q, aff):
                             ln = len(q)
                             return int(
-                                np.floor(ln * aff) + (np.random.rand() < ((ln * aff) % 1))
+                                np.floor(ln * aff)
+                                + (np.random.rand() < ((ln * aff) % 1))
                             )
 
                         selected = selected[
@@ -157,3 +158,6 @@ class ShapeToShapeIntersection(ConnectionStrategy):
             to_connect_post = to_connect_post[ids_to_select]
 
         self.connect_cells(pre_ps, post_ps, to_connect_pre, to_connect_post)
+
+
+__all__ = ["ShapeHemitype", "ShapeToShapeIntersection"]

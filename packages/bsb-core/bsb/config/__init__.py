@@ -100,7 +100,9 @@ def get_configuration_template(template, path=None):
     return files
 
 
-def copy_configuration_template(template, output="network_configuration.json", path=None):
+def copy_configuration_template(
+    template, output="network_configuration.json", path=None
+):
     """
     Copy the first configuration template file matching the provided name to the provided
     output filename.
@@ -197,7 +199,7 @@ def parse_configuration_file(file, parser=None, path=None, **kwargs):
     else:
         file = os.path.abspath(file)
         path = path or file
-        with open(file, "r") as f:
+        with open(file) as f:
             data = f.read()
     return parse_configuration_content(data, parser, path, **kwargs)
 

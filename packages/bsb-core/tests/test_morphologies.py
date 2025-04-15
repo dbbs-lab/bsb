@@ -37,7 +37,9 @@ class TestIO(NumpyTestCase, unittest.TestCase):
         self.assertEqual(1, len(m.roots), "Expected 1 root on the morphology")
         self.assertClose([1, 1], m.tags, "tags should be all soma")
         self.assertClose(1, m.labels, "labels should be all soma")
-        self.assertEqual({0: set(), 1: {"soma"}}, m.labels.labels, "incorrect labelsets")
+        self.assertEqual(
+            {0: set(), 1: {"soma"}}, m.labels.labels, "incorrect labelsets"
+        )
 
     def test_swc_2root(self):
         m = parse_morphology_file(get_morphology_path("2root.swc"))
@@ -88,7 +90,9 @@ class TestIO(NumpyTestCase, unittest.TestCase):
         )
 
     def test_known_gc(self):
-        m = parse_morphology_file(get_morphology_path("GolgiCell.asc"), parser="morphio")
+        m = parse_morphology_file(
+            get_morphology_path("GolgiCell.asc"), parser="morphio"
+        )
         self.assertEqual(5105, len(m), "Amount of point on purkinje changed")
         self.assertEqual(227, len(m.branches), "Amount of branches on purkinje changed")
         self.assertEqual(
@@ -109,7 +113,7 @@ class TestIO(NumpyTestCase, unittest.TestCase):
     def test_graph_array(self):
         file = get_morphology_path("AA0048.swc")
         m = parse_morphology_file(file)
-        with open(str(file), "r") as f:
+        with open(str(file)) as f:
             content = f.read()
             data = np.array(
                 [
@@ -352,7 +356,9 @@ class TestMorphologies(NumpyTestCase, unittest.TestCase):
             np.array([[0, 0, 0], [1, 1, 0], [0, 4, 0], [0, 6, 0], [2, 4, 8]]),
             "It has failed rdp with epsilon 0",
         )
-        with self.assertRaises(ValueError, msg="It should throw a ValueError") as context:
+        with self.assertRaises(
+            ValueError, msg="It should throw a ValueError"
+        ) as context:
             m_epsilon_0.simplify(epsilon=-1)
 
     def test_adjacency(self):
@@ -439,7 +445,9 @@ class TestMorphologyLabels(NumpyTestCase, unittest.TestCase):
             a.labels,
         )
         b.label("wow", [1, 3])
-        self.assertClose([2, 3, 2, 3, 2, 2, 2, 2, 2, 2], a, "specific point label failed")
+        self.assertClose(
+            [2, 3, 2, 3, 2, 2, 2, 2, 2, 2], a, "specific point label failed"
+        )
 
     def test_copy_labels(self):
         b = Branch([[0] * 3] * 10, [1] * 10)
@@ -509,7 +517,9 @@ class TestMorphologyLabels(NumpyTestCase, unittest.TestCase):
         b = _branch(10)
         m = Morphology([b])
         m.optimize()
-        self.assertEqual(0, np.sum(m.get_label_mask(["A"])[:3]), "expected first 0 lbled")
+        self.assertEqual(
+            0, np.sum(m.get_label_mask(["A"])[:3]), "expected first 0 lbled"
+        )
         m.label(["B", "A"], [0, 1, 2])
         self.assertEqual(3, np.sum(m.get_label_mask(["A"])[:3]), "then first 3 lbled")
 
@@ -585,7 +595,9 @@ class TestPointSetters(NumpyTestCase, unittest.TestCase):
     def test_branch_same_points(self):
         p = np.array(self.m.branches[5].points)
         self.m.branches[5].points = p
-        self.assertClose(p, self.m.branches[5].points, "same points, so should be close")
+        self.assertClose(
+            p, self.m.branches[5].points, "same points, so should be close"
+        )
         p = np.array(self.m.branches[5].radii)
         self.m.branches[5].radii = p
         self.assertClose(p, self.m.branches[5].radii, "same points, so should be close")
@@ -601,10 +613,14 @@ class TestPointSetters(NumpyTestCase, unittest.TestCase):
     def test_branch_doublenum_points(self):
         p = np.array(self.m.branches[5].points)
         self.m.branches[5].points = np.tile(p, (2, 1))
-        self.assertEqual(len(p) * 2, len(self.m.branches[5].points), "expected doublenum")
+        self.assertEqual(
+            len(p) * 2, len(self.m.branches[5].points), "expected doublenum"
+        )
         p = np.array(self.m.branches[5].radii)
         self.m.branches[5].radii = np.tile(p, (2, 1))
-        self.assertEqual(len(p) * 2, len(self.m.branches[5].radii), "expected doublenum")
+        self.assertEqual(
+            len(p) * 2, len(self.m.branches[5].radii), "expected doublenum"
+        )
 
     def test_branch_invalid_points(self):
         with self.assertRaises(ValueError):
@@ -673,7 +689,9 @@ class TestMorphologySet(NumpyTestCase, unittest.TestCase):
         self.assertEqual(["ello"], self.sets[1].names, "expected matching names list")
 
     def test_count(self):
-        self.assertEqual(0, self.sets[0].count_morphologies(), "expected no morphologies")
+        self.assertEqual(
+            0, self.sets[0].count_morphologies(), "expected no morphologies"
+        )
         self.assertEqual(1, self.sets[1].count_morphologies(), "expected fake loader")
 
     def test_count_unique(self):
@@ -748,10 +766,14 @@ class TestMorphologySet(NumpyTestCase, unittest.TestCase):
         ms.set_label_filter(["A"])
         m1 = ms.get(0, hard_cache=True)
         self.assertEqual(2, len(m1), "expected filtered morpho")
-        self.assertClose([[0, 0, 0], [1, 1, 1]], m1.points, "expected A labelled points")
+        self.assertClose(
+            [[0, 0, 0], [1, 1, 1]], m1.points, "expected A labelled points"
+        )
         m2 = ms.get(0, hard_cache=True)
         self.assertEqual(2, len(m2), "expected filtered morpho")
-        self.assertClose([[0, 0, 0], [1, 1, 1]], m2.points, "expected A labelled points")
+        self.assertClose(
+            [[0, 0, 0], [1, 1, 1]], m2.points, "expected A labelled points"
+        )
         self.assertEqual(m1, m2, "expected identical morphos")
         ms.set_label_filter(["B"])
         m = ms.get(0, hard_cache=True)
@@ -935,7 +957,9 @@ class TestBranchInsertion(NumpyTestCase, unittest.TestCase):
         root = Branch(np.array([0.0, 0.0, 0.0]).reshape(1, 3), radii=1)
         x1 = np.arange(4.0, dtype=float)
         y1, z = np.zeros(len(x1), dtype=float), np.zeros(len(x1), dtype=float)
-        b1 = Branch(((np.vstack((x1, y1, z)).T)).reshape(len(x1), 3), radii=[1] * len(x1))
+        b1 = Branch(
+            ((np.vstack((x1, y1, z)).T)).reshape(len(x1), 3), radii=[1] * len(x1)
+        )
         x2 = np.ones(len(x1), dtype=float) * 2
         y2 = np.arange(4.0, dtype=float)
         self.b2 = Branch(
@@ -979,7 +1003,9 @@ class TestBranchInsertion(NumpyTestCase, unittest.TestCase):
         }
         x0 = np.arange(4.0, dtype=float) + 3.0
         y0, z = np.zeros(len(x0), dtype=float), np.zeros(len(x0), dtype=float)
-        b0 = Branch(((np.vstack((x0, y0, z)).T)).reshape(len(x0), 3), radii=[1] * len(x0))
+        b0 = Branch(
+            ((np.vstack((x0, y0, z)).T)).reshape(len(x0), 3), radii=[1] * len(x0)
+        )
         first_insertion_pt = np.array([2.0, 0.0, 0.0])
         self.m.branches[1].insert_branch(self.b2, first_insertion_pt)
         x = np.arange(start=3.0, stop=6.0, dtype=float)
@@ -1248,7 +1274,9 @@ class TestPipelines(
         cfg = Configuration.default(morphologies=[m1, m2, m3])
         Scaffold(cfg, self.storage)
         self.assertNotClose(
-            m1.load_object().points, m2.load_object().points, "Pipeline rotation skipped"
+            m1.load_object().points,
+            m2.load_object().points,
+            "Pipeline rotation skipped",
         )
         self.assertClose(
             m1.load_object().points,

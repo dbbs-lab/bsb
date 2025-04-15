@@ -141,7 +141,9 @@ class MorphologyGenerator(MorphologyDistributor, classmap_entry=None):
         pass
 
 
-@config.dynamic(attr_name="strategy", required=False, default="none", auto_classmap=True)
+@config.dynamic(
+    attr_name="strategy", required=False, default="none", auto_classmap=True
+)
 class RotationDistributor(Distributor):
     """
     Rotates everything by nothing!
@@ -234,7 +236,9 @@ class VolumetricRotations(RotationDistributor, classmap_entry="orientation_field
         # By default, positions outside the field should not rotate.
         # So their target orientation vector will be set to the default_vector,
         # from which the rotation is processed.
-        orientations = np.full((positions.shape[0], 3), self.default_vector, dtype=float)
+        orientations = np.full(
+            (positions.shape[0], 3), self.default_vector, dtype=float
+        )
         # Expected orientation_field shape is (3, L, W, D) where L, W and D are the sizes
         # of the field. Here we want to filter on the space dimensions, so we move the axes.
         if filter_inside.any():
@@ -304,7 +308,8 @@ class DistributorsNode:
         loaders = self.scaffold.storage.morphologies.select(*sel)
         if not loaders and not self.morphologies.may_be_empty:
             raise EmptySelectionError(
-                f"Given {len(sel)} selectors: did not find any suitable morphologies", sel
+                f"Given {len(sel)} selectors: did not find any suitable morphologies",
+                sel,
             )
         distr = self._curry(partitions, indicator, positions, loaders)
         morphologies, rotations = distr("morphologies")

@@ -44,13 +44,13 @@ class FileSystemEngine(Engine):
 
     def _write(self):
         if self._readonly:
-            raise IOError("Can't perform write operations in readonly mode.")
+            raise OSError("Can't perform write operations in readonly mode.")
         else:
             return self._lock.write()
 
     def _master_write(self):
         if self._readonly:
-            raise IOError("Can't perform write operations in readonly mode.")
+            raise OSError("Can't perform write operations in readonly mode.")
         else:
             return self._lock.single_write()
 

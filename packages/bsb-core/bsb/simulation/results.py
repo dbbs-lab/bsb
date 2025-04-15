@@ -44,7 +44,7 @@ class SimulationResult:
         for recorder in self.recorders:
             try:
                 recorder.flush(segment)
-            except Exception as e:
+            except Exception:
                 traceback.print_exc()
                 warn("Recorder errored out!")
 

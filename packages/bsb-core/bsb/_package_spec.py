@@ -22,7 +22,7 @@ def get_missing_requirement_reason(package):
     except PackageNotFoundError:
         return f"Missing package '{req.name}'. You may experience errors or differences in results."
     else:
-        if not ver in req.specifier:
+        if ver not in req.specifier:
             return (
                 f"Installed version of '{req.name}' ({ver}) "
                 f"does not match requirements: '{req}'. You may experience errors or differences in results."

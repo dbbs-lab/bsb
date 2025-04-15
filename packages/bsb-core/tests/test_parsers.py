@@ -92,7 +92,9 @@ class TestFileRef(unittest.TestCase):
         self.assertNotIn("$ref", tree["refs"]["whats the"], "Ref key not removed")
         self.assertEqual("key", tree["refs"]["whats the"]["secret"])
         self.assertEqual("is hard", tree["refs"]["whats the"]["nested secrets"]["vim"])
-        self.assertEqual("convoluted", tree["refs"]["whats the"]["nested secrets"]["and"])
+        self.assertEqual(
+            "convoluted", tree["refs"]["whats the"]["nested secrets"]["and"]
+        )
         # Checking str keys order.
         self.assertEqual(
             str(tree["refs"]["whats the"]["nested secrets"]),
@@ -118,7 +120,7 @@ class TestFileRef(unittest.TestCase):
         tree, meta = self.parser.parse(
             content,
             path=str(
-                (pathlib.Path(__file__).parent / "data" / "configs" / "interdoc_refs.txt")
+                pathlib.Path(__file__).parent / "data" / "configs" / "interdoc_refs.txt"
             ),
         )
         self.assertIn("was", tree["refs"]["far"])
@@ -133,7 +135,7 @@ class TestFileRef(unittest.TestCase):
         tree, meta = self.parser.parse(
             get_content("doubleref.txt"),
             path=str(
-                (pathlib.Path(__file__).parent / "data" / "configs" / "doubleref.txt")
+                pathlib.Path(__file__).parent / "data" / "configs" / "doubleref.txt"
             ),
         )
         # Only the latest ref is included because the literal_eval keeps only the latest value
@@ -149,7 +151,7 @@ class TestFileRef(unittest.TestCase):
         tree, meta = self.parser.parse(
             get_content("doubleref.txt"),
             path=str(
-                (pathlib.Path(__file__).parent / "data" / "configs" / "doubleref.txt")
+                pathlib.Path(__file__).parent / "data" / "configs" / "doubleref.txt"
             ),
         )
         self.assertTrue(str(self.parser.references[0]).startswith("<file ref '"))
@@ -169,7 +171,7 @@ class TestFileRef(unittest.TestCase):
             self.parser.parse(
                 content,
                 path=str(
-                    (pathlib.Path(__file__).parent / "data" / "configs" / "wrong_ref.txt")
+                    pathlib.Path(__file__).parent / "data" / "configs" / "wrong_ref.txt"
                 ),
             )
 
@@ -238,7 +240,8 @@ class TestFileImport(unittest.TestCase):
 
         file = "outdoc_import_merge.txt"
         tree, meta = self.parser.parse(
-            get_content(file), path=pathlib.Path(__file__).parent / "data/configs" / file
+            get_content(file),
+            path=pathlib.Path(__file__).parent / "data/configs" / file,
         )
 
         expected = {

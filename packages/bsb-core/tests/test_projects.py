@@ -12,7 +12,7 @@ class TestProjects(unittest.TestCase):
     @skip_parallel
     def test_bsb_new(self):
         message = subprocess.check_output(
-            "bsb new test_bsb_new --quickstart --json".split()
+            ["bsb", "new", "test_bsb_new", "--quickstart", "--json"]
         )
         self.assertEqual(
             message.split(b"\n")[-2], b"Created 'test_bsb_new' project structure."

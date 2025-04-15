@@ -44,7 +44,9 @@ class TestMorphologyDistributor(
             regions=dict(reg=dict(children=["a"])),
             partitions=dict(a=dict(thickness=100)),
             cell_types=dict(
-                a=dict(spatial=dict(radius=2, density=1e-4, morphologies=[{"names": []}]))
+                a=dict(
+                    spatial=dict(radius=2, density=1e-4, morphologies=[{"names": []}])
+                )
             ),
             placement=dict(
                 a=dict(
@@ -160,11 +162,12 @@ class TestVolumetricRotations(
         pos_w_rot = np.any(rotations != 0, axis=1)
         self.assertTrue(
             np.array_equal(
-                pos_w_rot, np.isin(region_ids, (10690, 10691, 10692, 10705, 10706, 10707))
+                pos_w_rot,
+                np.isin(region_ids, (10690, 10691, 10692, 10705, 10706, 10707)),
             )
         )
         self.assertTrue(
-            np.all((-180.0 < rotations[pos_w_rot]) * (rotations[pos_w_rot] < 180.0))
+            np.all((rotations[pos_w_rot] > -180.0) * (rotations[pos_w_rot] < 180.0))
         )
         # orientation field x component should be close to 0.
         self.assertTrue(np.all(np.absolute(rotations[pos_w_rot][:, 0]) < 0.5))
@@ -176,4 +179,6 @@ class TestVolumetricRotations(
 
         self.network.compile(clear=True)
         rotations = np.array(self.network.get_placement_set("a").load_rotations())
-        self.assertTrue(np.array_equal(np.all(rotations == 0.0, axis=1), region_ids > 0))
+        self.assertTrue(
+            np.array_equal(np.all(rotations == 0.0, axis=1), region_ids > 0)
+        )

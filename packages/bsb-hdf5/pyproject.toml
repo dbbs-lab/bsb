@@ -1,0 +1,94 @@
+[build-system]
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "bsb-hdf5"
+authors = [
+  { name = "Robin De Schepper", email = "robingilbert.deschepper@unipv.it" },
+  { name = "Dimitri Rodarie", email = "dimitri.rodarie@unipv.it" }
+]
+version = "5.0.4"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.9,<4"
+dynamic = ["description"]
+classifiers = ["License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"]
+dependencies = [
+  "bsb-core"
+]
+
+[project.optional-dependencies]
+test = [
+  "bsb-core[parallel]",
+  "bsb-test",
+  "pytest>=8.3.4",
+  "pytest-sugar>=1.0.0",
+  "pytest-cov>=6.0.0",
+]
+docs = [
+    "sphinx~=7.0",
+    "sphinxemoji~=0.2",
+    "toml~=0.10",
+    "furo~=2024.0",
+    "sphinx-design~=0.5",
+    "sphinx-copybutton~=0.5"
+]
+dev  = [
+    "bsb-hdf5[test,docs]",
+    "pre-commit~=3.5",
+    "ruff>=0.8.2",
+]
+
+[dependency-groups]
+dev = [
+  "bsb-hdf5[dev]",
+]
+
+[tool.flit.module]
+name = "bsb_hdf5"
+
+[project.entry-points."bsb.storage.engines"]
+hdf5 = "bsb_hdf5"
+
+[tool.uv.sources]
+bsb-test = { path = "../bsb-test", editable = true }
+bsb-hdf5 = { path = "../bsb-hdf5", editable = true }
+
+[tool.coverage.run]
+branch = true
+source = [ "bsb_hdf5" ]
+
+[tool.coverage.report]
+exclude_lines = ['if TYPE_CHECKING:']
+show_missing = true
+
+[tool.pytest.ini_options]
+addopts = """
+ --cov
+ --cov-report html:'../../coverage/packages/bsb-hdf5/html'
+ --cov-report xml:'../../coverage/packages/bsb-hdf5/coverage.xml'
+"""
+
+[tool.ruff]
+exclude = [ ".ruff_cache", ".svn", ".tox", ".venv", "dist" ]
+line-length = 88
+indent-width = 4
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+docstring-code-line-length = "dynamic"
+
+[tool.ruff.lint]
+select = [ "E", "F", "UP", "B", "SIM", "I" ]
+ignore = [ ]
+fixable = [ "ALL" ]
+unfixable = [ ]
+
+[[tool.uv.index]]
+name = "testpypi"
+url = "https://test.pypi.org/simple/"
+publish-url = "https://test.pypi.org/legacy/"

@@ -2,6 +2,10 @@
 Helpers for better and more complete tests for component developers of the BSB framework.
 """
 
+
+__version__ = "1.0.5"
+
+
 import contextlib
 import glob as _glob
 import os as _os

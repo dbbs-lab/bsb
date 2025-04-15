@@ -43,6 +43,7 @@ name = "bsb_test"
 
 [tool.uv.sources]
 bsb-core = { path = "../bsb-core", editable = true }
+bsb-hdf5 = { path = "../bsb-hdf5", editable = true }
 
 [tool.coverage.run]
 branch = true

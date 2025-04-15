@@ -97,6 +97,7 @@ debug_pool = "bsb._options:debug_pool"
 
 [tool.uv.sources]
 bsb-test = { path = "../bsb-test", editable = true }
+bsb-hdf5 = { path = "../bsb-hdf5", editable = true }
 
 [tool.coverage.run]
 branch = true

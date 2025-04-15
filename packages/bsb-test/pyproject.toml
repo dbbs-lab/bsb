@@ -1,3 +1,49 @@
+[build-system]
+requires = [ "flit_core >=3.2,<4" ]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "bsb-test"
+authors = [
+  { name = "Robin De Schepper", email = "robin@alexandria.sc" },
+  { name = "Dimitri Rodarie", email = "dimitri.rodarie@unipv.it" }
+]
+version = "1.0.5"
+dynamic = ["description"]
+requires-python = ">=3.9,<4"
+readme = "README.md"
+license = {file = "LICENSE"}
+dependencies = [
+ "bsb-core",
+]
+
+[project.optional-dependencies]
+test = [
+  "bsb-core[parallel]",
+  "bsb-hdf5~=5.0",
+  "pytest>=8.3.4",
+  "pytest-sugar>=1.0.0",
+  "pytest-cov>=6.0.0",
+]
+dev = [
+  "bsb-test[test]",
+  "pre-commit~=3.5",
+  "ruff>=0.8.2",
+  "snakeviz~=2.1",
+  "bump-my-version~=0.24",
+]
+
+[dependency-groups]
+dev = [
+  "bsb-test[dev]",
+]
+
+[tool.flit.module]
+name = "bsb_test"
+
+[tool.uv.sources]
+bsb-core = { path = "../bsb-core", editable = true }
+
 [tool.coverage.run]
 branch = true
 source = [ "bsb_test" ]
@@ -11,8 +57,6 @@ addopts = """
  --cov
  --cov-report html:'../../coverage/packages/bsb-test/html'
  --cov-report xml:'../../coverage/packages/bsb-test/coverage.xml'
- --html='../../reports/packages/bsb-test/unittests/html/index.html'
- --junitxml='../../reports/packages/bsb-test/unittests/junit.xml'
 """
 
 [tool.ruff]
@@ -20,37 +64,13 @@ exclude = [ ".ruff_cache", ".svn", ".tox", ".venv", "dist" ]
 line-length = 88
 indent-width = 4
 
-  [tool.ruff.lint]
-  select = [ "E", "F", "UP", "B", "SIM", "I" ]
-  ignore = [ ]
-  fixable = [ "ALL" ]
-  unfixable = [ ]
+[tool.ruff.lint]
+select = [ "E", "F", "UP", "B", "SIM", "I" ]
+ignore = [ ]
+fixable = [ "ALL" ]
+unfixable = [ ]
 
-[tool.uv.sources]
-bsb-core = { path = "../bsb-core", editable = true }
-
-[project]
-name = "bsb-test"
-version = "1.0.5"
-requires-python = ">=3.9,<4"
-readme = "README.md"
-description = """
-Helpers for better and more complete tests for component developers of the BSB framework.
-"""
-dependencies = [
- "bsb-core",
-]
-
-[dependency-groups]
-dev = [
-  "autopep8>=2.3.1",
-  "ruff>=0.8.2",
-  "pytest>=8.3.4",
-  "pytest-sugar>=1.0.0",
-  "pytest-cov>=6.0.0",
-  "pytest-html>=4.1.1"
-]
-
-[build-system]
-requires = [ "flit_core >=3.2,<4" ]
-build-backend = "flit_core.buildapi"
+[[tool.uv.index]]
+name = "testpypi"
+url = "https://test.pypi.org/simple/"
+publish-url = "https://test.pypi.org/legacy/"

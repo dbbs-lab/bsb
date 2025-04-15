@@ -1,0 +1,101 @@
+{
+    "@context": "https://doi.org/10.5063/schema/codemeta-2.0",
+    "type": "SoftwareSourceCode",
+    "name": "Brain Scaffold Builder",
+    "license": "https://spdx.org/licenses/GPL-3.0-or-later",
+    "codeRepository": "git+https://github.com/dbbs-lab/bsb.git",
+    "downloadUrl": "https://github.com/dbbs-lab/bsb/archive/refs/tags/v4.4.2.tar.gz",
+    "referencePublication": "https://doi.org/10.1038/s42003-022-04213-y",
+    "dateCreated": "2019-07-19",
+    "datePublished": "2020-12-09",
+    "dateModified": "2025-01-14",
+    "version": "4.4.2",
+    "releaseNotes": "https://github.com/dbbs-lab/bsb/releases/tag/v4.4.2",
+    "funding": "785907 (Human Brain Project SGA2), 945539 (Human Brain Project SGA3), 101147319 (EBRAINS 2.0 Project) and 800858 (ICEI project), 101137289 (Virtual Brain Twin Project)",
+    "funder": {
+        "type": "Organization",
+        "name": "European Commission"
+    },
+    "description": "Developed by the Department of Brain and Behavioral Sciences at the University of Pavia, the Brain Scaffold Builder (BSB) is a component framework for neural modelling, which focuses on component declarations to piece together a brain model. The component declarations can be made in any supported configuration language, or using the library functions in Python. It offers parallel reconstruction and simulation of any network topology, placement and/or connectivity strategy.",
+    "keywords": [
+        "brain",
+        "scaffold",
+        "bsb",
+        "modelling",
+        "simulation"
+    ],
+    "author": [
+        {
+            "id": "https://search.kg.ebrains.eu/instances/2905ce6c-bc89-4c99-b8b0-0fa9a17d1897",
+            "type": "Person",
+            "affiliation": {
+                "type": "Organization",
+                "name": "DBBS Unipv"
+            },
+            "familyName": "De Schepper",
+            "givenName": "Robin"
+        },
+        {
+            "id": "https://search.kg.ebrains.eu/instances/a594cfe2-f53a-470f-b52e-697b8d5a8958",
+            "type": "Person",
+            "affiliation": {
+                "type": "Organization",
+                "name": "DBBS Unipv"
+            },
+            "familyName": "Geminiani",
+            "givenName": "Alice"
+        },
+        {
+            "id": "https://search.kg.ebrains.eu/instances/5dcb9bd9-f93f-48c4-88e0-ff0ed4221ac8",
+            "type": "Person",
+            "affiliation": {
+                "type": "Organization",
+                "name": "DBBS Unipv"
+            },
+            "familyName": "Antonietti",
+            "givenName": "Alberto"
+        },
+        {
+            "id": "https://search.kg.ebrains.eu/instances/5ad4749a-6e5a-4512-86ff-b89834c1b87c",
+            "type": "Person",
+            "affiliation": {
+                "type": "Organization",
+                "name": "DBBS Unipv"
+            },
+            "familyName": "Casellato",
+            "givenName": "Claudia"
+        },
+        {
+            "id": "https://orcid.org/0000-0003-2496-2311",
+            "type": "Person",
+            "affiliation": {
+                "type": "Organization",
+                "name": "DBBS Unipv"
+            },
+            "familyName": "Rodarie",
+            "givenName": "Dimitri"
+        },
+        {
+            "id": "https://orcid.org/0000-0003-2879-3893",
+            "type": "Person",
+            "affiliation": {
+                "type": "Organization",
+                "name": "DBBS Unipv"
+            },
+            "familyName": "Marchetti",
+            "givenName": "Filippo"
+        }
+    ],
+    "operatingSystem": [
+        "Linux",
+        "Windows",
+        "macOS"
+    ],
+    "programmingLanguage": ["Python"],
+    "developmentStatus": "active",
+    "softwareRequirements": ["Python (version 3.9+)"],
+    "relatedLink": ["https://bsb.readthedocs.io/en/latest/"],
+    "applicationCategory": "neuroscience",
+    "issueTracker": "https://github.com/dbbs-lab/bsb/issues",
+    "contIntegration": "https://github.com/dbbs-lab/bsb/actions"
+}

@@ -21,8 +21,8 @@
   "generators": {
     "@nxlv/python:uv-project": {
       "projectType": "library",
-      "pyprojectPythonDependency": ">=3.9",
-      "pyenvPythonVersion": "3.9.22",
+      "pyprojectPythonDependency": ">=3.9,<3.12",
+      "pyenvPythonVersion": "3.10.12",
       "publishable": true,
       "buildBundleLocalDependencies": false,
       "buildLockedVersions": false,

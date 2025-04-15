@@ -2,15 +2,15 @@ default_install_hook_types:
   - pre-commit
   - commit-msg
 repos:
-  - repo: https://github.com/psf/black-pre-commit-mirror
-    rev: 25.1.0
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    # Ruff version.
+    rev: v0.11.5
     hooks:
-      - id: black
-  - repo: https://github.com/pycqa/isort
-    rev: 6.0.0
-    hooks:
-      - id: isort
-        name: isort (python)
+      # Run the linter.
+      - id: ruff
+        args: [ --fix ]
+      # Run the formatter.
+      - id: ruff-format
   - repo: https://github.com/compilerla/conventional-pre-commit
     rev: v3.3.0
     hooks:

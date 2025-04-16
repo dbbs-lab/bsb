@@ -4,9 +4,18 @@ Arbor simulation adapter for the BSB framework
 
 from bsb import SimulationBackendPlugin
 
-from . import devices
 from .adapter import ArborAdapter
+from .devices import PoissonGenerator, Probe, SpikeRecorder
 from .simulation import ArborSimulation
 
 __version__ = "4.1.1"
 __plugin__ = SimulationBackendPlugin(Simulation=ArborSimulation, Adapter=ArborAdapter)
+
+
+__all__ = [
+    "PoissonGenerator",
+    "Probe",
+    "SpikeRecorder",
+    "ArborAdapter",
+    "ArborSimulation",
+]

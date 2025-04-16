@@ -23,13 +23,13 @@ if typing.TYPE_CHECKING:
 class ArborSimulationData(SimulationData):
     def __init__(self, simulation):
         super().__init__(simulation)
-        self.arbor_sim: "arbor.simulation" = None
+        self.arbor_sim: arbor.simulation = None
 
 
 class ReceiverCollection(list):
     """
-    Receiver collections store the incoming connections and deduplicate them into multiple
-    targets.
+    Receiver collections store the incoming connections and deduplicate them into
+    multiple targets.
     """
 
     def __init__(self):
@@ -46,7 +46,8 @@ class ReceiverCollection(list):
 
 class SingleReceiverCollection(list):
     """
-    The single receiver collection redirects all incoming connections to the same receiver
+    The single receiver collection redirects all incoming connections to the same
+    receiver
     """
 
     def append(self, rcv):
@@ -84,7 +85,8 @@ class Population:
         if getattr(item, "dtype", None) == bool or _all_bools(item):
             if len(item) != len(self):
                 raise ValueError(
-                    f"Dimension mismatch between population ({len(self)}) and mask ({len(item)})"
+                    f"Dimension mismatch between population ({len(self)}) "
+                    f"and mask ({len(item)})"
                 )
             return self._subpop_np(np.array(self)[item])
         elif getattr(item, "dtype", None) == int or _all_ints(item):
@@ -282,7 +284,7 @@ class ArborRecipe(arbor.recipe):
 class ArborAdapter(SimulatorAdapter):
     def __init__(self, comm=None):
         super().__init__(comm)
-        self.simdata: typing.Dict["ArborSimulation", "SimulationData"] = {}
+        self.simdata: dict[ArborSimulation, SimulationData] = {}
 
     def prepare(self, simulation: "ArborSimulation"):
         simdata = self._create_simdata(simulation)
@@ -292,7 +294,7 @@ class ArborAdapter(SimulatorAdapter):
                 if not arbor.config()["mpi4py"]:
                     warn(
                         f"Arbor does not seem to be built with MPI support, running"
-                        "duplicate simulations on {MPI.get_size()} nodes."
+                        f"duplicate simulations on {self.comm.get_size()} nodes."
                     )
                 else:
                     context = arbor.context(
@@ -305,7 +307,8 @@ class ArborAdapter(SimulatorAdapter):
                     arbor.profiler_initialize(context)
                 else:
                     raise RuntimeError(
-                        "Arbor must be built with profiling support to use the `profiling` flag."
+                        "Arbor must be built with profiling support to use the "
+                        "`profiling` flag."
                     )
             simdata.gid_manager = self.get_gid_manager(simulation, simdata)
             simdata.populations = simdata.gid_manager.get_populations()
@@ -334,7 +337,8 @@ class ArborAdapter(SimulatorAdapter):
     def run(self, *simulations):
         if len(simulations) != 1:
             raise RuntimeError(
-                "Can not run multiple simultaneous simulations. Composition not implemented."
+                "Can not run multiple simultaneous simulations. Composition not "
+                "implemented."
             )
         simulation = simulations[0]
         try:
@@ -419,7 +423,7 @@ class ArborAdapter(SimulatorAdapter):
     def _assign_chunks(self, simulation, simdata):
         chunk_stats = simulation.scaffold.storage.get_chunk_stats()
         size = self.comm.get_size()
-        all_chunks = [Chunk.from_id(int(chunk), None) for chunk in chunk_stats.keys()]
+        all_chunks = [Chunk.from_id(int(chunk), None) for chunk in chunk_stats]
         simdata.node_chunk_alloc = [all_chunks[rank::size] for rank in range(0, size)]
         simdata.chunk_node_map = {}
         for node, chunks in enumerate(simdata.node_chunk_alloc):

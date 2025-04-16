@@ -202,17 +202,34 @@ wheels = [
 [[package]]
 name = "bsb-arbor"
 version = "4.1.1"
-source = { registry = "https://pypi.org/simple/" }
+source = { editable = "../bsb-arbor" }
 dependencies = [
     { name = "arbor" },
     { name = "arborize", extra = ["arbor"] },
     { name = "bsb-core" },
     { name = "numpy" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/f9/22/f2ddca726ba564b8ff288ecdf091b51faba1b7d1721910a896f685c514e2/bsb_arbor-4.1.1.tar.gz", hash = "sha256:ba8f2de6ba79a41bfde64c848a78fb2133d21b8e270668ff66ee524ffed08f2b", size = 19970 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/ba/2a/d96c9be270365810d7f1d7dd924ae8e3733980cc81cefe0a8286270ca382/bsb_arbor-4.1.1-py2.py3-none-any.whl", hash = "sha256:c1e8098877c0cc9167789828d18c7457c7bdb265f0362e742e74587319bdca69", size = 22575 },
+
+[package.metadata]
+requires-dist = [
+    { name = "arbor", specifier = "~=0.10" },
+    { name = "arborize", extras = ["arbor"], specifier = "~=4.0" },
+    { name = "bsb-core", editable = "." },
+    { name = "bsb-core", extras = ["parallel"], marker = "extra == 'test'", editable = "." },
+    { name = "bsb-hdf5", marker = "extra == 'test'", editable = "../bsb-hdf5" },
+    { name = "bsb-test", extras = ["test"], marker = "extra == 'dev'", editable = "../bsb-test" },
+    { name = "numpy", specifier = "~=1.21" },
+    { name = "pre-commit", marker = "extra == 'dev'", specifier = "~=3.5" },
+    { name = "pytest", marker = "extra == 'test'", specifier = ">=8.3.4" },
+    { name = "pytest-cov", marker = "extra == 'test'", specifier = ">=6.0.0" },
+    { name = "pytest-sugar", marker = "extra == 'test'", specifier = ">=1.0.0" },
+    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.8.2" },
+    { name = "snakeviz", marker = "extra == 'dev'", specifier = "~=2.1" },
 ]
+provides-extras = ["test", "dev"]
+
+[package.metadata.requires-dev]
+dev = [{ name = "bsb-arbor", extras = ["dev"], editable = "../bsb-arbor" }]
 
 [[package]]
 name = "bsb-core"
@@ -299,7 +316,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "appdirs", specifier = "~=1.4" },
-    { name = "bsb-arbor", marker = "extra == 'test'", specifier = "~=4.0" },
+    { name = "bsb-arbor", marker = "extra == 'test'", editable = "../bsb-arbor" },
     { name = "bsb-core", extras = ["parallel"], marker = "extra == 'test'" },
     { name = "bsb-core", extras = ["test", "docs"], marker = "extra == 'dev'" },
     { name = "bsb-hdf5", marker = "extra == 'test'", editable = "../bsb-hdf5" },

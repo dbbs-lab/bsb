@@ -3,19 +3,22 @@ requires = [ "flit_core >=3.2,<4" ]
 build-backend = "flit_core.buildapi"
 
 [project]
-name = "bsb-test"
+name = "bsb-arbor"
 authors = [
   { name = "Robin De Schepper", email = "robin@alexandria.sc" },
   { name = "Dimitri Rodarie", email = "dimitri.rodarie@unipv.it" }
 ]
-version = "4.2.3"
+version = "4.1.1"
 dynamic = ["description"]
-requires-python = ">=3.9,<4"
-readme = "README.md"
-license = {file = "LICENSE"}
+requires-python = ">=3.9,<3.12"
+readme = 'README.md'
+license = { file = "LICENSE" }
 classifiers = ["License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"]
 dependencies = [
- "bsb-core",
+    "numpy~=1.21",
+    "bsb-core~=5.0",
+    "arbor~=0.10",
+    "arborize[arbor]~=4.0"
 ]
 
 [project.optional-dependencies]
@@ -27,38 +30,41 @@ test = [
   "pytest-cov>=6.0.0",
 ]
 dev = [
-  "bsb-test[test]",
-  "pre-commit~=3.5",
-  "ruff>=0.8.2",
-  "snakeviz~=2.1",
-  "bump-my-version~=0.24",
+    "bsb-test[test]",
+    "pre-commit~=3.5",
+    "ruff>=0.8.2",
+    "snakeviz~=2.1",
 ]
 
 [dependency-groups]
 dev = [
-  "bsb-test[dev]",
+  "bsb-arbor[dev]",
 ]
 
 [tool.flit.module]
-name = "bsb_test"
+name = "bsb_arbor"
+
+[project.entry-points."bsb.simulation_backends"]
+arbor = "bsb_arbor"
 
 [tool.uv.sources]
 bsb-core = { path = "../bsb-core", editable = true }
 bsb-hdf5 = { path = "../bsb-hdf5", editable = true }
+bsb-test = { path = "../bsb-test", editable = true }
 
 [tool.coverage.run]
 branch = true
-source = [ "bsb_test" ]
+source = [ "bsb_arbor" ]
 
 [tool.coverage.report]
-exclude_lines = [ "if TYPE_CHECKING:" ]
+exclude_lines = ['if TYPE_CHECKING:']
 show_missing = true
 
 [tool.pytest.ini_options]
 addopts = """
  --cov
- --cov-report html:'../../coverage/packages/bsb-test/html'
- --cov-report xml:'../../coverage/packages/bsb-test/coverage.xml'
+ --cov-report html:'../../coverage/packages/bsb-arbor/html'
+ --cov-report xml:'../../coverage/packages/bsb-arbor/coverage.xml'
 """
 
 [tool.ruff]

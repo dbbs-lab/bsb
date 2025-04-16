@@ -1,7 +1,6 @@
 """
-Helpers for better and more complete tests for component developers of the BSB framework.
+Helpers for better and more complete tests for component developers of the BSB framework
 """
-
 
 __version__ = "1.0.5"
 
@@ -35,7 +34,16 @@ from .configs import (
     list_test_configs,
 )
 from .exceptions import FixtureError
-from .parallel import *
+from .parallel import (
+    MPI,
+    internet_connection,
+    on_main_only,
+    serial_setup,
+    skip_nointernet,
+    skip_parallel,
+    skip_serial,
+    timeout,
+)
 
 if typing.TYPE_CHECKING:
     from bsb import Configuration, Scaffold, Storage
@@ -46,14 +54,10 @@ class NetworkFixture:
 
     def setUp(self):
         kwargs = {}
-        try:
+        with contextlib.suppress(Exception):
             kwargs["config"] = self.cfg
-        except Exception:
-            pass
-        try:
+        with contextlib.suppress(Exception):
             kwargs["storage"] = self.storage
-        except Exception:
-            pass
         self.network = Scaffold(**kwargs)
         super().setUp()
 
@@ -61,7 +65,9 @@ class NetworkFixture:
 class RandomStorageFixture:
     storage: "Storage"
 
-    def __init_subclass__(cls, root_factory=None, debug=False, setup_cls=False, *, engine_name, **kwargs):
+    def __init_subclass__(
+        cls, root_factory=None, debug=False, setup_cls=False, *, engine_name, **kwargs
+    ):
         super().__init_subclass__(**kwargs)
         cls._engine = engine_name
         cls._rootf = root_factory
@@ -151,17 +157,26 @@ class MorphologiesFixture:
 
     def setUp(self):
         if not hasattr(self, "network"):
-            raise FixtureError(f"{self.__class__.__name__} uses MorphologiesFixture, which requires a network fixture.")
+            raise FixtureError(
+                f"{self.__class__.__name__} uses MorphologiesFixture, which requires a"
+                f" network fixture."
+            )
         if MPI.get_rank():
             MPI.barrier()
         else:
             for mpath in get_all_morphology_paths(self._morpho_suffix):
-                if self._morpho_filters and all(mpath.find(filter) == -1 for filter in self._morpho_filters):
+                if self._morpho_filters and all(
+                    mpath.find(filter) == -1 for filter in self._morpho_filters
+                ):
                     continue
                 if mpath.endswith("swc"):
-                    self.network.morphologies.save(Path(mpath).stem, parse_morphology_file(mpath))
+                    self.network.morphologies.save(
+                        Path(mpath).stem, parse_morphology_file(mpath)
+                    )
                 else:
-                    self.network.morphologies.save(Path(mpath).stem, parse_morphology_file(mpath, parser="morphio"))
+                    self.network.morphologies.save(
+                        Path(mpath).stem, parse_morphology_file(mpath, parser="morphio")
+                    )
             MPI.barrier()
         super().setUp()
 
@@ -170,26 +185,34 @@ class NumpyTestCase:
     def assertClose(self, a, b, msg="", /, **kwargs):
         if msg:
             msg += ". "
-        return self.assertTrue(_np.allclose(a, b, **kwargs), f"{msg}Expected {a}, got {b}")
+        return self.assertTrue(
+            _np.allclose(a, b, **kwargs), f"{msg}Expected {a}, got {b}"
+        )
 
     def assertNotClose(self, a, b, msg="", /, **kwargs):
         if msg:
             msg += ". "
-        return self.assertFalse(_np.allclose(a, b, **kwargs), f"{msg}Expected {a}, got {b}")
+        return self.assertFalse(
+            _np.allclose(a, b, **kwargs), f"{msg}Expected {a}, got {b}"
+        )
 
     def assertAll(self, a, msg="", /, **kwargs):
         trues = _np.sum(a.astype(bool))
         all = _np.prod(a.shape)
         if msg:
             msg += ". "
-        return self.assertTrue(_np.all(a, **kwargs), f"{msg}Only {trues} out of {all} True")
+        return self.assertTrue(
+            _np.all(a, **kwargs), f"{msg}Only {trues} out of {all} True"
+        )
 
     def assertNan(self, a, msg="", /, **kwargs):
         if msg:
             msg += ". "
         nans = _np.isnan(a)
         all = _np.prod(a.shape)
-        return self.assertTrue(_np.all(a, **kwargs), f"{msg}Only {_np.sum(nans)} out of {all} True")
+        return self.assertTrue(
+            _np.all(a, **kwargs), f"{msg}Only {_np.sum(nans)} out of {all} True"
+        )
 
 
 def get_data_path(*paths):
@@ -219,8 +242,10 @@ def skipIfOffline(url=None, scheme: UrlScheme = None):
         session_ctx = requests.Session()
     try:
         url = url or scheme.get_base_url()
-    except NotImplementedError:
-        raise ValueError("Couldn't establish base URL to ping for health check.")
+    except NotImplementedError as err:
+        raise ValueError(
+            "Couldn't establish base URL to ping for health check."
+        ) from err
     try:
         with session_ctx as session:
             res = session.get(url)
@@ -291,3 +316,33 @@ def _invalidate_plugin_caches():
     load_component_plugins.cache_clear()
     get_backends.cache_clear()
     _get_schemes.cache_clear()
+
+
+__all__ = [
+    "NetworkFixture",
+    "RandomStorageFixture",
+    "FixedPosConfigFixture",
+    "ConfigFixture",
+    "MorphologiesFixture",
+    "NumpyTestCase",
+    "get_data_path",
+    "get_morphology_path",
+    "get_all_morphology_paths",
+    "skipIfOffline",
+    "SpoofedEntryPoint",
+    "plugin_context",
+    "spoof_plugin",
+    "spoof_plugins",
+    "get_test_config",
+    "get_test_config_tree",
+    "get_test_configs",
+    "list_test_configs",
+    "FixtureError",
+    "internet_connection",
+    "skip_nointernet",
+    "skip_serial",
+    "skip_parallel",
+    "timeout",
+    "on_main_only",
+    "serial_setup",
+]

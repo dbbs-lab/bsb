@@ -8,7 +8,13 @@ tree = {
         "some_brain": {"type": "stack", "children": ["some_cortex", "some_olive"]},
         "some_cortex": {
             "type": "stack",
-            "children": ["dcn_layer", "granular_layer", "purkinje_layer", "b_molecular_layer", "t_molecular_layer"],
+            "children": [
+                "dcn_layer",
+                "granular_layer",
+                "purkinje_layer",
+                "b_molecular_layer",
+                "t_molecular_layer",
+            ],
         },
         "some_olive": {"type": "stack", "children": ["io_layer"]},
     },
@@ -22,10 +28,21 @@ tree = {
     },
     "cell_types": {
         "granule_cell": {
-            "spatial": {"radius": 2.5, "density": 3.9e-3, "geometry": {"pf_height": 126, "pf_height_sd": 15}},
-            "plotting": {"display_name": "Granule cell", "color": "#e81005", "opacity": 0.3},
+            "spatial": {
+                "radius": 2.5,
+                "density": 3.9e-3,
+                "geometry": {"pf_height": 126, "pf_height_sd": 15},
+            },
+            "plotting": {
+                "display_name": "Granule cell",
+                "color": "#e81005",
+                "opacity": 0.3,
+            },
         },
-        "mossy_fibers": {"entity": True, "spatial": {"relative_to": "glomerulus", "count_ratio": 0.05}},
+        "mossy_fibers": {
+            "entity": True,
+            "spatial": {"relative_to": "glomerulus", "count_ratio": 0.05},
+        },
         "glomerulus": {
             "spatial": {"radius": 1.5, "density": 3e-4},
             "plotting": {"display_name": "Glomerulus", "color": "#6F6F70"},
@@ -47,7 +64,11 @@ tree = {
             "plotting": {"display_name": "Basket cell", "color": "#f5830a"},
         },
         "dcn_cell": {
-            "spatial": {"radius": 10.0, "relative_to": "purkinje_cell", "count_ratio": 0.090909},
+            "spatial": {
+                "radius": 10.0,
+                "relative_to": "purkinje_cell",
+                "count_ratio": 0.090909,
+            },
             "plotting": {"display_name": "DCN cell", "color": "#080808"},
         },
         "dcn_interneuron": {
@@ -101,8 +122,16 @@ tree = {
     "connectivity": {
         "io_to_dcn": {
             "strategy": "bsb.connectivity.AllToAll",
-            "presynaptic": {"cell_types": ["io_cell"], "morphology_labels": ["axon"], "labels": ["microzone-*"]},
-            "postsynaptic": {"cell_types": ["dcn_cell"], "morphology_labels": ["dendrites"], "labels": ["microzone-*"]},
+            "presynaptic": {
+                "cell_types": ["io_cell"],
+                "morphology_labels": ["axon"],
+                "labels": ["microzone-*"],
+            },
+            "postsynaptic": {
+                "cell_types": ["dcn_cell"],
+                "morphology_labels": ["dendrites"],
+                "labels": ["microzone-*"],
+            },
         }
     },
     "after_placement": {},

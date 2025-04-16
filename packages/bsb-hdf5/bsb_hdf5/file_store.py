@@ -19,16 +19,14 @@ class FileStore(Resource, IFileStore):
         return True
 
     def all(self):
-        with self._engine._read():
-            with self._engine._handle("r") as root:
+        with self._engine._read(), self._engine._handle("r") as root:
                 store = root[self._path]
                 return {
                     id: json.loads(f.attrs.get("meta", "{}")) for id, f in store.items()
                 }
 
     def load(self, id):
-        with self._engine._read():
-            with self._engine._handle("r") as root:
+        with self._engine._read(), self._engine._handle("r") as root:
                 ds = root[f"{self._path}/{id}"]
                 data = ds[()]
                 if encoding := ds.attrs.get("encoding", None):
@@ -36,8 +34,7 @@ class FileStore(Resource, IFileStore):
                 return data, json.loads(ds.attrs.get("meta", "{}"))
 
     def remove(self, id):
-        with self._engine._write():
-            with self._engine._handle("a") as root:
+        with self._engine._write(), self._engine._handle("a") as root:
                 del root[f"{self._path}/{id}"]
 
     def store(self, content, meta=None, id=None, encoding=None, overwrite=False):
@@ -46,8 +43,7 @@ class FileStore(Resource, IFileStore):
         if meta is None:
             meta = {}
         meta["mtime"] = int(time.time())
-        with self._engine._write():
-            with self._engine._handle("a") as root:
+        with self._engine._write(), self._engine._handle("a") as root:
                 store = root[self._path]
                 if isinstance(content, str):
                     if encoding is None:
@@ -71,7 +67,7 @@ class FileStore(Resource, IFileStore):
 
     def load_active_config(self):
         """
-        Load the active configuration stored inside of the storage.
+        Load the active configuration stored inside the storage.
 
         :returns: The active configuration that is loaded when this storage object is.
         :rtype: ~bsb.config.Configuration
@@ -114,21 +110,17 @@ class FileStore(Resource, IFileStore):
         return next(match, None)
 
     def has(self, id):
-        with self._engine._read():
-            with self._engine._handle("r") as root:
+        with self._engine._read(), self._engine._handle("r") as root:
                 return id in root
 
     def get_mtime(self, id):
-        with self._engine._read():
-            with self._engine._handle("r") as root:
+        with self._engine._read(), self._engine._handle("r") as root:
                 return root[self._path][id].attrs["mtime"]
 
     def get_encoding(self, id):
-        with self._engine._read():
-            with self._engine._handle("r") as root:
+        with self._engine._read(), self._engine._handle("r") as root:
                 return root[self._path][id].attrs.get("encoding", None)
 
     def get_meta(self, id):
-        with self._engine._read():
-            with self._engine._handle("r") as root:
+        with self._engine._read(), self._engine._handle("r") as root:
                 return json.loads(root[self._path][id].attrs.get("meta", "{}"))

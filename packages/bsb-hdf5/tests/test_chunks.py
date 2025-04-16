@@ -33,7 +33,7 @@ class TestChunks(
     # basic chunk properties. For example uses `.place` directly.
     def test_single_chunk(self):
         # Test that specifying a single chunk only reads the data from that chunk
-        cfg = get_test_config("single")
+        _cfg = get_test_config("single")
         self.network = network = Scaffold(
             get_test_config("single"), self.storage, clear=True
         )

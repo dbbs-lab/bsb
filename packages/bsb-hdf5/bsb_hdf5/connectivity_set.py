@@ -244,12 +244,8 @@ class ConnectivitySet(Resource, IConnectivitySet):
         chunks = [Chunk(t, (0, 0, 0)) for t in group.attrs["chunk_list"]]
         iptr = group.attrs[str(chunk.id)]
         idx = chunks.index(chunk)
-        if idx + 1 == len(chunks):
-            # Last chunk, no end pointer
-            eptr = None
-        else:
-            # Get the pointer of the next chunk
-            eptr = group.attrs[str(chunks[idx + 1].id)]
+        # Get the pointer of the next chunk or None if last chunk
+        eptr = None if idx + 1 == len(chunks) else group.attrs[str(chunks[idx + 1].id)]
         return iptr, eptr
 
     @handles_handles("a")
@@ -316,7 +312,7 @@ class ConnectivitySet(Resource, IConnectivitySet):
     @handles_handles("r")
     def get_local_chunks(self, direction, handle=HANDLED):
         return chunklist(
-            Chunk.from_id(int(k), None) for k in handle[self._path][direction].keys()
+            Chunk.from_id(int(k), None) for k in handle[self._path][direction]
         )
 
     @handles_handles("r")
@@ -384,8 +380,8 @@ class ConnectivitySet(Resource, IConnectivitySet):
         :type global_: Union[~bsb.storage._chunks.Chunk, list[~bsb.storage._chunks.Chunk]]
         :returns: Yields the direction, local chunk, global chunk, and data. The data is a
           tuple of the local and global connection locations.
-        :rtype: Tuple[str, ~bsb.storage._chunks.Chunk, ~bsb.storage._chunks.Chunk,
-          Tuple[numpy.ndarray, numpy.ndarray]]
+        :rtype: tuple[str, ~bsb.storage._chunks.Chunk, ~bsb.storage._chunks.Chunk,
+          tuple[numpy.ndarray, numpy.ndarray]]
         """
         itr = CSIterator(self, direction, local_, global_)
         for direction in get_dir_iter(direction):

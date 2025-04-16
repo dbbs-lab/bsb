@@ -11,10 +11,7 @@ from bsb import (
     MorphologySet,
 )
 from bsb import PlacementSet as IPlacementSet
-from bsb import (
-    RotationSet,
-    config,
-)
+from bsb import RotationSet, config
 from bsb._encoding import EncodedLabels
 
 from .chunks import ChunkedCollection, ChunkedProperty, ChunkLoader

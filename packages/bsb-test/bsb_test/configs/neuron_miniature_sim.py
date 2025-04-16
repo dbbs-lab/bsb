@@ -48,9 +48,21 @@ tree = {
             "temperature": 32,
             "resolution": 0.025,
             "cell_models": {
-                "golgi_cell": {"model": "dbbs_models.GolgiCell", "record_soma": True, "record_spikes": True},
-                "purkinje_cell": {"model": "dbbs_models.PurkinjeCell", "record_soma": True, "record_spikes": True},
-                "stellate_cell": {"model": "dbbs_models.StellateCell", "record_soma": True, "record_spikes": True},
+                "golgi_cell": {
+                    "model": "dbbs_models.GolgiCell",
+                    "record_soma": True,
+                    "record_spikes": True,
+                },
+                "purkinje_cell": {
+                    "model": "dbbs_models.PurkinjeCell",
+                    "record_soma": True,
+                    "record_spikes": True,
+                },
+                "stellate_cell": {
+                    "model": "dbbs_models.StellateCell",
+                    "record_soma": True,
+                    "record_spikes": True,
+                },
             },
             "connection_models": {
                 "gap_goc": {"synapses": ["gap"], "source": "vgap"},
@@ -67,7 +79,13 @@ tree = {
                     "synapses": ["AMPA_AA", "NMDA"],
                     "section_count": 5,
                     "record": True,
-                    "parameters": {"noise": False, "start": 100, "interval": 5, "number": 20, "sd": 5},
+                    "parameters": {
+                        "noise": False,
+                        "start": 100,
+                        "interval": 5,
+                        "number": 20,
+                        "sd": 5,
+                    },
                 },
                 "noisy_spike_generator": {
                     "io": "input",
@@ -79,7 +97,13 @@ tree = {
                     "synapses": ["AMPA_AA", "NMDA"],
                     "section_count": 5,
                     "record": True,
-                    "parameters": {"noise": True, "start": 100, "interval": 5, "number": 20, "sd": 5},
+                    "parameters": {
+                        "noise": True,
+                        "start": 100,
+                        "interval": 5,
+                        "number": 20,
+                        "sd": 5,
+                    },
                 },
                 "fixed_spike_generator": {
                     "io": "input",

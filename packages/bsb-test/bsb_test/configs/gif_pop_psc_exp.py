@@ -43,7 +43,12 @@ tree = {
                     },
                 }
             },
-            "connection_models": {"gif_pop_psc_exp": {"rule": "all_to_all", "synapse": {"weight": -6.25, "delay": 1}}},
+            "connection_models": {
+                "gif_pop_psc_exp": {
+                    "rule": "all_to_all",
+                    "synapse": {"weight": -6.25, "delay": 1},
+                }
+            },
             "devices": {},
         }
     },

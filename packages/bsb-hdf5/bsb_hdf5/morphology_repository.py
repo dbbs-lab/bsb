@@ -139,7 +139,7 @@ class MorphologyRepository(Resource, IMorphologyRepository):
                 labels[ptr:nptr],
                 {k: v[ptr:nptr] for k, v in props.items()},
             )
-            parent = parents.get(p, None)
+            parent = parents.get(p)
             parents[next(branch_id)] = branch
             if parent:
                 parent.attach_child(branch)

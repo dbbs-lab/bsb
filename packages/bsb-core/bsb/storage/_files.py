@@ -353,7 +353,7 @@ class NeuroMorphoScheme(UrlScheme):
 
 
 @_ft.cache
-def _get_schemes() -> _tp.Mapping[str, typing.Type[FileScheme]]:
+def _get_schemes() -> _tp.Mapping[str, type[FileScheme]]:
     from ..plugins import discover
 
     schemes = discover("storage.schemes")

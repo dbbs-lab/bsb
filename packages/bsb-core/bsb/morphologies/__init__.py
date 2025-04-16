@@ -40,9 +40,9 @@ class MorphologySet:
     def __init__(self, loaders, m_indices=None, /, labels=None):
         """
         :param loaders: list of Morphology loader functions.
-        :type loaders: List[Callable[[], bsb.storage.interfaces.StoredMorphology]]
+        :type loaders: list[Callable[[], bsb.storage.interfaces.StoredMorphology]]
         :param m_indices: indices of the loaders for each of the morphologies.
-        :type: List[int]
+        :type: list[int]
         """
         if m_indices is None:
             loaders, m_indices = np.unique(loaders, return_inverse=True)
@@ -424,8 +424,7 @@ class SubTree:
         """
         Return a depth-first flattened array of all or the selected branches.
 
-        :param labels: Names of the labels to select.
-        :type labels: list
+        :param list labels: Names of the labels to select.
         :returns: List of all branches, or the ones fully labelled with any of
           the given labels.
         :rtype: list
@@ -541,7 +540,7 @@ class SubTree:
         If the center is not provided, the Subtree will rotate from [0, 0, 0].
 
         :param rotation: Scipy rotation
-        :type rotation: Union[scipy.spatial.transform.Rotation, List[float,float,float]]
+        :type rotation: Union[scipy.spatial.transform.Rotation, list[float,float,float]]
         :param center: rotation offset point.
         :type center: numpy.ndarray
         """
@@ -1049,11 +1048,11 @@ class Branch:
         :param radii: Array of radii associated to each point
         :type radii: list | numpy.ndarray
         :param labels: Array of labels to associate to each point
-        :type labels: List[str] | set | numpy.ndarray
+        :type labels: list[str] | set | numpy.ndarray
         :param properties: dictionary of per-point data to store in the branch
         :type properties: dict
         :param children: list of child branches to attach to the branch
-        :type children: List[bsb.morphologies.Branch]
+        :type children: list[bsb.morphologies.Branch]
         :raises bsb.exceptions.MorphologyError: if a property of the branch does not have the same
             size as its points
         """
@@ -1353,7 +1352,7 @@ class Branch:
         Add labels to the branch.
 
         :param labels: Label(s) for the branch
-        :type labels: List[str]
+        :type labels: list[str]
         :param points: An integer or boolean mask to select the points to label.
         """
         if points is None:
@@ -1474,7 +1473,7 @@ class Branch:
         Check if this branch contains any points labelled with any of the given labels.
 
         :param labels: The labels to check for.
-        :type labels: List[str]
+        :type labels: list[str]
         :rtype: bool
         """
         return self.labels.contains(labels)
@@ -1484,9 +1483,9 @@ class Branch:
         Filter out all points with certain labels
 
         :param labels: The labels to check for.
-        :type labels: List[str] | numpy.ndarray[str]
+        :type labels: list[str] | numpy.ndarray[str]
         :returns: All points with the labels.
-        :rtype: List[numpy.ndarray]
+        :rtype: list[numpy.ndarray]
         """
         return self.points[self.get_label_mask(labels)]
 
@@ -1495,9 +1494,9 @@ class Branch:
         Return a mask for the specified labels
 
         :param labels: The labels to check for.
-        :type labels: List[str] | numpy.ndarray[str]
+        :type labels: list[str] | numpy.ndarray[str]
         :returns: A boolean mask that selects out the points that match the label.
-        :rtype: List[numpy.ndarray]
+        :rtype: list[numpy.ndarray]
         """
         return self.labels.get_mask(labels)
 
@@ -1512,7 +1511,7 @@ class Branch:
         :param index: Index of the new point.
         :type index: int
         :param position: Coordinates of the new point
-        :type position: List[float]
+        :type position: list[float]
         :param radius: The radius to assign to the point.
         :type radius: float
         :param labels: The labels to assign to the point.

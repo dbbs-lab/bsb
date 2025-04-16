@@ -78,8 +78,6 @@ class Neighbourhood:
 
     def get_overlap(self):
         overlap = 0
-        neighbours = self.neighbours
-        n_neighbours = len(neighbours)
         for partner in self.partners:
             for neighbour in self.neighbours:
                 if partner.id == neighbour.id:
@@ -93,7 +91,6 @@ class Neighbourhood:
         return overlap
 
     def colliding(self):
-        neighbours = self.neighbours
         for partner in self.partners:
             for neighbour in self.neighbours:
                 if partner.id == neighbour.id:
@@ -127,10 +124,10 @@ class VolumeFiller:
         Fill a list of voxels with Particles.
 
         :param bsb.voxels.VoxelSet voxels: List of voxels in which to place the particles.
-        :param List[dict] particles: List of dictionary for each particle to place.
+        :param list[dict] particles: List of dictionary for each particle to place.
             Each dictionary needs to contain the "name" (str), "radius" (float) of particle.
-            It should also store the "count" of particle (int | List[int]) either in total or
-            for each voxel and "voxels" (List[int]) which gives in which voxel the placement will
+            It should also store the "count" of particle (int | list[int]) either in total or
+            for each voxel and "voxels" (list[int]) which gives in which voxel the placement will
             append.
         :param bool check_pack: If True, will check the packing factor before placing particles in
             the voxels.
@@ -179,7 +176,6 @@ class VolumeFiller:
         # Reset particles
         self.particles = []
         for particle_type in self.particle_types:
-            radius = particle_type["radius"]
             count = particle_type["count"]
             if count.size == 1:
                 self._fill_global(particle_type)
@@ -242,7 +238,7 @@ class VolumeFiller:
         Calculate the packing factor of the volume where particles will be placed.
         It corresponds to the ratio of the sum of the particles' volume over the volume itself.
 
-        :param List[bsb.placement.particle.Particle] | None particles: List of Particle to place.
+        :param list[bsb.placement.particle.Particle] | None particles: List of Particle to place.
             If None, it will use the ParticleSystem particle_types list.
         :param float | None volume: Size of the volume in which the particles will be placed.
             If None, it will use the total volume of the voxels of the ParticleSystem.

@@ -7,6 +7,7 @@ config.attr/dict/list/ref/reflist`` to populate your classes with powerful attri
 """
 
 import builtins
+import contextlib
 import functools
 import glob
 import itertools
@@ -68,10 +69,7 @@ def get_config_path():
     import os
 
     env_paths = os.environ.get("BSB_CONFIG_PATH", None)
-    if env_paths is None:
-        env_paths = ()
-    else:
-        env_paths = env_paths.split(":")
+    env_paths = () if env_paths is None else env_paths.split(":")
     plugin_paths = plugins.discover("config.templates")
     return [*itertools.chain((os.getcwd(),), env_paths, *plugin_paths.values())]
 
@@ -82,7 +80,7 @@ def get_configuration_template(template, path=None):
 
     :param str template: name of the configuration template
     :param list path: list of paths to search for configuration templates
-    :rtype: List[str]
+    :rtype: list[str]
     """
     path = [
         *map(
@@ -192,10 +190,8 @@ def parse_configuration_file(file, parser=None, path=None, **kwargs):
     """
     if hasattr(file, "read"):
         data = file.read()
-        try:
+        with contextlib.suppress(TypeError):
             path = str(path) or os.fspath(file)
-        except TypeError:
-            pass
     else:
         file = os.path.abspath(file)
         path = path or file

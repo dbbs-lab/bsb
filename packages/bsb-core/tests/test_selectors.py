@@ -120,7 +120,7 @@ class TestSelectors(RandomStorageFixture, unittest.TestCase, engine_name="hdf5")
             )
         )
         cfg = Configuration.default(cell_types={"ct": ct})
-        s = Scaffold(cfg, self.storage)
+        Scaffold(cfg, self.storage)
         with self.assertRaises(SelectorError, msg="doesnt exist, should error"):
             err = None
             try:

@@ -135,7 +135,7 @@ class PlacementStrategy(abc.ABC, HasDependencies):
             np.concatenate([p.to_chunks(chunk_size) for p in self.partitions]), axis=0
         )
         for chunk in chunks:
-            job = pool.queue_placement(self, Chunk(chunk, chunk_size), deps=deps)
+            _job = pool.queue_placement(self, Chunk(chunk, chunk_size), deps=deps)
 
     def is_entities(self):
         return "entities" in self.__class__.__dict__ and self.__class__.entities

@@ -358,7 +358,7 @@ class TestMorphologies(NumpyTestCase, unittest.TestCase):
         )
         with self.assertRaises(
             ValueError, msg="It should throw a ValueError"
-        ) as context:
+        ) as _context:
             m_epsilon_0.simplify(epsilon=-1)
 
     def test_adjacency(self):
@@ -486,7 +486,7 @@ class TestMorphologyLabels(NumpyTestCase, unittest.TestCase):
         b3.label(["ello"], [1])
         self.assertTrue(b3.contains_labels(["ello"]))
         m = Morphology([b, b2, b3])
-        bs = m.subtree(["ello"]).branches
+        _bs = m.subtree(["ello"]).branches
         self.assertEqual([b, b3, b4], m.subtree(["ello"]).branches)
         self.assertEqual(len(b), len(b.get_points_labelled(["ello"])))
         self.assertEqual(1, len(b3.get_points_labelled(["ello"])))
@@ -722,7 +722,7 @@ class TestMorphologySet(NumpyTestCase, unittest.TestCase):
             all((d := c if d is None else d) is d for c in cached),
             "hard cache should return identical objects",
         )
-        uncached = self.sets[1].iter_morphologies()
+        _uncached = self.sets[1].iter_morphologies()
         d = None
         self.assertTrue(
             all((d := c if d is None else d) is d for c in list(cached)[1:]),
@@ -1300,7 +1300,7 @@ class TestMorphologyParsers(unittest.TestCase):
 
     def test_parse_mio__wrong_flags(self):
         with self.assertRaises(CastError):
-            m_mio = parse_morphology_file(
+            _m_mio = parse_morphology_file(
                 get_morphology_path("soma_boundary.swc"),
                 parser="morphio",
                 flags=["no_duplicates", "no_love"],

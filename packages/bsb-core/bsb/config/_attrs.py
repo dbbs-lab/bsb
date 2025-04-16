@@ -3,6 +3,7 @@ An attrs-inspired class annotation system, but my A stands for amateuristic.
 """
 
 import builtins
+import contextlib
 from functools import wraps
 
 import errr
@@ -402,10 +403,8 @@ def _boot_nodes(top_node, scaffold):
 
 def _unset_nodes(top_node):
     for node in walk_nodes(top_node):
-        try:
+        with contextlib.suppress(Exception):
             del node.scaffold
-        except Exception:
-            pass
         node._config_parent = None
         node._config_key = None
         if hasattr(node, "_config_index"):
@@ -624,10 +623,8 @@ class cfglist(builtins.list):
     def _preset(self, index, item):
         try:
             item = self._elem_type(item, _parent=self, _key=index)
-            try:
+            with contextlib.suppress(Exception):
                 item._config_index = index
-            except Exception:
-                pass
             return item
         except (RequirementError, CastError) as e:
             e.args = (

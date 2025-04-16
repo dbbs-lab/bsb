@@ -1,5 +1,6 @@
 import abc
 import concurrent
+import contextlib
 import re
 import tempfile
 import typing
@@ -108,13 +109,11 @@ class NeuroMorphoSelector(NameSelector, classmap_entry="from_neuromorpho"):
         # Weak DH key on neuromorpho.org
         # https://stackoverflow.com/questions/38015537/python-requests-exceptions-sslerror-dh-key-too-small
         requests.packages.urllib3.util.ssl_.DEFAULT_CIPHERS += ":HIGH:!DH:!aNULL"
-        try:
+        # Pass if no pyopenssl support used / needed / available
+        with contextlib.suppress(AttributeError):
             requests.packages.urllib3.contrib.pyopenssl.util.ssl_.DEFAULT_CIPHERS += (
                 ":HIGH:!DH:!aNULL"
             )
-        except AttributeError:
-            # no pyopenssl support used / needed / available
-            pass
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             with ThreadPoolExecutor() as executor:

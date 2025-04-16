@@ -296,7 +296,7 @@ class TestVoxelSet(bsb_test.NumpyTestCase, unittest.TestCase):
         vs = morpho.voxelize(16)
         self.assertLess(0, len(vs), "Empty voxelset from non empty morpho")
         self.assertClose(0, vs.get_raw(copy=False)[:, 2], "Flat morphology not flat VS")
-        data = vs.get_data()
+        _data = vs.get_data()
         vs = VoxelSet.from_morphology(morpho, 16, with_data=False)
         self.assertLess(0, len(vs), "Empty voxelset from non empty morpho")
         self.assertClose(0, vs.get_raw(copy=False)[:, 2], "Flat morphology not flat VS")
@@ -309,7 +309,7 @@ class TestVoxelSet(bsb_test.NumpyTestCase, unittest.TestCase):
         morpho = Morphology(branches)
         vs = morpho.voxelize(16)
         self.assertLess(0, len(vs), "Empty voxelset from non empty morpho")
-        data = vs.get_data()
+        _data = vs.get_data()
         vs = VoxelSet.from_morphology(morpho, 16, with_data=False)
         self.assertLess(0, len(vs), "Empty voxelset from non empty morpho")
 
@@ -426,7 +426,7 @@ class TestVoxelSet(bsb_test.NumpyTestCase, unittest.TestCase):
         self.assertEqual([1, 1], list(vs.get_data(0)))
 
     def test_index(self):
-        for label, set in self.all.items():
+        for _label, set in self.all.items():
             vs = set[0:0]
             self.assertTrue(vs.is_empty, "Empty selection should be empty set")
             with self.assertRaises(IndexError):
@@ -461,7 +461,7 @@ class TestVoxelSet(bsb_test.NumpyTestCase, unittest.TestCase):
                 )
 
     def test_concatenate(self):
-        for i in range(1000):
+        for _ in range(1000):
             choices = random.choices(list(self.all.items()), k=random.randint(0, 5))
             labels = [lbl for lbl, set_ in choices]
             sets = [set_ for lbl, set_ in choices]
@@ -470,7 +470,7 @@ class TestVoxelSet(bsb_test.NumpyTestCase, unittest.TestCase):
                 self.assertEqual(sum(len(s) for s in sets), len(vs))
 
     def test_concatenate_wdata(self):
-        for i in range(1000):
+        for _ in range(1000):
             choices = random.choices(
                 list(self.data_dict.items()), k=random.randint(0, 5)
             )
@@ -498,7 +498,10 @@ class TestVoxelSet(bsb_test.NumpyTestCase, unittest.TestCase):
         self.assertEqual(
             ["0", "1", "2", "a", "b"], cat._data.keys, "should add unnumbered cols"
         )
-        self.assertTrue(np.all(cat._data[3:, :3] == None), "unum cols should be first")
+        self.assertTrue(
+            np.all(cat._data[3:, :3] == None),  # noqa: E711
+            "unum cols should be first"
+        )
 
     def test_concatenate_partial_same_datakeys(self):
         vs1 = self.data_keys[0]
@@ -506,11 +509,11 @@ class TestVoxelSet(bsb_test.NumpyTestCase, unittest.TestCase):
         p = VoxelSet.concatenate(vs1, vs2)
         self.assertEqual((6, 3), p._data.shape, "Overlapping cols not together")
         # `ab + bc` should be merged to `abc` with Nones in the corners.
-        self.assertTrue(np.all(p._data[:3, 0] != None))
-        self.assertTrue(np.all(p._data[3:, 0] == None))
-        self.assertTrue(np.all(p._data[:, 1] != None))
-        self.assertTrue(np.all(p._data[3:, 2] != None))
-        self.assertTrue(np.all(p._data[:3, 2] == None))
+        self.assertTrue(np.all(p._data[:3, 0] != None))  # noqa: E711
+        self.assertTrue(np.all(p._data[3:, 0] == None))  # noqa: E711
+        self.assertTrue(np.all(p._data[:, 1] != None))  # noqa: E711
+        self.assertTrue(np.all(p._data[3:, 2] != None))  # noqa: E711
+        self.assertTrue(np.all(p._data[:3, 2] == None))  # noqa: E711
 
     def test_concatenate_with_and_without_datakeys(self):
         vs1 = self.data_keys[0]

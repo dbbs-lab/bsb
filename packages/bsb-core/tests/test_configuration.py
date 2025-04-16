@@ -74,7 +74,7 @@ class TestConfiguration(
     def test_unknown_attributes(self):
         tree = Configuration.default().__tree__()
         tree["shouldntexistasattr"] = 15
-        with self.assertRaises(ConfigurationError) as e:
+        with self.assertRaises(ConfigurationError) as _e:
             Configuration(tree)
 
 
@@ -774,9 +774,9 @@ class TestDynamic(unittest.TestCase):
         # Test that even if a dynamic attr is required on the parent, we can directly
         # construct the child. This has to be so because the chosen child class already
         # explicitly satisfies the dynamic requirement.
-        direct_child = DynamicChildNotRequired()
+        _direct_child = DynamicChildNotRequired()
         # Undecorated child classes are not endorsed, but just in case.
-        undecorated_direct_child = UndecoratedChildNotRequired()
+        _undecorated_direct_child = UndecoratedChildNotRequired()
 
 
 @config.dynamic(

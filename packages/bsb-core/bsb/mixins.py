@@ -39,7 +39,7 @@ def _queue_connectivity(self, pool: "JobPool"):
     # Schedule all chunks in 1 job
     pre_chunks = _all_chunks(self.presynaptic.cell_types)
     post_chunks = _all_chunks(self.postsynaptic.cell_types)
-    job = pool.queue_connectivity(self, pre_chunks, post_chunks, deps=deps)
+    _job = pool.queue_connectivity(self, pre_chunks, post_chunks, deps=deps)
 
 
 def _raise_na(*args, **kwargs):

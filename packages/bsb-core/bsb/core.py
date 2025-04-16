@@ -111,14 +111,14 @@ class Scaffold:
     """
 
     network: "Network"
-    regions: typing.Dict[str, "Region"]
-    partitions: typing.Dict[str, "Partition"]
-    cell_types: typing.Dict[str, "CellType"]
-    placement: typing.Dict[str, "PlacementStrategy"]
-    after_placement: typing.Dict[str, "AfterPlacementHook"]
-    connectivity: typing.Dict[str, "ConnectionStrategy"]
-    after_connectivity: typing.Dict[str, "AfterConnectivityHook"]
-    simulations: typing.Dict[str, "Simulation"]
+    regions: dict[str, "Region"]
+    partitions: dict[str, "Partition"]
+    cell_types: dict[str, "CellType"]
+    placement: dict[str, "PlacementStrategy"]
+    after_placement: dict[str, "AfterPlacementHook"]
+    connectivity: dict[str, "ConnectionStrategy"]
+    after_connectivity: dict[str, "AfterConnectivityHook"]
+    simulations: dict[str, "Simulation"]
 
     def __init__(self, config=None, storage=None, clear=False, comm=None):
         """
@@ -362,14 +362,10 @@ class Scaffold:
         Run reconstruction steps in the scaffold sequence to obtain a full network.
         """
         existed = self.storage.preexisted
-        if skip_placement:
-            p_strats = []
-        else:
-            p_strats = self.get_placement(skip=skip, only=only)
-        if skip_connectivity:
-            c_strats = []
-        else:
-            c_strats = self.get_connectivity(skip=skip, only=only)
+        p_strats = [] if skip_placement else self.get_placement(skip=skip, only=only)
+        c_strats = (
+            [] if skip_connectivity else self.get_connectivity(skip=skip, only=only)
+        )
         todo_list_str = ", ".join(s.name for s in itertools.chain(p_strats, c_strats))
         report(f"Compiling the following strategies: {todo_list_str}", level=2)
         if _bad_flag(clear) or _bad_flag(redo) or _bad_flag(append):
@@ -530,7 +526,7 @@ class Scaffold:
 
     def get_placement(
         self, cell_types=None, skip=None, only=None
-    ) -> typing.List["PlacementStrategy"]:
+    ) -> list["PlacementStrategy"]:
         if cell_types is not None:
             cell_types = [
                 self.cell_types[ct] if isinstance(ct, str) else ct for ct in cell_types
@@ -575,11 +571,11 @@ class Scaffold:
             type, chunks=chunks, labels=labels, morphology_labels=morphology_labels
         )
 
-    def get_placement_sets(self) -> typing.List["PlacementSet"]:
+    def get_placement_sets(self) -> list["PlacementSet"]:
         """
         Return all the placement sets present in the network.
 
-        :rtype: List[~bsb.storage.interfaces.PlacementSet]
+        :rtype: list[~bsb.storage.interfaces.PlacementSet]
         """
         return [cell_type.get_placement_set() for cell_type in self.cell_types.values()]
 
@@ -594,8 +590,8 @@ class Scaffold:
 
         :param bsb.storage.interfaces.PlacementSet pre_set: presynaptic placement set
         :param bsb.storage.interfaces.PlacementSet post_set: postsynaptic placement set
-        :param List[List[int, int, int]] src_locs: list of the presynaptic `connection location`.
-        :param List[List[int, int, int]] dest_locs: list of the postsynaptic `connection location`.
+        :param list[list[int, int, int]] src_locs: list of the presynaptic `connection location`.
+        :param list[list[int, int, int]] dest_locs: list of the postsynaptic `connection location`.
         :param str name: Name to give to the `ConnectivitySet`
         """
         cs = self.require_connectivity_set(pre_set.cell_type, post_set.cell_type, name)
@@ -603,7 +599,7 @@ class Scaffold:
 
     def get_connectivity(
         self, anywhere=None, presynaptic=None, postsynaptic=None, skip=None, only=None
-    ) -> typing.List["ConnectivitySet"]:
+    ) -> list["ConnectivitySet"]:
         conntype_filtered = self._connectivity_query(
             any_query=set(self._sanitize_ct(anywhere)),
             pre_query=set(self._sanitize_ct(presynaptic)),
@@ -616,12 +612,12 @@ class Scaffold:
             and (skip is None or ct.name not in skip)
         ]
 
-    def get_connectivity_sets(self) -> typing.List["ConnectivitySet"]:
+    def get_connectivity_sets(self) -> list["ConnectivitySet"]:
         """
         Return all connectivity sets from the output formatter.
 
         :returns: All connectivity sets
-        :rtype: List[:class:`~.storage.interfaces.ConnectivitySet`]
+        :rtype: list[:class:`~.storage.interfaces.ConnectivitySet`]
         """
         return [self._load_cs_types(cs) for cs in self.storage.get_connectivity_sets()]
 
@@ -654,7 +650,7 @@ class Scaffold:
                 )
         return self._load_cs_types(self.storage.get_connectivity_set(tag), pre, post)
 
-    def get_cell_types(self) -> typing.List["CellType"]:
+    def get_cell_types(self) -> list["CellType"]:
         """
         Return a list of all cell types in the network.
         """

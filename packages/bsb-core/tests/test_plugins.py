@@ -17,4 +17,4 @@ class TestComponentPlugins(unittest.TestCase):
         {"bsb.placement.strategy.PlacementStrategy": {"__a__": A}},
     )
     def test_classmap_dict(self):
-        a = PlacementStrategy(strategy="__a__", cell_types=[], partitions=[])
+        _a = PlacementStrategy(strategy="__a__", cell_types=[], partitions=[])

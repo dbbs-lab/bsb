@@ -89,7 +89,7 @@ class TestUriSchemes(RandomStorageFixture, unittest.TestCase, engine_name="fs"):
                 "nm://AX2_scaled",
                 Scaffold(storage=self.storage).files,
             )
-            with self.assertWarns(UserWarning) as w:
+            with self.assertWarns(UserWarning) as _w:
                 file.get_meta()
         finally:
             NeuroMorphoScheme._nm_url = url

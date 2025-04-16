@@ -53,7 +53,7 @@ class DistributionPlacement(PlacementStrategy):
 
     def place(self, chunk, indicators):
         # For each placement indicator
-        for name_indic, indicator in indicators.items():
+        for _name_indic, indicator in indicators.items():
             # Prepare an array to store positions
             all_positions = np.empty((0, 3))
             # For each partitions

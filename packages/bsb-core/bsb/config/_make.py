@@ -181,10 +181,7 @@ def compile_isc(node_cls, dynamic_config):
     def dud(*args, **kwargs):
         pass
 
-    if overrides(node_cls, "__init_subclass__"):
-        f = node_cls.__init_subclass__
-    else:
-        f = dud
+    f = node_cls.__init_subclass__ if overrides(node_cls, "__init_subclass__") else dud
 
     def __init_subclass__(cls, classmap_entry=MISSING, **kwargs):
         super(node_cls, cls).__init_subclass__(**kwargs)
@@ -592,10 +589,7 @@ def make_tree(node_cls):
         for name in instance._config_attr_order:
             if name in attrs:
                 attr = attrs[name]
-                if attr.is_dirty(instance):
-                    value = attr.tree(instance)
-                else:
-                    value = None
+                value = attr.tree(instance) if attr.is_dirty(instance) else None
             else:
                 for catcher in catch_attrs:
                     if catcher.contains(instance, name):
@@ -620,7 +614,7 @@ def make_copyable(node_cls):
 
 def walk_node_attributes(node):
     """
-    Walk over all of the child configuration nodes and attributes of ``node``.
+    Walk over all the child configuration nodes and attributes of ``node``.
 
     :returns: attribute, node, parents
     :rtype: Tuple[:class:`~.config.ConfigurationAttribute`, Any, Tuple]

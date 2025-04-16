@@ -101,7 +101,7 @@ class Chunk(np.ndarray):
         )
 
 
-def chunklist(chunks) -> typing.List[Chunk]:
+def chunklist(chunks) -> list[Chunk]:
     """
     Convert an iterable of chunk like objects to a sorted unique chunklist
     """

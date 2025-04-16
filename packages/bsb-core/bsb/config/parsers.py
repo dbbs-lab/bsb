@@ -104,10 +104,7 @@ class ParsesReferences:
     @staticmethod
     def _get_absolute_ref(node, ref):
         ref = ref.split("#")[-1]
-        if ref.startswith("/"):
-            path = ref
-        else:
-            path = os.path.join(node.location(), ref)
+        path = ref if ref.startswith("/") else os.path.join(node.location(), ref)
         return os.path.normpath(path).replace(os.path.sep, "/")
 
     def _store_reference(self, node, ref):

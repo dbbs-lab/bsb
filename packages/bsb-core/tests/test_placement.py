@@ -395,7 +395,7 @@ class TestPlacementStrategies(
 
     def test_wrong_angles(self):
         cfg = get_test_config("single")
-        network = Scaffold(cfg, self.storage)
+        _scaffold = Scaffold(cfg, self.storage)
         with self.assertRaises(BootError):
             cfg.placement["test_placement"] = dict(
                 strategy="bsb.placement.ParallelArrayPlacement",

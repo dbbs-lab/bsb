@@ -475,7 +475,7 @@ class PlacementSet(Interface):
         Clear (some chunks of) the placement set.
 
         :param chunks: If given, the specific chunks to clear.
-        :type chunks: List[bsb.storage._chunks.Chunk]
+        :type chunks: list[bsb.storage._chunks.Chunk]
         """
         pass
 
@@ -485,7 +485,7 @@ class PlacementSet(Interface):
         Get all the chunks that exist in the placement set.
 
         :returns: List of existing chunks.
-        :rtype: List[bsb.storage._chunks.Chunk]
+        :rtype: list[bsb.storage._chunks.Chunk]
         """
         pass
 
@@ -564,7 +564,7 @@ class PlacementSet(Interface):
         :type morphologies: ~bsb.morphologies.MorphologySet
         :param additional: Additional datasets with 1 value per cell, will be stored
           under its key in the dictionary
-        :type additional: Dict[str, numpy.ndarray]
+        :type additional: dict[str, numpy.ndarray]
         :param count: Amount of entities to place. Excludes the use of any positional,
           rotational or morphological data.
         :type count: int
@@ -691,10 +691,7 @@ class PlacementSet(Interface):
         :rtype: Iterator[Tuple[float, float, float, float, float, float]]
         :raises: DatasetNotFoundError if no morphologies are found.
         """
-        if morpho_cache is None:
-            mset = self.load_morphologies()
-        else:
-            mset = morpho_cache
+        mset = self.load_morphologies() if morpho_cache is None else morpho_cache
         expansion = [*zip([0] * 4 + [1] * 4, ([0] * 2 + [1] * 2) * 2, [0, 1] * 4)]
 
         def _box_of(m, o, r):
@@ -755,7 +752,7 @@ class MorphologyRepository(Interface, engine_key="morphologies"):
         Fetch all the stored morphologies.
 
         :returns: List of the stored morphologies.
-        :rtype: List[~bsb.storage.interfaces.StoredMorphology]
+        :rtype: list[~bsb.storage.interfaces.StoredMorphology]
         """
         pass
 
@@ -765,9 +762,9 @@ class MorphologyRepository(Interface, engine_key="morphologies"):
         Select stored morphologies.
 
         :param selectors: Any number of morphology selectors.
-        :type selectors: List[bsb.morphologies.selector.MorphologySelector]
+        :type selectors: list[bsb.morphologies.selector.MorphologySelector]
         :returns: All stored morphologies that match at least one selector.
-        :rtype: List[~bsb.storage.interfaces.StoredMorphology]
+        :rtype: list[~bsb.storage.interfaces.StoredMorphology]
         """
         pass
 

@@ -23,7 +23,7 @@ environment variables or project settings).
 Your ``MyOption`` will also be available on all CLI commands as ``--my_setting`` and will
 be read from the ``MY_SETTING`` environment variable.
 """
-
+import contextlib
 import functools
 
 from ._options import ProfilingOption, VerbosityOption
@@ -139,10 +139,8 @@ def unregister_option(option):
                 section = section[slug]
             else:
                 return
-        try:
+        with contextlib.suppress(KeyError):
             del section[path[-1]]
-        except KeyError:
-            pass
 
 
 def _register_project_option(option):  # pragma: nocover
@@ -209,24 +207,18 @@ def _remove_module_tags(*tags):  # pragma: nocover
     """
     global _module_options, _module_option_values
     for tag in tags:
-        try:
+        with contextlib.suppress(KeyError):
             del _module_options[tag]
-        except KeyError:
-            pass
-        try:
+        with contextlib.suppress(KeyError):
             del _module_option_values[tag]
-        except KeyError:
-            pass
 
 
 def reset_module_option(tag):
     global _module_option_values
     opt = _get_module_option(tag)
     # Module option values always stored under the "module tag" (= tag 0)
-    try:
+    with contextlib.suppress(KeyError):
         del _module_option_values[type(opt).script.tags[0]]
-    except KeyError:
-        pass
 
 
 def set_module_option(tag, value):

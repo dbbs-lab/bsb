@@ -18,7 +18,6 @@ from inspect import isclass
 
 from .. import plugins
 from ..exceptions import UnknownStorageEngineError
-from ..services import MPILock
 from ..services.mpi import MPIService
 
 if typing.TYPE_CHECKING:
@@ -83,9 +82,7 @@ def get_engine_support(engine_name):
 
 @functools.cache
 def get_engines():
-    return {
-        name: get_engine_support(name)["Engine"] for name in discover_engines()
-    }
+    return {name: get_engine_support(name)["Engine"] for name in discover_engines()}
 
 
 def create_engine(name, root, comm):
@@ -390,7 +387,7 @@ def open_storage(root, comm=None):
         if engine.peek_exists(root) and engine.recognizes(root, comm):
             return Storage(name, root, comm, missing_ok=False)
     else:
-        for name, engine in engines.items():
+        for engine in engines.values():
             if engine.peek_exists(root):
                 raise OSError(
                     f"Storage `{root}` not recognized as any installed format: "

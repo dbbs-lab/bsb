@@ -1,3 +1,4 @@
+import contextlib
 import os
 import pathlib
 import tempfile
@@ -103,10 +104,8 @@ class TestProjectOption(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         super().tearDownClass()
-        try:
+        with contextlib.suppress(FileNotFoundError):
             cls.proj.unlink()
-        except FileNotFoundError:
-            pass
         os.chdir(cls.old_path)
         cls.dir.cleanup()
 
@@ -117,10 +116,8 @@ class TestProjectOption(unittest.TestCase):
     def tearDown(self):
         super().tearDown()
         _pyproject_path.cache_clear()
-        try:
+        with contextlib.suppress(OSError):
             self.proj.unlink(missing_ok=True)
-        except OSError:
-            pass
 
     def create_toml(self, content=None, proj=None):
         if content is None:
@@ -213,7 +210,7 @@ class TestScriptOption(unittest.TestCase):
 
     def test_script_del(self):
         v_descr = type(self.opt["verbosity"]).script
-        preset = options.verbosity
+        _preset = options.verbosity
         self.assertFalse(v_descr.is_set(self.opt["verbosity"]), "verbosity set?")
         options.verbosity = 4
         self.assertTrue(v_descr.is_set(self.opt["verbosity"]), "verbosity not set")
@@ -230,7 +227,7 @@ class TestOptions(unittest.TestCase):
         self.opt = options.get_option_descriptors()
 
     def test_get_option(self):
-        cfg_opt = options.get_option_descriptor("config")
+        _cfg_opt = options.get_option_descriptor("config")
         with self.assertRaises(OptionError):
             options.get_option_descriptor("doesntexist")
 

@@ -151,10 +151,7 @@ def meter(f=None, *, name_f=None):
 
         if bsb.options.profiling:
             session = get_active_session()
-            if name_f:
-                name = name_f(f, args, kwargs)
-            else:
-                name = f.__name__
+            name = name_f(f, args, kwargs) if name_f else f.__name__
             with session.meter(name, args=str(args), kwargs=str(kwargs)):
                 r = f(*args, **kwargs)
             session.flush(stats=False)

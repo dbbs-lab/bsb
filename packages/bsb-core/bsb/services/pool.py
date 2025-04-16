@@ -40,6 +40,7 @@ API and subject to sudden change in the future.
 
 import abc
 import concurrent.futures
+import contextlib
 import functools
 import logging
 import pickle
@@ -572,11 +573,9 @@ class JobPool:
         del self._scaffold
 
         for listener in self._listeners:
-            try:
+            # Pass if listener is not a context manager
+            with contextlib.suppress(TypeError, AttributeError):
                 self._context.enter_context(listener)
-            except (TypeError, AttributeError):
-                # Listener is not a context manager
-                pass
         self.change_status(PoolStatus.SCHEDULING)
         return self
 

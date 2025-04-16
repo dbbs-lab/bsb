@@ -3,6 +3,7 @@ This module contains the classes required to construct options.
 """
 
 import argparse
+import contextlib
 import functools
 import os
 import pathlib
@@ -36,10 +37,8 @@ class OptionDescriptor:
         setattr(instance, f"_bsbopt_{self.slug}_value", set_value)
 
     def __delete__(self, instance):
-        try:
+        with contextlib.suppress(AttributeError):
             delattr(instance, f"_bsbopt_{self.slug}_value")
-        except AttributeError:
-            pass
 
     def is_set(self, instance):
         return hasattr(instance, f"_bsbopt_{self.slug}_value")
@@ -79,10 +78,8 @@ class EnvOptionDescriptor(OptionDescriptor, slug="env"):
 
     def __delete__(self, instance):
         for tag in self.tags:
-            try:
+            with contextlib.suppress(KeyError):
                 del os.environ[tag]
-            except KeyError:
-                pass
 
     def is_set(self, instance):
         return any(tag in os.environ for tag in self.tags)

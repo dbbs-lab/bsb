@@ -1,3 +1,4 @@
+import contextlib
 import traceback
 import typing
 
@@ -12,10 +13,8 @@ class SimulationResult:
         from neo import Block
 
         tree = simulation.__tree__()
-        try:
+        with contextlib.suppress(KeyError):
             del tree["post_prepare"]
-        except KeyError:
-            pass
         self.block = Block(name=simulation.name, config=tree)
         self.recorders = []
 

@@ -32,7 +32,7 @@ def create_topology(regions, ldc, mdc):
 
 def get_partitions(regions):
     """
-    Get all of the partitions belonging to the group of regions and their subregions.
+    Get all the partitions belonging to the group of regions and their subregions.
 
     :param regions: Any iterable of regions.
     :type regions: Iterable
@@ -53,7 +53,7 @@ def get_partitions(regions):
 
     partitions = set()
     for region in regions:
-        partitions.update(p := collect_deps(region, set()))
+        partitions.update(collect_deps(region, set()))
 
     return partitions
 
@@ -78,7 +78,7 @@ def is_region(obj):
 
 def get_root_regions(regions):
     """
-    Get all of the root regions, not belonging to any other region in the given group.
+    Get all the root regions, not belonging to any other region in the given group.
 
     :param regions: Any iterable of regions.
     :type regions: Iterable
@@ -111,4 +111,11 @@ __all__ = [
     "get_root_regions",
     "is_partition",
     "is_region",
+    "AllenStructure",
+    "Layer",
+    "NrrdVoxels",
+    "Partition",
+    "Region",
+    "RegionGroup",
+    "Stack",
 ]

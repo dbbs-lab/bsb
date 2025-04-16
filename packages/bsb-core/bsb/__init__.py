@@ -88,6 +88,10 @@ if typing.TYPE_CHECKING:
   import bsb.connectivity.detailed.shared
   import bsb.connectivity.detailed.voxel_intersection
   import bsb.connectivity.general
+  import bsb.connectivity.geometric.geometric_shapes
+  import bsb.connectivity.geometric.morphology_shape_intersection
+  import bsb.connectivity.geometric.shape_morphology_intersection
+  import bsb.connectivity.geometric.shape_shape_intersection
   import bsb.connectivity.import_
   import bsb.connectivity.strategy
   import bsb.core
@@ -171,6 +175,7 @@ CodeImportError: typing.Type["bsb.exceptions.CodeImportError"]
 CommandError: typing.Type["bsb.exceptions.CommandError"]
 CompartmentError: typing.Type["bsb.exceptions.CompartmentError"]
 CompilationError: typing.Type["bsb.exceptions.CompilationError"]
+Cone: typing.Type["bsb.connectivity.geometric.geometric_shapes.Cone"]
 ConfigTemplateNotFoundError: typing.Type["bsb.exceptions.ConfigTemplateNotFoundError"]
 Configuration: typing.Type["bsb.config.Configuration"]
 ConfigurationAttribute: typing.Type["bsb.config.ConfigurationAttribute"]
@@ -189,6 +194,8 @@ ContinuityError: typing.Type["bsb.exceptions.ContinuityError"]
 Convergence: typing.Type["bsb.connectivity.general.Convergence"]
 CsvImportConnectivity: typing.Type["bsb.connectivity.import_.CsvImportConnectivity"]
 CsvImportPlacement: typing.Type["bsb.placement.import_.CsvImportPlacement"]
+Cuboid: typing.Type["bsb.connectivity.geometric.geometric_shapes.Cuboid"]
+Cylinder: typing.Type["bsb.connectivity.geometric.geometric_shapes.Cylinder"]
 CylindricalTargetting: typing.Type["bsb.simulation.targetting.CylindricalTargetting"]
 DataNotFoundError: typing.Type["bsb.exceptions.DataNotFoundError"]
 DataNotProvidedError: typing.Type["bsb.exceptions.DataNotProvidedError"]
@@ -206,6 +213,7 @@ DryrunError: typing.Type["bsb.exceptions.DryrunError"]
 DynamicClassError: typing.Type["bsb.exceptions.DynamicClassError"]
 DynamicClassInheritanceError: typing.Type["bsb.exceptions.DynamicClassInheritanceError"]
 DynamicObjectNotFoundError: typing.Type["bsb.exceptions.DynamicObjectNotFoundError"]
+Ellipsoid: typing.Type["bsb.connectivity.geometric.geometric_shapes.Ellipsoid"]
 EmptyBranchError: typing.Type["bsb.exceptions.EmptyBranchError"]
 EmptySelectionError: typing.Type["bsb.exceptions.EmptySelectionError"]
 EmptyVoxelSetError: typing.Type["bsb.exceptions.EmptyVoxelSetError"]
@@ -226,6 +234,7 @@ FixedPositions: typing.Type["bsb.placement.strategy.FixedPositions"]
 FractionFilter: typing.Type["bsb.simulation.targetting.FractionFilter"]
 GatewayError: typing.Type["bsb.exceptions.GatewayError"]
 GeneratedMorphology: typing.Type["bsb.storage.interfaces.GeneratedMorphology"]
+GeometricShape: typing.Type["bsb.connectivity.geometric.geometric_shapes.GeometricShape"]
 HasDependencies: typing.Type["bsb.mixins.HasDependencies"]
 Hemitype: typing.Type["bsb.connectivity.strategy.Hemitype"]
 HemitypeCollection: typing.Type["bsb.connectivity.strategy.HemitypeCollection"]
@@ -270,6 +279,7 @@ MorphologyRepository: typing.Type["bsb.storage.interfaces.MorphologyRepository"]
 MorphologyRepositoryError: typing.Type["bsb.exceptions.MorphologyRepositoryError"]
 MorphologySelector: typing.Type["bsb.morphologies.selector.MorphologySelector"]
 MorphologySet: typing.Type["bsb.morphologies.MorphologySet"]
+MorphologyToShapeIntersection: typing.Type["bsb.connectivity.geometric.morphology_shape_intersection.MorphologyToShapeIntersection"]
 MorphologyWarning: typing.Type["bsb.exceptions.MorphologyWarning"]
 NameSelector: typing.Type["bsb.morphologies.selector.NameSelector"]
 NetworkDescription: typing.Type["bsb.storage.interfaces.NetworkDescription"]
@@ -291,6 +301,7 @@ PackageRequirementWarning: typing.Type["bsb.exceptions.PackageRequirementWarning
 PackingError: typing.Type["bsb.exceptions.PackingError"]
 PackingWarning: typing.Type["bsb.exceptions.PackingWarning"]
 ParallelArrayPlacement: typing.Type["bsb.placement.arrays.ParallelArrayPlacement"]
+Parallelepiped: typing.Type["bsb.connectivity.geometric.geometric_shapes.Parallelepiped"]
 Parameter: typing.Type["bsb.simulation.parameter.Parameter"]
 ParameterError: typing.Type["bsb.exceptions.ParameterError"]
 ParameterValue: typing.Type["bsb.simulation.parameter.ParameterValue"]
@@ -333,6 +344,10 @@ ScaffoldError: typing.Type["bsb.exceptions.ScaffoldError"]
 ScaffoldWarning: typing.Type["bsb.exceptions.ScaffoldWarning"]
 ScriptOptionDescriptor: typing.Type["bsb.option.ScriptOptionDescriptor"]
 SelectorError: typing.Type["bsb.exceptions.SelectorError"]
+ShapeHemitype: typing.Type["bsb.connectivity.geometric.shape_shape_intersection.ShapeHemitype"]
+ShapeToMorphologyIntersection: typing.Type["bsb.connectivity.geometric.shape_morphology_intersection.ShapeToMorphologyIntersection"]
+ShapeToShapeIntersection: typing.Type["bsb.connectivity.geometric.shape_shape_intersection.ShapeToShapeIntersection"]
+ShapesComposition: typing.Type["bsb.connectivity.geometric.geometric_shapes.ShapesComposition"]
 Simulation: typing.Type["bsb.simulation.simulation.Simulation"]
 SimulationBackendPlugin: typing.Type["bsb.simulation.SimulationBackendPlugin"]
 SimulationComponent: typing.Type["bsb.simulation.component.SimulationComponent"]
@@ -343,6 +358,7 @@ SimulationResult: typing.Type["bsb.simulation.results.SimulationResult"]
 SimulatorAdapter: typing.Type["bsb.simulation.adapter.SimulatorAdapter"]
 SomaTargetting: typing.Type["bsb.simulation.targetting.SomaTargetting"]
 SourceQualityError: typing.Type["bsb.exceptions.SourceQualityError"]
+Sphere: typing.Type["bsb.connectivity.geometric.geometric_shapes.Sphere"]
 SphericalTargetting: typing.Type["bsb.simulation.targetting.SphericalTargetting"]
 SpoofDetails: typing.Type["bsb.postprocessing.SpoofDetails"]
 Stack: typing.Type["bsb.topology.region.Stack"]
@@ -403,6 +419,7 @@ get_root_regions: "bsb.topology.get_root_regions"
 get_simulation_adapter: "bsb.simulation.get_simulation_adapter"
 handle_cli: "bsb.cli.handle_cli"
 handle_command: "bsb.cli.handle_command"
+inside_mbox: "bsb.connectivity.geometric.geometric_shapes.inside_mbox"
 is_module_option_set: "bsb.options.is_module_option_set"
 is_partition: "bsb.topology.is_partition"
 is_region: "bsb.topology.is_region"

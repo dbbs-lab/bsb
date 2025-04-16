@@ -1,3 +1,4 @@
+import contextlib
 import os
 import time
 import unittest
@@ -365,10 +366,8 @@ class TestParallelScheduler(
             job2 = pool.queue(sleep_y, (5, 0.1), deps=[job])
             job3 = pool.queue(sleep_y, (4, 0.1))
 
-            try:
+            with contextlib.suppress(WorkflowError):
                 pool.execute()
-            except WorkflowError:
-                pass
 
         if not MPI.get_rank():
             self.assertEqual(str(job2.error), "Job killed for dependency failure")
@@ -379,10 +378,10 @@ class TestParallelScheduler(
     def test_fail_fast(self):
         """Test that when a single job fails, main raises the error and further execution is aborted."""
         with self.network.create_job_pool(fail_fast=True, quiet=True) as pool:
-            job = pool.queue(sleep_fail, (4, 0.01))
-            job3 = pool.queue(sleep_y, (4, 0.01))
-            job4 = pool.queue(sleep_y, (4, 0.01))
-            job5 = pool.queue(sleep_y, (4, 0.01))
+            _job = pool.queue(sleep_fail, (4, 0.01))
+            _job3 = pool.queue(sleep_y, (4, 0.01))
+            _job4 = pool.queue(sleep_y, (4, 0.01))
+            _job5 = pool.queue(sleep_y, (4, 0.01))
 
             with self.assertRaises(WorkflowError) as workflow_errors:
                 pool.execute()

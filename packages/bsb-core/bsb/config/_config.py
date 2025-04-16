@@ -171,7 +171,6 @@ class Configuration:
         end = [start[0] + net.x, start[1] + net.y, start[2] + net.z]
         # If there are any partitions not part of the topology, add them to a group
         if unmanaged := set(self.partitions.values()) - get_partitions(regions):
-            p = "', '".join(p.name for p in unmanaged)
             r = scaffold.regions.add(
                 "__unmanaged__", RegionGroup(children=list(unmanaged))
             )

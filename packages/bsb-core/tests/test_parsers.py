@@ -221,7 +221,7 @@ class TestFileImport(unittest.TestCase):
         content = ast.literal_eval(get_content("indoc_import.txt"))
         content["imp"]["importable"] = 10
 
-        with self.assertWarns(ConfigurationWarning) as warning:
+        with self.assertWarns(ConfigurationWarning) as _warning:
             tree, meta = self.parser.parse(content)
         self.assertEqual(2, len(tree["imp"].keys()))
         self.assertIn("importable", tree["imp"])

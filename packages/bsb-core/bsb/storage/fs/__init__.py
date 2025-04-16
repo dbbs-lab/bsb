@@ -11,7 +11,7 @@ from ...services import MPILock
 from ..decorators import on_main_until
 from ..interfaces import Engine, NoopLock
 from ..interfaces import StorageNode as IStorageNode
-from .file_store import FileStore
+from .file_store import FileStore  # noqa: F401
 
 
 class FileSystemEngine(Engine):

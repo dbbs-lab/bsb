@@ -98,7 +98,7 @@ class CellType:
         Retrieve this cell type's placement data
 
         :param chunks: When given, restricts the placement data to these chunks.
-        :type chunks: List[bsb.storage._chunks.Chunk]
+        :type chunks: list[bsb.storage._chunks.Chunk]
         """
         return self.scaffold.get_placement_set(self, *args, **kwargs)
 
@@ -106,7 +106,7 @@ class CellType:
         """
         Return the list of morphologies of this cell type.
 
-        :rtype: List[~bsb.storage.interfaces.StoredMorphology]
+        :rtype: list[~bsb.storage.interfaces.StoredMorphology]
         """
         if "morphologies" not in self.spatial:
             return []

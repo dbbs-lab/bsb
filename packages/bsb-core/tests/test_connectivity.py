@@ -46,8 +46,8 @@ class TestAllToAll(
     def test_per_block(self):
         # Test that connections can be stored over chunked layout and can be loaded again.
         cs = self.network.get_connectivity_set("all_to_all")
-        for lchunk, g_itr in cs.nested_iter_connections(direction="out"):
-            for gchunk, conns in g_itr:
+        for _lchunk, g_itr in cs.nested_iter_connections(direction="out"):
+            for _gchunk, conns in g_itr:
                 ids = conns[0][:, 0]
                 self.assertEqual((625,), ids.shape, "625 local_locs per block expected")
                 u, c = np.unique(ids, return_counts=True)
@@ -471,7 +471,7 @@ class TestConnWithSubCellLabels(
         self.assertAll(sloc > -1, "expected only true conn")
         self.assertAll(dloc > -1, "expected only true conn")
         self.assertLess(100, len(cs), "Expected more connections")
-        for dir, schunk, gchunk, (sloc, gloc) in cs.flat_iter_connections("out"):
+        for _dir, schunk, _gchunk, (sloc, _gloc) in cs.flat_iter_connections("out"):
             ps = self.network.get_placement_set("test_cell", chunks=[schunk])
             mset = ps.load_morphologies()
             mids = mset.get_indices(copy=False)[sloc[:, 0]]
@@ -732,7 +732,7 @@ class TestFixedIndegree(
                     f"multi_indegree_{pre_name}_to_{post_name}"
                 )
                 _, post_locs = cs.load_connections().all()
-                ps = self.network.get_placement_set("inhibitory")
+                _ps = self.network.get_placement_set("inhibitory")
                 u, c = np.unique(post_locs[:, 0], return_counts=True)
                 this = np.zeros(len(post_ps), dtype=int)
                 this[u] = c
@@ -769,7 +769,7 @@ class TestFixedOutdegree(
                     f"multi_outdegree_{pre_name}_to_{post_name}"
                 )
                 pre_locs, _ = cs.load_connections().all()
-                ps = self.network.get_placement_set("inhibitory")
+                _ps = self.network.get_placement_set("inhibitory")
                 u, c = np.unique(pre_locs[:, 0], return_counts=True)
                 this = np.zeros(len(post_ps), dtype=int)
                 this[u] = c

@@ -91,7 +91,7 @@ class Partition(abc.ABC):
         :param chunk_size: Size per chunk (in μm). The slicing always starts at [0, 0, 0].
         :type chunk_size: numpy.ndarray
         :returns: Chunks occupied by this partition
-        :rtype: List[bsb.storage._chunks.Chunk]
+        :rtype: list[bsb.storage._chunks.Chunk]
         """
         pass
 
@@ -267,14 +267,12 @@ class Rhomboid(Partition, classmap_entry="rhomboid"):
         return []
 
     def get_layout(self, hint):
-        if self.dimensions is None:
-            dim = hint.data.mdc - hint.data.ldc
-        else:
-            dim = np.array(self.dimensions)
-        if self.origin is None:
-            orig = hint.data.ldc.copy()
-        else:
-            orig = np.array(self.origin)
+        dim = (
+            (hint.data.mdc - hint.data.ldc)
+            if self.dimensions is None
+            else np.array(self.dimensions)
+        )
+        orig = hint.data.ldc.copy() if self.origin is None else np.array(self.origin)
         return Layout(RhomboidData(orig, dim + orig), owner=self)
 
 
@@ -298,10 +296,7 @@ class Layer(Rhomboid, classmap_entry="layer"):
         axis = ["x", "y", "z"].index(self.axis)
         dim = hint.data.mdc - hint.data.ldc
         dim[axis] = self.thickness
-        if self.origin is None:
-            orig = hint.data.ldc.copy()
-        else:
-            orig = np.array(self.origin)
+        orig = hint.data.ldc.copy() if self.origin is None else np.array(self.origin)
         return Layout(RhomboidData(orig, dim + orig), owner=self)
 
     # TODO: Layer scaling
@@ -352,10 +347,7 @@ class Voxels(Partition, abc.ABC, classmap_entry=None):
         raise LayoutError("Voxelset surface calculations not supported.")
 
     def volume(self, chunk=None):
-        if chunk is not None:
-            vs = self.chunk_to_voxels(chunk)
-        else:
-            vs = self.voxelset
+        vs = self.chunk_to_voxels(chunk) if chunk is not None else self.voxelset
         return vs.volume
 
 
@@ -566,13 +558,13 @@ class AllenStructure(NrrdVoxels, classmap_entry="allen"):
         ).get_content()[0]
         try:
             return json.loads(content)["msg"]
-        except json.decoder.JSONDecodeError:
+        except json.decoder.JSONDecodeError as json_error:
             raise AllenApiError(
                 "Could not parse the Allen mouse brain region hierarchy, "
                 "most likely because the Allen API website is down. \n"
                 "Here is the content retrieved: \n"
                 f"{content}"
-            )
+            ) from json_error
 
     @classmethod
     def get_structure_mask_condition(cls, find):

@@ -65,17 +65,17 @@ class TestTopology(unittest.TestCase):
         self.assertEqual(300, r.data.height)
 
     def test_partition_chunking(self):
-        r, l = single_layer()
+        r, l_ = single_layer()
         cs = np.array([100, 100, 100])
         # Test 100x150x100 layer producing 2 100x100x100 chunks on top of eachother
-        self.assertEqual([[0, 0, 0], [0, 0, 1]], l.to_chunks(cs).tolist())
+        self.assertEqual([[0, 0, 0], [0, 0, 1]], l_.to_chunks(cs).tolist())
         # Test translation by whole chunk
-        l.data.x += cs[0]
-        self.assertEqual([[1, 0, 0], [1, 0, 1]], l.to_chunks(cs).tolist())
+        l_.data.x += cs[0]
+        self.assertEqual([[1, 0, 0], [1, 0, 1]], l_.to_chunks(cs).tolist())
         # Translate less than a chunk so that we overflow into an extra layer of x chunks
-        l.data.x += 1
+        l_.data.x += 1
         self.assertEqual(
-            [[1, 0, 0], [1, 0, 1], [2, 0, 0], [2, 0, 1]], l.to_chunks(cs).tolist()
+            [[1, 0, 0], [1, 0, 1], [2, 0, 0], [2, 0, 1]], l_.to_chunks(cs).tolist()
         )
 
 

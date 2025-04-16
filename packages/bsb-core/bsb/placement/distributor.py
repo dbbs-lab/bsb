@@ -1,7 +1,6 @@
 import abc
 import uuid
 from dataclasses import dataclass
-from typing import List
 
 import numpy as np
 from scipy.spatial.transform import Rotation
@@ -20,7 +19,7 @@ from .indicator import PlacementIndications
 @dataclass
 class DistributionContext:
     indicator: PlacementIndications
-    partitions: List[Partition]
+    partitions: list[Partition]
 
 
 @config.dynamic(attr_name="strategy", required=True)

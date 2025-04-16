@@ -76,7 +76,7 @@ class RegionalReference(Reference):
     def is_ref(self, value):
         from ..topology import Partition, Region
 
-        return isinstance(value, Region) or isinstance(value, Partition)
+        return isinstance(value, (Region, Partition))
 
 
 class PlacementReference(Reference):

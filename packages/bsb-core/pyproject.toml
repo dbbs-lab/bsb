@@ -8,7 +8,7 @@ authors = [
   { name = "Robin De Schepper", email = "robin@alexandria.sc" },
   { name = "Dimitri Rodarie", email = "dimitri.rodarie@unipv.it" }
 ]
-version = "1.0.5"
+version = "5.1.1"
 readme = "README.md"
 license = { file = "LICENSE" }
 requires-python = ">=3.9,<4"
@@ -116,7 +116,7 @@ addopts = """
 
 [tool.ruff]
 exclude = [ ".ruff_cache", ".svn", ".tox", ".venv", "dist" ]
-line-length = 88
+line-length = 90
 indent-width = 4
 
 [tool.ruff.format]
@@ -134,5 +134,5 @@ unfixable = [ ]
 
 [[tool.uv.index]]
 name = "testpypi"
-url = "https://test.pypi.org/simple/"
-publish-url = "https://test.pypi.org/legacy/"
+url = "https://pypi.org/simple/"
+publish-url = "https://pypi.org/legacy/"

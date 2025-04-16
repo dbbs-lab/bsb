@@ -186,7 +186,7 @@ class ByLabelTargetting(
             model: simdata.populations[model][
                 simdata.placement[model].get_label_mask(self.labels)
             ]
-            for model in super().get_targets(adapter, simulation, simdata).keys()
+            for model in super().get_targets(adapter, simulation, simdata)
         }
 
 
@@ -226,7 +226,7 @@ class CylindricalTargetting(
                 )
                 < self.radius**2
             ]
-            for model in super().get_targets(adapter, simulation, simdata).keys()
+            for model in super().get_targets(adapter, simulation, simdata)
         }
 
 
@@ -290,7 +290,7 @@ class SphericalTargetting(
                     < self.radius**2
                 )
             ]
-            for model in super().get_targets(adapter, simulation, simdata).keys()
+            for model in super().get_targets(adapter, simulation, simdata)
         }
 
 
@@ -319,7 +319,7 @@ class LabelTargetting(LocationTargetting, classmap_entry="label"):
         locs = [
             loc
             for loc in cell.locations.values()
-            if all(l in loc.section.labels for l in self.labels)
+            if all(l_ in loc.section.labels for l_ in self.labels)
         ]
         return locs
 

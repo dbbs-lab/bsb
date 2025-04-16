@@ -76,10 +76,9 @@ class CsvImportPlacement(ImportPlacement):
             cts = self.get_considered_cell_types()
             if len(cts) == 1:
                 name = cts[0].name
-            i = 0
             if self.progress_bar:
                 reader = tqdm(reader, desc="imported", unit=" lines")
-            for line in reader:
+            for i, line in enumerate(reader):
                 ct_cache = self._cache[line[type_col] if type_col is not None else name]
                 coords = [_safe_float(line[c]) for c in coord_cols]
                 others = [_safe_float(line[c]) for c in other_cols]
@@ -95,7 +94,6 @@ class CsvImportPlacement(ImportPlacement):
                             "FLUSHING, AVAILABLE MEM:",
                         )
                         self._flush(indicators)
-                i += 1
             self._flush(indicators)
 
     def get_considered_cell_types(self):

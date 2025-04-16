@@ -168,14 +168,14 @@ class EncodedLabels(np.ndarray):
         new_labelsets = set()
         to_map_arrs = {}
         for arr in arrs:
-            for k, l in arr.labels.items():
+            for k, l_ in arr.labels.items():
                 if k not in merged:
                     # The label spot is available, so take it
-                    merged[k] = l
-                elif merged[k] != l:
+                    merged[k] = l_
+                elif merged[k] != l_:
                     # The labelset doesn't match, so this array will have to be mapped,
                     # and a new spot found for the conflicting labelset.
-                    new_labelsets.add(l)
+                    new_labelsets.add(l_)
                     # np ndarray unhashable, for good reason, so use `id()` for quick hash
                     to_map_arrs[id(arr)] = arr
                 # else: this labelset matches with the superset's nothing to do

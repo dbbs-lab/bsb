@@ -107,7 +107,7 @@ def register_option(name, option):
     global _options
 
     if name in _options:
-        if type(_options[name]) != type(option):
+        if type(_options[name]) is not type(option):
             raise OptionError(
                 f"The '{name}' option name is already taken by {_options[name].__class__}."
             )
@@ -382,7 +382,7 @@ _om.__dict__.update(_module_magic)
 for _key, _value in zip(_post_freeze, map(globals().get, _post_freeze)):
     _om.__dict__[_key] = _value
 # Set the module's public API.
-_om.__dict__["__all__"] = sorted([k for k in vars(_om).keys() if not k.startswith("_")])
+_om.__dict__["__all__"] = sorted([k for k in vars(_om) if not k.startswith("_")])
 
 sys.modules[__name__] = _om
 

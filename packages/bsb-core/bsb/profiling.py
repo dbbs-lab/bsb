@@ -87,7 +87,7 @@ class ProfilingSession:
             with open(f"{self._current_f}.pkl", "wb") as f:
                 pickle.dump(self, f)
         except Exception as e:
-            warnings.warn(f"Could not store profile: {e}")
+            warnings.warn(f"Could not store profile: {e}", stacklevel=2)
         finally:
             self.profile = profile
 

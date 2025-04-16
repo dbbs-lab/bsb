@@ -155,12 +155,14 @@ class TestVoxelSet(bsb_test.NumpyTestCase, unittest.TestCase):
 
     def test_unbroadcastables(self):
         with self.assertRaises(ValueError):
-            unb_size = VoxelSet([[1, 0, 1]], [1, 1, 1, 1])
+            _unb_size = VoxelSet([[1, 0, 1]], [1, 1, 1, 1])
 
     def test_ragged(self):
-        with self.assertRaises(ValueError):
-            with self.assertWarns(np.VisibleDeprecationWarning):
-                ragged = VoxelSet([[1, 0, 1], [1, 1]], [1, 1, 1, 1])
+        with (
+            self.assertRaises(ValueError),
+            self.assertWarns(np.VisibleDeprecationWarning),
+        ):
+            _ragged = VoxelSet([[1, 0, 1], [1, 1]], [1, 1, 1, 1])
 
     def test_get_size(self):
         for set in self.regulars:
@@ -387,7 +389,7 @@ class TestVoxelSet(bsb_test.NumpyTestCase, unittest.TestCase):
                     self.assertEqual(3, len(bounds[1]), "3 dim")
                     self.assertTrue(all(a <= b for a, b in zip(*bounds)), "min max")
         with self.assertRaises(EmptyVoxelSetError):
-            self.empty.bounds
+            _empty = self.empty.bounds
         self.unequals[0]
 
     def test_str(self):

@@ -7,6 +7,8 @@ which are essential for `bsb-core` to function. First time users are recommended
 install the `bsb` package instead.
 """
 
+__version__ = "5.1.1"
+
 import functools
 import importlib
 import sys
@@ -17,7 +19,7 @@ import bsb.exceptions as _exc
 
 # Patch functools on 3.8
 try:
-    functools.cache
+    _cache = functools.cache
 except AttributeError:
     functools.cache = functools.lru_cache
 

@@ -639,7 +639,7 @@ class AllenStructure(NrrdVoxels, classmap_entry="allen"):
             treat = lambda s: s.strip().lower()
             name = treat(id)
             find = lambda x: treat(x["name"]) == name or treat(x["acronym"]) == name
-        elif isinstance(id, int) or isinstance(id, float):
+        elif isinstance(id, (int, float)):
             id = int(id)
             find = lambda x: x["id"] == id
         else:

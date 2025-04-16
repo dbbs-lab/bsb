@@ -218,7 +218,7 @@ class TestSerialAndParallelScheduler(
         with self.network.create_job_pool(quiet=True) as pool:
             job = pool.queue(sleep_y, (5, 0.5))
         with self.assertRaisesRegex(JobPoolError, "not available"):
-            job.result
+            _res = job.result
 
     @timeout(1)
     def test_job_result_after_run(self):
@@ -228,7 +228,7 @@ class TestSerialAndParallelScheduler(
             job = pool.queue(sleep_y, (5, 0.5))
             pool.execute()
         with self.assertRaisesRegex(JobPoolError, "not available"):
-            job.result
+            _res = job.result
 
     @timeout(3)
     def test_placement_job(self):
@@ -337,12 +337,11 @@ class TestParallelScheduler(
                 progress.jobs[0].status == JobStatus.PENDING
                 or progress.jobs[0].status == JobStatus.QUEUED
                 or progress.jobs[0].status == JobStatus.RUNNING
+            ) and (
+                progress.jobs[1].status == JobStatus.RUNNING
+                or progress.jobs[1].status == JobStatus.QUEUED
             ):
-                if (
-                    progress.jobs[1].status == JobStatus.RUNNING
-                    or progress.jobs[1].status == JobStatus.QUEUED
-                ):
-                    outcome = False
+                outcome = False
 
         with self.network.create_job_pool(quiet=True) as pool:
             pool.add_listener(spy_initial_pool_queue)

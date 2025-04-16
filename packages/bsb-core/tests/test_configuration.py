@@ -1544,7 +1544,9 @@ class TestListScripting(RandomStorageFixture, unittest.TestCase, engine_name="fs
             "test", spatial=dict(radius=2, morphologies=[])
         ).spatial.morphologies
 
-    def assertList(self, len_, prev=[]):
+    def assertList(self, len_, prev=None):
+        if prev is None:
+            prev = []
         self.assertEqual(len_, len(self.list), f"expected {len_} elements")
         for i in range(len_):
             with self.subTest(i=i):

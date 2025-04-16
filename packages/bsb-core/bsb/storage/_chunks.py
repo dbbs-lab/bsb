@@ -5,7 +5,7 @@ import numpy as np
 from ..exceptions import ChunkError
 
 _iinfo = np.iinfo(np.int16)
-Chunklike = typing.Union["Chunk", "numpy.typing.ArrayLike"]
+Chunklike = typing.Union["Chunk", "np.typing.ArrayLike"]
 
 
 class Chunk(np.ndarray):

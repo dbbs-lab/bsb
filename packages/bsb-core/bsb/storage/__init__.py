@@ -15,7 +15,6 @@ end goal of this module.
 import functools
 import typing
 from inspect import isclass
-from typing import Type
 
 from .. import plugins
 from ..exceptions import UnknownStorageEngineError
@@ -64,7 +63,7 @@ def get_engine_support(engine_name):
         ) from None
     engine_support = {
         interface_name: NotSupported(interface_name)
-        for interface_name in get_storage_interfaces().keys()
+        for interface_name in get_storage_interfaces()
     }
     engine_support["StorageNode"] = engine_module.StorageNode
     # Search for interface support
@@ -85,7 +84,7 @@ def get_engine_support(engine_name):
 @functools.cache
 def get_engines():
     return {
-        name: get_engine_support(name)["Engine"] for name in discover_engines().keys()
+        name: get_engine_support(name)["Engine"] for name in discover_engines()
     }
 
 
@@ -133,10 +132,10 @@ class Storage:
     underlying engine.
     """
 
-    _PlacementSet: Type["PlacementSet"]
-    _ConnectivitySet: Type["ConnectivitySet"]
-    _MorphologyRepository: Type["MorphologyRepository"]
-    _FileStore: Type["FileStore"]
+    _PlacementSet: type["PlacementSet"]
+    _ConnectivitySet: type["ConnectivitySet"]
+    _MorphologyRepository: type["MorphologyRepository"]
+    _FileStore: type["FileStore"]
 
     def __init__(self, engine, root, comm=None, main=0, missing_ok=True):
         """

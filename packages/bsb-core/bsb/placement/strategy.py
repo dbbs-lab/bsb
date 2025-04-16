@@ -109,9 +109,7 @@ class PlacementStrategy(abc.ABC, HasDependencies):
             morphologies, rotations = None, None
 
         distr = self.distribute._curry(self.partitions, indicator, positions)
-        additional.update(
-            {prop: distr(prop) for prop in self.distribute.properties}
-        )
+        additional.update({prop: distr(prop) for prop in self.distribute.properties})
         self.scaffold.place_cells(
             indicator.cell_type,
             positions=positions,

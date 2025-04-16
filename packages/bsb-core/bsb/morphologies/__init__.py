@@ -584,7 +584,7 @@ class SubTree:
                 raise ValueError(
                     "Can't rotate with subbranch precision with multiple roots"
                 )
-            elif type(downstream_of) == int and 0 < downstream_of < len(
+            elif type(downstream_of) is int and 0 < downstream_of < len(
                 self.roots[0].points
             ):
                 b = self.roots[0]
@@ -981,7 +981,7 @@ class Morphology(SubTree):
         :param file: path to write to
         """
         file_data = _morpho_to_swc(self)
-        if isinstance(file, str) or isinstance(file, Path):
+        if isinstance(file, (str, Path)):
             np.savetxt(
                 file,
                 file_data,
@@ -1723,7 +1723,7 @@ def _morpho_to_swc(morpho):
     if np.any(tags == -1):
         raise NotImplementedError("Can't store morphologies with custom SWC tags")
     # Iterate over the morphology branches
-    for b in morpho.branches:
+    for offset, b in enumerate(morpho.branches):
         ids = (
             np.arange(nid, nid + len(b) - 1)
             if len(b) > 1
@@ -1741,7 +1741,6 @@ def _morpho_to_swc(morpho):
                 " Note that SWC files cannot store multi-dimensional radii"
             )
         nid += len(b) - 1 if len(b) > 1 else len(b)
-        offset += 1
         bmap[b] = ids[-1]
         data[ids, 6] = ids
         data[ids[0], 6] = -1 if b.parent is None else bmap[b.parent] + 1

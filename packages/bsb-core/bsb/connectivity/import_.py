@@ -71,8 +71,8 @@ class CsvImportConnectivity(ImportConnectivity):
 
             def make_maps(pre_chunks, post_chunks):
                 def flush(pre_block, post_block, other_block):
-                    with pre.chunk_context(pre_chunks),     post.chunk_context(post_chunks):
-                            self.connect_cells(pre, post, pre_block, post_block)
+                    with pre.chunk_context(pre_chunks), post.chunk_context(post_chunks):
+                        self.connect_cells(pre, post, pre_block, post_block)
 
                 return lambda x: x, lambda x: x, flush
 
@@ -129,7 +129,7 @@ class CsvImportConnectivity(ImportConnectivity):
 
         def flush(pre_block, post_block, other_block):
             with pre.chunk_context(pre_chunks), post.chunk_context(post_chunks):
-                    self.connect_cells(pre, post, pre_block, post_block)
+                self.connect_cells(pre, post, pre_block, post_block)
 
         return pre_map, post_map, flush
 

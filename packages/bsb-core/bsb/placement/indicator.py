@@ -154,7 +154,7 @@ class PlacementIndicator:
                 )
         if density_key is not None:
             if voxels is None:
-                raise Exception("Can't guess voxel density without a voxelset.")
+                raise PlacementError("Can't guess voxel density without a voxelset.")
             elif density_key in voxels.data_keys:
                 estimate = self._estim_for_voxels(voxels, density_key)
             else:

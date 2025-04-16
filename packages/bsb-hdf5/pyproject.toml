@@ -90,5 +90,5 @@ unfixable = [ ]
 
 [[tool.uv.index]]
 name = "testpypi"
-url = "https://test.pypi.org/simple/"
-publish-url = "https://test.pypi.org/legacy/"
+url = "https://pypi.org/simple/"
+publish-url = "https://pypi.org/legacy/"

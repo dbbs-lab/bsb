@@ -89,15 +89,12 @@ class EnvOptionDescriptor(OptionDescriptor, slug="env"):
 
     def _parse(self, value):
         if self.flag:
-            if value is True or str(value).strip().upper() in (
+            return value is True or str(value).strip().upper() in (
                 "ON",
                 "TRUE",
                 "1",
                 "YES",
-            ):
-                return True
-            else:
-                return False
+            )
         else:
             return value
 

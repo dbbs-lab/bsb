@@ -455,9 +455,10 @@ class Job(abc.ABC):
         self._error = (
             JobCancelledError() if reason is None else JobCancelledError(reason)
         )
-        if self._future:
-            if not self._future.cancel():
-                warnings.warn(f"Could not cancel {self}, the job is already running.")
+        if self._future and not self._future.cancel():
+            warnings.warn(
+                f"Could not cancel {self}, the job is already running.", stacklevel=2
+            )
 
     def change_status(self, status: JobStatus):
         old_status = self._status

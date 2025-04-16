@@ -466,7 +466,7 @@ class Scaffold:
         Retrieve the default single-instance adapter for a simulation.
         """
         if sim_name not in self.simulations:
-            simstr = ", ".join(f"'{s}'" for s in self.simulations.keys())
+            simstr = ", ".join(f"'{s}'" for s in self.simulations)
             raise NodeNotFoundError(
                 f"Unknown simulation '{sim_name}', choose from: {simstr}"
             )
@@ -675,12 +675,19 @@ class Scaffold:
         except KeyError as e:
             raise NodeNotFoundError(f"Cell type `{e.args[0]}` not found.")
 
-    def _connectivity_query(self, any_query=set(), pre_query=set(), post_query=set()):
+    def _connectivity_query(self, any_query=None, pre_query=None, post_query=None):
         # Filter network connection types for any type that satisfies both
         # the presynaptic and postsynaptic query. Empty queries satisfy all
         # types. The presynaptic query is satisfied if the conn type contains
         # any of the queried cell types presynaptically, and same for post.
         # The any query is satisfied if a cell type is found either pre or post.
+
+        if post_query is None:
+            post_query = set()
+        if pre_query is None:
+            pre_query = set()
+        if any_query is None:
+            any_query = set()
 
         def partial_query(types, query):
             return not query or any(cell_type in query for cell_type in types)
@@ -738,17 +745,16 @@ class Scaffold:
             level=2,
         )
         # Don't do greedy things without `force`
-        if not force:
-            # Error if we need to redo things the user asked to skip
-            if skip is not None:
-                unskipped = [p.name for p in p_contrib if p.name in skip]
-                if unskipped:
-                    chainstr = ", ".join(f"'{s.name}'" for s in (p_strats + c_strats))
-                    skipstr = ", ".join(f"'{s}'" for s in unskipped)
-                    raise RedoError(
-                        f"Can't skip {skipstr}. Redoing {chainstr} requires to redo them."
-                        + f" Omit {skipstr} from `skip` or use `force` (not recommended)."
-                    )
+        # Error if we need to redo things the user asked to skip
+        if not force and skip is not None:
+            unskipped = [p.name for p in p_contrib if p.name in skip]
+            if unskipped:
+                chainstr = ", ".join(f"'{s.name}'" for s in (p_strats + c_strats))
+                skipstr = ", ".join(f"'{s}'" for s in unskipped)
+                raise RedoError(
+                    f"Can't skip {skipstr}. Redoing {chainstr} requires to redo them."
+                    + f" Omit {skipstr} from `skip` or use `force` (not recommended)."
+                )
 
         for ct in cell_types_affected:
             report(f"Clearing all data of {ct.name}", level=2)
@@ -834,8 +840,8 @@ class Scaffold:
         self._pool_listeners.append((listener, max_wait))
 
     def remove_listener(self, listener):
-        for i, (l, _) in enumerate(self._pool_listeners):
-            if l is listener:
+        for i, (l_, _) in enumerate(self._pool_listeners):
+            if l_ is listener:
                 self._pool_listeners.pop(i)
                 break
 

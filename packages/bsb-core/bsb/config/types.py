@@ -439,7 +439,7 @@ def key():
     """
 
     def type_handler(value):
-        if not (isinstance(value, builtins.int) or isinstance(value, builtins.str)):
+        if not isinstance(value, (builtins.int, builtins.str)):
             raise TypeError(f"{type(value)} is not an int or str")
         else:
             return value
@@ -768,7 +768,7 @@ def same_size(*list_attrs, required=True):
                     raise RequirementError(err_msg)
                 common_size = len(v)
                 count += 1
-        if not count == len(list_attrs) and required:
+        if count != len(list_attrs) and required:
             err_msg = f"The {listed} attributes are required."
             raise RequirementError(err_msg)
         return False

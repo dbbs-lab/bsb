@@ -48,7 +48,7 @@ def _reserved_kw_passes(f):
     try:
         sig = _inspect_signature(f)
         params = sig.parameters
-    except:
+    except (ValueError, TypeError):
         params = []
 
     return {key: key in params for key in _reserved_keywords}

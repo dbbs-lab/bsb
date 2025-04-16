@@ -29,7 +29,7 @@ def spoof_combo(name, *names):
 
 class TestSelectors(RandomStorageFixture, unittest.TestCase, engine_name="hdf5"):
     def assertPicked(self, picks, sel, loaders, msg=None):
-        self.assertEqual(picks, [l.name for l in loaders if sel.pick(l)], msg=msg)
+        self.assertEqual(picks, [l_.name for l_ in loaders if sel.pick(l_)], msg=msg)
 
     def test_strict_empty_name_selector(self):
         ns = NameSelector(names=[])

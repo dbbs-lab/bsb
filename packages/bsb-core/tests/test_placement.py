@@ -190,7 +190,7 @@ class TestIndicators(
         dud3_ind = indicators["cell_rel_dens_key"]
         dud4_ind = indicators["cell_density_key"]
         ratio_dud3 = 2.0
-        with self.assertRaises(Exception):
+        with self.assertRaises(PlacementError):
             # No voxel set provided
             dud4_ind.guess()
 

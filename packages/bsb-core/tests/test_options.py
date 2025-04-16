@@ -118,8 +118,8 @@ class TestProjectOption(unittest.TestCase):
         super().tearDown()
         _pyproject_path.cache_clear()
         try:
-            self.proj.unlink()
-        except:
+            self.proj.unlink(missing_ok=True)
+        except OSError:
             pass
 
     def create_toml(self, content=None, proj=None):

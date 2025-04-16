@@ -85,7 +85,7 @@ class TestIO(NumpyTestCase, unittest.TestCase):
         for value in m.labelsets.values():
             all_sets.update(value)
         self.assertEqual(
-            set(np.concatenate([[v] if type(v) == str else v for v in tags.values()])),
+            set(np.concatenate([[v] if type(v) is str else v for v in tags.values()])),
             all_sets,
         )
 
@@ -808,17 +808,15 @@ class TestMorphometry(NumpyTestCase, unittest.TestCase):
             "start",
             "max_displacement",
         ):
-            with self.subTest(attr=attr):
-                with self.assertRaises(EmptyBranchError):
-                    getattr(self.b0, attr)
+            with self.subTest(attr=attr), self.assertRaises(EmptyBranchError):
+                getattr(self.b0, attr)
 
         for attr in (
             "versor",
             "max_displacement",
         ):
-            with self.subTest(attr=attr):
-                with self.assertRaises(EmptyBranchError):
-                    getattr(self.bzero1, attr)
+            with self.subTest(attr=attr), self.assertRaises(EmptyBranchError):
+                getattr(self.bzero1, attr)
 
     def test_zero_len(self):
         for attr in ("euclidean_dist", "path_length"):
@@ -914,9 +912,9 @@ class TestSwcFiles(NumpyTestCase, unittest.TestCase):
     def generate_radius(
         self, origin_x, origin_y, len=10, angle=(np.pi / 2), stepsize=0.1
     ):
-        l = np.arange(0, len + stepsize, stepsize)
-        x = l * np.cos(angle) + origin_x
-        y = l * np.sin(angle) + origin_y
+        l_ = np.arange(0, len + stepsize, stepsize)
+        x = l_ * np.cos(angle) + origin_x
+        y = l_ * np.sin(angle) + origin_y
         z = np.zeros(y.shape)
 
         return x, y, z

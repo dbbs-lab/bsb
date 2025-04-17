@@ -107,12 +107,12 @@ parallel = [
 [package.metadata]
 requires-dist = [
     { name = "appdirs", specifier = "~=1.4" },
-    { name = "bsb-arbor", marker = "extra == 'test'", specifier = "~=4.0" },
+    { name = "bsb-arbor", marker = "extra == 'test'", editable = "../bsb-arbor" },
     { name = "bsb-core", extras = ["parallel"], marker = "extra == 'test'" },
     { name = "bsb-core", extras = ["test", "docs"], marker = "extra == 'dev'" },
     { name = "bsb-hdf5", marker = "extra == 'test'", editable = "../bsb-hdf5" },
-    { name = "bsb-json", marker = "extra == 'docs'", specifier = "~=4.0" },
-    { name = "bsb-json", marker = "extra == 'test'", specifier = "~=4.2" },
+    { name = "bsb-json", marker = "extra == 'docs'", editable = "../bsb-json" },
+    { name = "bsb-json", marker = "extra == 'test'", editable = "../bsb-json" },
     { name = "bsb-test", marker = "extra == 'test'", editable = "." },
     { name = "bsb-yaml", marker = "extra == 'docs'", specifier = "~=4.0" },
     { name = "dashing-next", specifier = "~=0.1" },

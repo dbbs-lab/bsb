@@ -1,70 +1,69 @@
 [build-system]
-requires = [ "flit_core >=3.2,<4" ]
+requires = ["flit_core >=3.2,<4"]
 build-backend = "flit_core.buildapi"
 
 [project]
-name = "bsb-arbor"
+name = "bsb-json"
 authors = [
   { name = "Robin De Schepper", email = "robin@alexandria.sc" },
   { name = "Dimitri Rodarie", email = "dimitri.rodarie@unipv.it" }
 ]
-version = "4.1.1"
-dynamic = ["description"]
-requires-python = ">=3.9,<3.12"
-readme = 'README.md'
-license = { file = "LICENSE" }
+version = "4.2.3"
+requires-python = ">=3.9,<4"
+readme = "README.md"
+license = {file = "LICENSE"}
 classifiers = ["License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"]
+dynamic = ["description"]
 dependencies = [
-    "numpy~=1.21",
-    "bsb-core~=5.0",
-    "arbor~=0.10",
-    "arborize[arbor]~=4.0"
+    "bsb-core",
 ]
 
 [project.optional-dependencies]
 test = [
-  "bsb-core[parallel]",
-  "bsb-hdf5~=5.0",
-  "pytest>=8.3.4",
-  "pytest-sugar>=1.0.0",
-  "pytest-cov>=6.0.0",
+    "bsb-core[parallel]",
+    "bsb-test~=4.0",
+    "pytest>=8.3.4",
+    "pytest-sugar>=1.0.0",
+    "pytest-cov>=6.0.0"
 ]
 dev = [
-    "bsb-test[test]",
+    "bsb-json[test]",
     "pre-commit~=3.5",
     "ruff>=0.8.2",
-    "snakeviz~=2.1",
+    "bump-my-version~=0.24"
 ]
 
 [dependency-groups]
 dev = [
-  "bsb-arbor[dev]",
+  "bsb-json[dev]",
 ]
 
-[tool.flit.module]
-name = "bsb_arbor"
+[project.entry-points."bsb.config.parsers"]
+json = "bsb_json.parser"
 
-[project.entry-points."bsb.simulation_backends"]
-arbor = "bsb_arbor"
+[project.entry-points."bsb.config.templates"]
+json_templates = "bsb_json.templates"
+
+[tool.flit.module]
+name = "bsb_json"
 
 [tool.uv.sources]
 bsb-core = { path = "../bsb-core", editable = true }
-bsb-hdf5 = { path = "../bsb-hdf5", editable = true }
 bsb-test = { path = "../bsb-test", editable = true }
 
 [tool.coverage.run]
 branch = true
-source = [ "bsb_arbor" ]
+source = [ "bsb_test" ]
 
 [tool.coverage.report]
-exclude_lines = ['if TYPE_CHECKING:']
+exclude_lines = [ "if TYPE_CHECKING:" ]
 show_missing = true
 
 [tool.pytest.ini_options]
 addopts = """
  --cov
- --cov-report html:'../../coverage/packages/bsb-arbor/html'
- --cov-report xml:'../../coverage/packages/bsb-arbor/coverage.xml'
+ --cov-report html:'../../coverage/packages/bsb-test/html'
+ --cov-report xml:'../../coverage/packages/bsb-test/coverage.xml'
 """
 
 [tool.ruff]

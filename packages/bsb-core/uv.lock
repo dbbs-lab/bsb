@@ -320,8 +320,8 @@ requires-dist = [
     { name = "bsb-core", extras = ["parallel"], marker = "extra == 'test'" },
     { name = "bsb-core", extras = ["test", "docs"], marker = "extra == 'dev'" },
     { name = "bsb-hdf5", marker = "extra == 'test'", editable = "../bsb-hdf5" },
-    { name = "bsb-json", marker = "extra == 'docs'", specifier = "~=4.0" },
-    { name = "bsb-json", marker = "extra == 'test'", specifier = "~=4.2" },
+    { name = "bsb-json", marker = "extra == 'docs'", editable = "../bsb-json" },
+    { name = "bsb-json", marker = "extra == 'test'", editable = "../bsb-json" },
     { name = "bsb-test", marker = "extra == 'test'", editable = "../bsb-test" },
     { name = "bsb-yaml", marker = "extra == 'docs'", specifier = "~=4.0" },
     { name = "dashing-next", specifier = "~=0.1" },
@@ -395,14 +395,28 @@ dev = [{ name = "bsb-hdf5", extras = ["dev"], editable = "../bsb-hdf5" }]
 [[package]]
 name = "bsb-json"
 version = "4.2.3"
-source = { registry = "https://pypi.org/simple/" }
+source = { editable = "../bsb-json" }
 dependencies = [
     { name = "bsb-core" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/9c/eb/3a90b2e187afeee9031bb725212c06fa66fa3518651b7780c02ecfffa896/bsb_json-4.2.3.tar.gz", hash = "sha256:e204ee36ccb1ad5083f0e72d2da3bfd55f39989e6c681e27b62c0a52b5a187c8", size = 14601 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/30/1f/0a73cd4ab7fa103e9a6cb0e9154e1fbc203f18ff4934a991082442e9e429/bsb_json-4.2.3-py3-none-any.whl", hash = "sha256:5aa3435f7c4872adab374b78865e5eac4b58bdd7ce35b9d64980da8884af65f5", size = 15994 },
+
+[package.metadata]
+requires-dist = [
+    { name = "bsb-core", editable = "." },
+    { name = "bsb-core", extras = ["parallel"], marker = "extra == 'test'", editable = "." },
+    { name = "bsb-json", extras = ["test"], marker = "extra == 'dev'", editable = "../bsb-json" },
+    { name = "bsb-test", marker = "extra == 'test'", editable = "../bsb-test" },
+    { name = "bump-my-version", marker = "extra == 'dev'", specifier = "~=0.24" },
+    { name = "pre-commit", marker = "extra == 'dev'", specifier = "~=3.5" },
+    { name = "pytest", marker = "extra == 'test'", specifier = ">=8.3.4" },
+    { name = "pytest-cov", marker = "extra == 'test'", specifier = ">=6.0.0" },
+    { name = "pytest-sugar", marker = "extra == 'test'", specifier = ">=1.0.0" },
+    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.8.2" },
 ]
+provides-extras = ["test", "dev"]
+
+[package.metadata.requires-dev]
+dev = [{ name = "bsb-json", extras = ["dev"], editable = "../bsb-json" }]
 
 [[package]]
 name = "bsb-test"

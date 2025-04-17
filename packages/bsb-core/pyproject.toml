@@ -60,7 +60,7 @@ docs = [
     "sphinx_design~=0.5.0",
     "sphinx-copybutton~=0.5.0",
     "sphinxext-bsb~=0.2.2",
-    "bsb-json~=4.0",
+    "bsb-json~=4.2",
     "bsb-yaml~=4.0",
 ]
 dev = [
@@ -99,6 +99,7 @@ debug_pool = "bsb._options:debug_pool"
 bsb-test = { path = "../bsb-test", editable = true }
 bsb-hdf5 = { path = "../bsb-hdf5", editable = true }
 bsb-arbor = { path = "../bsb-arbor", editable = true }
+bsb-json = { path = "../bsb-json", editable = true }
 
 [tool.coverage.run]
 branch = true

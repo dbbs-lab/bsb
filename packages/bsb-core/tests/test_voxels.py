@@ -499,8 +499,7 @@ class TestVoxelSet(bsb_test.NumpyTestCase, unittest.TestCase):
             ["0", "1", "2", "a", "b"], cat._data.keys, "should add unnumbered cols"
         )
         self.assertTrue(
-            np.all(cat._data[3:, :3] == None),  # noqa: E711
-            "unum cols should be first"
+            np.all(cat._data[3:, :3] == None), "unum cols should be first"  # noqa: E711
         )
 
     def test_concatenate_partial_same_datakeys(self):

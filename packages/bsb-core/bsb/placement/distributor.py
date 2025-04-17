@@ -65,8 +65,8 @@ class MorphologyDistributor(Distributor):
         :param context: The placement indicator and partitions.
         :type context: ~bsb.placement.distributor.DistributionContext
         :returns: A MorphologySet with assigned morphologies, and optionally a RotationSet
-        :rtype: Union[~bsb.morphologies.MorphologySet, Tuple[
-          ~bsb.morphologies.MorphologySet, ~bsb.morphologies.RotationSet]]
+        :rtype: ~bsb.morphologies.MorphologySet | tuple[
+          ~bsb.morphologies.MorphologySet, ~bsb.morphologies.RotationSet]
         """
         pass
 

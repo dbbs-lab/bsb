@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import itertools
 import os
 import sys
@@ -110,15 +112,15 @@ class Scaffold:
     :class:`~.storage.Storage`.
     """
 
-    network: "Network"
-    regions: dict[str, "Region"]
-    partitions: dict[str, "Partition"]
-    cell_types: dict[str, "CellType"]
-    placement: dict[str, "PlacementStrategy"]
-    after_placement: dict[str, "AfterPlacementHook"]
-    connectivity: dict[str, "ConnectionStrategy"]
-    after_connectivity: dict[str, "AfterConnectivityHook"]
-    simulations: dict[str, "Simulation"]
+    network: Network
+    regions: dict[str, Region]
+    partitions: dict[str, Partition]
+    cell_types: dict[str, CellType]
+    placement: dict[str, PlacementStrategy]
+    after_placement: dict[str, AfterPlacementHook]
+    connectivity: dict[str, ConnectionStrategy]
+    after_connectivity: dict[str, AfterConnectivityHook]
+    simulations: dict[str, Simulation]
 
     def __init__(self, config=None, storage=None, clear=False, comm=None):
         """
@@ -231,11 +233,11 @@ class Scaffold:
         storage.init(self)
 
     @property
-    def morphologies(self) -> "MorphologyRepository":
+    def morphologies(self) -> MorphologyRepository:
         return self.storage.morphologies
 
     @property
-    def files(self) -> "FileStore":
+    def files(self) -> FileStore:
         return self.storage.files
 
     def clear(self):
@@ -457,7 +459,7 @@ class Scaffold:
         )
         return adapter.simulate(simulation)[0]
 
-    def get_simulation(self, sim_name: str) -> "Simulation":
+    def get_simulation(self, sim_name: str) -> Simulation:
         """
         Retrieve the default single-instance adapter for a simulation.
         """
@@ -526,7 +528,7 @@ class Scaffold:
 
     def get_placement(
         self, cell_types=None, skip=None, only=None
-    ) -> list["PlacementStrategy"]:
+    ) -> list[PlacementStrategy]:
         if cell_types is not None:
             cell_types = [
                 self.cell_types[ct] if isinstance(ct, str) else ct for ct in cell_types
@@ -544,18 +546,18 @@ class Scaffold:
         Find all the placement strategies that involve the given cell types.
 
         :param cell_types: Cell types (or their names) of interest.
-        :type cell_types: Union[~bsb.cell_types.CellType, str]
+        :type cell_types: ~bsb.cell_types.CellType | str
         """
         return self.get_placement(cell_types=cell_types)
 
     def get_placement_set(
         self, type, chunks=None, labels=None, morphology_labels=None
-    ) -> "PlacementSet":
+    ) -> PlacementSet:
         """
         Return a cell type's placement set from the output formatter.
 
         :param type: Cell type name
-        :type type: Union[~bsb.cell_types.CellType, str]
+        :type type: ~bsb.cell_types.CellType | str
         :param chunks: Optionally load a specific list of chunks.
         :type chunks: list[tuple[float, float, float]]
         :param labels: Labels to filter the placement set by.
@@ -571,7 +573,7 @@ class Scaffold:
             type, chunks=chunks, labels=labels, morphology_labels=morphology_labels
         )
 
-    def get_placement_sets(self) -> list["PlacementSet"]:
+    def get_placement_sets(self) -> list[PlacementSet]:
         """
         Return all the placement sets present in the network.
 
@@ -599,7 +601,7 @@ class Scaffold:
 
     def get_connectivity(
         self, anywhere=None, presynaptic=None, postsynaptic=None, skip=None, only=None
-    ) -> list["ConnectivitySet"]:
+    ) -> list[ConnectivitySet]:
         conntype_filtered = self._connectivity_query(
             any_query=set(self._sanitize_ct(anywhere)),
             pre_query=set(self._sanitize_ct(presynaptic)),
@@ -612,7 +614,7 @@ class Scaffold:
             and (skip is None or ct.name not in skip)
         ]
 
-    def get_connectivity_sets(self) -> list["ConnectivitySet"]:
+    def get_connectivity_sets(self) -> list[ConnectivitySet]:
         """
         Return all connectivity sets from the output formatter.
 
@@ -621,12 +623,12 @@ class Scaffold:
         """
         return [self._load_cs_types(cs) for cs in self.storage.get_connectivity_sets()]
 
-    def require_connectivity_set(self, pre, post, tag=None) -> "ConnectivitySet":
+    def require_connectivity_set(self, pre, post, tag=None) -> ConnectivitySet:
         return self._load_cs_types(
             self.storage.require_connectivity_set(pre, post, tag), pre, post
         )
 
-    def get_connectivity_set(self, tag=None, pre=None, post=None) -> "ConnectivitySet":
+    def get_connectivity_set(self, tag=None, pre=None, post=None) -> ConnectivitySet:
         """
         Return a connectivity set from its name according to the output formatter.
         The name can be specified directly with tag or with deduced from pre and post
@@ -650,7 +652,7 @@ class Scaffold:
                 )
         return self._load_cs_types(self.storage.get_connectivity_set(tag), pre, post)
 
-    def get_cell_types(self) -> list["CellType"]:
+    def get_cell_types(self) -> list[CellType]:
         """
         Return a list of all cell types in the network.
         """
@@ -784,8 +786,8 @@ class Scaffold:
         return dot
 
     def _load_cs_types(
-        self, cs: "ConnectivitySet", pre=None, post=None
-    ) -> "ConnectivitySet":
+        self, cs: ConnectivitySet, pre=None, post=None
+    ) -> ConnectivitySet:
         if pre and pre.name != cs.pre_type_name:
             raise ValueError(
                 "Given and stored type mismatch:" + f" {pre.name} vs {cs.pre_type_name}"

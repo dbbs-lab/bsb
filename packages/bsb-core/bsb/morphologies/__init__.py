@@ -540,7 +540,7 @@ class SubTree:
         If the center is not provided, the Subtree will rotate from [0, 0, 0].
 
         :param rotation: Scipy rotation
-        :type rotation: Union[scipy.spatial.transform.Rotation, list[float,float,float]]
+        :type rotation: scipy.spatial.transform.Rotation | list[float,float,float]
         :param center: rotation offset point.
         :type center: numpy.ndarray
         """
@@ -1399,7 +1399,7 @@ class Branch:
         :param branch: Branch to be attached
         :type branch: :class:`Branch <.morphologies.Branch>`
         :param index: Index or coordinates of the cutpoint; if coordinates are given, the closest point to the coordinates is used.
-        :type: Union[:class:`numpy.ndarray`, int]
+        :type: numpy.ndarray | int
         """
         index = np.array(index, copy=False)
         if index.ndim != 0:
@@ -1574,7 +1574,7 @@ class Branch:
         :param eps: Maximum distance/tolerance to accept an arc point as a match.
         :type eps: float
         :returns: The matched arc point index, or ``None`` if no match is found
-        :rtype: Union[int, None]
+        :rtype: int | None
         """
         arc_values = self.as_arc()
         arc_match = (i for i, arc_p in enumerate(arc_values) if abs(arc_p - arc) < eps)

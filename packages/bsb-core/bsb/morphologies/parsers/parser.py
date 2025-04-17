@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import abc
 import itertools
 import typing
@@ -24,14 +26,14 @@ class MorphologyParser:
     )
 
     @abc.abstractmethod
-    def parse(self, file: typing.Union["FileDependency", str]) -> Morphology:
+    def parse(self, file: FileDependency | str) -> Morphology:
         """Parse the morphology"""
         pass
 
 
 @config.node
 class BsbParser(MorphologyParser, classmap_entry="bsb"):
-    tags: dict[typing.Union[str, list[str]]] = config.attr(
+    tags: dict[str | list[str]] = config.attr(
         type=types.dict(type=types.or_(types.str(), types.list(str)))
     )
     """
@@ -44,7 +46,7 @@ class BsbParser(MorphologyParser, classmap_entry="bsb"):
     labels; usually used to skip points between the soma and its child branches.
     """
 
-    def parse(self, file: typing.Union["FileDependency", str]):
+    def parse(self, file: FileDependency | str):
         from ...storage._files import FileDependency
 
         if not isinstance(file, FileDependency):
@@ -212,7 +214,7 @@ class MorphIOParser(MorphologyParser, classmap_entry="morphio"):
             morphio.Option.no_modifier,
         )
 
-    def parse(self, file: typing.Union["FileDependency", str]) -> Morphology:
+    def parse(self, file: FileDependency | str) -> Morphology:
         from ...storage._files import FileDependency
 
         if isinstance(file, str):

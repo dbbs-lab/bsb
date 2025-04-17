@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import abc
 import typing
 from functools import cache
@@ -28,15 +30,15 @@ class Hemitype:
     Class used to represent one (pre- or postsynaptic) side of a connection rule.
     """
 
-    scaffold: "Scaffold"
+    scaffold: Scaffold
 
-    cell_types: list["CellType"] = config.reflist(refs.cell_type_ref, required=True)
+    cell_types: list[CellType] = config.reflist(refs.cell_type_ref, required=True)
     """List of cell types to use in connection."""
     labels: list[str] = config.attr(type=types.list())
     """List of labels to filter the placement set by."""
     morphology_labels: list[str] = config.attr(type=types.list())
     """List of labels to filter the morphologies by."""
-    morpho_loader: typing.Callable[["PlacementSet"], "MorphologySet"] = config.attr(
+    morpho_loader: typing.Callable[[PlacementSet], MorphologySet] = config.attr(
         type=types.function_(),
         required=False,
         call_default=False,
@@ -116,28 +118,28 @@ class HemitypeCollection:
 
 @config.dynamic(attr_name="strategy", required=True)
 class ConnectionStrategy(abc.ABC, HasDependencies):
-    scaffold: "Scaffold"
+    scaffold: Scaffold
     name: str = config.attr(key=True)
     """Name used to refer to the connectivity strategy"""
     presynaptic: Hemitype = config.attr(type=Hemitype, required=True)
     """Presynaptic (source) neuron population"""
     postsynaptic: Hemitype = config.attr(type=Hemitype, required=True)
     """Postsynaptic (target) neuron population"""
-    depends_on: list["ConnectionStrategy"] = config.reflist(refs.connectivity_ref)
+    depends_on: list[ConnectionStrategy] = config.reflist(refs.connectivity_ref)
     """The list of strategies that must run before this one"""
-    output_naming: typing.Union[
-        str, None, dict[str, dict[str, str, None, list[str]]]
-    ] = config.attr(
-        type=types.or_(
-            types.str(),
-            types.dict(
-                type=types.dict(
-                    type=types.or_(
-                        types.str(), types.list(type=types.str()), types.none()
+    output_naming: str | None | dict[str, dict[str, str, None, list[str]]] = (
+        config.attr(
+            type=types.or_(
+                types.str(),
+                types.dict(
+                    type=types.dict(
+                        type=types.or_(
+                            types.str(), types.list(type=types.str()), types.none()
+                        )
                     )
-                )
-            ),
-            types.list(type=types.str()),
+                ),
+                types.list(type=types.str()),
+            )
         )
     )
     """Specifies how to name the output ConnectivitySets in which the connections between
@@ -243,7 +245,7 @@ class ConnectionStrategy(abc.ABC, HasDependencies):
         """
         pass
 
-    def queue(self, pool: "JobPool"):
+    def queue(self, pool: JobPool):
         """
         Specifies how to queue this connectivity strategy into a job pool. Can
         be overridden, the default implementation asks each partition to chunk

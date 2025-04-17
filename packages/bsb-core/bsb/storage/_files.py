@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import abc as _abc
 import contextlib as _cl
 import datetime as _dt
@@ -47,8 +49,8 @@ def _uri_to_path(uri):
 class FileDependency:
     def __init__(
         self,
-        source: typing.Union[str, _os.PathLike],
-        file_store: "FileStore" = None,
+        source: str | _os.PathLike,
+        file_store: FileStore = None,
         ext: str = None,
         cache=True,
     ):
@@ -373,8 +375,8 @@ def _get_scheme(scheme: str) -> FileScheme:
 
 @config.node
 class FileDependencyNode:
-    scaffold: "Scaffold"
-    file: "FileDependency" = config.attr(type=FileDependency)
+    scaffold: Scaffold
+    file: FileDependency = config.attr(type=FileDependency)
 
     def __init__(self, value=None, **kwargs):
         if value is not None:
@@ -513,7 +515,7 @@ class MorphologyOperationCallable(OperationCallable):
     Hello
     """
 
-    def __call__(self, obj: "Morphology", **kwargs: typing.Any) -> "Morphology":
+    def __call__(self, obj: Morphology, **kwargs: typing.Any) -> Morphology:
         pass
 
 
@@ -547,7 +549,7 @@ class MorphologyDependencyNode(FilePipelineMixin, FileDependencyNode):
         stored = super().store_content(content, *args, encoding=encoding, meta=meta)
         return stored
 
-    def load_object(self, parser=None, save=True) -> "Morphology":
+    def load_object(self, parser=None, save=True) -> Morphology:
         if parser is None or self.__class__.parser.is_dirty(self):
             parser = self.parser
         self.file.update()

@@ -23,6 +23,7 @@ environment variables or project settings).
 Your ``MyOption`` will also be available on all CLI commands as ``--my_setting`` and will
 be read from the ``MY_SETTING`` environment variable.
 """
+
 import contextlib
 import functools
 

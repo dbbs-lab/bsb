@@ -287,9 +287,9 @@ class Layer(Rhomboid, classmap_entry="layer"):
     dimensions = config.unset()
     thickness: float = config.attr(type=float, required=True)
     """Thickness of the layer along its axis"""
-    axis: typing.Union[
-        typing.Literal["x"], typing.Literal["y"], typing.Literal["z"]
-    ] = config.attr(type=types.in_(["x", "y", "z"]), default="z")
+    axis: typing.Literal["x"] | typing.Literal["y"] | typing.Literal["z"] = config.attr(
+        type=types.in_(["x", "y", "z"]), default="z"
+    )
     """Axis along which the layer will be limited."""
 
     def get_layout(self, hint):
@@ -573,7 +573,7 @@ class AllenStructure(NrrdVoxels, classmap_entry="allen"):
         the Allen structure.
 
         :param find: Acronym, Name or ID of the Allen structure.
-        :type find: Union[str, int]
+        :type find: str | int
         :returns: Masking lambda
         :rtype: Callable[numpy.ndarray]
         """
@@ -590,7 +590,7 @@ class AllenStructure(NrrdVoxels, classmap_entry="allen"):
         Returns the mask data delineated by the Allen structure.
 
         :param find: Acronym, Name or ID of the Allen structure.
-        :type find: Union[str, int]
+        :type find: str | int
         :returns: A boolean of the mask filtered based on the Allen structure.
         :rtype: Callable[numpy.ndarray]
         """
@@ -603,7 +603,7 @@ class AllenStructure(NrrdVoxels, classmap_entry="allen"):
         Return the set of IDs that make up the requested Allen structure.
 
         :param find: Acronym or ID of the Allen structure.
-        :type find: Union[str, int]
+        :type find: str | int
         :returns: Set of IDs
         :rtype: numpy.ndarray
         """
@@ -622,7 +622,7 @@ class AllenStructure(NrrdVoxels, classmap_entry="allen"):
         Find an Allen structure by name, acronym or ID.
 
         :param id: Query for the name, acronym or ID of the Allen structure.
-        :type id: Union[str, int, float]
+        :type id: str | int | float
         :returns: Allen structure node of the Allen ontology tree.
         :rtype: dict
         :raises: NodeNotFoundError

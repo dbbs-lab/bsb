@@ -15,8 +15,8 @@ if typing.TYPE_CHECKING:
 
 @config.dynamic(attr_name="strategy", default="all", auto_classmap=True)
 class Targetting:
-    type: typing.Union[typing.Literal["cell"], typing.Literal["connection"]] = (
-        config.attr(type=types.in_(["cell", "connection"]), default="cell")
+    type: typing.Literal["cell"] | typing.Literal["connection"] = config.attr(
+        type=types.in_(["cell", "connection"]), default="cell"
     )
 
     def get_targets(self, adapter, simulation, simdata):
@@ -200,9 +200,9 @@ class CylindricalTargetting(
 
     origin: np.ndarray[float] = config.attr(type=types.ndarray(shape=(2,), dtype=float))
     """Coordinates of the base of the cylinder for each non main axis"""
-    axis: typing.Union[
-        typing.Literal["x"], typing.Literal["y"], typing.Literal["z"]
-    ] = config.attr(type=types.in_(["x", "y", "z"]), default="y")
+    axis: typing.Literal["x"] | typing.Literal["y"] | typing.Literal["z"] = config.attr(
+        type=types.in_(["x", "y", "z"]), default="y"
+    )
     """Main axis of the cylinder"""
     radius: float = config.attr(type=float, required=True)
     """Radius of the cylinder"""

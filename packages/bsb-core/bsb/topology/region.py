@@ -2,6 +2,8 @@
 Module for the Region types.
 """
 
+from __future__ import annotations
+
 import abc
 import typing
 
@@ -26,10 +28,10 @@ class Region(abc.ABC):
     changes itself.
     """
 
-    scaffold: "Scaffold"
+    scaffold: Scaffold
 
     name: str = config.attr(key=True)
-    children: list[typing.Union["Region", "Partition"]] = config.reflist(
+    children: list[Region | Partition] = config.reflist(
         refs.regional_ref, backref="region", required=True
     )
     """Reference to Regions or Partitions belonging to this region."""
@@ -91,11 +93,11 @@ class Stack(RegionGroup, classmap_entry="stack"):
     Stack components on top of each other and adjust its own height accordingly.
     """
 
-    axis: typing.Union[
-        typing.Literal["x"], typing.Literal["y"], typing.Literal["z"]
-    ] = config.attr(type=types.in_(["x", "y", "z"]), default="z")
+    axis: typing.Literal["x"] | typing.Literal["y"] | typing.Literal["z"] = config.attr(
+        type=types.in_(["x", "y", "z"]), default="z"
+    )
     """Axis along which the stack's children will be stacked"""
-    anchor: typing.Union["Region", "Partition"] = config.ref(refs.regional_ref)
+    anchor: Region | Partition = config.ref(refs.regional_ref)
     """Reference to one child of the stack, which origin will become the origin of the stack"""
 
     def _resolve_anchor_offset(self, children, axis_idx):

@@ -1,11 +1,10 @@
-import typing
+from __future__ import annotations
 
 import numpy as np
 
 from ..exceptions import ChunkError
 
 _iinfo = np.iinfo(np.int16)
-Chunklike = typing.Union["Chunk", "np.typing.ArrayLike"]
 
 
 class Chunk(np.ndarray):
@@ -99,6 +98,9 @@ class Chunk(np.ndarray):
             ).astype(np.int16),
             size,
         )
+
+
+Chunklike = Chunk | np.typing.ArrayLike
 
 
 def chunklist(chunks) -> list[Chunk]:

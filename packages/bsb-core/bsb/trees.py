@@ -50,8 +50,8 @@ class _BoxRTree(BoxTreeInterface):
         :param unique: If ``True``, return a flat generator of unique results. If ``False``
             (default), per box in ``boxes``, return a list of intersecting boxes.
         :returns: See ``unique``.
-        :rtype: Union[Iterator[list[Tuple[float, float, float, float, float, float]]],
-            Iterator[Tuple[float, float, float, float, float, float]]]
+        :rtype: Iterator[list[Tuple[float, float, float, float, float, float]]] |
+            Iterator[Tuple[float, float, float, float, float, float]]
         """
         all_ = (list(self._rtree.intersection(box, objects=False)) for box in boxes)
         if unique:

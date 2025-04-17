@@ -281,7 +281,7 @@ class VoxelSet:
         The size of the voxels. When it is 0D or 1D it counts as the size for all voxels,
         if it is 2D it is 1 an individual size per voxel.
 
-        :rtype: Union[numpy.ndarray, None]
+        :rtype: numpy.ndarray | None
         """
         return self.get_data()
 

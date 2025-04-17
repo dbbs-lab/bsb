@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import typing
 
 from .. import config
@@ -24,7 +26,7 @@ class ProgressEvent:
 
 @config.pluggable(key="simulator", plugin_name="simulation backend")
 class Simulation:
-    scaffold: "Scaffold"
+    scaffold: Scaffold
     simulator: str
     name: str = config.attr(key=True)
     duration: float = config.attr(type=float, required=True)
@@ -33,7 +35,7 @@ class Simulation:
         type=ConnectionModel, required=True
     )
     devices: cfgdict[DeviceModel] = config.slot(type=DeviceModel, required=True)
-    post_prepare: cfglist[typing.Callable[["Simulation", typing.Any], None]] = (
+    post_prepare: cfglist[typing.Callable[[Simulation, typing.Any], None]] = (
         config.list(type=cfgtypes.function_())
     )
 
@@ -42,8 +44,8 @@ class Simulation:
         return get_simulation_nodes()
 
     def get_model_of(
-        self, type: typing.Union["CellType", "ConnectionStrategy"]
-    ) -> typing.Optional[typing.Union["CellModel", "ConnectionModel"]]:
+        self, type: CellType | ConnectionStrategy
+    ) -> CellModel | ConnectionModel:
         cell_models = [cm for cm in self.cell_models.values() if cm.cell_type is type]
         if cell_models:
             return cell_models[0]
@@ -55,7 +57,7 @@ class Simulation:
 
     def get_connectivity_sets(
         self,
-    ) -> typing.Mapping["ConnectionModel", "ConnectivitySet"]:
+    ) -> typing.Mapping[ConnectionModel, ConnectivitySet]:
         return {
             model: self.scaffold.get_connectivity_set(model.name)
             for model in sorted(self.connection_models.values())

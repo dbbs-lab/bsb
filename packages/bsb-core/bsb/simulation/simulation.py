@@ -12,7 +12,7 @@ from .device import DeviceModel
 
 if typing.TYPE_CHECKING:
     from ..cell_types import CellType
-    from ..connectivity import ConnectionStrategy
+    from ..connectivity.strategy import ConnectionStrategy
     from ..core import Scaffold
     from ..storage.interfaces import ConnectivitySet
 

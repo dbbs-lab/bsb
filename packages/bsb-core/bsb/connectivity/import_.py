@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import abc
 import csv
 import io
@@ -16,14 +18,14 @@ from .strategy import ConnectionStrategy
 if typing.TYPE_CHECKING:
     from ..cell_types import CellType
     from ..storage._files import FileDependencyNode
-    from ..topology import Partition
+    from ..topology.partition import Partition
 
 
 @config.node
 class ImportConnectivity(NotParallel, ConnectionStrategy, abc.ABC, classmap_entry=None):
-    source: "FileDependencyNode" = config.file(required=True)
-    cell_types: list["CellType"] = config.reflist(refs.cell_type_ref, required=False)
-    partitions: list["Partition"] = config.reflist(refs.partition_ref, required=False)
+    source: FileDependencyNode = config.file(required=True)
+    cell_types: list[CellType] = config.reflist(refs.cell_type_ref, required=False)
+    partitions: list[Partition] = config.reflist(refs.partition_ref, required=False)
 
     @config.property(default=False)
     def cache(self):

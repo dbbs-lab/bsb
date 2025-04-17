@@ -20,7 +20,7 @@ from .indicator import PlacementIndications, PlacementIndicator
 if typing.TYPE_CHECKING:
     from ..cell_types import CellType
     from ..core import Scaffold
-    from ..topology import Partition
+    from ..topology.partition import Partition
 
 
 @config.dynamic(attr_name="strategy", required=True)

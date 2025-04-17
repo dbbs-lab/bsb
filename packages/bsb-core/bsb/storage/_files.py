@@ -6,7 +6,7 @@ import datetime as _dt
 import email.utils as _eml
 import functools as _ft
 import hashlib as _hl
-import os as _os
+import os
 import pathlib as _pl
 import tempfile as _tf
 import time as _t
@@ -38,18 +38,16 @@ def _is_uri(url):
 
 def _uri_to_path(uri):
     parsed = _up.urlparse(uri)
-    host = f"{_os.path.sep}{_os.path.sep}{parsed.netloc}{_os.path.sep}"
-    return _os.path.relpath(
-        _os.path.normpath(
-            _os.path.join(host, _ur.url2pathname(_up.unquote(parsed.path)))
-        )
+    host = f"{os.path.sep}{os.path.sep}{parsed.netloc}{os.path.sep}"
+    return os.path.relpath(
+        os.path.normpath(os.path.join(host, _ur.url2pathname(_up.unquote(parsed.path))))
     )
 
 
 class FileDependency:
     def __init__(
         self,
-        source: str | _os.PathLike,
+        source: str | os.PathLike,
         file_store: FileStore = None,
         ext: str = None,
         cache=True,
@@ -105,7 +103,7 @@ class FileDependency:
     def provide_locally(self):
         try:
             path = self._scheme.get_local_path(self)
-            if _os.path.exists(path):
+            if os.path.exists(path):
                 yield (path, None)
             else:
                 raise FileNotFoundError()
@@ -117,7 +115,7 @@ class FileDependency:
                 name = "file"
                 if self.extension:
                     name = f"{name}.{self.extension}"
-                filepath = _os.path.join(dirpath, name)
+                filepath = os.path.join(dirpath, name)
                 with open(filepath, "wb") as f:
                     f.write(content[0])
                 yield (filepath, content[1])
@@ -171,13 +169,13 @@ class UriScheme(_abc.ABC):
     @_abc.abstractmethod
     def find(self, file: FileDependency):
         path = _uri_to_path(file.uri)
-        return _os.path.exists(path)
+        return os.path.exists(path)
 
     @_abc.abstractmethod
     def should_update(self, file: FileDependency, stored_file):
         path = _uri_to_path(file.uri)
         try:
-            file_mtime = _os.path.getmtime(path)
+            file_mtime = os.path.getmtime(path)
         except FileNotFoundError:
             return False
         try:
@@ -422,8 +420,6 @@ class CodeDependencyNode(FileDependencyNode):
 
     @config.property
     def file(self):
-        import os
-
         if getattr(self, "scaffold", None) is not None:
             file_store = self.scaffold.files
         else:
@@ -433,7 +429,7 @@ class CodeDependencyNode(FileDependencyNode):
             module_file = os.path.abspath(os.path.join(os.getcwd(), self.module))
         else:
             # Module like string converted to a path string relative to current folder
-            module_file = "./" + self.module.replace(".", _os.sep) + ".py"
+            module_file = "./" + self.module.replace(".", os.sep) + ".py"
         return FileDependency(module_file, file_store=file_store)
 
     def __init__(self, module=None, **kwargs):
@@ -453,7 +449,7 @@ class CodeDependencyNode(FileDependencyNode):
         import importlib.util
         import sys
 
-        sys.path.append(_os.getcwd())
+        sys.path.append(os.getcwd())
         try:
             with self.file.provide_locally() as (path, encoding):
                 spec = importlib.util.spec_from_file_location(self.module, path)
@@ -463,7 +459,7 @@ class CodeDependencyNode(FileDependencyNode):
                 return module if self.attr is None else getattr(module, self.attr)
         finally:
             tmp = list(reversed(sys.path))
-            tmp.remove(_os.getcwd())
+            tmp.remove(os.getcwd())
             sys.path = list(reversed(tmp))
 
 
@@ -635,7 +631,7 @@ class MorphologyPipelineNode(FilePipelineMixin):
         Add the loading of the current morphology to a job queue.
 
         :param pool: Queue of jobs.
-        :type pool:bsb.services.pool.JobPool
+        :type pool: bsb.services.pool.JobPool
         """
 
         def job(scaffold, i, j):

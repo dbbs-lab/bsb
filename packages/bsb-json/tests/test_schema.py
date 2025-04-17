@@ -1,4 +1,3 @@
-import unittest
 
 from bsb import config
 

@@ -52,7 +52,7 @@ class TestJsonRef(unittest.TestCase):
         tree, meta = get_configuration_parser("json").parse(
             get_content("interdoc_refs.json"),
             path=str(
-                (pathlib.Path(__file__).parent / "parser_tests" / "interdoc_refs.json")
+                pathlib.Path(__file__).parent / "parser_tests" / "interdoc_refs.json"
             ),
         )
         self.assertIn("was", tree["refs"]["far"])
@@ -64,7 +64,7 @@ class TestJsonRef(unittest.TestCase):
         tree, meta = get_configuration_parser("json").parse(
             get_content("doubleref.json"),
             path=str(
-                (pathlib.Path(__file__).parent / "parser_tests" / "doubleref.json")
+                pathlib.Path(__file__).parent / "parser_tests" / "doubleref.json"
             ),
         )
 
@@ -73,7 +73,7 @@ class TestJsonRef(unittest.TestCase):
         tree, meta = parser.parse(
             get_content("doubleref.json"),
             path=str(
-                (pathlib.Path(__file__).parent / "parser_tests" / "doubleref.json")
+                pathlib.Path(__file__).parent / "parser_tests" / "doubleref.json"
             ),
         )
         self.assertTrue(str(parser.references[0]).startswith("<file ref '"))
@@ -126,7 +126,7 @@ class TestJsonImport(unittest.TestCase):
         self.assertEqual(["new", "list"], tree["imp"]["importable"]["dicts"]["with"])
 
     def test_import_overwrite(self):
-        with self.assertWarns(ConfigurationWarning) as warning:
+        with self.assertWarns(ConfigurationWarning) as _warning:
             tree, meta = get_configuration_parser("json").parse(
                 get_content("indoc_import_overwrite.json")
             )

@@ -27,7 +27,7 @@ def object_schema(obj, defs=None):
     cls = obj.__class__
     obj_hints = typing.get_type_hints(cls, localns={"Scaffold": Scaffold})
     obj_attrs = get_config_attributes(cls)
-    for attr, descr in obj_attrs.items():
+    for attr, _descr in obj_attrs.items():
         hint = obj_hints.get(attr, str)
         schema["properties"][attr] = attr_schema(hint, defs)
 
@@ -62,7 +62,7 @@ def attr_schema(hint, defs=None):
     else:
         try:
             is_node = get_config_attributes(hint)
-        except:
+        except Exception:
             is_node = False
         if is_node:
             key = defs_key(hint)

@@ -323,7 +323,7 @@ requires-dist = [
     { name = "bsb-json", marker = "extra == 'docs'", editable = "../bsb-json" },
     { name = "bsb-json", marker = "extra == 'test'", editable = "../bsb-json" },
     { name = "bsb-test", marker = "extra == 'test'", editable = "../bsb-test" },
-    { name = "bsb-yaml", marker = "extra == 'docs'", specifier = "~=4.0" },
+    { name = "bsb-yaml", marker = "extra == 'docs'", editable = "../bsb-yaml" },
     { name = "dashing-next", specifier = "~=0.1" },
     { name = "errr", specifier = "~=1.2" },
     { name = "exceptiongroup", specifier = ">=1.2.0" },
@@ -448,15 +448,28 @@ dev = [{ name = "bsb-test", extras = ["dev"] }]
 [[package]]
 name = "bsb-yaml"
 version = "4.2.3"
-source = { registry = "https://pypi.org/simple/" }
+source = { editable = "../bsb-yaml" }
 dependencies = [
     { name = "bsb-core" },
     { name = "pyyaml" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/48/bc/63aab0c75238370e6f2bdd0690c3ca2c9e07fccaed9bfd79ebcfc5037dae/bsb_yaml-4.2.3.tar.gz", hash = "sha256:3e2b5766daab29052297d11b69c6f251f8db576a35b224c11b99dcf49341dd11", size = 14065 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/80/e7/e68362d5a92099b7a5100bc61b11d9537b59999399e38ec3d6ed69cfc184/bsb_yaml-4.2.3-py2.py3-none-any.whl", hash = "sha256:7f414a4e49221f3f245911eb4c2ed082102ac79f0a378e2f06f9995101eb36cd", size = 15390 },
+
+[package.metadata]
+requires-dist = [
+    { name = "bsb-core", editable = "." },
+    { name = "bsb-core", extras = ["parallel"], marker = "extra == 'test'", editable = "." },
+    { name = "bsb-test", marker = "extra == 'test'", editable = "../bsb-test" },
+    { name = "bsb-yaml", extras = ["test"], marker = "extra == 'dev'", editable = "../bsb-yaml" },
+    { name = "bump-my-version", marker = "extra == 'dev'", specifier = "~=0.24" },
+    { name = "coverage", marker = "extra == 'test'", specifier = "~=7.0" },
+    { name = "pre-commit", marker = "extra == 'dev'", specifier = "~=3.5" },
+    { name = "pyyaml", specifier = "~=6.0" },
+    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.8.2" },
 ]
+provides-extras = ["test", "dev"]
+
+[package.metadata.requires-dev]
+dev = [{ name = "bsb-yaml", extras = ["dev"], editable = "../bsb-yaml" }]
 
 [[package]]
 name = "certifi"

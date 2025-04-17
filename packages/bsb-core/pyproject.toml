@@ -100,6 +100,7 @@ bsb-test = { path = "../bsb-test", editable = true }
 bsb-hdf5 = { path = "../bsb-hdf5", editable = true }
 bsb-arbor = { path = "../bsb-arbor", editable = true }
 bsb-json = { path = "../bsb-json", editable = true }
+bsb-yaml = { path = "../bsb-yaml", editable = true }
 
 [tool.coverage.run]
 branch = true

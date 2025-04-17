@@ -1,0 +1,26 @@
+name: Starting example
+storage:
+  engine: hdf5
+  root: network.hdf5
+network:
+  x: 200.0
+  y: 200.0
+  z: 200.0
+partitions:
+  base_layer:
+    type: layer
+    thickness: 100
+cell_types:
+  base_type:
+    spatial:
+      radius: 2.5
+      density: 3.9e-4
+placement:
+  example_placement:
+    strategy: bsb.placement.RandomPlacement
+    cell_types:
+    - base_type
+    partitions:
+    - base_layer
+connectivity: {}
+simulations: {}

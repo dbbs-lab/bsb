@@ -114,11 +114,7 @@ class TTYTerminalListener(Listener):
 
     def update_progress(self):
         cast(Text, self._ui.items[0]).text = (
-            (
-                f"Workflow: {' | '.join(self._workflow.phases)}\n"
-                if self._workflow
-                else ""
-            )
+            (f"Workflow: {' | '.join(self._workflow.phases)}\n" if self._workflow else "")
             + (f"Phase: {self._workflow.phase}\n" if self._workflow else "")
             + f"Status: {str(self._pool_status).split('.')[1]}\n"
             f"Job total:\n"

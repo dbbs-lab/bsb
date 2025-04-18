@@ -22,9 +22,7 @@ def internet_connection():
 
 
 def skip_nointernet(o):
-    return _unittest.skipIf(not internet_connection(), "Internet connection required.")(
-        o
-    )
+    return _unittest.skipIf(not internet_connection(), "Internet connection required.")(o)
 
 
 def skip_serial(o):

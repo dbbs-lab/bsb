@@ -1,4 +1,3 @@
-
 from bsb import config
 
 from bsb_json import get_schema

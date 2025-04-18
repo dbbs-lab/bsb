@@ -2,9 +2,14 @@ import itertools
 import json
 
 import numpy as np
-from bsb import Branch, MissingMorphologyError, Morphology
+from bsb import (
+    Branch,
+    MissingMorphologyError,
+    Morphology,
+    MorphologyRepositoryError,
+    StoredMorphology,
+)
 from bsb import MorphologyRepository as IMorphologyRepository
-from bsb import MorphologyRepositoryError, StoredMorphology
 from bsb._encoding import EncodedLabels
 
 from .resource import HANDLED, Resource, handles_handles

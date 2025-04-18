@@ -106,16 +106,11 @@ class MorphologySet:
 
             if idx not in self._cached:
                 self._cached[idx] = (
-                    self._loaders[idx]
-                    .load()
-                    .set_label_filter(self._labels)
-                    .as_filtered()
+                    self._loaders[idx].load().set_label_filter(self._labels).as_filtered()
                 )
             return self._cached[idx].copy()
         else:
-            return (
-                self._loaders[idx].load().set_label_filter(self._labels).as_filtered()
-            )
+            return self._loaders[idx].load().set_label_filter(self._labels).as_filtered()
 
     def _get_many(self, data, cache, hard_cache):
         if hard_cache:
@@ -405,9 +400,7 @@ class SubTree:
         Return a dictionary containing mapping the id of the branch to its children.
         """
         idmap = {b: n for n, b in enumerate(self.branches)}
-        return {
-            n: list(map(idmap.get, b.children)) for n, b in enumerate(self.branches)
-        }
+        return {n: list(map(idmap.get, b.children)) for n, b in enumerate(self.branches)}
 
     @property
     def path_length(self):
@@ -547,9 +540,7 @@ class SubTree:
         if not isinstance(rotation, Rotation):
             rotation = Rotation.from_euler("xyz", rotation, degrees=True)
         if self._is_shared:
-            self._shared._points[:] = self._rotate(
-                self._shared._points, rotation, center
-            )
+            self._shared._points[:] = self._rotate(self._shared._points, rotation, center)
         else:
             for b in self.branches:
                 b.points[:] = self._rotate(b.points, rotation, center)
@@ -701,8 +692,7 @@ class _SharedBuffers:
     def properties_shared(self, branches):
         return all(
             (
-                b._properties.keys() == self._prop.keys()
-                and all(c.base is self._prop[c])
+                b._properties.keys() == self._prop.keys() and all(c.base is self._prop[c])
                 for a, c in b._properties.items()
             )
             for b in branches
@@ -1500,9 +1490,7 @@ class Branch:
         """
         return self.labels.get_mask(labels)
 
-    def introduce_point(
-        self, index, position, radius=None, labels=None, properties=None
-    ):
+    def introduce_point(self, index, position, radius=None, labels=None, properties=None):
         """
         Insert a new point at ``index``, before the existing point at ``index``.
         Radius, labels and extra properties can be set or will be copied from the

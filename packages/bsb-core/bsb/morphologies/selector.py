@@ -52,9 +52,7 @@ class NameSelector(MorphologySelector, classmap_entry="by_name"):
         return self.__tree__()
 
     def _cache_patterns(self):
-        self._pnames = {
-            n: n.replace("*", r".*").replace("|", "\\|") for n in self.names
-        }
+        self._pnames = {n: n.replace("*", r".*").replace("|", "\\|") for n in self.names}
         self._patterns = {n: re.compile(f"^{pat}$") for n, pat in self._pnames.items()}
         self._empty = not self.names
         self._match = re.compile(f"^({'|'.join(self._pnames.values())})$")
@@ -120,9 +118,7 @@ class NeuroMorphoSelector(NameSelector, classmap_entry="from_neuromorpho"):
                 # Certificate issues with neuromorpho --> verify=False
                 res = requests.get(cls._url + cls._meta + ",".join(names), verify=False)
                 if res.status_code == 404:
-                    raise SelectorError(
-                        f"'{names[0]}' is not a valid NeuroMorpho name."
-                    )
+                    raise SelectorError(f"'{names[0]}' is not a valid NeuroMorpho name.")
                 elif res.status_code != 200:
                     raise SelectorError("NeuroMorpho API error: " + res.message)
                 metas = {n: None for n in names}

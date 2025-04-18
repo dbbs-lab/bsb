@@ -422,9 +422,7 @@ class ShapesComposition:
             specified.
         :rtype: ShapesComposition
         """
-        result = ShapesComposition(
-            dict(voxel_size=self.voxel_size, labels=[], shapes=[])
-        )
+        result = ShapesComposition(dict(voxel_size=self.voxel_size, labels=[], shapes=[]))
         selected_id = np.where(np.isin(labels, self._labels))[0]
         result._shapes = [self._shapes[i].__copy__() for i in selected_id]
         result._labels = [self._labels[i].copy() for i in selected_id]
@@ -699,9 +697,7 @@ class Ellipsoid(GeometricShape, classmap_entry="ellipsoid"):
 
     def wireframe_points(self, nb_points_1=30, nb_points_2=30):
         # Generate an ellipse orientated along x,y,z
-        x, y, z = uniform_surface_wireframe(
-            nb_points_1, nb_points_2, self.surface_point
-        )
+        x, y, z = uniform_surface_wireframe(nb_points_1, nb_points_2, self.surface_point)
         # Rotate the ellipse
         rmat = np.array([self.v0, self.v1, self.v2]).T
         x, y, z = rotate_3d_mesh_by_rot_mat(x, y, z, rmat)
@@ -799,9 +795,7 @@ class Cone(GeometricShape, classmap_entry="cone"):
 
         # Find the angle between the points and the apex
         apex_angles = np.arccos(
-            np.dot(
-                (rot_pts / np.linalg.norm(rot_pts, axis=1)[..., np.newaxis]), h_vector
-            )
+            np.dot((rot_pts / np.linalg.norm(rot_pts, axis=1)[..., np.newaxis]), h_vector)
         )
         # Compute the cone angle
         cone_angle = np.arctan(self.radius / height)
@@ -1207,9 +1201,7 @@ class Parallelepiped(GeometricShape, classmap_entry="parallelepiped"):
         return minima, maxima
 
     def get_volume(self):
-        vol = np.dot(
-            self.side_vector_3, np.cross(self.side_vector_1, self.side_vector_2)
-        )
+        vol = np.dot(self.side_vector_3, np.cross(self.side_vector_1, self.side_vector_2))
         return vol
 
     def translate(self, t_vector: np.ndarray[float]):

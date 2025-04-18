@@ -92,9 +92,7 @@ class TestFileRef(unittest.TestCase):
         self.assertNotIn("$ref", tree["refs"]["whats the"], "Ref key not removed")
         self.assertEqual("key", tree["refs"]["whats the"]["secret"])
         self.assertEqual("is hard", tree["refs"]["whats the"]["nested secrets"]["vim"])
-        self.assertEqual(
-            "convoluted", tree["refs"]["whats the"]["nested secrets"]["and"]
-        )
+        self.assertEqual("convoluted", tree["refs"]["whats the"]["nested secrets"]["and"])
         # Checking str keys order.
         self.assertEqual(
             str(tree["refs"]["whats the"]["nested secrets"]),

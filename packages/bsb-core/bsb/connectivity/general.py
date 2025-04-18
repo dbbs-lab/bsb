@@ -31,9 +31,7 @@ class AllToAll(ConnectionStrategy):
     All to all connectivity between two neural populations
     """
 
-    affinity: float = config.attr(
-        type=types.float(0.0, 1.0), required=False, default=1.0
-    )
+    affinity: float = config.attr(type=types.float(0.0, 1.0), required=False, default=1.0)
     """Probability for each individual connection to be, default is 1, 
     i.e. all connected."""
 

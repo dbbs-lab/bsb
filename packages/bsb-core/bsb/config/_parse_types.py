@@ -108,9 +108,7 @@ class file_ref:
         self.node.rev_merge(target)
 
     def __str__(self):
-        return "<file ref '{}'>".format(
-            ((self.doc + "#") if self.doc else "") + self.ref
-        )
+        return "<file ref '{}'>".format(((self.doc + "#") if self.doc else "") + self.ref)
 
 
 class file_imp(file_ref):

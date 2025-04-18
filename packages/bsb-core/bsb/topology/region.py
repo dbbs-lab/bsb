@@ -125,9 +125,7 @@ class Stack(RegionGroup, classmap_entry="stack"):
         cumul_offset = self._resolve_anchor_offset(layout.children, axis_idx)
         for child in layout.children:
             if child.data is None:
-                warn(
-                    f"Skipped layout arrangement of {child._owner.name} in {self.name}"
-                )
+                warn(f"Skipped layout arrangement of {child._owner.name} in {self.name}")
                 continue
             translation = (
                 layout.data.ldc[axis_idx] + cumul_offset - child.data.ldc

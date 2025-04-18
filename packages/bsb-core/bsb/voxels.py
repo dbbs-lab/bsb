@@ -22,9 +22,7 @@ class VoxelData(np.ndarray):
             if len(set(keys)) != len(keys):
                 raise ValueError("Data keys must be unique")
             if len(keys) != data.shape[1]:
-                raise ValueError(
-                    "Amount of data keys must match amount of data columns"
-                )
+                raise ValueError("Amount of data keys must match amount of data columns")
             obj._keys = keys
         else:
             obj._keys = []
@@ -117,9 +115,7 @@ class VoxelSet:
             else:
                 raise ValueError("`voxels` needs to be convertable to a 2D matrix")
         if voxels.ndim == 2 and voxels.shape[1] != 3:
-            raise ValueError(
-                "`voxels` needs to have 3 columns, 1 for each spatial dim."
-            )
+            raise ValueError("`voxels` needs to have 3 columns, 1 for each spatial dim.")
         if not _is_broadcastable(voxels.shape, voxel_size.shape):
             raise ValueError(
                 f"Shape {voxel_size.shape} of `size` is"

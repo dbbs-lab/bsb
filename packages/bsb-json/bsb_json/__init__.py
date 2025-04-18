@@ -10,5 +10,5 @@ __version__ = "4.2.3"
 __all__ = [
     "get_json_schema",
     "get_schema",
-    "JsonParser"
+    "JsonParser",
 ]

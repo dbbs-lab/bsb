@@ -45,9 +45,7 @@ class BsbCommand:
         if abstract:
             return
         if cls.add_to_parser is BsbCommand.add_to_parser:
-            raise NotImplementedError(
-                "Commands must implement a `add_to_parser` method."
-            )
+            raise NotImplementedError("Commands must implement a `add_to_parser` method.")
         if cls.handler is BsbCommand.handler:
             raise NotImplementedError("Commands must implement a `handler` method.")
         if name is None:

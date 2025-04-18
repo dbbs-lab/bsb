@@ -108,9 +108,7 @@ class TestStorage(RandomStorageFixture, engine_name=None):
         for _ in range(100):
             os = Storage(self._engine, s.root)
             s.move(s.root[:-5] + "e" + s.root[-5:])
-            self.assertTrue(
-                s.exists(), f"{MPI.get_rank()} can't find moved storage yet."
-            )
+            self.assertTrue(s.exists(), f"{MPI.get_rank()} can't find moved storage yet.")
             self.assertFalse(os.exists(), f"{MPI.get_rank()} still finds old storage.")
 
     @timeout(10)
@@ -118,9 +116,7 @@ class TestStorage(RandomStorageFixture, engine_name=None):
         for _ in range(100):
             s = self.storage
             s.remove()
-            self.assertFalse(
-                s.exists(), f"{MPI.get_rank()} still finds removed storage."
-            )
+            self.assertFalse(s.exists(), f"{MPI.get_rank()} still finds removed storage.")
             s.create()
             self.assertTrue(s.exists(), f"{MPI.get_rank()} can't find new storage yet.")
 
@@ -262,9 +258,7 @@ class TestPlacementSet(
     def test_load_no_morphologies(self):
         self.network.compile()
         ps = self.network.get_placement_set("test_cell")
-        with self.assertRaises(
-            DatasetNotFoundError, msg="missing morphos should raise"
-        ):
+        with self.assertRaises(DatasetNotFoundError, msg="missing morphos should raise"):
             ps.load_morphologies()
 
     def test_load_morphologies(self):
@@ -558,25 +552,19 @@ class TestConnectivitySet(
                 self.assertClose(np.arange(0, 25), np.sort(u))
                 self.assertClose(25, c)
                 ids = conns[1][:, 0]
-                self.assertEqual(
-                    (625,), ids.shape, "625 global_locs per block expected"
-                )
+                self.assertEqual((625,), ids.shape, "625 global_locs per block expected")
                 u, c = np.unique(ids, return_counts=True)
                 self.assertEqual(25, len(u), "expected exactly 25 global cells")
                 self.assertClose(np.arange(0, 25), np.sort(u))
                 self.assertClose(25, c)
-        self.assertEqual(
-            100 * 100, len(self.network.get_connectivity_set("all_to_all"))
-        )
+        self.assertEqual(100 * 100, len(self.network.get_connectivity_set("all_to_all")))
 
     def test_local(self):
         # Test that connections can be stored over chunked layout
         # and can be loaded again.
         cs = self.network.get_connectivity_set("all_to_all")
         for lchunk in cs.get_local_chunks(direction="out"):
-            local_locs, gchunk_ids, global_locs = cs.load_local_connections(
-                "out", lchunk
-            )
+            local_locs, gchunk_ids, global_locs = cs.load_local_connections("out", lchunk)
             ids = local_locs[:, 0]
             self.assertEqual((2500,), ids.shape, "2500 conns per chunk expected")
             u, c = np.unique(ids, return_counts=True)
@@ -589,9 +577,7 @@ class TestConnectivitySet(
             self.assertEqual(25, len(u), "expected exactly 25 global cells")
             self.assertClose(np.arange(0, 25), np.sort(u))
             self.assertClose(100, c, "expected 25 local sources per global cell")
-        self.assertEqual(
-            100 * 100, len(self.network.get_connectivity_set("all_to_all"))
-        )
+        self.assertEqual(100 * 100, len(self.network.get_connectivity_set("all_to_all")))
 
     @skip_parallel
     def test_connect_connect(self):
@@ -679,13 +665,10 @@ class TestConnectivitySet(
                         locals_, globals_ = data
                     except TypeError:
                         self.fail(
-                            "`nested_iter_connections` return value should be"
-                            " unpackable"
+                            "`nested_iter_connections` return value should be unpackable"
                         )
                     except ValueError:
-                        self.fail(
-                            "`nested_iter_connections` should return 2 data values"
-                        )
+                        self.fail("`nested_iter_connections` should return 2 data values")
                     self.assertClose(625, len(locals_), "expected 625 local locs")
                     self.assertClose(625, len(globals_), "expected 625 global locs")
                 self.assertEqual(4, len(gchunks), "expected 4 global chunks")

@@ -34,8 +34,7 @@ class FileStore(IFileStore):
 
     def all(self):
         return {
-            id: self.get_meta(id)
-            for id in map(_path_to_id, os.listdir(self.file_path()))
+            id: self.get_meta(id) for id in map(_path_to_id, os.listdir(self.file_path()))
         }
 
     def store(self, content, id=None, meta=None, encoding=None, overwrite=False):

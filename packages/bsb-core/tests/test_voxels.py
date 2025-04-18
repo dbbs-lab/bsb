@@ -197,9 +197,7 @@ class TestVoxelSet(bsb_test.NumpyTestCase, unittest.TestCase):
                 sc = set.as_spatial_coords()
                 self.assertEqual(2, sc.ndim, "coords should be matrix")
         set = self.empty
-        self.assertEqual(
-            (0, 3), set.as_spatial_coords().shape, "empty coords not empty"
-        )
+        self.assertEqual((0, 3), set.as_spatial_coords().shape, "empty coords not empty")
 
     def test_as_boxes(self):
         for label, set in self.all.items():
@@ -222,9 +220,7 @@ class TestVoxelSet(bsb_test.NumpyTestCase, unittest.TestCase):
 
         for label, set in self.all.items():
             with self.subTest(label=label):
-                self.assertEqual(
-                    None, set.get_data(), "No index no data should be None"
-                )
+                self.assertEqual(None, set.get_data(), "No index no data should be None")
                 self.assertEqual(None, set.get_data([1, 2]), "No data should be None")
                 self.assertEqual(None, set.data, "No data should be None")
 
@@ -345,9 +341,7 @@ class TestVoxelSet(bsb_test.NumpyTestCase, unittest.TestCase):
         vs = self.regulars[0]
         _vs = vs.copy()
         vs.resize([1, 1, 1])
-        self.assertClose(
-            vs.as_spatial_coords() * 2, _vs.as_spatial_coords(), "not half"
-        )
+        self.assertClose(vs.as_spatial_coords() * 2, _vs.as_spatial_coords(), "not half")
         self.assertTrue(vs.regular, "still regular")
         with self.assertRaises(ValueError):
             vs.resize(None)
@@ -420,9 +414,7 @@ class TestVoxelSet(bsb_test.NumpyTestCase, unittest.TestCase):
         vs = VoxelSet.one([[100, 0, 0]], [120, 20, 20], [1])
         self.assertEqual(1, vs.get_data(0))
         vs = VoxelSet.one([100, 0, 0], [120, 20, 20], [1, 1])
-        self.assertEqual(
-            (1, 2), vs.get_data().shape, "incorrect interpretation of 2col"
-        )
+        self.assertEqual((1, 2), vs.get_data().shape, "incorrect interpretation of 2col")
         self.assertEqual([1, 1], list(vs.get_data(0)))
 
     def test_index(self):
@@ -439,14 +431,10 @@ class TestVoxelSet(bsb_test.NumpyTestCase, unittest.TestCase):
                 sel = set[1]
                 self.assertEqual(1, len(sel), "selected 1 index, should have 1 voxel")
                 sel = set[:]
-                self.assertEqual(
-                    len(set), len(sel), "indexed all, didn't get all voxels"
-                )
+                self.assertEqual(len(set), len(sel), "indexed all, didn't get all voxels")
         vs = self.regulars[0]
         v0 = vs[0]
-        self.assertEqual(
-            VoxelSet, type(v0), "single voxel index didn't make a VoxelSet"
-        )
+        self.assertEqual(VoxelSet, type(v0), "single voxel index didn't make a VoxelSet")
         vs = self.data1d[0]
         vs[1:]
 
@@ -471,9 +459,7 @@ class TestVoxelSet(bsb_test.NumpyTestCase, unittest.TestCase):
 
     def test_concatenate_wdata(self):
         for _ in range(1000):
-            choices = random.choices(
-                list(self.data_dict.items()), k=random.randint(0, 5)
-            )
+            choices = random.choices(list(self.data_dict.items()), k=random.randint(0, 5))
             labels = [lbl for lbl, set_ in choices]
             sets = [set_ for lbl, set_ in choices]
             with self.subTest(labels=labels):
@@ -499,7 +485,8 @@ class TestVoxelSet(bsb_test.NumpyTestCase, unittest.TestCase):
             ["0", "1", "2", "a", "b"], cat._data.keys, "should add unnumbered cols"
         )
         self.assertTrue(
-            np.all(cat._data[3:, :3] == None), "unum cols should be first"  # noqa: E711
+            np.all(cat._data[3:, :3] == None),
+            "unum cols should be first",  # noqa: E711
         )
 
     def test_concatenate_partial_same_datakeys(self):
@@ -543,9 +530,7 @@ class TestVoxelSet(bsb_test.NumpyTestCase, unittest.TestCase):
         }.items():
             data = getattr(self, subtype)
             with self.subTest(type=subtype):
-                self.assertEqual(
-                    results, [vs.equilateral for vs in data], "equi-cy fail"
-                )
+                self.assertEqual(results, [vs.equilateral for vs in data], "equi-cy fail")
         self.assertFalse(self.empty.equilateral, "empty vs should not be equilateral")
 
 
@@ -557,12 +542,14 @@ class TestVoxelData(unittest.TestCase):
         with self.assertRaises(ValueError):
             VoxelData(np.array([[1], [1], [1]]), keys=["a", "b", "c"])
         with self.assertRaises(ValueError):
-            VoxelSet(
-                [[0, 0, 0], [1, 0, 0], [2, 0, 0]],
-                [2, 2, 2],
-                [[1, "a"], [0, "b"], [1, "c"]],
-                data_keys=["b", "b"],
-            ),
+            (
+                VoxelSet(
+                    [[0, 0, 0], [1, 0, 0], [2, 0, 0]],
+                    [2, 2, 2],
+                    [[1, "a"], [0, "b"], [1, "c"]],
+                    data_keys=["b", "b"],
+                ),
+            )
         self.assertTrue(np.all(vd["alpha"] == vd), "Selecting all should eq all")
         self.assertTrue(np.all(vd[:] == vd), "Selecting all should eq all")
         self.assertTrue(np.all(vd[:, :] == vd), "Selecting all should eq all")

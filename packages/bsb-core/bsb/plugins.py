@@ -41,9 +41,7 @@ def discover(category):
     if not hasattr(eps, "select"):
         eps = _EntryPointsPatch(eps)
 
-    for entry in chain(
-        eps.select(group="bsb." + category), _unittest_plugins[category]
-    ):
+    for entry in chain(eps.select(group="bsb." + category), _unittest_plugins[category]):
         try:
             advert = entry.load()
             if hasattr(advert, "__plugin__"):

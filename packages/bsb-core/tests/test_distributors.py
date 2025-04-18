@@ -44,9 +44,7 @@ class TestMorphologyDistributor(
             regions=dict(reg=dict(children=["a"])),
             partitions=dict(a=dict(thickness=100)),
             cell_types=dict(
-                a=dict(
-                    spatial=dict(radius=2, density=1e-4, morphologies=[{"names": []}])
-                )
+                a=dict(spatial=dict(radius=2, density=1e-4, morphologies=[{"names": []}]))
             ),
             placement=dict(
                 a=dict(
@@ -179,6 +177,4 @@ class TestVolumetricRotations(
 
         self.network.compile(clear=True)
         rotations = np.array(self.network.get_placement_set("a").load_rotations())
-        self.assertTrue(
-            np.array_equal(np.all(rotations == 0.0, axis=1), region_ids > 0)
-        )
+        self.assertTrue(np.array_equal(np.all(rotations == 0.0, axis=1), region_ids > 0))

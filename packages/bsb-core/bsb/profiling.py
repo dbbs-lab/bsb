@@ -95,9 +95,7 @@ class ProfilingSession:
         try:
             from snakeviz.cli import main as snakeviz
         except ImportError:
-            raise ImportError(
-                "Please `pip install snakeviz` to view profiles."
-            ) from None
+            raise ImportError("Please `pip install snakeviz` to view profiles.") from None
 
         args = sys.argv
         if self._current_f is None:
@@ -136,9 +134,7 @@ def node_meter(*methods):
     def decorator(node_cls):
         for method_name in methods:
             if method := getattr(node_cls, method_name, None):
-                setattr(
-                    node_cls, method_name, meter(method, name_f=get_node_method_name)
-                )
+                setattr(node_cls, method_name, meter(method, name_f=get_node_method_name))
 
         return node_cls
 

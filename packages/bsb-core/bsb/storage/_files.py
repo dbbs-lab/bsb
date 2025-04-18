@@ -299,17 +299,13 @@ class NeuroMorphoScheme(UrlScheme):
         name = file.uri[idx : (idx + len(name))]
         with self.create_session() as session:
             try:
-                res = session.get(
-                    self._nm_url + self._meta + name, verify=_cert.where()
-                )
+                res = session.get(self._nm_url + self._meta + name, verify=_cert.where())
             except Exception:
                 return {"archive": "none", "neuron_name": "none"}
             if res.status_code == 404:
                 res = session.get(self._nm_url, verify=_cert.where())
                 if res.status_code != 200 or "Service Interruption Notice" in res.text:
-                    warn(
-                        f"NeuroMorpho.org is down, can't retrieve morphology '{name}'."
-                    )
+                    warn(f"NeuroMorpho.org is down, can't retrieve morphology '{name}'.")
                     return {"archive": "none", "neuron_name": "none"}
                 raise OSError(f"'{name}' is not a valid NeuroMorpho name.")
             elif res.status_code != 200:

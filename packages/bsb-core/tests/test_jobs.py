@@ -352,9 +352,7 @@ class TestParallelScheduler(
             results = pool.execute(return_results=True)
 
         if pool.is_main():
-            self.assertTrue(
-                outcome, "A job with unfinished dependencies was scheduled."
-            )
+            self.assertTrue(outcome, "A job with unfinished dependencies was scheduled.")
             self.assertEqual(4, results[job_without_dep])
             self.assertEqual(5, results[job_with_dep])
 

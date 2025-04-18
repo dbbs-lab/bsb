@@ -33,9 +33,7 @@ def _queue_connectivity(self, pool: "JobPool"):
     param pool: pool where the jobs will be queued
     type pool: bsb.services.pool.JobPool
     """
-    deps = set(
-        _gutil.ichain(pool.get_submissions_of(strat) for strat in self.get_deps())
-    )
+    deps = set(_gutil.ichain(pool.get_submissions_of(strat) for strat in self.get_deps()))
     # Schedule all chunks in 1 job
     pre_chunks = _all_chunks(self.presynaptic.cell_types)
     post_chunks = _all_chunks(self.postsynaptic.cell_types)
@@ -96,8 +94,7 @@ class NotParallel:
                 cls.get_region_of_interest = _raise_na
         else:
             raise Exception(
-                "NotParallel can only be applied to placement or "
-                "connectivity strategies"
+                "NotParallel can only be applied to placement or connectivity strategies"
             )
 
 

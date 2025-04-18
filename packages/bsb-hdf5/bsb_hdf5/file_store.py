@@ -20,22 +20,20 @@ class FileStore(Resource, IFileStore):
 
     def all(self):
         with self._engine._read(), self._engine._handle("r") as root:
-                store = root[self._path]
-                return {
-                    id: json.loads(f.attrs.get("meta", "{}")) for id, f in store.items()
-                }
+            store = root[self._path]
+            return {id: json.loads(f.attrs.get("meta", "{}")) for id, f in store.items()}
 
     def load(self, id):
         with self._engine._read(), self._engine._handle("r") as root:
-                ds = root[f"{self._path}/{id}"]
-                data = ds[()]
-                if encoding := ds.attrs.get("encoding", None):
-                    data = data.decode(encoding)
-                return data, json.loads(ds.attrs.get("meta", "{}"))
+            ds = root[f"{self._path}/{id}"]
+            data = ds[()]
+            if encoding := ds.attrs.get("encoding", None):
+                data = data.decode(encoding)
+            return data, json.loads(ds.attrs.get("meta", "{}"))
 
     def remove(self, id):
         with self._engine._write(), self._engine._handle("a") as root:
-                del root[f"{self._path}/{id}"]
+            del root[f"{self._path}/{id}"]
 
     def store(self, content, meta=None, id=None, encoding=None, overwrite=False):
         if id is None:
@@ -44,25 +42,25 @@ class FileStore(Resource, IFileStore):
             meta = {}
         meta["mtime"] = int(time.time())
         with self._engine._write(), self._engine._handle("a") as root:
-                store = root[self._path]
-                if isinstance(content, str):
-                    if encoding is None:
-                        encoding = "utf-8"
-                    content = content.encode(encoding)
-                content = np.array(content)
-                if overwrite:
-                    try:
-                        del store[id]
-                    except KeyError:
-                        pass
+            store = root[self._path]
+            if isinstance(content, str):
+                if encoding is None:
+                    encoding = "utf-8"
+                content = content.encode(encoding)
+            content = np.array(content)
+            if overwrite:
                 try:
-                    ds = store.create_dataset(id, data=content)
-                except ValueError:
-                    raise Exception(f"File `{id}` already exists in store.")
-                if encoding:
-                    ds.attrs["encoding"] = encoding
-                ds.attrs["meta"] = json.dumps(meta)
-                ds.attrs["mtime"] = meta["mtime"]
+                    del store[id]
+                except KeyError:
+                    pass
+            try:
+                ds = store.create_dataset(id, data=content)
+            except ValueError:
+                raise Exception(f"File `{id}` already exists in store.")
+            if encoding:
+                ds.attrs["encoding"] = encoding
+            ds.attrs["meta"] = json.dumps(meta)
+            ds.attrs["mtime"] = meta["mtime"]
         return id
 
     def load_active_config(self):
@@ -111,16 +109,16 @@ class FileStore(Resource, IFileStore):
 
     def has(self, id):
         with self._engine._read(), self._engine._handle("r") as root:
-                return id in root
+            return id in root
 
     def get_mtime(self, id):
         with self._engine._read(), self._engine._handle("r") as root:
-                return root[self._path][id].attrs["mtime"]
+            return root[self._path][id].attrs["mtime"]
 
     def get_encoding(self, id):
         with self._engine._read(), self._engine._handle("r") as root:
-                return root[self._path][id].attrs.get("encoding", None)
+            return root[self._path][id].attrs.get("encoding", None)
 
     def get_meta(self, id):
         with self._engine._read(), self._engine._handle("r") as root:
-                return json.loads(root[self._path][id].attrs.get("meta", "{}"))
+            return json.loads(root[self._path][id].attrs.get("meta", "{}"))

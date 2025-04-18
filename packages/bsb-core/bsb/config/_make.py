@@ -196,9 +196,7 @@ def compile_isc(node_cls, dynamic_config):
 
 def _snake_case(s):
     return "_".join(
-        sub(
-            "([A-Z][a-z]+)", r" \1", sub("([A-Z]+)", r" \1", s.replace("-", " "))
-        ).split()
+        sub("([A-Z][a-z]+)", r" \1", sub("([A-Z]+)", r" \1", s.replace("-", " "))).split()
     ).lower()
 
 

@@ -44,7 +44,7 @@
       "outputs": [],
       "options": {
         "lintFilePatterns": [
-          "bsb_core",
+          "bsb",
           "tests"
         ]
       },
@@ -55,7 +55,7 @@
       "outputs": [],
       "options": {
         "filePatterns": [
-          "bsb_core",
+          "bsb",
           "tests"
         ]
       },

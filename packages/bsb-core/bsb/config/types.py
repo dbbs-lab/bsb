@@ -178,9 +178,7 @@ class class_(object_):
             return value
         obj = super().__call__(value)
         if not inspect.isclass(obj):
-            raise TypeError(
-                f"'{value}' is not a class, got {builtins.type(obj)} instead"
-            )
+            raise TypeError(f"'{value}' is not a class, got {builtins.type(obj)} instead")
         return obj
 
     def __inv__(self, value):
@@ -234,9 +232,7 @@ class method(function_):
         except AttributeError as e:
             raise TypeError(builtins.str(e)) from None
         if not callable(obj):
-            raise TypeError(
-                f"Could not import '{value}' as a method of `{self._class}`."
-            )
+            raise TypeError(f"Could not import '{value}' as a method of `{self._class}`.")
         return obj
 
     def __inv__(self, value):
@@ -301,9 +297,7 @@ def str(strip=False, lower=False, upper=False, safe=True):
     """
     handler_name = "str"
     # Compile a custom function to sanitize the string according to args
-    safety_check = (
-        "\n if not isinstance(s, str):\n  raise TypeError()\n" if safe else ""
-    )
+    safety_check = "\n if not isinstance(s, str):\n  raise TypeError()\n" if safe else ""
     fstr = f"def f(s):{safety_check} return str(s)"
     for add, mod in zip((strip, lower, upper), ("strip", "lower", "upper")):
         if add:
@@ -523,9 +517,7 @@ def list(type=builtins.str, size=None):
             for i, e in enumerate(v):
                 v[i] = type(e)
         except Exception:
-            raise TypeError(
-                f"Couldn't cast element {i} of {value} into {type.__name__}"
-            )
+            raise TypeError(f"Couldn't cast element {i} of {value} into {type.__name__}")
         if size is not None and len(v) != size:
             raise ValueError(f"Couldn't cast {value} into a {size} element list")
         return v
@@ -606,9 +598,7 @@ class distribution(TypeHandler):
     def __call__(self, value, _key=None, _parent=None):
         from ._distributions import Distribution
 
-        if not isinstance(value, builtins.list) and not isinstance(
-            value, builtins.dict
-        ):
+        if not isinstance(value, builtins.list) and not isinstance(value, builtins.dict):
             value = {"distribution": "constant", "constant": value}
 
         return Distribution(**value, _key=_key, _parent=_parent)
@@ -665,9 +655,7 @@ class evaluation(TypeHandler):
         vid = id(value)
         # Create a set of references from our stored weak references that are still alive.
         if vid not in self._references:
-            raise InvalidReferenceError(
-                f"No evaluation reference found for {vid}", value
-            )
+            raise InvalidReferenceError(f"No evaluation reference found for {vid}", value)
         return self._references[vid]
 
     def __inv__(self, value):

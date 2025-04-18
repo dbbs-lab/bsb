@@ -9,9 +9,10 @@ from bsb import (
     MissingMorphologyError,
     MorphologySelector,
     MorphologySet,
+    RotationSet,
+    config,
 )
 from bsb import PlacementSet as IPlacementSet
-from bsb import RotationSet, config
 from bsb._encoding import EncodedLabels
 
 from .chunks import ChunkedCollection, ChunkedProperty, ChunkLoader
@@ -300,9 +301,7 @@ class PlacementSet(
         if additional is not None:
             for key, ds in additional.items():
                 self.append_additional(key, chunk, ds)
-        self._track_add(
-            handle, chunk, len(positions) if positions is not None else count
-        )
+        self._track_add(handle, chunk, len(positions) if positions is not None else count)
 
     def _append_morphologies(self, chunk, new_set):
         with self.chunk_context([chunk]):
@@ -422,9 +421,7 @@ class PlacementSet(
 
     @handles_handles("r")
     def get_label_mask(self, labels=None, handle=HANDLED):
-        return self._labels_chunks.load(handle=handle, pad_by="position").get_mask(
-            labels
-        )
+        return self._labels_chunks.load(handle=handle, pad_by="position").get_mask(labels)
 
     def _lendemux(self):
         """

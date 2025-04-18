@@ -116,9 +116,7 @@ class SpoofDetails(AfterConnectivityHook):
         compartments = np.column_stack(
             (
                 axons[np.random.randint(0, len(axons), len(connectivity_matrix))],
-                dendrites[
-                    np.random.randint(0, len(dendrites), len(connectivity_matrix))
-                ],
+                dendrites[np.random.randint(0, len(dendrites), len(connectivity_matrix))],
             )
         )
         # Erase previous connection data so that `.connect_cells` can overwrite it.

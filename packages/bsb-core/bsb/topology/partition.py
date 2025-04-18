@@ -462,9 +462,7 @@ class NrrdVoxels(Voxels, classmap_entry="nrrd"):
         source_headers = {s: s.get_header() for s in self._src}
         all_headers = mask_headers.copy()
         all_headers.update(source_headers)
-        dim_probs = [
-            (s, d) for s, h in all_headers.items() if (d := h["dimension"]) != 3
-        ]
+        dim_probs = [(s, d) for s, h in all_headers.items() if (d := h["dimension"]) != 3]
         if dim_probs:
             summ = ", ".join(f"'{s}' has {d}" for s, d in dim_probs)
             raise ConfigurationError(f"NRRD voxels must contain 3D arrays; {summ}")

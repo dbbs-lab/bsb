@@ -93,9 +93,9 @@ class Chunk(np.ndarray):
     @classmethod
     def from_id(cls, id, size):
         return cls(
-            np.uint16(
-                [id % 2**16, (id // 2**16) % 2**16, (id // 2**32) % 2**16]
-            ).astype(np.int16),
+            np.uint16([id % 2**16, (id // 2**16) % 2**16, (id // 2**32) % 2**16]).astype(
+                np.int16
+            ),
             size,
         )
 

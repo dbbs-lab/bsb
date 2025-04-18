@@ -67,9 +67,7 @@ class Particle:
 
 
 class Neighbourhood:
-    def __init__(
-        self, epicenter, neighbours, neighbour_radius, partners, partner_radius
-    ):
+    def __init__(self, epicenter, neighbours, neighbour_radius, partners, partner_radius):
         self.epicenter = epicenter
         self.neighbours = neighbours
         self.neighbour_radius = neighbour_radius
@@ -254,10 +252,7 @@ class VolumeFiller:
             particles_volume = sum(sphere_volume(p.radius) for p in particles)
         if volume is None:
             volume = sum(
-                sum(
-                    np.prod(v.size)
-                    for v in np.array(self.voxels)[np.array(p["voxels"])]
-                )
+                sum(np.prod(v.size) for v in np.array(self.voxels)[np.array(p["voxels"])])
                 for p in self.particle_types
             )
         return particles_volume / volume

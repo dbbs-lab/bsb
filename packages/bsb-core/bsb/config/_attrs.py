@@ -282,9 +282,7 @@ def provide(value):
     prop = property(value)
 
     def provided(self, instance, value):
-        raise AttributeError(
-            f"Can't set attribute, class provides the value '{value}'."
-        )
+        raise AttributeError(f"Can't set attribute, class provides the value '{value}'.")
 
     # Create a callable object that invokes `provided` when called, and whose `bool()`
     # returns `False`. Later in `_is_settable_attr`, we use this to trick the short

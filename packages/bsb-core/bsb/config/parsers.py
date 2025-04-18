@@ -144,9 +144,7 @@ class ParsesReferences:
                 ext = file.split(".")[-1]
                 with open(file) as f:
                     content = f.read()
-                    _, content, _ = _try_parsers(
-                        content, parser_classes, ext, path=file
-                    )
+                    _, content, _ = _try_parsers(content, parser_classes, ext, path=file)
             try:
                 self.resolved_documents[file] = self._resolve_document(content, refs)
             except FileReferenceError as jre:

@@ -126,8 +126,7 @@ class ShapeToShapeIntersection(ConnectionStrategy):
                         def sizemod(q, aff):
                             ln = len(q)
                             return int(
-                                np.floor(ln * aff)
-                                + (np.random.rand() < ((ln * aff) % 1))
+                                np.floor(ln * aff) + (np.random.rand() < ((ln * aff) % 1))
                             )
 
                         selected = selected[

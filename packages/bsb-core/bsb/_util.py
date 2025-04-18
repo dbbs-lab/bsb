@@ -135,9 +135,7 @@ def rotation_matrix_from_vectors(vec1, vec2):
         or not _np.any(vec1)
         or not _np.any(vec2)
     ):
-        raise ValueError(
-            "Vectors should not contain nan and their norm should not be 0."
-        )
+        raise ValueError("Vectors should not contain nan and their norm should not be 0.")
     a = (vec1 / _np.linalg.norm(vec1)).reshape(3)
     b = (vec2 / _np.linalg.norm(vec2)).reshape(3)
     v = _np.cross(a, b)

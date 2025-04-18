@@ -98,9 +98,7 @@ def get_configuration_template(template, path=None):
     return files
 
 
-def copy_configuration_template(
-    template, output="network_configuration.json", path=None
-):
+def copy_configuration_template(template, output="network_configuration.json", path=None):
     """
     Copy the first configuration template file matching the provided name to the provided
     output filename.

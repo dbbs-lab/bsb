@@ -51,9 +51,7 @@ class TestAfterConnectivityHook(
             self.assertEqual(count_files, 1)
 
 
-class TestAfterPlacementHook(
-    RandomStorageFixture, unittest.TestCase, engine_name="hdf5"
-):
+class TestAfterPlacementHook(RandomStorageFixture, unittest.TestCase, engine_name="hdf5"):
     def setUp(self):
         super().setUp()
 

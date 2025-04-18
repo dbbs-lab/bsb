@@ -23,12 +23,8 @@ def single_layer():
 class TestCreateTopology(unittest.TestCase):
     def test_single(self):
         r = topology.Region(name="R", children=[])
-        t = topology.create_topology(
-            [r], np.array([0, 0, 0]), np.array([100, 100, 100])
-        )
-        self.assertEqual(
-            r, t, "Topology with 1 root region should be the region itself"
-        )
+        t = topology.create_topology([r], np.array([0, 0, 0]), np.array([100, 100, 100]))
+        self.assertEqual(r, t, "Topology with 1 root region should be the region itself")
 
     def test_unrelated(self):
         r = topology.Region(children=[])
@@ -92,7 +88,6 @@ def skip_test_allen_api():
 class TestStack(
     RandomStorageFixture, NumpyTestCase, unittest.TestCase, engine_name="hdf5"
 ):
-
     def setUp(self):
         super().setUp()
         self.origin_order = ["rhomboid1", "layer2", "rhomboid2", "layer1", "rhomboid3"]

@@ -246,9 +246,7 @@ class BsbOption:
         :type action: boolean
         """
         if name is None:
-            raise OptionError(
-                "Options must be given a name in the class argument list."
-            )
+            raise OptionError("Options must be given a name in the class argument list.")
         cls.name = name
         cls.env = EnvOptionDescriptor(*env, flag=flag)
         cls.project = ProjectOptionDescriptor(*project)

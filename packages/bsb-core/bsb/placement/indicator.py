@@ -133,9 +133,7 @@ class PlacementIndicator:
                 rel_pl_density = rel_ind.indication("planar_density")
                 rel_pl_density_key = rel_ind.indication("density_key")
                 if rel_density is not None:
-                    estimate = self._density_to_estim(
-                        rel_density * density_ratio, chunk
-                    )
+                    estimate = self._density_to_estim(rel_density * density_ratio, chunk)
                 elif rel_pl_density is not None:
                     estimate = self._pdensity_to_estim(
                         rel_pl_density * density_ratio, chunk

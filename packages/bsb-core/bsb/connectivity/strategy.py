@@ -127,19 +127,17 @@ class ConnectionStrategy(abc.ABC, HasDependencies):
     """Postsynaptic (target) neuron population"""
     depends_on: list[ConnectionStrategy] = config.reflist(refs.connectivity_ref)
     """The list of strategies that must run before this one"""
-    output_naming: str | None | dict[str, dict[str, str, None, list[str]]] = (
-        config.attr(
-            type=types.or_(
-                types.str(),
-                types.dict(
-                    type=types.dict(
-                        type=types.or_(
-                            types.str(), types.list(type=types.str()), types.none()
-                        )
+    output_naming: str | None | dict[str, dict[str, str, None, list[str]]] = config.attr(
+        type=types.or_(
+            types.str(),
+            types.dict(
+                type=types.dict(
+                    type=types.or_(
+                        types.str(), types.list(type=types.str()), types.none()
                     )
-                ),
-                types.list(type=types.str()),
-            )
+                )
+            ),
+            types.list(type=types.str()),
         )
     )
     """Specifies how to name the output ConnectivitySets in which the connections between
@@ -317,10 +315,7 @@ class ConnectionStrategy(abc.ABC, HasDependencies):
             return self._get_output_name(pre, post)
 
     def _infer_output_name(self, base, pre, post):
-        if (
-            len(self.presynaptic.cell_types) > 1
-            or len(self.postsynaptic.cell_types) > 1
-        ):
+        if len(self.presynaptic.cell_types) > 1 or len(self.postsynaptic.cell_types) > 1:
             if pre is None:
                 # All output names
                 return [

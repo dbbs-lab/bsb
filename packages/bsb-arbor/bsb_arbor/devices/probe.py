@@ -11,7 +11,6 @@ class Probe(ArborDevice):
         return f"cable_probe_{self.probe_type}"
 
     def validate_specifics(self):
-
         if self.get_probe_name() not in vars(arbor):
             raise ConfigurationError(
                 f"`{self.probe_type}` is not a valid probe type for `{self.name}`"

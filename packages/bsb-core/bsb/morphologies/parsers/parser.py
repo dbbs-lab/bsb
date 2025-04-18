@@ -21,9 +21,7 @@ if typing.TYPE_CHECKING:
 @config.dynamic(attr_name="parser", auto_classmap=True, default="bsb")
 class MorphologyParser:
     cls: type = config.attr(type=types.class_(), default="bsb.morphologies.Morphology")
-    branch_cls: type = config.attr(
-        type=types.class_(), default="bsb.morphologies.Branch"
-    )
+    branch_cls: type = config.attr(type=types.class_(), default="bsb.morphologies.Branch")
 
     @abc.abstractmethod
     def parse(self, file: FileDependency | str) -> Morphology:
@@ -175,8 +173,7 @@ class BsbParser(MorphologyParser, classmap_entry="bsb"):
                     branch_id = len(branches)
                     branches.append((parent_bid, branch))
             elif len(child_nodes) == 1 and not (
-                data[node, 1] in boundaries
-                and data[child_nodes[0], 1] not in boundaries
+                data[node, 1] in boundaries and data[child_nodes[0], 1] not in boundaries
             ):
                 # One child, and not a skipped boundary: grow the branch
                 node = child_nodes[0]
@@ -265,9 +262,9 @@ class MorphIOParser(MorphologyParser, classmap_entry="morphio"):
                 children = reversed([(branch, child) for child in section.children])
                 section_stack.extend(children)
         morpho = self.cls(roots, shared_buffers=(points, radii, labels, {"tags": tags}))
-        assert (
-            morpho._check_shared()
-        ), "MorphIO import didn't result in shareable buffers."
+        assert morpho._check_shared(), (
+            "MorphIO import didn't result in shareable buffers."
+        )
         return morpho
 
 

@@ -35,8 +35,8 @@ class Simulation:
         type=ConnectionModel, required=True
     )
     devices: cfgdict[DeviceModel] = config.slot(type=DeviceModel, required=True)
-    post_prepare: cfglist[typing.Callable[[Simulation, typing.Any], None]] = (
-        config.list(type=cfgtypes.function_())
+    post_prepare: cfglist[typing.Callable[[Simulation, typing.Any], None]] = config.list(
+        type=cfgtypes.function_()
     )
 
     @staticmethod

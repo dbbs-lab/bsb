@@ -697,9 +697,7 @@ class PlacementSet(Interface):
         def _box_of(m, o, r):
             oo = (m["ldc"], m["mdc"])
             # Make the 8 corners of the box
-            corners = np.array(
-                [[oo[x][0], oo[y][1], oo[z][2]] for x, y, z in expansion]
-            )
+            corners = np.array([[oo[x][0], oo[y][1], oo[z][2]] for x, y, z in expansion])
             # Rotate them
             rotbox = r.apply(corners)
             # Find outer box, by rotating and translating the starting box
@@ -1166,9 +1164,7 @@ class ConnectivityIterator:
     def _chunk_offsets(self, source, chunks):
         stats = source.get_placement_set().get_chunk_stats()
         if self._scoped and chunks is not None:
-            stats = {
-                chunk: item for chunk, item in stats.items() if int(chunk) in chunks
-            }
+            stats = {chunk: item for chunk, item in stats.items() if int(chunk) in chunks}
         offsets = {}
         ctr = 0
         for chunk, len_ in sorted(

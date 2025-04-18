@@ -79,8 +79,7 @@ class Resource:
 
     def __eq__(self, other):
         return (
-            self._engine == getattr(other, "_engine", None)
-            and self._path == other._path
+            self._engine == getattr(other, "_engine", None) and self._path == other._path
         )
 
     def require(self, handle):
@@ -97,7 +96,7 @@ class Resource:
                 return list(node.keys())
 
     def remove(self):
-        with self._engine._write(),self._engine._handle("a") as f:
+        with self._engine._write(), self._engine._handle("a") as f:
             del f[self._path]
 
     def get_dataset(self, selector=()):

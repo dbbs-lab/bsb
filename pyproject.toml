@@ -23,7 +23,7 @@ dependencies = [
   "bsb-hdf5",
   "bsb-arbor",
   "bsb-json",
-  "bsb-yaml"
+  "bsb-yaml",
 ]
 
 
@@ -38,13 +38,12 @@ dev = [
   "bsb-json[dev]",
   "bsb-yaml[dev]",
   "bsb-arbor[dev]",
-  "bsb-test[dev]"
+  "bsb-test[dev]",
 ]
 
 [dependency-groups]
 dev = [
   "bsb[dev]",
-  "ruff>=0.8.2",
 ]
 
 [tool.setuptools]
@@ -63,26 +62,3 @@ Home = "https://github.com/dbbs-lab/bsb"
 Documentation = "https://bsb.readthedocs.io/"
 "Bug Tracker" = "https://github.com/dbbs-lab/bsb/issues/"
 "Source Code" = "https://github.com/dbbs-lab/bsb/"
-
-[tool.ruff]
-exclude = [ ".ruff_cache", ".svn", ".tox", ".venv", "dist" ]
-line-length = 90
-indent-width = 4
-
-[tool.ruff.format]
-quote-style = "double"
-indent-style = "space"
-skip-magic-trailing-comma = false
-line-ending = "auto"
-docstring-code-line-length = "dynamic"
-
-[tool.ruff.lint]
-select = [ "E", "F", "UP", "B", "SIM", "I" ]
-ignore = [ ]
-fixable = [ "ALL" ]
-unfixable = [ ]
-
-[[tool.uv.index]]
-name = "testpypi"
-url = "https://pypi.org/simple/"
-publish-url = "https://pypi.org/legacy/"

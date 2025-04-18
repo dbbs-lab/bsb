@@ -2,9 +2,8 @@ import json
 
 import errr
 import numpy as np
-from bsb import CellType, Chunk
+from bsb import CellType, Chunk, DatasetNotFoundError, chunklist
 from bsb import ConnectivitySet as IConnectivitySet
-from bsb import DatasetNotFoundError, chunklist
 
 from .resource import (
     HANDLED,
@@ -488,9 +487,7 @@ class CSIterator:
                 )
             )
         else:
-            yield self._cs.load_block_connections(
-                self._dir, self._lchunks, self._gchunks
-            )
+            yield self._cs.load_block_connections(self._dir, self._lchunks, self._gchunks)
 
     def get_local_iter(self, direction, local_):
         if local_ is None:

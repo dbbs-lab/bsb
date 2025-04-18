@@ -39,9 +39,7 @@ class TestJsonRef(unittest.TestCase):
         self.assertNotIn("$ref", tree["refs"]["whats the"], "Ref key not removed")
         self.assertEqual("key", tree["refs"]["whats the"]["secret"])
         self.assertEqual("is hard", tree["refs"]["whats the"]["nested secrets"]["vim"])
-        self.assertEqual(
-            "convoluted", tree["refs"]["whats the"]["nested secrets"]["and"]
-        )
+        self.assertEqual("convoluted", tree["refs"]["whats the"]["nested secrets"]["and"])
         self.assertEqual(tree["refs"]["whats the"], tree["refs"]["omitted_doc"])
         with self.assertRaises(FileReferenceError, msg="Should raise 'ref not a dict'"):
             tree, meta = get_configuration_parser("json").parse(
@@ -63,18 +61,14 @@ class TestJsonRef(unittest.TestCase):
     def test_double_ref(self):
         tree, meta = get_configuration_parser("json").parse(
             get_content("doubleref.json"),
-            path=str(
-                pathlib.Path(__file__).parent / "parser_tests" / "doubleref.json"
-            ),
+            path=str(pathlib.Path(__file__).parent / "parser_tests" / "doubleref.json"),
         )
 
     def test_ref_str(self):
         parser = get_configuration_parser("json")
         tree, meta = parser.parse(
             get_content("doubleref.json"),
-            path=str(
-                pathlib.Path(__file__).parent / "parser_tests" / "doubleref.json"
-            ),
+            path=str(pathlib.Path(__file__).parent / "parser_tests" / "doubleref.json"),
         )
         self.assertTrue(str(parser.references[0]).startswith("<file ref '"))
         # Convert windows backslashes

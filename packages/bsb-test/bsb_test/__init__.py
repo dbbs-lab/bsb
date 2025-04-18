@@ -243,9 +243,7 @@ def skipIfOffline(url=None, scheme: UrlScheme = None):
     try:
         url = url or scheme.get_base_url()
     except NotImplementedError as err:
-        raise ValueError(
-            "Couldn't establish base URL to ping for health check."
-        ) from err
+        raise ValueError("Couldn't establish base URL to ping for health check.") from err
     try:
         with session_ctx as session:
             res = session.get(url)

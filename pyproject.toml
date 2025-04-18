@@ -1,0 +1,88 @@
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = ["setuptools"]
+
+[project]
+name = "bsb"
+authors = [
+  { name = "Robin De Schepper", email = "robin@alexandria.sc" },
+  { name = "Dimitri Rodarie", email = "dimitri.rodarie@unipv.it" }
+]
+
+maintainers = [{ name = "Dimitri Rodarie", email = "dimitri.rodarie@unipv.it" }]
+version = "4.4.2"
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.9,<4"
+description = "Black-box component framework for multiscale neural modeling"
+classifiers = [
+  "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"
+]
+dependencies = [
+  "bsb-core",
+  "bsb-hdf5",
+  "bsb-arbor",
+  "bsb-json",
+  "bsb-yaml"
+]
+
+
+[project.optional-dependencies]
+parallel = ["bsb-core[parallel]"]
+neuron = ["bsb-neuron~=4.2.2"]
+nest = ["bsb-nest~=4.3.2"]
+arbor = ["bsb-arbor~=4.1.1"]
+dev = [
+  "bsb-core[dev]",
+  "bsb-hdf5[dev]",
+  "bsb-json[dev]",
+  "bsb-yaml[dev]",
+  "bsb-arbor[dev]",
+  "bsb-test[dev]"
+]
+
+[dependency-groups]
+dev = [
+  "bsb[dev]",
+  "ruff>=0.8.2",
+]
+
+[tool.setuptools]
+packages = []
+
+[tool.uv.sources]
+bsb-core = { path = "packages/bsb-core", editable = true }
+bsb-hdf5 = { path = "packages/bsb-hdf5", editable = true }
+bsb-json = { path = "packages/bsb-json", editable = true }
+bsb-yaml = { path = "packages/bsb-yaml", editable = true }
+bsb-arbor = { path = "packages/bsb-arbor", editable = true }
+bsb-test = { path = "packages/bsb-test", editable = true }
+
+[project.urls]
+Home = "https://github.com/dbbs-lab/bsb"
+Documentation = "https://bsb.readthedocs.io/"
+"Bug Tracker" = "https://github.com/dbbs-lab/bsb/issues/"
+"Source Code" = "https://github.com/dbbs-lab/bsb/"
+
+[tool.ruff]
+exclude = [ ".ruff_cache", ".svn", ".tox", ".venv", "dist" ]
+line-length = 90
+indent-width = 4
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+docstring-code-line-length = "dynamic"
+
+[tool.ruff.lint]
+select = [ "E", "F", "UP", "B", "SIM", "I" ]
+ignore = [ ]
+fixable = [ "ALL" ]
+unfixable = [ ]
+
+[[tool.uv.index]]
+name = "testpypi"
+url = "https://pypi.org/simple/"
+publish-url = "https://pypi.org/legacy/"

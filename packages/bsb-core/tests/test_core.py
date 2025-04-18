@@ -153,4 +153,10 @@ class TestProfiling(
         self.assertGreater(
             len(bsb.profiling.get_active_session()._meters), 0, "missing meters"
         )
+        found = 0
+        for filename in os.listdir():
+            if filename.startswith("bsb_profiling_") and filename.endswith(".pkl"):
+                found += 1
+                os.remove(filename)
+        self.assertEqual(found, 1, "should have found 1 profiling file")
         bsb.options.profiling = False

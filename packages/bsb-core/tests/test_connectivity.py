@@ -114,7 +114,6 @@ class TestConnectivitySet(
     NumpyTestCase,
     unittest.TestCase,
     engine_name="hdf5",
-    debug=True,
 ):
     def setUp(self):
         super().setUp()

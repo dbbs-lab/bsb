@@ -15,12 +15,18 @@ license = {file = "LICENSE"}
 classifiers = ["License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"]
 dynamic = ["description"]
 dependencies = [
-    "bsb-core~=5.0",
+    "bsb-core",
     "PyYAML~=6.0"
 ]
 
 [project.optional-dependencies]
-test = ["bsb-core[parallel]~=5.0", "bsb-test~=4.0", "coverage~=7.0"]
+test = [
+    "bsb-core[parallel]",
+    "bsb-test~=4.0",
+    "pytest>=8.3.4",
+    "pytest-sugar>=1.0.0",
+    "pytest-cov>=6.0.0"
+]
 dev = [
     "bsb-yaml[test]",
     "pre-commit~=3.5",

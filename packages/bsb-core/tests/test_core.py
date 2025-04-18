@@ -151,10 +151,13 @@ class TestProfiling(
         self.assertGreater(
             len(bsb.profiling.get_active_session()._meters), 0, "missing meters"
         )
-        found = 0
-        for filename in os.listdir():
-            if filename.startswith("bsb_profiling_") and filename.endswith(".pkl"):
-                found += 1
-                os.remove(filename)
-        self.assertEqual(found, 1, "should have found 1 profiling file")
+        world = MPI.COMM_WORLD
+        if not world.Get_rank():
+            found = 0
+            for filename in os.listdir():
+                if filename.startswith("bsb_profiling_") and filename.endswith(".pkl"):
+                    print(filename)
+                    found += 1
+                    os.remove(filename)
+            self.assertEqual(found, world.Get_size(), f"should have found {world.Get_size()} profiling file(s)")
         bsb.options.profiling = False

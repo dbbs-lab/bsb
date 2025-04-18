@@ -25,6 +25,7 @@ test = [
   "pytest>=8.3.4",
   "pytest-sugar>=1.0.0",
   "pytest-cov>=6.0.0",
+  "pytest-mpi>=0.6",
 ]
 dev = [
   "bsb-test[test]",
@@ -59,6 +60,7 @@ addopts = """
  --cov
  --cov-report html:'../../coverage/packages/bsb-test/html'
  --cov-report xml:'../../coverage/packages/bsb-test/coverage.xml'
+ --with-mpi
 """
 
 [tool.ruff]

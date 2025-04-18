@@ -25,6 +25,7 @@ test = [
   "pytest>=8.3.4",
   "pytest-sugar>=1.0.0",
   "pytest-cov>=6.0.0",
+  "pytest-mpi>=0.6",
 ]
 docs = [
     "sphinx~=7.0",
@@ -68,6 +69,7 @@ addopts = """
  --cov
  --cov-report html:'../../coverage/packages/bsb-hdf5/html'
  --cov-report xml:'../../coverage/packages/bsb-hdf5/coverage.xml'
+ --with-mpi
 """
 
 [tool.ruff]

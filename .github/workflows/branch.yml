@@ -1,0 +1,11 @@
+name: Check branch commit
+
+on:
+  push:
+    branches:
+      - '**'  # matches every branch ...
+      - '!main'  # ... that is not main
+
+jobs:
+  build:
+    uses: ./.github/workflows/build.yml

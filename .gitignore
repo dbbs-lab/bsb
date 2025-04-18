@@ -170,3 +170,4 @@ unittests/
 
 *.hdf5
 *.pkl
+*uv.lock

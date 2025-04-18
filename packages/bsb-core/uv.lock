@@ -229,7 +229,7 @@ requires-dist = [
 provides-extras = ["test", "dev"]
 
 [package.metadata.requires-dev]
-dev = [{ name = "bsb-arbor", extras = ["dev"], editable = "../bsb-arbor" }]
+dev = [{ name = "bsb-arbor", extras = ["dev"] }]
 
 [[package]]
 name = "bsb-core"
@@ -404,9 +404,8 @@ dependencies = [
 requires-dist = [
     { name = "bsb-core", editable = "." },
     { name = "bsb-core", extras = ["parallel"], marker = "extra == 'test'", editable = "." },
-    { name = "bsb-json", extras = ["test"], marker = "extra == 'dev'", editable = "../bsb-json" },
+    { name = "bsb-json", extras = ["test"], marker = "extra == 'dev'" },
     { name = "bsb-test", marker = "extra == 'test'", editable = "../bsb-test" },
-    { name = "bump-my-version", marker = "extra == 'dev'", specifier = "~=0.24" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = "~=3.5" },
     { name = "pytest", marker = "extra == 'test'", specifier = ">=8.3.4" },
     { name = "pytest-cov", marker = "extra == 'test'", specifier = ">=6.0.0" },
@@ -416,7 +415,7 @@ requires-dist = [
 provides-extras = ["test", "dev"]
 
 [package.metadata.requires-dev]
-dev = [{ name = "bsb-json", extras = ["dev"], editable = "../bsb-json" }]
+dev = [{ name = "bsb-json", extras = ["dev"] }]
 
 [[package]]
 name = "bsb-test"
@@ -458,18 +457,19 @@ dependencies = [
 requires-dist = [
     { name = "bsb-core", editable = "." },
     { name = "bsb-core", extras = ["parallel"], marker = "extra == 'test'", editable = "." },
-    { name = "bsb-test", marker = "extra == 'test'", editable = "../bsb-test" },
-    { name = "bsb-yaml", extras = ["test"], marker = "extra == 'dev'", editable = "../bsb-yaml" },
+    { name = "bsb-yaml", extras = ["test"], marker = "extra == 'dev'" },
     { name = "bump-my-version", marker = "extra == 'dev'", specifier = "~=0.24" },
-    { name = "coverage", marker = "extra == 'test'", specifier = "~=7.0" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = "~=3.5" },
+    { name = "pytest", marker = "extra == 'test'", specifier = ">=8.3.4" },
+    { name = "pytest-cov", marker = "extra == 'test'", specifier = ">=6.0.0" },
+    { name = "pytest-sugar", marker = "extra == 'test'", specifier = ">=1.0.0" },
     { name = "pyyaml", specifier = "~=6.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.8.2" },
 ]
 provides-extras = ["test", "dev"]
 
 [package.metadata.requires-dev]
-dev = [{ name = "bsb-yaml", extras = ["dev"], editable = "../bsb-yaml" }]
+dev = [{ name = "bsb-yaml", extras = ["dev"] }]
 
 [[package]]
 name = "certifi"

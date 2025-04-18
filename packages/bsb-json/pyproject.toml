@@ -1,5 +1,5 @@
 [build-system]
-requires = ["flit_core >=3.2,<4"]
+requires = [ "flit_core >=3.2,<4" ]
 build-backend = "flit_core.buildapi"
 
 [project]
@@ -9,11 +9,11 @@ authors = [
   { name = "Dimitri Rodarie", email = "dimitri.rodarie@unipv.it" }
 ]
 version = "4.2.3"
+dynamic = ["description"]
 requires-python = ">=3.9,<4"
 readme = "README.md"
-license = {file = "LICENSE"}
+license = { file = "LICENSE" }
 classifiers = ["License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"]
-dynamic = ["description"]
 dependencies = [
     "bsb-core",
 ]
@@ -30,7 +30,6 @@ dev = [
     "bsb-json[test]",
     "pre-commit~=3.5",
     "ruff>=0.8.2",
-    "bump-my-version~=0.24"
 ]
 
 [dependency-groups]
@@ -53,7 +52,7 @@ bsb-test = { path = "../bsb-test", editable = true }
 
 [tool.coverage.run]
 branch = true
-source = [ "bsb_test" ]
+source = [ "bsb_json" ]
 
 [tool.coverage.report]
 exclude_lines = [ "if TYPE_CHECKING:" ]
@@ -62,8 +61,8 @@ show_missing = true
 [tool.pytest.ini_options]
 addopts = """
  --cov
- --cov-report html:'../../coverage/packages/bsb-test/html'
- --cov-report xml:'../../coverage/packages/bsb-test/coverage.xml'
+ --cov-report html:'../../coverage/packages/bsb-json/html'
+ --cov-report xml:'../../coverage/packages/bsb-json/coverage.xml'
 """
 
 [tool.ruff]

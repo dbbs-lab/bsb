@@ -22,7 +22,6 @@ dependencies = [
 [project.optional-dependencies]
 test = [
     "bsb-core[parallel]",
-    "bsb-test~=4.0",
     "pytest>=8.3.4",
     "pytest-sugar>=1.0.0",
     "pytest-cov>=6.0.0"
@@ -50,11 +49,10 @@ name = "bsb_yaml"
 
 [tool.uv.sources]
 bsb-core = { path = "../bsb-core", editable = true }
-bsb-test = { path = "../bsb-test", editable = true }
 
 [tool.coverage.run]
 branch = true
-source = [ "bsb_test" ]
+source = [ "bsb_yaml" ]
 
 [tool.coverage.report]
 exclude_lines = [ "if TYPE_CHECKING:" ]
@@ -63,8 +61,8 @@ show_missing = true
 [tool.pytest.ini_options]
 addopts = """
  --cov
- --cov-report html:'../../coverage/packages/bsb-test/html'
- --cov-report xml:'../../coverage/packages/bsb-test/coverage.xml'
+ --cov-report html:'../../coverage/packages/bsb-yaml/html'
+ --cov-report xml:'../../coverage/packages/bsb-yaml/coverage.xml'
 """
 
 [tool.ruff]

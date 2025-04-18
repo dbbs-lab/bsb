@@ -114,7 +114,7 @@ requires-dist = [
     { name = "bsb-json", marker = "extra == 'docs'", editable = "../bsb-json" },
     { name = "bsb-json", marker = "extra == 'test'", editable = "../bsb-json" },
     { name = "bsb-test", marker = "extra == 'test'", editable = "." },
-    { name = "bsb-yaml", marker = "extra == 'docs'", specifier = "~=4.0" },
+    { name = "bsb-yaml", marker = "extra == 'docs'", editable = "../bsb-yaml" },
     { name = "dashing-next", specifier = "~=0.1" },
     { name = "errr", specifier = "~=1.2" },
     { name = "exceptiongroup", specifier = ">=1.2.0" },

@@ -1211,11 +1211,10 @@ class Branch:
         """
         Return the normalized vector of the axis connecting the start and terminal points.
         """
-        versor = (self.end - self.start) / np.linalg.norm(self.end - self.start)
-        if np.any(np.isnan(versor)):
+        if np.all(self.end == self.start):
             raise EmptyBranchError("Empty and single-point branched have no versor")
         else:
-            return versor
+            return (self.end - self.start) / np.linalg.norm(self.end - self.start)
 
     @property
     def euclidean_dist(self):
@@ -1612,7 +1611,7 @@ class Branch:
         """
         start = self.points[idx_start]
         end = self.points[idx_end]
-        versor = (end - start) / np.linalg.norm(end - start)
+        versor = (end - start) / np.linalg.norm(end - start) if np.any(end != start) else np.zeros(3)
         displacements = np.linalg.norm(
             np.cross(
                 versor,

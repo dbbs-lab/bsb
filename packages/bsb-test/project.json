@@ -68,8 +68,11 @@
       ],
       "options": {
         "commands": [
-          "uv run pytest tests/",
-          "mpirun -n 2 uv run pytest tests/"
+          "coverage run -p -m unittest discover -v -s ./tests",
+          "mpiexec -n 2 coverage run -p -m unittest discover -v -s ./tests",
+          "coverage combine",
+          "coverage xml -o ../../coverage/packages/bsb-test/coverage.xml",
+          "coverage html -d  ../../coverage/packages/bsb-test/html"
         ],
         "parallel": false,
         "cwd": "{projectRoot}"

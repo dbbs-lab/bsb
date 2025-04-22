@@ -1715,7 +1715,7 @@ class TestPackageRequirements(RandomStorageFixture, unittest.TestCase, engine_na
         self.assertIsNotNone(
             get_missing_requirement_reason("==" + bsb.__version__ + "@@==@@")
         )
-        with self.assertRaises(CastError):
+        with self.assertWarns(PackageRequirementWarning), self.assertRaises(CastError):
             Configuration.default(packages=["==" + bsb.__version__ + "@@==@@"])
 
     def test_different_version(self):

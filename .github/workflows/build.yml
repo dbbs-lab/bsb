@@ -16,4 +16,7 @@ jobs:
       - run: npm ci --legacy-peer-deps
       - uses: nrwl/nx-set-shas@v4
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
       - run: npx nx affected -t test

@@ -22,10 +22,7 @@ dependencies = [
 test = [
     "bsb-core[parallel]",
     "bsb-test~=4.0",
-    "pytest>=8.3.4",
-    "pytest-sugar>=1.0.0",
-    "pytest-cov>=6.0.0",
-    "pytest-mpi>=0.6",
+    "coverage>=7.3",
 ]
 dev = [
     "bsb-json[test]",
@@ -58,14 +55,6 @@ source = [ "bsb_json" ]
 [tool.coverage.report]
 exclude_lines = [ "if TYPE_CHECKING:" ]
 show_missing = true
-
-[tool.pytest.ini_options]
-addopts = """
- --cov
- --cov-report html:'../../coverage/packages/bsb-json/html'
- --cov-report xml:'../../coverage/packages/bsb-json/coverage.xml'
- --with-mpi
-"""
 
 [tool.ruff]
 exclude = [ ".ruff_cache", ".svn", ".tox", ".venv", "dist" ]

@@ -3,7 +3,7 @@ name: Build and test BSB
 on: [workflow_call]
 
 jobs:
-  ruff:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4

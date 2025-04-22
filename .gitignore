@@ -167,7 +167,11 @@ cython_debug/
 .nx/cache
 .nx/workspace-data
 unittests/
+*uv.lock
 
+# nodejs
+node_modules
+
+# bsb
 *.hdf5
 *.pkl
-*uv.lock

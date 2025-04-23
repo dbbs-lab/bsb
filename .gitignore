@@ -168,6 +168,7 @@ cython_debug/
 .nx/workspace-data
 unittests/
 *uv.lock
+**_build
 
 # nodejs
 node_modules

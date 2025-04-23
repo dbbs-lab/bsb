@@ -111,4 +111,11 @@ __all__ = [
     "get_root_regions",
     "is_partition",
     "is_region",
+    "AllenStructure",
+    "Layer",
+    "NrrdVoxels",
+    "Partition",
+    "Region",
+    "RegionGroup",
+    "Stack"
 ]

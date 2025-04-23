@@ -45,3 +45,4 @@ Module contents
 .. automodule:: bsb.placement
    :members:
    :undoc-members:
+   :ignore-module-all:

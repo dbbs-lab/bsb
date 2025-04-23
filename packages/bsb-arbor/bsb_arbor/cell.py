@@ -1,13 +1,11 @@
 import abc
-import typing
 
 import arbor
 from bsb import CellModel, ConfigurationError, config, types
 
 from .adapter import SingleReceiverCollection
 
-if typing.TYPE_CHECKING:
-    from bsb import PlacementSet
+from bsb import PlacementSet
 
 
 @config.dynamic(
@@ -21,7 +19,7 @@ class ArborCell(CellModel):
     model = config.attr(type=types.class_(), required=True)
 
     @abc.abstractmethod
-    def cache_population_data(self, simdata, ps: "PlacementSet"):
+    def cache_population_data(self, simdata, ps: PlacementSet):
         pass
 
     @abc.abstractmethod
@@ -53,7 +51,7 @@ class LIFCell(ArborCell, classmap_entry="lif"):
     model = config.unset()
     constants = config.dict(type=types.any_())
 
-    def cache_population_data(self, simdata, ps: "PlacementSet"):
+    def cache_population_data(self, simdata, ps: PlacementSet):
         pass
 
     def discard_population_data(self):

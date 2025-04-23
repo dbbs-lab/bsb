@@ -24,8 +24,12 @@ test = [
     "bsb-core[parallel]",
     "coverage>=7.3",
 ]
+docs = [
+    "sphinx~=7.0",
+    "furo~=2024.0",
+]
 dev = [
-    "bsb-yaml[test]",
+    "bsb-yaml[test,docs]",
     "pre-commit~=3.5",
     "ruff>=0.8.2",
     "bump-my-version~=0.24"

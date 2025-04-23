@@ -24,8 +24,12 @@ test = [
     "bsb-test~=4.0",
     "coverage>=7.3",
 ]
+docs = [
+    "sphinx~=7.0",
+    "furo~=2024.0",
+]
 dev = [
-    "bsb-json[test]",
+    "bsb-json[test,docs]",
     "pre-commit~=3.5",
     "ruff>=0.8.2",
 ]

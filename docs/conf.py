@@ -85,12 +85,24 @@ collections = {
         "driver": "copy_folder",
         "source": join(bsb_folder, "packages", "bsb-core", "docs/"),
         "target": "bsb-core/",
+        "ignore": ["index.rst", "modules.rst", "genindex.rst", "py-modindex.rst"]
+    },
+    "bsb-json": {
+        "driver": "copy_folder",
+        "source": join(bsb_folder, "packages", "bsb-json", "docs/"),
+        "target": "bsb-json/",
         "ignore": ["index.rst", "genindex.rst", "py-modindex.rst"]
     },
-    "bsb-hdf5": {
+    "bsb-yaml": {
         "driver": "copy_folder",
-        "source": join(bsb_folder, "packages", "bsb-hdf5", "docs/"),
-        "target": "bsb-hdf5/",
+        "source": join(bsb_folder, "packages", "bsb-yaml", "docs/"),
+        "target": "bsb-yaml/",
+        "ignore": ["index.rst", "genindex.rst", "py-modindex.rst"]
+    },
+    "bsb-test": {
+        "driver": "copy_folder",
+        "source": join(bsb_folder, "packages", "bsb-test", "docs/"),
+        "target": "bsb-test/",
         "ignore": ["index.rst", "genindex.rst", "py-modindex.rst"]
     },
 }

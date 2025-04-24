@@ -39,6 +39,9 @@ dev = [
   "bsb-yaml[dev]",
   "bsb-arbor[dev]",
   "bsb-test[dev]",
+  "gitdb>=4.0.12",
+  "gitpython>=3.1.44",
+  "smmap>=5.0.2",
   "sphinxcontrib-collections @ git+https://github.com/useblocks/sphinx-collections.git@37b54c0a78e1772aabe13634ea2e2211749ac865",
 ]
 

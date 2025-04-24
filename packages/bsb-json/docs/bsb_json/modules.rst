@@ -1,4 +1,4 @@
-.. _api:
+.. _bsb_json_api:
 
 bsb_json package
 ================
@@ -12,8 +12,11 @@ Module contents
    :show-inheritance:
    :ignore-module-all:
 
+Submodules
+----------
+
 bsb_json.parser module
-----------------------
+^^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: bsb_json.parser
    :members:

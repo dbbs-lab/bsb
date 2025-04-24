@@ -1,4 +1,4 @@
-.. _api:
+.. _bsb_test_api:
 
 bsb_test package
 ================
@@ -12,8 +12,11 @@ Module contents
    :show-inheritance:
    :ignore-module-all:
 
+Submodules
+----------
+
 bsb_test.engines module
------------------------
+^^^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: bsb_test.engines
    :members:
@@ -21,7 +24,7 @@ bsb_test.engines module
    :show-inheritance:
 
 bsb_test.exceptions module
---------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: bsb_test.exceptions
    :members:
@@ -29,7 +32,7 @@ bsb_test.exceptions module
    :show-inheritance:
 
 bsb_test.parallel module
-------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: bsb_test.parallel
    :members:

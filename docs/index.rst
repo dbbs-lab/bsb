@@ -107,8 +107,7 @@ Content
    :maxdepth: 2
    :caption: References
 
-   _collections/bsb-core/bsb/modules
-   _collections/bsb-hdf5/bsb_hdf5/modules
+   modules
    genindex
    py-modindex
 

@@ -85,7 +85,7 @@
         "{projectRoot}/docs/_build/"
       ],
       "options": {
-        "command": "rm -rf _build/html/ && sphinx-build -nW -b html ./source _build/html",
+        "command": "rm -rf _build/html/ && sphinx-build -nW -b html . _build/html",
         "cwd": "{projectRoot}/docs/"
       },
       "cache": true

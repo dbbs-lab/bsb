@@ -10,11 +10,6 @@ Welcome to BSB HDF5 Storage Engine's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-   modindex
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`search`
+   bsb_hdf5/modules
+   genindex
+   py-modindex

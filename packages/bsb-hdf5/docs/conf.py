@@ -1,3 +1,5 @@
+from os.path import dirname, join
+
 # Configuration file for the Sphinx documentation builder.
 #
 # This file only contains a selection of the most common options. For a full
@@ -21,8 +23,18 @@ project = "BSB HDF5 Storage Engine"
 copyright = "2022, Robin De Schepper"
 author = "Robin De Schepper"
 
-# The full version, including alpha/beta/rc tags
-release = "0.1"
+# Fetch the `__version__`
+project_folder = dirname(dirname(__file__))
+bsb_init_file = join(project_folder, "pyproject.toml")
+_findver = "version = "
+with open(bsb_init_file) as f:
+    for line in f:
+        if "version = " in line:
+            f = line.find(_findver)
+            __version__ = eval(line[line.find(_findver) + len(_findver) :])
+            break
+    else:
+        raise Exception(f"No `version` found in '{bsb_init_file}'.")
 
 
 # -- General configuration ---------------------------------------------------
@@ -30,6 +42,8 @@ release = "0.1"
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
+main_folder = join(dirname(dirname(project_folder)), "docs")
+
 extensions = [
     "sphinx.ext.autodoc",
     "sphinxemoji.sphinxemoji",

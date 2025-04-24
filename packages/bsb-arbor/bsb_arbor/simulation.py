@@ -9,7 +9,9 @@ from .device import ArborDevice
 @config.node
 class ArborSimulation(Simulation):
     resolution = config.attr(type=types.float(min=0.0), default=0.1)
+    """Simulation time step size in milliseconds"""
     profiling = config.attr(type=bool)
+    """Flag to perform profiling during the simulation"""
     cell_models = config.dict(type=ArborCell, required=True)
     connection_models = config.dict(type=ArborConnection, required=True)
     devices = config.dict(type=ArborDevice, required=True)

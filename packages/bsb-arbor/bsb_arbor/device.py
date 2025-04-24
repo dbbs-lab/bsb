@@ -7,8 +7,11 @@ from bsb import DeviceModel, Targetting, config, types
 @config.dynamic(attr_name="device", auto_classmap=True, classmap_entry=None)
 class ArborDevice(DeviceModel):
     targetting = config.attr(type=Targetting, required=True)
+    """Targets of the device, which should be either a population or a nest rule"""
     resolution = config.attr(type=float)
+    """Time resolution of the device"""
     sampling_policy = config.attr(type=types.in_(["exact"]))
+    """Policy used to sample simulation data from the device"""
 
     def __init__(self, **kwargs):
         self._probe_ids = []

@@ -50,6 +50,7 @@ class ArborCell(CellModel):
 class LIFCell(ArborCell, classmap_entry="lif"):
     model = config.unset()
     constants = config.dict(type=types.any_())
+    """Dictionary linking the parameters' name to its value"""
 
     def cache_population_data(self, simdata, ps: PlacementSet):
         pass

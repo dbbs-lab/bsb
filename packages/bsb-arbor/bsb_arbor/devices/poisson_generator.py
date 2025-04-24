@@ -9,9 +9,13 @@ from ..device import ArborDevice
 @config.node
 class PoissonGenerator(ArborDevice, classmap_entry="poisson_generator"):
     record = config.attr(type=bool, default=True)
+    """Flag to save the spikes generated to file"""
     rate = config.attr(type=float, required=True)
+    """Frequency of the poisson generator"""
     weight = config.attr(type=float, required=True)
+    """weight of the connection between the device and its target"""
     delay = config.attr(type=float, required=True)
+    """delay of the transmission between the device and its target"""
 
     def implement_probes(self, simdata, gid):
         return []

@@ -5,7 +5,7 @@ Submodules
 ----------
 
 bsb.connectivity.geometric.geometric\_shapes module
----------------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: bsb.connectivity.geometric.geometric_shapes
    :members:
@@ -13,7 +13,7 @@ bsb.connectivity.geometric.geometric\_shapes module
    :show-inheritance:
 
 bsb.connectivity.geometric.morphology\_shape\_intersection
-----------------------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: bsb.connectivity.geometric.morphology_shape_intersection
    :members:
@@ -21,7 +21,7 @@ bsb.connectivity.geometric.morphology\_shape\_intersection
    :show-inheritance:
 
 bsb.connectivity.geometric.shape\_morphology\_intersection
-----------------------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: bsb.connectivity.geometric.shape_morphology_intersection
    :members:
@@ -29,7 +29,7 @@ bsb.connectivity.geometric.shape\_morphology\_intersection
    :show-inheritance:
 
 bsb.connectivity.geometric.shape\_shape\_intersection
------------------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: bsb.connectivity.geometric.shape_shape_intersection
    :members:

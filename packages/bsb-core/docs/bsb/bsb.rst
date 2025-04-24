@@ -21,7 +21,7 @@ Submodules
 ----------
 
 bsb.core module
----------------
+^^^^^^^^^^^^^^^
 
 .. automodule:: bsb.core
    :members:
@@ -29,7 +29,7 @@ bsb.core module
    :show-inheritance:
 
 bsb.cell_types module
----------------------
+^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: bsb.cell_types
    :members:
@@ -37,7 +37,7 @@ bsb.cell_types module
    :show-inheritance:
 
 bsb.exceptions module
----------------------
+^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: bsb.exceptions
    :members:
@@ -45,14 +45,14 @@ bsb.exceptions module
    :show-inheritance:
 
 bsb.exceptions module
----------------------
+^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: bsb.mixins
    :members:
    :undoc-members:
 
 bsb.option module
------------------
+^^^^^^^^^^^^^^^^^
 
 .. automodule:: bsb.option
    :members:
@@ -60,7 +60,7 @@ bsb.option module
    :show-inheritance:
 
 bsb.options module
-------------------
+^^^^^^^^^^^^^^^^^^
 
 .. automodule:: bsb.options
    :members:
@@ -68,7 +68,7 @@ bsb.options module
    :show-inheritance:
 
 bsb.plugins module
-------------------
+^^^^^^^^^^^^^^^^^^
 
 .. automodule:: bsb.plugins
    :members:
@@ -76,7 +76,7 @@ bsb.plugins module
    :show-inheritance:
 
 bsb.postprocessing module
--------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: bsb.postprocessing
    :members:
@@ -84,7 +84,7 @@ bsb.postprocessing module
    :show-inheritance:
 
 bsb.reporting module
---------------------
+^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: bsb.reporting
    :members:
@@ -92,7 +92,7 @@ bsb.reporting module
    :show-inheritance:
 
 bsb.trees module
-----------------
+^^^^^^^^^^^^^^^^
 
 .. automodule:: bsb.trees
    :members:
@@ -100,7 +100,7 @@ bsb.trees module
 .. autoclass:: bsb.trees._BoxRTree
 
 bsb.voxels module
------------------
+^^^^^^^^^^^^^^^^^
 
 .. automodule:: bsb.voxels
    :members:

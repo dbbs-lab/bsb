@@ -60,6 +60,7 @@ docs = [
     "sphinxext-bsb~=0.2.2",
     "bsb-json~=4.2",
     "bsb-yaml~=4.0",
+    "setuptools>=79.0.1",
 ]
 dev = [
   "bsb-core[test,docs]",

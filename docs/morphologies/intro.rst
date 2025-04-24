@@ -669,3 +669,4 @@ Reference
 
 .. automodule:: bsb.morphologies
   :members:
+  :no-index:

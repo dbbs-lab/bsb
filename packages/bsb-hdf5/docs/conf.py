@@ -52,7 +52,7 @@ extensions = [
 
 intersphinx_mapping = {
     "numpy": ("https://numpy.org/doc/stable/", None),
-    "bsb": ("https://bsb.readthedocs.io/en/latest/", None),
+    "bsb": (join(main_folder, "_build", "html"), None),
     "errr": ("https://errr.readthedocs.io/en/latest/", None),
     "h5py": ("https://docs.h5py.org/en/latest/", None),
     "mpi4py": ("https://mpi4py.readthedocs.io/en/stable/", None),
@@ -61,20 +61,26 @@ intersphinx_mapping = {
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
 
-# List of patterns, relative to source directory, that match files and
-# directories to ignore when looking for source files.
-# This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = []
-
 
 # -- Options for HTML output -------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = "alabaster"
+html_theme = "furo"
 
-# Add any paths that contain custom static files (such as style sheets) here,
-# relative to this directory. They are copied after the builtin static files,
-# so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ["_static"]
+html_static_path = [join(main_folder, '_static')]
+
+html_theme_options = {
+    "light_logo": "bsb.svg",
+    "dark_logo": "bsb_dark.svg",
+    "sidebar_hide_name": True,
+}
+
+html_favicon = join(html_static_path[0], "bsb_ico.svg")
+
+html_context = {
+    "maintainer": "Robin De Schepper",
+    "project_pretty_name": "BSB-HDF%",
+    "projects": {"DBBS Scaffold": "https://github.com/dbbs/bsb"},
+}

@@ -132,10 +132,10 @@ class MorphologySet:
         """
         Iterate over the morphologies in a MorphologySet with full control over caching.
 
-        :param cache: Use :ref:`soft-caching` (1 copy stored in mem per cache miss, 1 copy
+        :param cache: Use :ref:`Soft caching<soft-caching>` (1 copy stored in mem per cache miss, 1 copy
           created from that per cache hit).
         :type cache: bool
-        :param hard_cache: Use :ref:`hard-caching` (1 copy stored on the loader, always
+        :param hard_cache: Use :ref:`Hard caching<hard-caching>` (1 copy stored on the loader, always
           same copy returned from that loader forever).
         """
         if hard_cache:
@@ -1284,7 +1284,7 @@ class Branch:
     def labels(self):
         """
         Return the labels of the points on this branch. Labels are represented as a number
-        that is associated to a set of labels. See :ref:`morphology_labels` for more info.
+        that is associated to a set of labels. See :ref:`Labels <morphology_labels>` for more info.
         """
         return self._labels
 

@@ -5,7 +5,7 @@ Submodules
 ----------
 
 bsb.connectivity.detailed.shared module
----------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: bsb.connectivity.detailed.shared
    :members:
@@ -13,7 +13,7 @@ bsb.connectivity.detailed.shared module
    :show-inheritance:
 
 bsb.connectivity.detailed.voxel\_intersection module
-----------------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: bsb.connectivity.detailed.voxel_intersection
    :members:

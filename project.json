@@ -39,6 +39,17 @@
       },
       "cache": true
     },
+    "docs": {
+      "executor": "@nxlv/python:run-commands",
+      "outputs": [
+        "{projectRoot}/docs/_build/"
+      ],
+      "options": {
+        "command": "rm -rf _build/html/ && sphinx-build -nW -b html . _build/html",
+        "cwd": "{projectRoot}/docs/"
+      },
+      "cache": true
+    },
     "install": {
       "executor": "@nxlv/python:install",
       "options": {

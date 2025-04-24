@@ -25,6 +25,7 @@ Internal layout module. Makes sure regions and partitions don't mutate during la
    :members:
    :undoc-members:
    :show-inheritance:
+   :no-index:
 
 bsb._util
 ---------

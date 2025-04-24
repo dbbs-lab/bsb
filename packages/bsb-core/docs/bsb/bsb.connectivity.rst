@@ -14,7 +14,7 @@ Submodules
 ----------
 
 bsb.connectivity.general module
--------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: bsb.connectivity.general
    :members:
@@ -22,7 +22,7 @@ bsb.connectivity.general module
    :show-inheritance:
 
 bsb.connectivity.strategy module
---------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: bsb.connectivity.strategy
    :members:

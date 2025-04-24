@@ -5,7 +5,7 @@ Submodules
 ----------
 
 bsb.topology.partition module
------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: bsb.topology.partition
    :members:
@@ -13,9 +13,17 @@ bsb.topology.partition module
    :show-inheritance:
 
 bsb.topology.region module
---------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: bsb.topology.region
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+bsb.topology.layout module
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. automodule:: bsb.topology._layout
    :members:
    :undoc-members:
    :show-inheritance:

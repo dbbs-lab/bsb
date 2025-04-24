@@ -6,8 +6,8 @@ from os.path import dirname, join
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
 # Fetch the `__version__`
-bsb_folder = dirname(dirname(__file__))
-bsb_init_file = join(bsb_folder, "pyproject.toml")
+project_folder = dirname(dirname(__file__))
+bsb_init_file = join(project_folder, "pyproject.toml")
 _findver = "version = "
 with open(bsb_init_file) as f:
     for line in f:
@@ -31,6 +31,8 @@ release = __version__
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
+main_folder = join(dirname(dirname(project_folder)), "docs")
+
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.intersphinx",
@@ -38,7 +40,7 @@ extensions = [
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
-    "bsb": ("https://bsb.readthedocs.io/en/latest", None),
+    "bsb": (join(main_folder, "_build", "html"), None),
 }
 
 autoclass_content = "both"
@@ -54,8 +56,7 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 html_theme = 'furo'
 
-bsb_core_folder = join(dirname(bsb_folder), "bsb-core", "docs")
-html_static_path = [join(bsb_core_folder, '_static')]
+html_static_path = [join(main_folder, '_static')]
 
 html_theme_options = {
     "light_logo": "bsb.svg",

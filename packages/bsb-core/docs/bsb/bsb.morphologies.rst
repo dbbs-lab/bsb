@@ -9,6 +9,14 @@ Subpackages
 
    bsb.morphologies.parsers
 
+bsb.morphologies.selector module
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. automodule:: bsb.morphologies.selector
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 Module contents
 ---------------
 
@@ -16,9 +24,4 @@ Module contents
    :members:
    :undoc-members:
    :show-inheritance:
-   :noindex:
-
-.. automodule:: bsb.morphologies.selector
-   :members:
-   :undoc-members:
-   :show-inheritance:
+   :ignore-module-all:

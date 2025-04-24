@@ -39,6 +39,7 @@ dev = [
   "bsb-yaml[dev]",
   "bsb-arbor[dev]",
   "bsb-test[dev]",
+  "sphinxcontrib-collections @ git+https://github.com/useblocks/sphinx-collections.git@37b54c0a78e1772aabe13634ea2e2211749ac865",
 ]
 
 [dependency-groups]

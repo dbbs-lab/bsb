@@ -5,7 +5,7 @@ Submodules
 ----------
 
 bsb.simulation.simulation module
---------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: bsb.simulation.simulation
    :members:
@@ -13,7 +13,7 @@ bsb.simulation.simulation module
    :show-inheritance:
 
 bsb.simulation.adapter module
------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: bsb.simulation.adapter
    :members:
@@ -21,7 +21,7 @@ bsb.simulation.adapter module
    :show-inheritance:
 
 bsb.simulation.cell module
---------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: bsb.simulation.cell
    :members:
@@ -29,7 +29,7 @@ bsb.simulation.cell module
    :show-inheritance:
 
 bsb.simulation.component module
--------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: bsb.simulation.component
    :members:
@@ -37,7 +37,7 @@ bsb.simulation.component module
    :show-inheritance:
 
 bsb.simulation.connection module
---------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: bsb.simulation.connection
    :members:
@@ -45,7 +45,7 @@ bsb.simulation.connection module
    :show-inheritance:
 
 bsb.simulation.device module
-----------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: bsb.simulation.device
    :members:
@@ -53,7 +53,7 @@ bsb.simulation.device module
    :show-inheritance:
 
 bsb.simulation.parameter module
--------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: bsb.simulation.parameter
    :members:
@@ -61,7 +61,7 @@ bsb.simulation.parameter module
    :show-inheritance:
 
 bsb.simulation.results module
------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: bsb.simulation.results
    :members:
@@ -69,7 +69,7 @@ bsb.simulation.results module
    :show-inheritance:
 
 bsb.simulation.targetting module
---------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: bsb.simulation.targetting
    :members:

@@ -5,7 +5,7 @@ Submodules
 ----------
 
 bsb.services.mpi module
---------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: bsb.services.mpi
    :members:
@@ -13,7 +13,7 @@ bsb.services.mpi module
    :show-inheritance:
 
 bsb.services.mpilock module
------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: bsb.services.mpilock
    :members:
@@ -21,14 +21,14 @@ bsb.services.mpilock module
    :show-inheritance:
 
 bsb.services.pool module
---------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: bsb.services.pool
    :members:
    :undoc-members:
 
 Developer modules
------------------
+^^^^^^^^^^^^^^^^^
 
 .. automodule:: bsb.services._util
    :members:

@@ -1,5 +1,10 @@
 from os.path import dirname, join
 
+# Configuration file for the Sphinx documentation builder.
+#
+# For the full list of built-in configuration values, see the documentation:
+# https://www.sphinx-doc.org/en/master/usage/configuration.html
+
 # Fetch the `__version__`
 bsb_folder = dirname(dirname(__file__))
 bsb_init_file = join(bsb_folder, "pyproject.toml")
@@ -14,23 +19,16 @@ with open(bsb_init_file) as f:
         raise Exception(f"No `version` found in '{bsb_init_file}'.")
 
 # -- Project information -----------------------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = "Brain Scaffold Builder"
-copyright = "2022, DBBS University of Pavia"
-author = "Robin De Schepper"
+project = 'Brain Scaffold Builder'
+copyright = '2025, DBBS University of Pavia'
+author = 'Robin De Schepper'
 
-# The full version, including alpha/beta/rc tags
 release = __version__
 
-
 # -- General configuration ---------------------------------------------------
-
-# Add any Sphinx extension module names here, as strings. They can be
-# extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
-# ones.
-
-autodoc_typehints = "both"
-
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
     "sphinx.ext.autodoc",
@@ -43,7 +41,10 @@ extensions = [
     "sphinx_design",
     "sphinx_copybutton",
     "bsbdocs",
+    "sphinxcontrib.collections"
 ]
+autodoc_typehints = "both"
+autoclass_content = "both"
 
 autodoc_mock_imports = [
     "glia",
@@ -79,29 +80,31 @@ intersphinx_mapping = {
     "neo": ("https://neo.readthedocs.io/en/latest/", None),
 }
 
-# Add any paths that contain templates here, relative to this directory.
-templates_path = ["_templates"]
+collections = {
+    "bsb-core": {
+        "driver": "copy_folder",
+        "source": join(bsb_folder, "packages", "bsb-core", "docs/"),
+        "target": "bsb-core/",
+        "ignore": ["index.rst", "genindex.rst", "py-modindex.rst"]
+    },
+    "bsb-hdf5": {
+        "driver": "copy_folder",
+        "source": join(bsb_folder, "packages", "bsb-hdf5", "docs/"),
+        "target": "bsb-hdf5/",
+        "ignore": ["index.rst", "genindex.rst", "py-modindex.rst"]
+    },
+}
 
-# List of patterns, relative to source directory, that match files and
-# directories to ignore when looking for source files.
-# This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = [
-    "_build",
-    "Thumbs.db",
-    ".DS_Store",
-]
-
-autoclass_content = "both"
+templates_path = ['_templates']
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+todo_include_todos = True
 
 # -- Options for HTML output -------------------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-# The theme to use for HTML and HTML Help pages.  See the documentation for
-# a list of builtin themes.
-#
-html_theme = "furo"
+html_theme = 'furo'
 
-main_doc_folder = join(dirname(dirname(bsb_folder)), "docs")
-html_static_path = [join(main_doc_folder, '_static')]
+html_static_path = [join(bsb_folder, "docs", '_static')]
 
 html_theme_options = {
     "light_logo": "bsb.svg",
@@ -110,16 +113,3 @@ html_theme_options = {
 }
 
 html_favicon = join(html_static_path[0], "bsb_ico.svg")
-
-html_context = {
-    "maintainer": "Robin De Schepper",
-    "project_pretty_name": "BSB",
-    "projects": {"DBBS Scaffold": "https://github.com/dbbs/bsb"},
-}
-
-# Add any paths that contain custom static files (such as style sheets) here,
-# relative to this directory. They are copied after the builtin static files,
-# so a file named "default.css" will overwrite the builtin "default.css".
-
-todo_include_todos = True
-suppress_warnings = ["ref.ref"]

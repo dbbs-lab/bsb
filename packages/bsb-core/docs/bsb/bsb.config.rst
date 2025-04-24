@@ -13,7 +13,7 @@ Submodules
 ----------
 
 bsb.config.refs module
-----------------------
+^^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: bsb.config.refs
    :members:
@@ -21,7 +21,7 @@ bsb.config.refs module
    :show-inheritance:
 
 bsb.config.types module
------------------------
+^^^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: bsb.config.types
    :members:

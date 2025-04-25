@@ -40,6 +40,7 @@
       "cache": true
     },
     "docs": {
+      "dependsOn": ["bsb:sync", "bsb-core:docs", "bsb-json:docs", "bsb-yaml:docs", "bsb-test:docs"],
       "executor": "@nxlv/python:run-commands",
       "outputs": [
         "{projectRoot}/docs/_build/"

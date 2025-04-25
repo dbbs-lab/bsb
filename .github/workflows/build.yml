@@ -8,6 +8,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install apt dependencies
+        run: |
+          sudo apt update
+          # Install `libopenmpi` for MPI
+          sudo apt install openmpi-bin libopenmpi-dev
+          # Install `libhdf5` for `morphio`
+          sudo apt install libhdf5-dev
+
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -19,4 +27,4 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v5
 
-      - run: npx nx affected -t sync test
+      - run: npx nx affected -t test

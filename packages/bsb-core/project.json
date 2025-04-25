@@ -80,6 +80,7 @@
       "cache": true
     },
     "docs": {
+      "dependsOn": ["bsb-core:sync"],
       "executor": "@nxlv/python:run-commands",
       "outputs": [
         "{projectRoot}/docs/_build/"

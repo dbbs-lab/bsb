@@ -30,5 +30,10 @@
       "unitTestRunner": "pytest",
       "codeCoverage": true
     }
+  },
+  "targetDefaults": {
+    "test": {
+      "dependsOn": ["^sync"]
+    }
   }
 }

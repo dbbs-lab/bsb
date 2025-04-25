@@ -31,7 +31,7 @@ release = __version__
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-main_folder = join(dirname(dirname(project_folder)), "docs")
+main_folder = dirname(dirname(project_folder))
 
 extensions = [
     "sphinx.ext.autodoc",
@@ -40,7 +40,7 @@ extensions = [
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
-    "bsb": (join(main_folder, "_build", "html"), None),
+    "bsb": (join(main_folder, "packages", "bsb-core", "docs", "_build", "html"), None),
 }
 
 autoclass_content = "both"
@@ -56,7 +56,7 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 html_theme = 'furo'
 
-html_static_path = [join(main_folder, '_static')]
+html_static_path = [join(main_folder, "docs", '_static')]
 
 html_theme_options = {
     "light_logo": "bsb.svg",

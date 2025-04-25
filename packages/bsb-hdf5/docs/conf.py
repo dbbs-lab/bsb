@@ -42,7 +42,7 @@ with open(bsb_init_file) as f:
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-main_folder = join(dirname(dirname(project_folder)), "docs")
+main_folder = dirname(dirname(project_folder))
 
 extensions = [
     "sphinx.ext.autodoc",
@@ -52,7 +52,7 @@ extensions = [
 
 intersphinx_mapping = {
     "numpy": ("https://numpy.org/doc/stable/", None),
-    "bsb": (join(main_folder, "_build", "html"), None),
+    "bsb": (join(main_folder, "packages", "bsb-core", "docs", "_build", "html"), None),
     "errr": ("https://errr.readthedocs.io/en/latest/", None),
     "h5py": ("https://docs.h5py.org/en/latest/", None),
     "mpi4py": ("https://mpi4py.readthedocs.io/en/stable/", None),
@@ -69,7 +69,7 @@ templates_path = ["_templates"]
 #
 html_theme = "furo"
 
-html_static_path = [join(main_folder, '_static')]
+html_static_path = [join(main_folder, "docs", '_static')]
 
 html_theme_options = {
     "light_logo": "bsb.svg",

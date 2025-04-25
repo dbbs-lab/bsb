@@ -62,6 +62,7 @@
       "cache": true
     },
     "test": {
+      "dependsOn": ["bsb-json:sync"],
       "executor": "@nxlv/python:run-commands",
       "outputs": [
         "{workspaceRoot}/coverage/{projectRoot}"

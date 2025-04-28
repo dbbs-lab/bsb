@@ -1,46 +1,52 @@
-from os.path import dirname, join
+import importlib.metadata
+import os
+from pathlib import Path
 
 # Configuration file for the Sphinx documentation builder.
 #
 # For the full list of built-in configuration values, see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
-# Fetch the `__version__`
-project_folder = dirname(dirname(__file__))
-bsb_init_file = join(project_folder, "pyproject.toml")
-_findver = "version = "
-with open(bsb_init_file) as f:
-    for line in f:
-        if "version = " in line:
-            f = line.find(_findver)
-            __version__ = eval(line[line.find(_findver) + len(_findver) :])
-            break
-    else:
-        raise Exception(f"No `version` found in '{bsb_init_file}'.")
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
+
 project = 'BSB YAML Configuration File Parser'
 copyright = '2025, DBBS University of Pavia'
 author = 'Robin De Schepper'
+project_folder = Path(__file__).parent.parent
+package_name = project_folder.stem
 
+# Fetch the version
+version = importlib.metadata.version(package_name)
+# Determine whether we build from local sources
+BSB_LOCAL_INTERSPHINX_ONLY = os.getenv("BSB_LOCAL_INTERSPHINX_ONLY", "false") == "true"
 # The full version, including alpha/beta/rc tags
-release = __version__
+release = version
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
-
-main_folder = dirname(dirname(project_folder))
 
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.intersphinx",
 ]
 
+
+def interbsb(dep_package):
+    local_folder = project_folder / f"../{dep_package}/docs/_build/iso-html"
+    remote = f"https://{dep_package}.readthedocs.io"
+
+    if BSB_LOCAL_INTERSPHINX_ONLY:
+        return str(local_folder), None
+    else:
+        return remote, (None, str(local_folder / "objects.inv"))
+
+
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
-    "bsb": (join(main_folder, "packages", "bsb-core", "docs", "_build", "html"), None),
+    "bsb": interbsb("bsb-core"),
 }
 
 autoclass_content = "both"
@@ -56,7 +62,8 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 html_theme = 'furo'
 
-html_static_path = [join(main_folder, "docs", '_static')]
+bsb_doc_static = project_folder / "../../packages/bsb/docs/_static"
+html_static_path = [str(bsb_doc_static)]
 
 html_theme_options = {
     "light_logo": "bsb.svg",
@@ -64,7 +71,7 @@ html_theme_options = {
     "sidebar_hide_name": True,
 }
 
-html_favicon = join(html_static_path[0], "bsb_ico.svg")
+html_favicon = str(bsb_doc_static / "bsb_ico.svg")
 
 html_context = {
     "maintainer": "Robin De Schepper",

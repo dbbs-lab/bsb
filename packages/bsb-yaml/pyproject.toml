@@ -16,7 +16,8 @@ classifiers = ["License :: OSI Approved :: GNU General Public License v3 or late
 dynamic = ["description"]
 dependencies = [
     "bsb-core",
-    "PyYAML~=6.0"
+    "PyYAML~=6.0",
+    "pydantic"
 ]
 
 [project.optional-dependencies]

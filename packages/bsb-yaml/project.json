@@ -80,15 +80,30 @@
       },
       "cache": true
     },
-    "docs": {
-      "dependsOn": ["bsb-yaml:sync", "bsb-core:docs"],
+    "iso-docs": {
       "executor": "@nxlv/python:run-commands",
+      "dependsOn": ["bsb-yaml:sync", "bsb-core:iso-docs"],
       "outputs": [
-        "{projectRoot}/docs/_build/"
+        "{projectRoot}/docs/_build/iso-html"
       ],
       "options": {
-        "command": "rm -rf _build/html/ && sphinx-build -nW -b html . _build/html",
+        "command": "npx rimraf _build/iso-html/ && uv run sphinx-build -b html . _build/iso-html",
         "cwd": "{projectRoot}/docs/"
+      },
+      "cache": true
+    },
+    "docs": {
+      "dependsOn": ["iso-docs"],
+      "executor": "@nxlv/python:run-commands",
+      "outputs": [
+        "{projectRoot}/docs/_build/html"
+      ],
+      "options": {
+        "command": "npx rimraf _build/html/ && uv run sphinx-build -nW -b html . _build/html",
+        "cwd": "{projectRoot}/docs/"
+      },
+      "env": {
+        "BSB_LOCAL_INTERSPHINX_ONLY": "true"
       },
       "cache": true
     },

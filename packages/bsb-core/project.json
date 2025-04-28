@@ -80,6 +80,21 @@
       },
       "cache": true
     },
+    "iso-docs": {
+      "executor": "@nxlv/python:run-commands",
+      "dependsOn": ["bsb-core:sync"],
+      "outputs": [
+        "{projectRoot}/docs/_build/iso-html"
+      ],
+      "options": {
+        "command": "npx rimraf _build/iso-html/ && uv run sphinx-build -b html . _build/iso-html",
+        "cwd": "{projectRoot}/docs/",
+        "env": {
+          "BSB_LOCAL_INTERSPHINX_ONLY": "true"
+        }
+      },
+      "cache": true
+    },
     "docs": {
       "dependsOn": ["bsb-core:sync"],
       "executor": "@nxlv/python:run-commands",

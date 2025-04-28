@@ -21,7 +21,7 @@ classifiers = [
 dependencies = [
   "bsb-core",
   "bsb-hdf5",
-  "bsb-arbor",
+  "bsb-arbor; sys_platform != 'win32'",
   "bsb-json",
   "bsb-yaml",
 ]

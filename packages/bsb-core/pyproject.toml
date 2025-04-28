@@ -45,7 +45,7 @@ parallel = [
 ]
 test = [
     "bsb-core[parallel]",
-    "bsb-arbor~=4.0",
+    "bsb-arbor~=4.0; sys_platform != 'win32'",
     "bsb-hdf5~=5.0",
     "bsb-json~=4.2",
     "bsb-test",

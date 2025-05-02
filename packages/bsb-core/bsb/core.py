@@ -127,7 +127,7 @@ class Scaffold:
         Bootstraps a network object.
 
         :param config: The configuration to use for this network. If it is omitted the
-          :ref:`default configuration <default-config>` is used.
+          :external:ref:`bsb.default configuration <default-config>` is used.
         :type config: :class:`~.config.Configuration`
         :param storage: The storage to use to read and write data for this network. If it
           is omitted the configuration's ``Storage`` node is used to construct one.
@@ -140,7 +140,9 @@ class Scaffold:
         :rtype: :class:`~.core.Scaffold`
         """
         self._pool_cache: dict[int, typing.Callable[[], None]] = {}
-        self._pool_listeners: list[tuple[typing.Callable[[list[Job]], None], float]] = []
+        self._pool_listeners: list[tuple[typing.Callable[[list[Job]], None], float]] = (
+            []
+        )
         self._configuration = None
         self._storage = None
         self._comm = MPIService(comm)
@@ -154,7 +156,9 @@ class Scaffold:
         file = os.path.abspath(self.storage.root)
         cells_placed = len(self.cell_types)
         n_types = len(self.connectivity)
-        return f"'{file}' with {cells_placed} cell types, and {n_types} connection_types"
+        return (
+            f"'{file}' with {cells_placed} cell types, and {n_types} connection_types"
+        )
 
     def is_main_process(self) -> bool:
         return not self._comm.get_rank()
@@ -418,7 +422,9 @@ class Scaffold:
                 self._workflow.next_phase()
             if not skip_connectivity:
                 connectivity_todo = ", ".join(s.name for s in c_strats)
-                report(f"Starting connectivity strategies: {connectivity_todo}", level=2)
+                report(
+                    f"Starting connectivity strategies: {connectivity_todo}", level=2
+                )
                 self.run_connectivity(c_strats, fail_fast=fail_fast, pipelines=False)
                 self._workflow.next_phase()
             if not skip_after_connectivity:
@@ -604,7 +610,8 @@ class Scaffold:
         return [
             ct
             for ct in conntype_filtered
-            if (only is None or ct.name in only) and (skip is None or ct.name not in skip)
+            if (only is None or ct.name in only)
+            and (skip is None or ct.name not in skip)
         ]
 
     def get_connectivity_sets(self) -> list[ConnectivitySet]:
@@ -640,7 +647,9 @@ class Scaffold:
             try:
                 tag = f"{pre.name}_to_{post.name}"
             except Exception:
-                raise ValueError("Supply either `tag` or a valid pre and post cell type.")
+                raise ValueError(
+                    "Supply either `tag` or a valid pre and post cell type."
+                )
         return self._load_cs_types(self.storage.get_connectivity_set(tag), pre, post)
 
     def get_cell_types(self) -> list[CellType]:
@@ -776,14 +785,17 @@ class Scaffold:
         dot += "\n}\n"
         return dot
 
-    def _load_cs_types(self, cs: ConnectivitySet, pre=None, post=None) -> ConnectivitySet:
+    def _load_cs_types(
+        self, cs: ConnectivitySet, pre=None, post=None
+    ) -> ConnectivitySet:
         if pre and pre.name != cs.pre_type_name:
             raise ValueError(
                 "Given and stored type mismatch:" + f" {pre.name} vs {cs.pre_type_name}"
             )
         if post and post.name != cs.post_type_name:
             raise ValueError(
-                "Given and stored type mismatch:" + f" {post.name} vs {cs.post_type_name}"
+                "Given and stored type mismatch:"
+                + f" {post.name} vs {cs.post_type_name}"
             )
         try:
             cs.pre_type = self.cell_types[cs.pre_type_name]

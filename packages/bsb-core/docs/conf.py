@@ -44,7 +44,7 @@ extensions = [
     "sphinxemoji.sphinxemoji",
     "sphinx_design",
     "sphinx_copybutton",
-    "bsbdocs",
+    "sphinxext.bsb",
 ]
 
 autodoc_mock_imports = [

@@ -1,6 +1,6 @@
 {
   "name": "bsb-yaml",
-  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "$schema": "../../.nx/installation/node_modules/nx/schemas/project-schema.json",
   "projectType": "library",
   "sourceRoot": "packages/bsb-yaml/bsb_yaml",
   "targets": {

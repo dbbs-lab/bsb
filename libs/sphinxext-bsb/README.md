@@ -1,3 +1,3 @@
 # sphinxext-bsb
 
-Project description here.
+Sphinx extension for the BSB documentation.

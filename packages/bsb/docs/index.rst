@@ -65,7 +65,7 @@ human-readable, multi-scale models!
        Explore more about the main components.
 
     .. grid-item-card:: :octicon:`briefcase;1em;sd-text-warning` Python API
-       :link: whole-api
+       :link: bsb-core:whole-api
        :link-type: ref
 
 
@@ -93,7 +93,7 @@ Content
 
 .. toctree::
    :maxdepth: 2
-   :caption: BSB core
+   :caption: Framework concepts
 
    core/core-toc
 
@@ -107,7 +107,7 @@ Content
    :maxdepth: 2
    :caption: References
 
-   modules
+   Python API <https://bsb.readthedocs.io/en/latest/bsb/modules.html>
    genindex
    py-modindex
 

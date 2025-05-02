@@ -21,9 +21,9 @@ with open(bsb_init_file) as f:
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = 'Brain Scaffold Builder'
-copyright = '2025, DBBS University of Pavia'
-author = 'Robin De Schepper'
+project = "Brain Scaffold Builder"
+copyright = "2025, DBBS University of Pavia"
+author = "Robin De Schepper"
 
 release = __version__
 
@@ -41,7 +41,6 @@ extensions = [
     "sphinx_design",
     "sphinx_copybutton",
     "bsbdocs",
-    "sphinxcontrib.collections"
 ]
 autodoc_typehints = "both"
 autoclass_content = "both"
@@ -80,43 +79,16 @@ intersphinx_mapping = {
     "neo": ("https://neo.readthedocs.io/en/latest/", None),
 }
 
-collections = {
-    "bsb-core": {
-        "driver": "copy_folder",
-        "source": join(bsb_folder, "packages", "bsb-core", "docs/"),
-        "target": "bsb-core/",
-        "ignore": ["index.rst", "modules.rst", "genindex.rst", "py-modindex.rst"]
-    },
-    "bsb-json": {
-        "driver": "copy_folder",
-        "source": join(bsb_folder, "packages", "bsb-json", "docs/"),
-        "target": "bsb-json/",
-        "ignore": ["index.rst", "genindex.rst", "py-modindex.rst"]
-    },
-    "bsb-yaml": {
-        "driver": "copy_folder",
-        "source": join(bsb_folder, "packages", "bsb-yaml", "docs/"),
-        "target": "bsb-yaml/",
-        "ignore": ["index.rst", "genindex.rst", "py-modindex.rst"]
-    },
-    "bsb-test": {
-        "driver": "copy_folder",
-        "source": join(bsb_folder, "packages", "bsb-test", "docs/"),
-        "target": "bsb-test/",
-        "ignore": ["index.rst", "genindex.rst", "py-modindex.rst"]
-    },
-}
-
-templates_path = ['_templates']
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+templates_path = ["_templates"]
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 todo_include_todos = True
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = 'furo'
+html_theme = "furo"
 
-html_static_path = [join(bsb_folder, "docs", '_static')]
+html_static_path = [join(bsb_folder, "docs", "_static")]
 
 html_theme_options = {
     "light_logo": "bsb.svg",

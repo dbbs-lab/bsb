@@ -3,7 +3,7 @@ BSB core
 
 .. toctree::
    :maxdepth: 2
-   :caption: BSB core
+   :caption: Framework concepts
 
    /core/scaffold
    /config/configuration-toc

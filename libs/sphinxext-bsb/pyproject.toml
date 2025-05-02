@@ -1,0 +1,73 @@
+[tool.coverage.run]
+branch = true
+source = [ "sphinxext_bsb" ]
+
+[tool.coverage.report]
+exclude_lines = ['if TYPE_CHECKING:']
+show_missing = true
+
+[tool.pytest.ini_options]
+addopts = """
+ --cov
+ --cov-report html:'../coverage/sphinxext-bsb/html'
+ --cov-report xml:'../coverage/sphinxext-bsb/coverage.xml'
+ --html='../reports/sphinxext-bsb/unittests/html/index.html'
+ --junitxml='../reports/sphinxext-bsb/unittests/junit.xml'
+"""
+
+[project]
+name = "sphinxext-bsb"
+version = "0.2.3"
+description = "BSB Sphinx documentation extension"
+requires-python = ">=3.9,<3.12"
+readme = 'README.md'
+dependencies = []
+
+[tool.flit.module]
+name = "sphinxext.bsb"
+
+[dependency-groups]
+dev = [
+  "autopep8>=2.3.1",
+  "ruff>=0.8.2",
+  "pytest>=8.3.4",
+  "pytest-sugar>=1.0.0",
+  "pytest-cov>=6.0.0",
+  "pytest-html>=4.1.1",
+]
+
+[build-system]
+requires = ["flit>=3.5"]
+build-backend = "flit.buildapi"
+
+[tool.ruff]
+exclude = [
+  ".ruff_cache",
+  ".svn",
+  ".tox",
+  ".venv",
+  "dist",
+]
+
+line-length = 88
+indent-width = 4
+
+[tool.ruff.lint]
+select = [
+  # pycodestyle
+  "E",
+  # Pyflakes
+  "F",
+  # pyupgrade
+  "UP",
+  # flake8-bugbear
+  "B",
+  # flake8-simplify
+  "SIM",
+  # isort
+  "I",
+]
+ignore = []
+
+fixable = ["ALL"]
+unfixable = []

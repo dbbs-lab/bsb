@@ -12,9 +12,9 @@ from pathlib import Path
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 
-project = 'BSB YAML Configuration File Parser'
-copyright = '2025, DBBS University of Pavia'
-author = 'Robin De Schepper'
+project = "BSB YAML Configuration File Parser"
+copyright = "2025, DBBS University of Pavia"
+author = "Robin De Schepper"
 project_folder = Path(__file__).parent.parent
 package_name = project_folder.stem
 
@@ -52,15 +52,14 @@ intersphinx_mapping = {
 autoclass_content = "both"
 autodoc_typehints = "both"
 
-templates_path = ['_templates']
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
-
+templates_path = ["_templates"]
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = 'furo'
+html_theme = "furo"
 
 bsb_doc_static = project_folder / "../../packages/bsb/docs/_static"
 html_static_path = [str(bsb_doc_static)]

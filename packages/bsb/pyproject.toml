@@ -54,12 +54,12 @@ dev = [
 packages = []
 
 [tool.uv.sources]
-bsb-core = { path = "packages/bsb-core", editable = true }
-bsb-hdf5 = { path = "packages/bsb-hdf5", editable = true }
-bsb-json = { path = "packages/bsb-json", editable = true }
-bsb-yaml = { path = "packages/bsb-yaml", editable = true }
-bsb-arbor = { path = "packages/bsb-arbor", editable = true }
-bsb-test = { path = "packages/bsb-test", editable = true }
+bsb-core = { path = "../bsb-core", editable = true }
+bsb-hdf5 = { path = "../bsb-hdf5", editable = true }
+bsb-json = { path = "../bsb-json", editable = true }
+bsb-yaml = { path = "../bsb-yaml", editable = true }
+bsb-arbor = { path = "../bsb-arbor", editable = true }
+bsb-test = { path = "../bsb-test", editable = true }
 
 [project.urls]
 Home = "https://github.com/dbbs-lab/bsb"

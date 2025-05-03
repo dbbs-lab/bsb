@@ -1,6 +1,6 @@
 {
   "name": "bsb-core",
-  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "$schema": "../../.nx/installation/node_modules/nx/schemas/project-schema.json",
   "projectType": "library",
   "sourceRoot": "packages/bsb-core/bsb",
   "targets": {
@@ -28,9 +28,7 @@
     },
     "build": {
       "executor": "@nxlv/python:build",
-      "outputs": [
-        "{projectRoot}/dist"
-      ],
+      "outputs": ["{projectRoot}/dist"],
       "options": {
         "outputPath": "{projectRoot}/dist",
         "publish": true,
@@ -43,10 +41,7 @@
       "executor": "@nxlv/python:ruff-check",
       "outputs": [],
       "options": {
-        "lintFilePatterns": [
-          "bsb",
-          "tests"
-        ]
+        "lintFilePatterns": ["bsb", "tests"]
       },
       "cache": true
     },
@@ -54,19 +49,14 @@
       "executor": "@nxlv/python:ruff-format",
       "outputs": [],
       "options": {
-        "filePatterns": [
-          "bsb",
-          "tests"
-        ]
+        "filePatterns": ["bsb", "tests"]
       },
       "cache": true
     },
     "test": {
       "dependsOn": ["bsb-core:sync"],
       "executor": "@nxlv/python:run-commands",
-      "outputs": [
-        "{workspaceRoot}/coverage/{projectRoot}"
-      ],
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
       "options": {
         "commands": [
           "coverage run -p -m unittest discover -v -s ./tests",
@@ -81,28 +71,27 @@
       "cache": true
     },
     "iso-docs": {
+      "dependsOn": ["sync"],
       "executor": "@nxlv/python:run-commands",
-      "dependsOn": ["bsb-core:sync"],
-      "outputs": [
-        "{projectRoot}/docs/_build/iso-html"
-      ],
+      "outputs": ["{projectRoot}/docs/_build/iso-html"],
       "options": {
-        "command": "npx rimraf _build/iso-html/ && uv run sphinx-build -b html . _build/iso-html",
-        "cwd": "{projectRoot}/docs/",
-        "env": {
-          "BSB_LOCAL_INTERSPHINX_ONLY": "true"
-        }
+        "commands": [
+          "npx rimraf _build/iso-html/",
+          "uv run sphinx-build -v -b html . _build/iso-html"
+        ],
+        "cwd": "{projectRoot}/docs/"
       },
       "cache": true
     },
     "docs": {
-      "dependsOn": ["bsb-core:sync"],
+      "dependsOn": ["sync"],
       "executor": "@nxlv/python:run-commands",
-      "outputs": [
-        "{projectRoot}/docs/_build/"
-      ],
+      "outputs": ["{projectRoot}/docs/_build/html"],
       "options": {
-        "command": "rm -rf _build/html/ && sphinx-build -nW -b html . _build/html",
+        "commands": [
+          "npx rimraf _build/html/",
+          "npx cross-env BSB_LOCAL_INTERSPHINX_ONLY=true uv run sphinx-build -nW -b html . _build/html"
+        ],
         "cwd": "{projectRoot}/docs/"
       },
       "cache": true

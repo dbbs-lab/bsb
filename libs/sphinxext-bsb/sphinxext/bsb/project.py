@@ -94,7 +94,7 @@ class Project:
     def _get_monorepo_doc_dependencies(self):
         project = self._get_monorepo_project()
         doc_dependencies: list[str] = (
-            project.get("targets", {}).get("iso-docs", {}).get("dependsOn", [])
+            project.get("targets", {}).get("docs", {}).get("dependsOn", [])
         )
         return [k.split(":")[0] for k in doc_dependencies if k.endswith(":iso-docs")]
 

@@ -1,31 +1,26 @@
-from os.path import dirname, join
+from pathlib import Path
+
+import sphinxext.bsb
 
 # Configuration file for the Sphinx documentation builder.
 #
 # For the full list of built-in configuration values, see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
-# Fetch the `__version__`
-bsb_folder = dirname(dirname(__file__))
-bsb_init_file = join(bsb_folder, "pyproject.toml")
-_findver = "version = "
-with open(bsb_init_file) as f:
-    for line in f:
-        if "version = " in line:
-            f = line.find(_findver)
-            __version__ = eval(line[line.find(_findver) + len(_findver) :])
-            break
-    else:
-        raise Exception(f"No `version` found in '{bsb_init_file}'.")
+# Use sphinxext.bsb to help configure this monorepo package
+_project = sphinxext.bsb.Project(
+    "The Brain Scaffold Builder", Path(__file__).parent.parent, monorepo=True
+)
+
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = "Brain Scaffold Builder"
-copyright = "2025, DBBS University of Pavia"
-author = "Robin De Schepper"
-
-release = __version__
+project = _project.name
+copyright = _project.copyright
+author = _project.authors
+release = _project.version
+version = _project.version
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -40,10 +35,8 @@ extensions = [
     "sphinxemoji.sphinxemoji",
     "sphinx_design",
     "sphinx_copybutton",
-    "bsbdocs",
+    *_project.extensions,
 ]
-autodoc_typehints = "both"
-autoclass_content = "both"
 
 autodoc_mock_imports = [
     "glia",
@@ -68,6 +61,7 @@ autodoc_mock_imports = [
     "nrrd",
 ]
 
+
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
     "packaging": ("https://packaging.pypa.io/en/stable/", None),
@@ -77,23 +71,28 @@ intersphinx_mapping = {
     "mpi4py": ("https://mpi4py.readthedocs.io/en/stable/", None),
     "arbor": ("https://docs.arbor-sim.org/en/latest/", None),
     "neo": ("https://neo.readthedocs.io/en/latest/", None),
+    **_project.intersphinx,
 }
 
-templates_path = ["_templates"]
+autoclass_content = "both"
+autodoc_typehints = "both"
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+templates_path = ["_templates"]
 todo_include_todos = True
+
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = "furo"
 
-html_static_path = [join(bsb_folder, "docs", "_static")]
+html_static_path = [*_project.html_static_path]
+html_favicon = _project.html_favicon
 
 html_theme_options = {
-    "light_logo": "bsb.svg",
-    "dark_logo": "bsb_dark.svg",
-    "sidebar_hide_name": True,
+    **_project.html_theme_options,
 }
 
-html_favicon = join(html_static_path[0], "bsb_ico.svg")
+html_context = {
+    **_project.html_context,
+}

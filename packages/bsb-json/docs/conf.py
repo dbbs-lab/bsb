@@ -1,73 +1,56 @@
-from os.path import dirname, join
+from pathlib import Path
+
+import sphinxext.bsb
 
 # Configuration file for the Sphinx documentation builder.
 #
 # For the full list of built-in configuration values, see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
-# Fetch the `__version__`
-project_folder = dirname(dirname(__file__))
-bsb_init_file = join(project_folder, "pyproject.toml")
-_findver = "version = "
-with open(bsb_init_file) as f:
-    for line in f:
-        if "version = " in line:
-            f = line.find(_findver)
-            __version__ = eval(line[line.find(_findver) + len(_findver) :])
-            break
-    else:
-        raise Exception(f"No `version` found in '{bsb_init_file}'.")
+# Use sphinxext.bsb to help configure this monorepo package
+_project = sphinxext.bsb.Project(
+    "BSB JSON extension", Path(__file__).parent.parent, monorepo=True
+)
+
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = 'BSB JSON Configuration File Parser'
-copyright = '2025, DBBS University of Pavia'
-author = 'Robin De Schepper'
-
-# The full version, including alpha/beta/rc tags
-release = __version__
+project = _project.name
+copyright = _project.copyright
+author = _project.authors
+release = _project.version
+version = _project.version
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-main_folder = dirname(dirname(project_folder))
-
-extensions = [
-    "sphinx.ext.autodoc",
-    "sphinx.ext.intersphinx",
-]
+extensions = ["sphinx.ext.autodoc", "sphinx.ext.intersphinx", *_project.extensions]
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
-    "bsb": (join(main_folder, "packages", "bsb-core", "docs", "_build", "html"), None),
+    **_project.intersphinx,
 }
 
 autoclass_content = "both"
 autodoc_typehints = "both"
 
-templates_path = ['_templates']
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
-
+templates_path = ["_templates"]
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = 'furo'
+html_theme = "furo"
 
-html_static_path = [join(main_folder, "docs", '_static')]
+html_static_path = [*_project.html_static_path]
+html_favicon = _project.html_favicon
 
 html_theme_options = {
-    "light_logo": "bsb.svg",
-    "dark_logo": "bsb_dark.svg",
-    "sidebar_hide_name": True,
+    **_project.html_theme_options,
 }
 
-html_favicon = join(html_static_path[0], "bsb_ico.svg")
-
 html_context = {
-    "maintainer": "Robin De Schepper",
-    "project_pretty_name": "BSB-JSON",
-    "projects": {"DBBS Scaffold": "https://github.com/dbbs/bsb"},
+    **_project.html_context,
 }

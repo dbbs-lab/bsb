@@ -29,7 +29,7 @@ docs = [
     "sphinxemoji~=0.2",
     "toml~=0.10",
     "furo~=2024.0",
-    "sphinx-design~=0.5",
+    "sphinx-design~=0.6",
     "sphinx-copybutton~=0.5"
 ]
 dev  = [

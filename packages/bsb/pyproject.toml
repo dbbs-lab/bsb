@@ -13,7 +13,7 @@ maintainers = [{ name = "Dimitri Rodarie", email = "dimitri.rodarie@unipv.it" }]
 version = "4.4.2"
 readme = "README.md"
 license = { file = "LICENSE" }
-requires-python = ">=3.9,<4"
+requires-python = ">=3.10,<4"
 description = "Black-box component framework for multiscale neural modeling"
 classifiers = [
   "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"

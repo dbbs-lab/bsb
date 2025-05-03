@@ -9,7 +9,7 @@ authors = [
   { name = "Dimitri Rodarie", email = "dimitri.rodarie@unipv.it" }
 ]
 version = "4.2.3"
-requires-python = ">=3.9,<4"
+requires-python = ">=3.10,<4"
 readme = "README.md"
 license = {file = "LICENSE"}
 classifiers = ["License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"]
@@ -26,7 +26,7 @@ test = [
     "coverage>=7.3",
 ]
 docs = [
-    "sphinx~=7.0",
+    "sphinx~=8.1",
     "furo~=2024.0",
 ]
 dev = [

@@ -13,3 +13,4 @@ Developer guides
    plugins
    hooks
    reference
+   monorepo

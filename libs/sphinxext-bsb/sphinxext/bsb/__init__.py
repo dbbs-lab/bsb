@@ -1,6 +1,7 @@
 import itertools
 from inspect import isclass
 from types import FunctionType
+import importlib.metadata
 
 import docutils.parsers.rst.directives
 from bsb.config import get_config_attributes
@@ -16,7 +17,7 @@ from docutils.parsers.rst import Directive
 from docutils.statemachine import StringList
 from sphinx.util.docutils import SphinxDirective
 
-__version__ = "0.2.1"
+from .project import Project
 
 
 def example_function():
@@ -369,7 +370,7 @@ def setup(app):
     app.add_directive("autoconfig", AutoconfigDirective)
 
     return {
-        "version": __version__,
+        "version": importlib.metadata.version("sphinxext-bsb"),
         "parallel_read_safe": True,
         "parallel_write_safe": True,
     }

@@ -6,6 +6,8 @@ from bsb import DeviceModel, Targetting, config, types
 
 @config.dynamic(attr_name="device", auto_classmap=True, classmap_entry=None)
 class ArborDevice(DeviceModel):
+    device: config.ConfigurationAttribute
+    """Optional importable reference to the device strategy"""
     targetting = config.attr(type=Targetting, required=True)
     """Targets of the device, which should be either a population or a nest rule"""
     resolution = config.attr(type=float)

@@ -41,6 +41,7 @@ class Connection:
 @config.node
 class ArborConnection(ConnectionModel):
     gap = config.attr(type=bool, default=False)
+    """Is this synapce a gap junction?"""
     weight = config.attr(type=float, required=True)
     """weight of the connection between the presynaptic and the postsynaptic cells"""
     delay = config.attr(type=float, required=True)
@@ -63,5 +64,7 @@ class ArborConnection(ConnectionModel):
 
     def gap_junction(self, conn):
         l_ = arbor.cell_local_label(f"gap_{conn.to_compartment.id}")
-        g = arbor.cell_global_label(int(conn.from_id), f"gap_{conn.from_compartment.id}")
+        g = arbor.cell_global_label(
+            int(conn.from_id), f"gap_{conn.from_compartment.id}"
+        )
         return arbor.gap_junction_connection(g, l_, self.weight)

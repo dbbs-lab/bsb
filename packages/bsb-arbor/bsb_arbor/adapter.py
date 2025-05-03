@@ -21,7 +21,14 @@ if typing.TYPE_CHECKING:
 
 
 class ArborSimulationData(SimulationData):
+    """
+    Container class for simulation data.
+    """
+
     def __init__(self, simulation):
+        """
+        Container class for simulation data.
+        """
         super().__init__(simulation)
         self.arbor_sim: arbor.simulation = None
 
@@ -143,7 +150,9 @@ class Population:
                 ptr += stop - start
 
     def __iter__(self):
-        yield from itertools.chain.from_iterable(range(r[0], r[1]) for r in self._ranges)
+        yield from itertools.chain.from_iterable(
+            range(r[0], r[1]) for r in self._ranges
+        )
 
 
 class GIDManager:
@@ -282,9 +291,10 @@ class ArborRecipe(arbor.recipe):
 class ArborAdapter(SimulatorAdapter):
     def __init__(self, comm=None):
         super().__init__(comm)
-        self.simdata: dict[ArborSimulation, SimulationData] = {}
+        self.simdata: dict[ArborSimulation, ArborSimulationData] = {}
 
-    def prepare(self, simulation: "ArborSimulation"):
+    def prepare(self, simulation: "ArborSimulation") -> ArborSimulationData:
+        """Prepares the arbor simulation engine with the given simulation."""
         simdata = self._create_simdata(simulation)
         try:
             context = arbor.context(arbor.proc_allocation(threads=simulation.threads))
@@ -370,7 +380,7 @@ class ArborAdapter(SimulatorAdapter):
         return ArborRecipe(simulation, simdata)
 
     def _create_simdata(self, simulation):
-        self.simdata[simulation] = simdata = SimulationData(simulation)
+        self.simdata[simulation] = simdata = ArborSimulationData(simulation)
         self._assign_chunks(simulation, simdata)
         return simdata
 

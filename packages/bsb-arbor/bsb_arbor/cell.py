@@ -1,7 +1,9 @@
 import abc
 
 import arbor
+
 from bsb import CellModel, ConfigurationError, config, types
+from bsb.config import ConfigurationAttribute
 
 from .adapter import SingleReceiverCollection
 
@@ -15,8 +17,15 @@ from bsb import PlacementSet
     classmap_entry=None,
 )
 class ArborCell(CellModel):
+    model_strategy: config.ConfigurationAttribute
+    """
+    Optional importable reference to a different modelling strategy than the
+    default Arborize strategy.
+    """
     gap = config.attr(type=bool, default=False)
+    """Is this synapse a gap junction?"""
     model = config.attr(type=types.class_(), required=True)
+    """Importable reference to the arborize model describing the cell type"""
 
     @abc.abstractmethod
     def cache_population_data(self, simdata, ps: PlacementSet):
@@ -49,6 +58,7 @@ class ArborCell(CellModel):
 @config.node
 class LIFCell(ArborCell, classmap_entry="lif"):
     model = config.unset()
+    """Importable reference to the arborize model describing the cell type"""
     constants = config.dict(type=types.any_())
     """Dictionary linking the parameters' name to its value"""
 

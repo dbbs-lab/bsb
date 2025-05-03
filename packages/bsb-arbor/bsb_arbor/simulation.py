@@ -12,9 +12,18 @@ class ArborSimulation(Simulation):
     """Simulation time step size in milliseconds"""
     profiling = config.attr(type=bool)
     """Flag to perform profiling during the simulation"""
-    cell_models = config.dict(type=ArborCell, required=True)
-    connection_models = config.dict(type=ArborConnection, required=True)
-    devices = config.dict(type=ArborDevice, required=True)
+    cell_models: config._attrs.cfgdict[ArborCell] = config.dict(
+        type=ArborCell, required=True
+    )
+    """dictionary of cell models in the simulation"""
+    connection_models: config._attrs.cfgdict[ArborConnection] = config.dict(
+        type=ArborConnection, required=True
+    )
+    """dictionary of connection models in the simulation"""
+    devices: config._attrs.cfgdict[ArborDevice] = config.dict(
+        type=ArborDevice, required=True
+    )
+    """dictionary of devices in the simulation"""
 
     @config.property(default=1)
     def threads(self):

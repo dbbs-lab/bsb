@@ -1,0 +1,32 @@
+name: Documentation
+
+on: [workflow_call]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install apt dependencies
+        run: |
+          sudo apt update
+          # Install `libopenmpi` for MPI
+          sudo apt install openmpi-bin libopenmpi-dev
+          # Install `libhdf5` for `morphio`
+          sudo apt install libhdf5-dev
+
+      - name: Install nodejs
+        run: |
+          curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+          \. "$HOME/.nvm/nvm.sh"
+          nvm install 22
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Derive appropriate SHAs for base and head for `nx affected` commands
+        id: setSHAs
+        uses: nrwl/nx-set-shas@v4
+
+      - run: ./nx affected -t docs

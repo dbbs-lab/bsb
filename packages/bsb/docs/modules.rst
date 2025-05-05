@@ -1,8 +1,8 @@
 :doc:`bsb-core <bsb:bsb/modules>`
 ---------------------------------
 
-:doc:`bsb-hdf5 <bsb:bsb/modules>`
----------------------------------
+:doc:`bsb-hdf5 <bsb_hdf5:bsb_hdf5/modules>`
+-------------------------------------------
 
 :doc:`bsb-json <bsb_json:bsb_json/modules>`
 -------------------------------------------

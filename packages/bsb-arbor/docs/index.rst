@@ -11,4 +11,6 @@ BSB Arbor documentation
    :maxdepth: 2
    :caption: Contents:
 
-   modules
+   bsb_arbor/modules
+   genindex
+   py-modindex

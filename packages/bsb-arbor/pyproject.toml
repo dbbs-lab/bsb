@@ -31,6 +31,7 @@ test = [
 docs = [
     "sphinx~=8.1",
     "furo~=2024.0",
+    "sphinxext-bsb>=0.2.7"
 ]
 dev = [
     "bsb-test[test,docs]",

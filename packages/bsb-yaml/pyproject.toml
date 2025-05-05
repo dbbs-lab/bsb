@@ -26,7 +26,7 @@ test = [
     "coverage>=7.3",
 ]
 docs = [
-    "sphinx~=8.1",
+    "sphinxext-bsb>=0.2.7",
     "furo~=2024.0",
 ]
 dev = [
@@ -52,6 +52,7 @@ name = "bsb_yaml"
 
 [tool.uv.sources]
 bsb-core = { path = "../bsb-core", editable = true }
+sphinxext-bsb = { path = "../../libs/sphinxext-bsb", editable = true }
 
 [tool.coverage.run]
 branch = true

@@ -19,11 +19,11 @@ addopts = """
 name = "sphinxext-bsb"
 version = "0.2.7"
 description = "BSB Sphinx documentation extension"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 readme = 'README.md'
 dependencies = [
     "bsb-core",
-    "sphinx>=4.0",
+    "sphinx>=8.1",
     "sphinx-design~=0.6",
 ]
 

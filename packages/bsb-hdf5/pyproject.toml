@@ -25,12 +25,11 @@ test = [
   "coverage>=7.3",
 ]
 docs = [
-    "sphinx~=8.1",
     "sphinxemoji~=0.2",
     "toml~=0.10",
     "furo~=2024.0",
-    "sphinx-design~=0.6",
-    "sphinx-copybutton~=0.5"
+    "sphinx-copybutton~=0.5",
+    "sphinxext-bsb>=0.2.7"
 ]
 dev  = [
     "bsb-hdf5[test,docs]",
@@ -52,6 +51,7 @@ hdf5 = "bsb_hdf5"
 [tool.uv.sources]
 bsb-test = { path = "../bsb-test", editable = true }
 bsb-hdf5 = { path = "../bsb-hdf5", editable = true }
+sphinxext-bsb = { path = "../../libs/sphinxext-bsb", editable = true }
 
 [tool.coverage.run]
 branch = true

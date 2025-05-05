@@ -16,10 +16,11 @@ jobs:
           # Install `libhdf5` for `morphio`
           sudo apt install libhdf5-dev
 
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: 'npm'
+      - name: Install nodejs
+        run: |
+          curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+          \. "$HOME/.nvm/nvm.sh"
+          nvm install 22
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5

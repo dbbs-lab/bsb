@@ -59,11 +59,11 @@
       "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
       "options": {
         "commands": [
-          "coverage run -p -m unittest discover -v -s ./tests",
-          "mpiexec -n 2 coverage run -p -m unittest discover -v -s ./tests",
-          "coverage combine",
-          "coverage xml -i -o ../../coverage/packages/bsb-hdf5/coverage.xml",
-          "coverage html -i -d ../../coverage/packages/bsb-hdf5/html"
+          "uv run coverage run -p -m unittest discover -v -s ./tests",
+          "mpiexec -n 2 uv run coverage run -p -m unittest discover -v -s ./tests",
+          "uv run coverage combine",
+          "uv run coverage xml -i -o ../../coverage/packages/bsb-hdf5/coverage.xml",
+          "uv run coverage html -i -d ../../coverage/packages/bsb-hdf5/html"
         ],
         "parallel": false,
         "cwd": "{projectRoot}"

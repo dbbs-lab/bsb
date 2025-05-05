@@ -2,8 +2,8 @@
 Placement sets
 ##############
 
-:class:`PlacementSets <.storage.interfaces.PlacementSet>` are constructed from the
-:class:`~.storage.Storage` and can be used to retrieve the positions, morphologies,
+:class:`PlacementSets <bsb:bsb.storage.interfaces.PlacementSet>` are constructed from the
+:class:`bsb:bsb.storage.Storage` and can be used to retrieve the positions, morphologies,
 rotations and additional datasets.
 
 .. note::
@@ -15,7 +15,7 @@ Retrieving a PlacementSet
 =========================
 
 Multiple ``get_placement_set`` methods exist in several places as shortcuts to create the
-same :class:`~.storage.interfaces.PlacementSet`. If the placement set does not exist, a
+same :class:`bsb:bsb.storage.interfaces.PlacementSet`. If the placement set does not exist, a
 ``DatesetNotFoundError`` is thrown.
 
 .. code-block:: python
@@ -35,7 +35,7 @@ Identifiers
 
 Cells have no global identifiers, instead you use the indices of their data, i.e. the
 n-th position belongs to cell n, and so will the n-th rotation.
-To easily retrieve the cells' IDs make use of the method :meth:`~.storage.interfaces.PlacementSet.load_ids`.
+To easily retrieve the cells' IDs make use of the method :meth:`bsb:bsb.storage.interfaces.PlacementSet.load_ids`.
 
 .. code-block:: python
 
@@ -46,7 +46,7 @@ Positions
 =========
 
 The positions of the cells can be retrieved using the
-:meth:`~.storage.interfaces.PlacementSet.load_positions` method.
+:meth:`bsb:bsb.storage.interfaces.PlacementSet.load_positions` method.
 
 .. code-block:: python
 
@@ -57,7 +57,7 @@ Morphologies
 ============
 
 The morphology of the cells can be retrieved using the
-:meth:`~.storage.interfaces.PlacementSet.load_morphologies` method.
+:meth:`bsb:bsb.storage.interfaces.PlacementSet.load_morphologies` method.
 
 .. code-block:: python
 
@@ -67,15 +67,15 @@ The morphology of the cells can be retrieved using the
 .. warning::
 
    | Loading morphologies is especially expensive.
-   | :meth:`~.storage.interfaces.PlacementSet.load_morphologies` returns a
-     :class:`~.morphologies.MorphologySet`.
+   | :meth:`bsb:bsb.storage.interfaces.PlacementSet.load_morphologies` returns a
+     :class:`bsb:bsb.morphologies.MorphologySet`.
    | There are better ways to iterate over it using either **soft caching** or **hard caching**.
 
 Rotations
 =========
 
 The positions of the cells can be retrieved using the
-:meth:`~.storage.interfaces.PlacementSet.load_rotations` method.
+:meth:`bsb:bsb.storage.interfaces.PlacementSet.load_rotations` method.
 
 .. code-block:: python
 
@@ -86,7 +86,7 @@ Labeling
 ========
 
 You can label cells and/or their attached morphologies using the
-:meth:`~.storage.interfaces.PlacementSet.load_rotations`
+:meth:`bsb:bsb.storage.interfaces.PlacementSet.load_rotations`
 
 Additional datasets
 ===================

@@ -2,8 +2,8 @@
 List of placement strategies
 ############################
 
-:class:`RandomPlacement <.placement.random.RandomPlacement>`
-============================================================
+:class:`RandomPlacement <bsb:bsb.placement.random.RandomPlacement>`
+===================================================================
 
 This class assigns a random position to each cell within their related partition. Below is an example with 10 cells.
 
@@ -47,8 +47,8 @@ This class assigns a random position to each cell within their related partition
  Therefore, the ratio of the total cell soma volume to the partition volume, referred as the `packing factor`,
  should not exceed 0.4.
 
-:class:`ParallelArrayPlacement <.placement.arrays.ParallelArrayPlacement>`
-==========================================================================
+:class:`ParallelArrayPlacement <bsb:bsb.placement.arrays.ParallelArrayPlacement>`
+=================================================================================
 
 This class places a single layer of cells on the `xy` plane in an aligned array fashion.
 To this end, it create a lattice with fixed spacing between cell positions for each of its row (``spacing_x`` in µm).
@@ -93,8 +93,8 @@ The lattice can be additionally rotated along the `z` axis (``angle`` defined in
       )
 
 
-:class:`FixedPositions <.placement.strategy.FixedPositions>`
-============================================================
+:class:`FixedPositions <bsb:bsb.placement.strategy.FixedPositions>`
+===================================================================
 
 This class places the cells at fixed positions specified by the attribute ``positions``.
 

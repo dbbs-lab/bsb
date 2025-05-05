@@ -2,63 +2,63 @@
 Scaffold
 ########
 
-:class:`~.core.Scaffold` is the main object of the BSB infrastructure (see the
+:class:`bsb:bsb.core.Scaffold` is the main object of the BSB infrastructure (see the
 :doc:`/getting-started/top-level-guide` for an introduction to this class).
 
 Properties
 ----------
 
 The Scaffold object tights together the network description
-of the ``Configuration`` with the data stored in the :class:`~.storage.Storage`.
+of the ``Configuration`` with the data stored in the :class:`bsb:bsb.storage.Storage`.
 You can access the latter classes with respectively the
-:meth:`scaffold.configuration <.core.Scaffold.configuration>` and the
-:meth:`scaffold.storage <.core.Scaffold.storage>` attributes.
+:attr:`scaffold.configuration <bsb:bsb.core.Scaffold.configuration>` and the
+:attr:`scaffold.storage <bsb:bsb.core.Scaffold.storage>` attributes.
 Scaffold also provides a direct access to all of its main configuration components as class attributes:
 
-- :attr:`scaffold.network <.core.Scaffold.network>` -> :class:`~.config._config.NetworkNode`
-- :attr:`scaffold.regions <.core.Scaffold.regions>` -> :class:`~.topology.region.Region`
-- :attr:`scaffold.partitions <.core.Scaffold.partitions>` -> :class:`~.topology.partition.Partition`
-- :attr:`scaffold.cell_types <.core.Scaffold.cell_types>` -> :class:`~.cell_types.CellType`
-- :attr:`scaffold.morphologies <.core.Scaffold.morphologies>` -> :class:`~.morphologies.Morphology`
-- :attr:`scaffold.morphologies <.core.Scaffold.morphologies>` -> :class:`~.cell_types.CellType`
-- :attr:`scaffold.placement <.core.Scaffold.placement>` -> :class:`~.placement.strategy.PlacementStrategy`
-- :attr:`scaffold.connectivity <.core.Scaffold.connectivity>` -> :class:`~.connectivity.strategy.ConnectionStrategy`
-- :attr:`scaffold.simulations <.core.Scaffold.simulations>` -> :class:`~.simulation.simulation.Simulation`
-- :attr:`scaffold.after_placement <.core.Scaffold.after_placement>` -> :class:`~.postprocessing.AfterPlacementHook`
-- :attr:`scaffold.after_connectivity <.core.Scaffold.after_connectivity>` -> :class:`~.postprocessing.AfterConnectivityHook`
+- :attr:`scaffold.network <bsb:bsb.core.Scaffold.network>` -> :class:`bsb:bsb.config._config.NetworkNode`
+- :attr:`scaffold.regions <bsb:bsb.core.Scaffold.regions>` -> :class:`bsb:bsb.topology.region.Region`
+- :attr:`scaffold.partitions <bsb:bsb.core.Scaffold.partitions>` -> :class:`bsb:bsb.topology.partition.Partition`
+- :attr:`scaffold.cell_types <bsb:bsb.core.Scaffold.cell_types>` -> :class:`bsb:bsb.cell_types.CellType`
+- :attr:`scaffold.morphologies <bsb:bsb.core.Scaffold.morphologies>` -> :class:`bsb:bsb.morphologies.Morphology`
+- :attr:`scaffold.morphologies <bsb:bsb.core.Scaffold.morphologies>` -> :class:`bsb:bsb.cell_types.CellType`
+- :attr:`scaffold.placement <bsb:bsb.core.Scaffold.placement>` -> :class:`bsb:bsb.placement.strategy.PlacementStrategy`
+- :attr:`scaffold.connectivity <bsb:bsb.core.Scaffold.connectivity>` -> :class:`bsb:bsb.connectivity.strategy.ConnectionStrategy`
+- :attr:`scaffold.simulations <bsb:bsb.core.Scaffold.simulations>` -> :class:`bsb:bsb.simulation.simulation.Simulation`
+- :attr:`scaffold.after_placement <bsb:bsb.core.Scaffold.after_placement>` -> :class:`bsb:bsb.postprocessing.AfterPlacementHook`
+- :attr:`scaffold.after_connectivity <bsb:bsb.core.Scaffold.after_connectivity>` -> :class:`bsb:bsb.postprocessing.AfterConnectivityHook`
 
 There are also a list of methods starting with ``get_`` that allows you to retrieve these components with some
-additional filtering parameters (:meth:`get_cell_types <.core.Scaffold.get_cell_types>`,
-:meth:`get_placement <.core.Scaffold.get_placement>`,
-:meth:`get_placement_of <.core.Scaffold.get_placement_of>`,
-:meth:`get_connectivity <.core.Scaffold.get_connectivity>`)
+additional filtering parameters (:meth:`get_cell_types <bsb:bsb.core.Scaffold.get_cell_types>`,
+:meth:`get_placement <bsb:bsb.core.Scaffold.get_placement>`,
+:meth:`get_placement_of <bsb:bsb.core.Scaffold.get_placement_of>`,
+:meth:`get_connectivity <bsb:bsb.core.Scaffold.get_connectivity>`)
 
 Workflow methods
 ----------------
 
 Scaffold contains also all the functions required to run the reconstruction pipeline, and to simulate
 the resulting networks.
-You can run the full reconstruction with the :meth:`compile <.core.Scaffold.compile>` method or any of its sub-step:
+You can run the full reconstruction with the :meth:`compile <bsb:bsb.core.Scaffold.compile>` method or any of its sub-step:
 
-- Topology creation / update: :meth:`resize <.core.Scaffold.resize>`
-- Cell placement: :meth:`run_placement <.core.Scaffold.run_placement>`
-- After placement hook: :meth:`run_after_placement <.core.Scaffold.run_after_placement>`
-- Cell connectivity: :meth:`run_connectivity <.core.Scaffold.run_connectivity>`
-- After placement hook: :meth:`run_after_connectivity <.core.Scaffold.run_after_connectivity>`
-- Run a simulation: :meth:`run_simulation <.core.Scaffold.run_simulation>`
+- Topology creation / update: :meth:`resize <bsb:bsb.core.Scaffold.resize>`
+- Cell placement: :meth:`run_placement <bsb:bsb.core.Scaffold.run_placement>`
+- After placement hook: :meth:`run_after_placement <bsb:bsb.core.Scaffold.run_after_placement>`
+- Cell connectivity: :meth:`run_connectivity <bsb:bsb.core.Scaffold.run_connectivity>`
+- After placement hook: :meth:`run_after_connectivity <bsb:bsb.core.Scaffold.run_after_connectivity>`
+- Run a simulation: :meth:`run_simulation <bsb:bsb.core.Scaffold.run_simulation>`
 
-Similarly, you can clear the results of the reconstruction stored so far with the :meth:`clear <.core.Scaffold.clear>`
+Similarly, you can clear the results of the reconstruction stored so far with the :meth:`clear <bsb:bsb.core.Scaffold.clear>`
 or any of its sub-step:
 
-- Cell placement: :meth:`clear_placement <.core.Scaffold.clear_placement>`
-- Cell connectivity: :meth:`clear_connectivity <.core.Scaffold.clear_connectivity>`
+- Cell placement: :meth:`clear_placement <bsb:bsb.core.Scaffold.clear_placement>`
+- Cell connectivity: :meth:`clear_connectivity <bsb:bsb.core.Scaffold.clear_connectivity>`
 
 Get Stored data
 ---------------
 
 You can also inspect the data produced during the reconstruction from the storage:
 
-- :class:`~.storage.interfaces.PlacementSet` from :meth:`get_placement_set <.core.Scaffold.get_placement_set>`,
-  :meth:`get_placement_sets <.core.Scaffold.get_placement_sets>`
-- :class:`~.storage.interfaces.ConnectivitySet` from :meth:`get_connectivity_set <.core.Scaffold.get_connectivity_set>`,
-  :meth:`get_connectivity_sets <.core.Scaffold.get_connectivity_sets>`
+- :class:`bsb:bsb.storage.interfaces.PlacementSet` from :meth:`get_placement_set <bsb:bsb.core.Scaffold.get_placement_set>`,
+  :meth:`get_placement_sets <bsb:bsb.core.Scaffold.get_placement_sets>`
+- :class:`bsb:bsb.storage.interfaces.ConnectivitySet` from :meth:`get_connectivity_set <bsb:bsb.core.Scaffold.get_connectivity_set>`,
+  :meth:`get_connectivity_sets <bsb:bsb.core.Scaffold.get_connectivity_sets>`

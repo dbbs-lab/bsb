@@ -5,7 +5,7 @@ Configuration attributes
 ########################
 
 An attribute can refer to a singular value of a certain type, a dict, list, reference, or
-to a deeper node. You can use the :func:`config.attr <.config.attr>` in node decorated
+to a deeper node. You can use the :func:`config.attr <bsb:bsb.config.attr>` in node decorated
 classes to define your attribute:
 
 .. code-block:: python
@@ -33,13 +33,13 @@ Type validation
 Configuration types convert given configuration values. Values incompatible with the type
 are rejected and the user is warned. The default type is ``str``.
 
-Any callable that takes 1 argument can be used as a type handler. The :mod:`.config.types`
+Any callable that takes 1 argument can be used as a type handler. The :mod:`bsb:bsb.config.types`
 module provides extra functionality such as validation of list and dictionaries and even
 more complex combinations of types. Every configuration node itself can be used as a type.
 
 .. warning::
 
-    All of the members of the :mod:`.config.types` module are factory methods: they need to
+    All of the members of the :mod:`bsb:bsb.config.types` module are factory methods: they need to
     be **called** in order to produce the type handler. Make sure that you use
     ``config.attr(type=types.any_())``, as opposed to ``config.attr(type=types.any_)``.
 
@@ -49,7 +49,7 @@ Configuration dictionaries
 ==========================
 
 Configuration dictionaries hold configuration nodes. If you need a dictionary of values
-use the :func:`types.dict <.config.types.dict>` syntax instead.
+use the :func:`types.dict <bsb:bsb.config.types.dict>` syntax instead.
 
 .. code-block:: python
 
@@ -92,7 +92,7 @@ Configuration lists
 ===================
 
 Configuration dictionaries hold unnamed collections of configuration nodes. If you need a
-list of values use the :func:`types.list <.config.types.list>` syntax instead.
+list of values use the :func:`types.list <bsb:bsb.config.types.list>` syntax instead.
 
 .. code-block:: python
 
@@ -153,7 +153,7 @@ and placed under ``where`` so that in the config object:
   'A'
 
 References are defined inside of configuration nodes by passing a `reference object
-<quick-reference-object>`_ to the :func:`.config.ref` function:
+<quick-reference-object>`_ to the :func:`bsb:bsb.config.ref` function:
 
 .. code-block:: python
 

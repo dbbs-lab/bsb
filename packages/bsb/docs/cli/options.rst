@@ -52,7 +52,7 @@ Using project values
 
 Project values are stored in the Python project configuration file ``pyproject.toml`` in
 the ``tools.bsb`` section. You can modify the `TOML <https://toml.io/en/>`_ content in the
-file, or use :func:`.options.store_option`:
+file, or use :func:`bsb:bsb.options.store_option`:
 
 .. _store:
 
@@ -63,7 +63,7 @@ file, or use :func:`.options.store_option`:
   store_option("verbosity", 4)
 
 The value will be written to ``pyproject.toml`` and saved permanently at project level. To
-read any ``pyproject.toml`` values you can use :func:`.options.read_option`:
+read any ``pyproject.toml`` values you can use :func:`bsb:bsb.options.read_option`:
 
 .. code-block:: python
 
@@ -122,7 +122,7 @@ List of options
 
 * ``config``: The default config file to use, if omitted in commands.
 
-  * *script*: None (when scripting, you should create a :class:`~.config.Configuration`)
+  * *script*: None (when scripting, you should create a :class:`bsb:bsb.config.Configuration`)
     object.
 
   * *cli*: ``config``, usually positional. e.g. ``bsb compile conf.json``
@@ -148,7 +148,7 @@ Writing your own options
 ========================
 
 You can create your own options as a :doc:`plugin </dev/plugins>` by defining a class that
-inherits from :class:`~.option.BsbOption`:
+inherits from :class:`bsb:bsb.option.BsbOption`:
 
 .. code-block:: python
 

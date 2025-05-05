@@ -46,13 +46,13 @@ if typing.TYPE_CHECKING:
 @meter()
 def from_storage(root, comm=None):
     """
-    Load :class:`.core.Scaffold` from a storage object.
+    Load :class:`bsb.core.Scaffold` from a storage object.
 
     :param root: Root (usually path) pointing to the storage object.
     :param mpi4py.MPI.Comm comm: MPI communicator that shares control
       over the Storage.
     :returns: A network scaffold
-    :rtype: :class:`Scaffold`
+    :rtype: :class:`bsb.core.Scaffold`
     """
     return open_storage(root, comm).load()
 

@@ -2,11 +2,11 @@
 Morphology repositories
 #######################
 
-Morphology repositories (MRs) are an interface of the :mod:`.storage` module and can be
-supported by the :class:`~.storage.interfaces.Engine` so that morphologies can be stored
+Morphology repositories (MRs) are an interface of the :mod:`bsb:bsb.storage` module and can be
+supported by the :class:`bsb:bsb.storage.interfaces.Engine` so that morphologies can be stored
 inside the network storage.
 
-To access an MR, a :class:`~.storage.Storage` object is required:
+To access an MR, a :class:`bsb:bsb.storage.Storage` object is required:
 
 .. code-block:: python
 
@@ -25,11 +25,11 @@ Similarly, the built-in MR of a network is accessible as ``network.morphologies`
   network = from_hdf("my_existing_model.hdf5")
   mr = network.morphologies
 
-You can use the :meth:`~.storage.interfaces.MorphologyRepository.save` method to store
-:class:`Morphologies <.morphologies.Morphology>`. If you don't immediately need the whole
-morphology, you can :meth:`~.storage.interfaces.MorphologyRepository.preload` it,
+You can use the :meth:`bsb:bsb.storage.interfaces.MorphologyRepository.save` method to store
+:class:`Morphologies <bsb:bsb.morphologies.Morphology>`. If you don't immediately need the whole
+morphology, you can :meth:`bsb:bsb.storage.interfaces.MorphologyRepository.preload` it,
 otherwise you can load the entire thing with
-:meth:`~.storage.interfaces.MorphologyRepository.load`.
+:meth:`bsb:bsb.storage.interfaces.MorphologyRepository.load`.
 
 .. autoclass:: bsb.storage.interfaces.MorphologyRepository
   :noindex:

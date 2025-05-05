@@ -34,7 +34,7 @@ from ..voxels import VoxelSet
 class MorphologySet:
     """
     Associates a set of :class:`StoredMorphologies
-    <.storage.interfaces.StoredMorphology>` to cells
+    <bsb.storage.interfaces.StoredMorphology>` to cells
     """
 
     def __init__(self, loaders, m_indices=None, /, labels=None):
@@ -1353,7 +1353,7 @@ class Branch:
         """
         Collection of the child branches of this branch.
 
-        :returns: list of :class:`Branches <.morphologies.Branch>`
+        :returns: list of :class:`Branches <bsb.morphologies.Branch>`
         :rtype: list
         """
         return self._children.copy()
@@ -1363,7 +1363,7 @@ class Branch:
         Attach a branch as a child to this branch.
 
         :param branch: Child branch
-        :type branch: :class:`Branch <.morphologies.Branch>`
+        :type branch: :class:`Branch <bsb.morphologies.Branch>`
         """
         self._on_mutate()
         if branch._parent is not None:
@@ -1386,7 +1386,7 @@ class Branch:
         Split this branch and insert the given ``branch`` at the specified ``index``.
 
         :param branch: Branch to be attached
-        :type branch: :class:`Branch <.morphologies.Branch>`
+        :type branch: :class:`Branch <bsb.morphologies.Branch>`
         :param index: Index or coordinates of the cutpoint; if coordinates are given, the closest point to the coordinates is used.
         :type: numpy.ndarray | int
         """
@@ -1436,7 +1436,7 @@ class Branch:
         Remove a branch as a child from this branch.
 
         :param branch: Child branch
-        :type branch: :class:`Branch <.morphologies.Branch>`
+        :type branch: :class:`Branch <bsb.morphologies.Branch>`
         """
         if branch._parent is not self:
             raise ValueError(f"Can't detach {branch} from {self}, not a child branch.")

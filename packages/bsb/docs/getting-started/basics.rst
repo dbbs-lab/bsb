@@ -16,7 +16,7 @@ Loading a scaffold from file
 To retrieve the information from your network file, you need to open it with Python.
 To follow this tutorial, either create a new python file ``"load_data.py"`` in your project
 folder. You can load a stored network from file using the method
-:meth:`from_storage <bsb.core.from_storage>`:
+:func:`from_storage <bsb:bsb.core.from_storage>`:
 
 .. literalinclude:: /../examples/tutorials/load_data.py
    :language: python
@@ -51,7 +51,7 @@ needless typing and repetition.
 Placement data
 --------------
 
-The placement data is available through the :class:`PlacementSet <.storage.interfaces.PlacementSet>`
+The placement data is available through the :class:`PlacementSet <bsb:bsb.storage.interfaces.PlacementSet>`
 interface. You can access stored placement sets through their name or their cell type.
 This example shows how to access the cell positions of each population:
 
@@ -67,7 +67,7 @@ Connectivity data
 -----------------
 
 The connectivity data is available through the
-:class:`ConnectivitySet <.storage.interfaces.ConnectivitySet>` interface.
+:class:`ConnectivitySet <bsb:bsb.storage.interfaces.ConnectivitySet>` interface.
 Remember that connection sets are labelled by default according to the connection strategy
 used to obtain them (and the pre and postsynaptic cell types in case their are more than one).
 

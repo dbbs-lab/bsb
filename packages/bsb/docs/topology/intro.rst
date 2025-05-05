@@ -34,7 +34,7 @@ Example
 The root ``Group`` receives the network X, Y, and Z. A
 ``Group`` is an inert region and simply passes the network boundaries on to its children.
 The :ref:`Voxels <voxel-partition>` loads its voxels, and positions them absolutely,
-ignoring the network boundaries. The :class:`~.topology.region.Stack` passes the volume on
+ignoring the network boundaries. The :class:`bsb:bsb.topology.region.Stack` passes the volume on
 to the :ref:`Layers <layer-partition>` who fill up the space and occupy their
 thickness. They return their layout up to the parent ``Stack``, who in turn proposes
 translations to the layers in order to stack them on top of the other. The end result is

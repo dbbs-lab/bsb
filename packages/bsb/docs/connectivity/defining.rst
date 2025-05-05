@@ -5,7 +5,7 @@ Connectivity
 The connection between cells is managed with ``ConnectivityStrategy`` objects. A strategy
 present all the rules to apply for the definition of connection among cells. In BSB is implemented
 a set of strategies ready to use (here is a :doc:`list </connectivity/connection-strategies>`), but it also possible to build a customised strategy.
-Once created the connectivity are stored in :class:`ConnectivitySets <.storage.interfaces.ConnectivitySet>`.
+Once created the connectivity are stored in :class:`ConnectivitySets <bsb:bsb.storage.interfaces.ConnectivitySet>`.
 
 Adding a connection type
 ========================
@@ -36,9 +36,9 @@ Connections are defined in the configuration under the ``connectivity`` block:
       )
 
 
-* :guilabel:`strategy`: Which :class:`~.connectivity.strategy.ConnectionStrategy` to load.
+* :guilabel:`strategy`: Which :class:`bsb:bsb.connectivity.strategy.ConnectionStrategy` to load.
 * :guilabel:`pre`/:guilabel:`post`: The pre/post-synaptic
-  :class:`hemitypes <.connectivity.strategy.Hemitype>`:
+  :class:`hemitypes <bsb:bsb.connectivity.strategy.Hemitype>`:
 
   * :guilabel:`cell_types`: A list of cell types.
   * :guilabel:`labels`: (optional) a list of labels to filter the cells by

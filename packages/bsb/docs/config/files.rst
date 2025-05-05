@@ -13,10 +13,10 @@ like this:
 
 The :guilabel:`regions`, :guilabel:`partitions`, :guilabel:`cell_types`,
 :guilabel:`placement` and :guilabel:`connectivity` spaceholders hold the configuration for
-:class:`Regions <.topology.region.Region>`, :class:`Partitions
-<.topology.partition.Partition>`, :class:`CellTypes <.cell_types.CellType>`,
-:class:`PlacementStrategies <.placement.strategy.PlacementStrategy>` and
-:class:`ConnectionStrategies <.connectivity.strategy.ConnectionStrategy>` respectively.
+:class:`Regions <bsb:bsb.topology.region.Region>`, :class:`Partitions
+<bsb:bsb.topology.partition.Partition>`, :class:`CellTypes <bsb:bsb.cell_types.CellType>`,
+:class:`PlacementStrategies <bsb:bsb.placement.strategy.PlacementStrategy>` and
+:class:`ConnectionStrategies <bsb:bsb.connectivity.strategy.ConnectionStrategy>` respectively.
 
 When you are configuring a model you will mostly be using configuration :ref:`attributes
 <config_attrs>`, :ref:`nodes <config_nodes>`, :ref:`dictionaries <config_dict>`,
@@ -81,7 +81,7 @@ Default configuration
 #####################
 
 You can create a default configuration by calling :meth:`Configuration.default
-<.config.Configuration.default>`. It corresponds to the following JSON:
+<bsb:bsb.config.Configuration.default>`. It corresponds to the following JSON:
 
 .. code-block:: json
 

@@ -2,8 +2,8 @@
 List of strategies
 ##################
 
-:class:`AllToAll <.connectivity.general.AllToAll>`
-==================================================
+:class:`AllToAll <bsb:bsb.connectivity.general.AllToAll>`
+=========================================================
 
 This strategy creates a connection with a probability equals to ``affinity``
 for each possible pair of presynaptic and postsynaptic neurons.
@@ -11,8 +11,8 @@ By default, all unique neuron pair create one connection.
 
 * ``affinity``: Probability of a pair of neuron to create a connection (default is 1.0, i.e. all connected).
 
-:class:`FixedIndegree <.connectivity.general.FixedIndegree>`
-============================================================
+:class:`FixedIndegree <bsb:bsb.connectivity.general.FixedIndegree>`
+===================================================================
 
 This strategy connects to each postsynaptic neuron, a fixed number of uniform randomly selected
 presynaptic neurons.
@@ -49,16 +49,16 @@ presynaptic neurons.
   In this example every cell of type B is connected to two cells of type A.
 
 
-:class:`FixedOutdegree <.connectivity.general.FixedOutdegree>`
-==============================================================
+:class:`FixedOutdegree <bsb:bsb.connectivity.general.FixedOutdegree>`
+=====================================================================
 
 This strategy connects to each presynaptic neuron, a fixed number of uniform randomly selected
 postsynaptic neurons.
 
 * ``outdegree``: Number of neuron to connect for each presynaptic neuron.
 
-:class:`VoxelIntersection <.connectivity.detailed.voxel_intersection.VoxelIntersection>`
-========================================================================================
+:class:`VoxelIntersection <bsb:bsb.connectivity.detailed.voxel_intersection.VoxelIntersection>`
+===============================================================================================
 
 This strategy voxelizes morphologies into collections of cubes, thereby reducing the
 spatial specificity of the provided traced morphologies by grouping multiple compartments

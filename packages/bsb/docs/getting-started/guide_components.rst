@@ -48,8 +48,8 @@ In our case, we will place our `ConnectionStrategy` class in ``connectome.py``:
             # write your code here
             pass
 
-The :class:`ConnectionStrategy <.connectivity.strategy.ConnectionStrategy>` here requires you to
-implement the :meth:`connect <.connectivity.strategy.ConnectionStrategy.connect>` function.
+The :class:`ConnectionStrategy <bsb:bsb.connectivity.strategy.ConnectionStrategy>` here requires you to
+implement the :meth:`connect <bsb:bsb.connectivity.strategy.ConnectionStrategy.connect>` function.
 
 .. tip::
     Take the time to familiarize yourself with the class and the function before continuing.
@@ -90,7 +90,7 @@ Here, we need a radius parameter which translates into the following code in our
             pass
 
 Here, :guilabel:`radius` is a positive float that is required, this means that the BSB will throw a
-:class:`ConfigurationError <.exceptions.ConfigurationError>` if the parameter is not provided.
+:class:`ConfigurationError <bsb:bsb.exceptions.ConfigurationError>` if the parameter is not provided.
 This will also happen if the parameters provided for the configuration attributes do not match
 the expected types.
 
@@ -120,20 +120,20 @@ your circuit topology into independent pieces to parallelize the circuit reconst
 (see :doc:`this section</core/job-distribution>` for more details).
 
 Here, we are going to use the `connect` function to produce and store
-:class:`ConnectivitySets <.storage.interfaces.ConnectivitySet>`.
+:class:`ConnectivitySets <bsb:bsb.storage.interfaces.ConnectivitySet>`.
 First some definition:
 
 | The presynaptic and postsynaptic populations to connect (each can have multiple cell type
-  populations) are called :class:`Hemitype <.connectivity.strategy.Hemitype>`. An `Hemitype`
+  populations) are called :class:`Hemitype <bsb:bsb.connectivity.strategy.Hemitype>`. An `Hemitype`
   serves as the interface to define a connection population and its parameters in the
   Configuration.
-| The class :class:`HemitypeCollection <.connectivity.strategy.HemitypeCollection>` allows
+| The class :class:`HemitypeCollection <bsb:bsb.connectivity.strategy.HemitypeCollection>` allows
   you to filter the cells of an `Hemitype` according to a list of `Chunk`.
 | The `connect` method deals with connecting cells, and split the task into Chunks
   (here, each chunk containing a presynaptic cell).
 
 The parameters of `connect` are therefore the pre- and post-synaptic ``HemitypeCollection``.
-This class provides a :meth:`placement <.connectivity.strategy.HemitypeCollection.placement>`
+This class provides a :attr:`placement <bsb:bsb.connectivity.strategy.HemitypeCollection.placement>`
 method that we will use to iterate over its cell types populations ``PlacementSet``.
 
 .. code-block:: python
@@ -165,7 +165,7 @@ The ones we keep are within the ``radius`` defined as attribute of the class.
         nb_connections = len(ids_to_keep)
 
 Finally, we use the
-:meth:`ConnectionStrategy.connect_cells <.connectivity.strategy.ConnectionStrategy.connect_cells>`
+:meth:`ConnectionStrategy.connect_cells <bsb:bsb.connectivity.strategy.ConnectionStrategy.connect_cells>`
 function, which will create and store our resulting `ConnectivitySet`. It will also assign it a name
 based on the Strategy name and eventually the pre- and post-synaptic populations connected (if there
 are more than one pair).

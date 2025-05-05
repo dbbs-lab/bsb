@@ -7,7 +7,7 @@ placed within `Partitions` according to :doc:`placement indications </placement/
 You can also attach morphologies and orientations to them.
 During placement, the cell positions are generated in the form of a :doc:`PlacementSet </placement/placement-set>`.
 These can then be connected together into :class:`ConnectivitySets
-<.storage.interfaces.ConnectivitySet>`. Furthermore, during simulation, cell types are
+<bsb:bsb.storage.interfaces.ConnectivitySet>`. Furthermore, during simulation, cell types are
 represented by **cell models**.
 
 .. rubric:: Basic configuration

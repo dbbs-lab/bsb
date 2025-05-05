@@ -96,7 +96,7 @@ It is also possible to add a pipeline to perform transformations on the loaded
 morphology. Pipelines can be added with a :guilabel:`pipeline` list component to the
 morphology node.
 Each item in the list may either be a string reference to a method of the
-:class:`~bsb.morphologies.Morphology` class or an importable function.
+:class:`bsb:bsb.morphologies.Morphology` class or an importable function.
 If the function requires parameters, use a node with the function reference placed in the
 :guilabel:`func` attribute, and a :guilabel:`parameters` list.
 
@@ -145,11 +145,11 @@ Here is an example what that would look like:
 
 In this case, we created a pipeline of 3 steps:
 
-1. Reset the origin of the morphology, using the :meth:`~.morphologies.SubTree.center` function from the
+1. Reset the origin of the morphology, using the :meth:`bsb:bsb.morphologies.SubTree.center` function from the
    Morphology class.
 2. Run the :guilabel:`add_axon` function from the external file `my_module.py`
 3. Rotate the morphology by 20 degrees along the x and z axis, using the
-   :meth:`~.morphologies.SubTree.rotate` function from the Morphology class.
+   :meth:`bsb:bsb.morphologies.SubTree.rotate` function from the Morphology class.
 
 .. note::
 

@@ -65,7 +65,7 @@ human-readable, multi-scale models!
        Explore more about the main components.
 
     .. grid-item-card:: :octicon:`briefcase;1em;sd-text-warning` Python API
-       :link: bsb-core:whole-api
+       :link: bsb:whole-api
        :link-type: ref
 
 
@@ -107,7 +107,7 @@ Content
    :maxdepth: 2
    :caption: References
 
-   Python API <https://bsb.readthedocs.io/en/latest/bsb/modules.html>
+   modules
    genindex
    py-modindex
 

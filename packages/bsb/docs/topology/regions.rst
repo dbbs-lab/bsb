@@ -5,8 +5,8 @@ Regions
 ===========
 RegionGroup
 ===========
-:class:`RegionGroup <.topology.region.RegionGroup>` is the simplest implementation
-of the :class:`Region class <.topology.region.Region>`. It serves as a container
+:class:`RegionGroup <bsb:bsb.topology.region.RegionGroup>` is the simplest implementation
+of the :class:`Region class <bsb:bsb.topology.region.Region>`. It serves as a container
 interface for its children. Any transformation operation applied to it will be directly
 applied to all its children independently.
 
@@ -19,7 +19,7 @@ Parameters
 =====
 Stack
 =====
-:class:`Stack <.topology.region.Stack>` groups its children on top of each other along a
+:class:`Stack <bsb:bsb.topology.region.Stack>` groups its children on top of each other along a
 defined axis (`main axis`) and adjust its length accordingly.
 
 This class first place the first of its children at its defined coordinates. Then, each

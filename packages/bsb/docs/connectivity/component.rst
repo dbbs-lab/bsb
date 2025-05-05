@@ -4,7 +4,7 @@ Writing a component
 
 You can create custom connectivity patterns by creating a Python file in your project
 root (e.g. ``my_module.py``) with inside a class inheriting from
-:class:`~.connectivity.strategy.ConnectionStrategy`.
+:class:`bsb:bsb.connectivity.strategy.ConnectionStrategy`.
 
 First we'll discuss the parts of the interface to implement, followed by an example, some
 notes, and use cases.
@@ -12,8 +12,8 @@ notes, and use cases.
 Interface
 ---------
 
-:meth:`~bsb.connectivity.strategy.ConnectionStrategy.connect`
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+:meth:`bsb:bsb.connectivity.strategy.ConnectionStrategy.connect`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 * ``pre_set``/``post_set``: The pre/post-synaptic placement sets you used to perform the calculations.
 * ``src_locs``/``dest_locs``:
@@ -78,8 +78,8 @@ Furthermore, the connection begins at the point with id ``6`` on the branch whos
   and ``dest_locs`` the indices of the branches and of the point on the branch can be set
   to ``-1``.
 
-:meth:`~bsb.connectivity.strategy.ConnectionStrategy.get_region_of_interest`
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+:meth:`bsb:bsb.connectivity.strategy.ConnectionStrategy.get_region_of_interest`
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 This is an optional part of the interface. Using a region of interest (RoI) can speed
 up algorithms when it is possible to know for a given presynaptic chunk, which
@@ -197,8 +197,8 @@ In this example :guilabel:`min` is an optional float that defaults to 0, and
 
 The ``connect`` function is handed the placement information as the ``pre`` and ``post``
 parameters. The ``.placement`` attribute contains a dictionary with as keys the
-:class:`.cell_types.CellType` and as value the
-:class:`PlacementSets <.storage.interfaces.PlacementSet>`.
+:class:`bsb:bsb.cell_types.CellType` and as value the
+:class:`PlacementSets <bsb:bsb.storage.interfaces.PlacementSet>`.
 
 .. note::
   The placement sets in the parameters are scoped to the data of the parallel job that is
@@ -374,9 +374,9 @@ this in the configuration file, using the:guilabel:`morphology_labels` attribute
         }
       }
 
-The :meth:`~bsb.connectivity.strategy.ConnectionStrategy.get_region_of_interest` is
+The :meth:`bsb:bsb.connectivity.strategy.ConnectionStrategy.get_region_of_interest` is
 analogous to the previous example, so we focus only on the
-:meth:`~bsb.connectivity.strategy.ConnectionStrategy.connect` method.
+:meth:`bsb:bsb.connectivity.strategy.ConnectionStrategy.connect` method.
 
 .. code-block:: python
 

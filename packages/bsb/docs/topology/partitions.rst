@@ -15,8 +15,8 @@ In the BSB the following two partitions are implemented:
 ========
 Rhomboid
 ========
-:class:`Rhomboid <.topology.partition.Rhomboid>` is the simplest implementation
-of the :class:`Partition <.topology.partition.Partition>`. Here, the `Rhomboid`
+:class:`Rhomboid <bsb:bsb.topology.partition.Rhomboid>` is the simplest implementation
+of the :class:`Partition <bsb:bsb.topology.partition.Partition>`. Here, the `Rhomboid`
 occupies the space of a rectangular cuboid defined by its ``origin`` and ``dimensions``
 within its `Region`.
 
@@ -32,7 +32,7 @@ Parameters
 =====
 Layer
 =====
-A :class:`Layer <.topology.partition.Layer>` occupies the full space of its
+A :class:`Layer <bsb:bsb.topology.partition.Layer>` occupies the full space of its
 containing `Region` except on a defined ``axis``, where it is limited.
 This creates a stratum within the `Region` along the chosen ``axis``.
 
@@ -56,8 +56,8 @@ Parameters
 Voxels
 ======
 
-:class:`Voxel partitions <.topology.partition.Voxels>` are an irregular shape in space,
-described by a group of rhomboids, called a :class:`~.voxels.VoxelSet`. Most brain atlases
+:class:`Voxel partitions <bsb:bsb.topology.partition.Voxels>` are an irregular shape in space,
+described by a group of rhomboids, called a :class:`bsb:bsb.voxels.VoxelSet`. Most brain atlases
 scan the brain in a 3D grid and publish their data in the same way, usually in the `Nearly
 Raw Raster Data format, NRRD <https://pynrrd.readthedocs.io/en/stable/>`_.
 In general, whenever you have a voxelized 3D image, a ``Voxels`` partition will help you
@@ -66,7 +66,7 @@ define the shapes contained within.
 NRRD
 ----
 
-To load data from NRRD files use the :class:`~.topology.partition.NrrdVoxels`. By
+To load data from NRRD files use the :class:`bsb:bsb.topology.partition.NrrdVoxels`. By
 default it will load all the nonzero values in a source file:
 
 .. tab-set-code::
@@ -90,8 +90,8 @@ default it will load all the nonzero values in a source file:
         my_voxel_partition = NrrdVoxels(source="data/my_nrrd_data.nrrd", voxel_size=25)
 
 The nonzero values from the ``data/my_nrrd_data.nrrd`` file will be included in the
-:class:`~.voxels.VoxelSet`, and their values will be stored on the voxelset as a *data
-column*. Data columns can be accessed through the :attr:`~.voxels.VoxelSet.data` property:
+:class:`bsb:bsb.voxels.VoxelSet`, and their values will be stored on the voxelset as a *data
+column*. Data columns can be accessed through the :attr:`bsb:bsb.voxels.VoxelSet.data` property:
 
 .. code-block:: python
 
@@ -259,9 +259,9 @@ in the ``CCF``:
   of the ``CCF`` the id of the finest region it belongs to according to the brain region ontology.
 
 With the BSB you can be seamlessly integrate any dataset registered in the Allen Mouse Brain CCF
-into your workflow using the :class:`~.topology.partition.AllenStructure`.
+into your workflow using the :class:`bsb:bsb.topology.partition.AllenStructure`.
 By default (:guilabel:`mask_volume` is not specified), the
-:class:`~.topology.partition.AllenStructure` leverages the 2017 version of the
+:class:`bsb:bsb.topology.partition.AllenStructure` leverages the 2017 version of the
 ``CCFv3 Annotation volume``, which it downloads directly from the Allen website. BSB will also
 automatically download the ``AMBRH`` that you can use to filter regions, providing any of the
 brain region id, name or acronym identifiers.

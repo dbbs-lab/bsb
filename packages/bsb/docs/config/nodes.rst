@@ -59,7 +59,7 @@ Basic inheritance works like this:
         pass
 
 However, when inheriting from more than one node class you will run into a metaclass
-conflict. To solve it, use :func:`.config.compose_nodes`:
+conflict. To solve it, use :func:`bsb:bsb.config.compose_nodes`:
 
 .. code-block:: python
 
@@ -249,7 +249,7 @@ Casting
 
 When the Configuration object is loaded it is cast from a tree to an object. This happens
 recursively starting at a configuration root. The default :class:`Configuration
-<.config.Configuration>` root is defined in ``scaffold/config/_config.py`` and describes
+<bsb:bsb.config.Configuration>` root is defined in ``scaffold/config/_config.py`` and describes
 how the scaffold builder will read a configuration tree.
 
 You can cast from configuration trees to configuration nodes yourself by using the class

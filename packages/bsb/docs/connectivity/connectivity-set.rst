@@ -2,9 +2,9 @@
 Connectivity sets
 #################
 
-The :class:`ConnectivitySet <.storage.interfaces.ConnectivitySet>` represents the
+The :class:`ConnectivitySet <bsb:bsb.storage.interfaces.ConnectivitySet>` represents the
 ensemble of all connections established in your network.
-It is constructed from the :class:`~.storage.Storage` and can be used to retrieve
+It is constructed from the :class:`bsb:bsb.storage.Storage` and can be used to retrieve
 information about pre- and post-cell types, as well as the connections between them.
 
 Retrieving a ConnectivitySet
@@ -45,7 +45,7 @@ Connections
 ===========
 
 A list of all the cell pairs for every ``ConnectivitySet`` can be loaded with the
-method :meth:`~.storage.interfaces.ConnectivitySet.load_connections`.
+method :meth:`bsb:bsb.storage.interfaces.ConnectivitySet.load_connections`.
 
 .. code-block:: python
 

@@ -13,7 +13,7 @@ Job parallelization
 Let us see how the BSB jobs are created:
 
 The BSB decomposes your `Scaffold` topology (`Region` and `Partition`) into a list of
-:class:`Chunk <.storage._chunks.Chunk>` (parallelepipeds) of same size (and volume). The idea
+:class:`Chunk <bsb:bsb.storage._chunks.Chunk>` (parallelepipeds) of same size (and volume). The idea
 is to consider the `Chunk` as independent from each other so that you can also decompose each
 reconstruction task into a list of small tasks to apply to each `Chunk`. All reconstruction
 jobs that happen after the creation of the topology follow this strategy.

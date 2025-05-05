@@ -14,7 +14,7 @@ re-used a copy of the cached morphology is created. This means that the storage 
 to be read once per morphology, but additional memory is used for each unique morphology
 in the set. If you are iterating, the soft cache is cleared immediately after the iteration
 stops. Soft caching is available by passing ``cache=True`` to
-:meth:`~.morphologies.MorphologySet.iter_morphologies`:
+:meth:`bsb:bsb.morphologies.MorphologySet.iter_morphologies`:
 
 .. code-block:: python
 

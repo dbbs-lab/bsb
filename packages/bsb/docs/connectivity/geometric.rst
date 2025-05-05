@@ -17,9 +17,9 @@ approximated sampling point clouds from the shapes and checking the shape boundi
 Creating simplified morphologies
 ********************************
 
-The :class:`~bsb.connectivity.geometric.geometric_shapes.ShapesComposition` allows the simplified
+The :class:`bsb:bsb.connectivity.geometric.geometric_shapes.ShapesComposition` allows the simplified
 representation of cell morphologies. This class leverages a list geometric shapes
-(:class:`~bsb.connectivity.geometric.geometric_shapes.GeometricShape`) to represent ``sections``
+(:class:`bsb:bsb.connectivity.geometric.geometric_shapes.GeometricShape`) to represent ``sections``
 the cell morphology. Similarly to morphologies, labels should be associated to each of these
 ``sections``. These labels will be used as reference during connectivity.
 
@@ -31,7 +31,7 @@ The program generates as many points as the number of voxels in the volume of th
 Geometric shapes
 ----------------
 
-Pre-defined GeometricShape implemented can be found in the ``~bsb.connectivity.geometric`` package.
+Pre-defined GeometricShape implemented can be found in the ``bsb:bsb.connectivity.geometric`` package.
 Each shape has its own set of parameters. We provide here an example of the configuration
 for a sphere:
 
@@ -40,11 +40,11 @@ for a sphere:
    :max-depth: 1
 
 If needed, a user can define its own geometric shape, creating a new class inheriting from the base
-virtual class :class:`~bsb.connectivity.geometric.geometric_shapes.GeometricShape`.
+virtual class :class:`bsb:bsb.connectivity.geometric.geometric_shapes.GeometricShape`.
 
 ShapesComposition
 -----------------
-To instantiate a :class:`~bsb.connectivity.geometric.geometric_shapes.ShapesComposition`, you need
+To instantiate a :class:`bsb:bsb.connectivity.geometric.geometric_shapes.ShapesComposition`, you need
 to provide a list of ``shapes`` together with their ``labels``: a list of lists of strings.
 ``shapes`` and ``labels`` should have the same size. For each shape, multiple labels can be provided.
 You can additionally control the number of points sampled for connectivity with the parameter
@@ -93,13 +93,13 @@ Geometric shape connectivity
 ****************************
 
 The configuration of the geometric shape strategies are similar to the other connectivity strategies
-(see :class:`~bsb.connectivity.detailed.voxel_intersection.VoxelIntersection`).
+(see :class:`bsb:bsb.connectivity.detailed.voxel_intersection.VoxelIntersection`).
 
 The ``ShapesComposition`` configuration should be provided with the field ``shape_compositions`` in
 the pre- and/or postsynaptic field (dependant on the strategy chosen).
 
 The parameters ``morphology_labels`` here specifies which shapes of the ``shape_compositions`` in
-:class:`~bsb.connectivity.geometric.geometric_shapes.ShapesComposition` must be used
+:class:`bsb:bsb.connectivity.geometric.geometric_shapes.ShapesComposition` must be used
 (corresponds to values stored in ``labels``).
 
 The ``affinity`` parameter controls the probability to form a connection.
@@ -108,7 +108,7 @@ Three different connectivity strategies based on ``ShapesComposition`` are avail
 MorphologyToShapeIntersection
 -----------------------------
 
-The class :class:`~bsb.connectivity.geometric.morphology_shape_intersection.MorphologyToShapeIntersection`
+The class :class:`bsb:bsb.connectivity.geometric.morphology_shape_intersection.MorphologyToShapeIntersection`
 creates connections between the points of the morphology of the presynaptic cell and a geometric shape composition
 representing a postsynaptic cell, checking if the points of the morphology are inside the geometric
 shapes representing the postsynaptic cells.
@@ -142,7 +142,7 @@ Configuration example:
 ShapeToMorphologyIntersection
 -----------------------------
 
-The class :class:`~bsb.connectivity.geometric.shape_morphology_intersection.ShapeToMorphologyIntersection`
+The class :class:`bsb:bsb.connectivity.geometric.shape_morphology_intersection.ShapeToMorphologyIntersection`
 creates connections between the point cloud representing the presynaptic cell the points of the
 morphology of a postsynaptic cell, checking if the points of the morphology are inside the
 geometric shapes representing the presynaptic cells.
@@ -176,7 +176,7 @@ Configuration example:
 ShapeToShapeIntersection
 ------------------------
 
-The class :class:`~bsb.connectivity.geometric.shape_shape_intersection.ShapeToShapeIntersection`
+The class :class:`bsb:bsb.connectivity.geometric.shape_shape_intersection.ShapeToShapeIntersection`
 creates connections between the geometric shape compositions representing the presynaptic and postsynaptic cells.
 This strategy forms a connections generating a number of points inside the presynaptic probability
 point cloud and checking if they are inside the geometric shapes representing the postsynaptic cell.

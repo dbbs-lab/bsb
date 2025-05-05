@@ -2,7 +2,7 @@
 Placement
 =========
 This block in the configuration is responsible for placing cells into partitions.
-All placement strategies derive from the :class:`~.placement.strategy.PlacementStrategy` class,
+All placement strategies derive from the :class:`bsb:bsb.placement.strategy.PlacementStrategy` class,
 and should provide functions to define the positions of each ``CellType`` within a ``Partition`` volume.
 
 BSB offers several built-in strategies (here is a :doc:`list </placement/placement-strategies>`),

@@ -51,9 +51,9 @@ We will write our `PlacementStrategy` class in a ``placement.py`` file,
             pass
 
 Here, our class will extend from
-:class:`PlacementStrategy <.placement.strategy.PlacementStrategy>` which is an
+:class:`PlacementStrategy <bsb:bsb.placement.strategy.PlacementStrategy>` which is an
 abstract class that requires you to implement the
-:meth:`place <.placement.strategy.PlacementStrategy.place>` function.
+:meth:`place <bsb:bsb.placement.strategy.PlacementStrategy.place>` function.
 
 Note that this strategy leverages the ``@config.node`` `python decorator`.
 The :doc:`configuration node decorator</config/nodes>` allows you to pass the parameters
@@ -93,10 +93,10 @@ This translates into 3 configuration attributes that you can add to your class:
             pass
 
 | In this case, ``distribution`` is required, and should correspond to a
-  :class:`distribution <.config._distributions.Distribution>` node which interface scipy distributions.
+  :class:`distribution <bsb:bsb.config._distributions.Distribution>` node which interface scipy distributions.
 | ``axis`` here is an optional integer attribute with a default value set to 2.
 | Finally, ``direction`` is an optional string attribute that can be either the string ``"positive"``
-  or ``"negative"`` (see :func:`in_ <.config.types.in_>`).
+  or ``"negative"`` (see :func:`in_ <bsb:bsb.config.types.in_>`).
 
 At this stage, you have created a python class with minimal code implementation, you should
 now link it to your configuration file. To import our class in our configuration file, we
@@ -126,19 +126,19 @@ will modify the :guilabel:`placement` block:
 Implement the python methods
 ----------------------------
 The `place` function will be used here to produce and store a
-:class:`PlacementSet <.storage.interfaces.PlacementSet>` for each `cell type` population
+:class:`PlacementSet <bsb:bsb.storage.interfaces.PlacementSet>` for each `cell type` population
 to place in the selected `Partition`.
 BSB is parallelizing placement jobs for each `Chunk` concerned.
 
 The parameters of `place` includes a dictionary linking each cell type name to its
-:class:`PlacementIndicator <.placement.indicator.PlacementIndicator>`, and the `Chunk`
+:class:`PlacementIndicator <bsb:bsb.placement.indicator.PlacementIndicator>`, and the `Chunk`
 in which to place the cells.
 
 We need to apply our distribution to each Partition of our circuit to see how
 the cells are distributed within, along our directed axis.
 Let's make two for loops to iterate over the Partitions of each indicator.
 Then, we extract the number of cells to place within the total Partition, using
-the :meth:`guess <.placement.indicator.PlacementIndicator.guess>` function.
+the :meth:`guess <bsb:bsb.placement.indicator.PlacementIndicator.guess>` function.
 For that, we will convert the partition into a list of voxels.
 
 .. literalinclude:: /../examples/tutorials/distrib_placement.py

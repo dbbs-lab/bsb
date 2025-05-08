@@ -5,6 +5,9 @@ on: [workflow_call]
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [ "3.10", "3.11" ]
     steps:
       - uses: actions/checkout@v4
 
@@ -24,6 +27,7 @@ jobs:
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5
+        run: echo "UV_PYTHON=${{ matrix.python-version }}" >> $GITHUB_ENV
 
       - name: Derive appropriate SHAs for base and head for `nx affected` commands
         id: setSHAs

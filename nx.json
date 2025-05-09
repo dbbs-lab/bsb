@@ -2,7 +2,7 @@
   "installation": {
     "version": "20.7.2",
     "plugins": {
-      "@nxlv/python": "20.12.4"
+      "@nxlv/python": "20.15.0"
     }
   },
   "plugins": [
@@ -14,9 +14,7 @@
     }
   ],
   "release": {
-    "projects": [
-      "*"
-    ]
+    "projects": ["*"]
   },
   "generators": {
     "@nxlv/python:uv-project": {

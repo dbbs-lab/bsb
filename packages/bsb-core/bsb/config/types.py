@@ -264,7 +264,8 @@ class method_shortcut(method, function_):
                 obj = function_.__call__(self, value)
             except TypeError:
                 raise TypeError(
-                    f"Could not import '{value}' as a function or a method of `{self._class}`."
+                    f"Could not import '{value}' as a function "
+                    f"or a method of `{self._class}`."
                 ) from None
         return obj
 
@@ -804,7 +805,8 @@ class ndarray(TypeHandler):
                 result = result.reshape(self.shape)
             except Exception:
                 raise TypeError(
-                    f"Couldn't cast array of {getattr(value, 'shape', 'unknown')} shape into an array of {self.shape} shape."
+                    f"Couldn't cast array of {getattr(value, 'shape', 'unknown')} shape "
+                    f"into an array of {self.shape} shape."
                 ) from None
         return result
 

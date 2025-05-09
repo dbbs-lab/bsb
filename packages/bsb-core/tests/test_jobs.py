@@ -351,8 +351,8 @@ class TestParallelScheduler(
         """
         outcome = True
 
-        # Add a spy listener that checks that the job with dependencies isn't queued or ran
-        # while its dependency isn't finished yet.
+        # Add a spy listener that checks that the job with dependencies isn't queued or
+        # ran while its dependency isn't finished yet.
         def spy_initial_pool_queue(progress: PoolProgress):
             nonlocal outcome
             if (

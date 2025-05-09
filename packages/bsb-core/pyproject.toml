@@ -137,3 +137,6 @@ select = [ "E", "F", "UP", "B", "SIM", "I" ]
 ignore = [ "F822", "B019" ]
 fixable = [ "ALL" ]
 unfixable = [ ]
+
+[tool.ruff.lint.per-file-ignores]
+"bsb/__init__.py" = ["E501"]

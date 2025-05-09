@@ -20,12 +20,16 @@ def get_missing_requirement_reason(package):
     try:
         ver = version(req.name)
     except PackageNotFoundError:
-        return f"Missing package '{req.name}'. You may experience errors or differences in results."
+        return (
+            f"Missing package '{req.name}'. "
+            "You may experience errors or differences in results."
+        )
     else:
         if ver not in req.specifier:
             return (
                 f"Installed version of '{req.name}' ({ver}) "
-                f"does not match requirements: '{req}'. You may experience errors or differences in results."
+                f"does not match requirements: '{req}'. "
+                "You may experience errors or differences in results."
             )
 
 

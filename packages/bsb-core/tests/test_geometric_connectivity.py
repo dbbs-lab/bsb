@@ -128,7 +128,8 @@ class TestShapeConnectivity(
             "labels": [["sphere"]],
         }
 
-        # We know a priori that there are intersections between the presyn shape and the morphology
+        # We know a priori that there are intersections between the presyn shape
+        # and the morphology
         self.network.connectivity["shape_to_morpho_1"] = ShapeToMorphologyIntersection(
             presynaptic=dict(
                 cell_types=["test_cell_pc_2"],
@@ -175,7 +176,8 @@ class TestShapeConnectivity(
             "labels": [["sphere"]],
         }
 
-        # We know a priori that there are intersections between the presyn shape and the morphology
+        # We know a priori that there are intersections between the presyn shape
+        # and the morphology
         self.network.connectivity["shape_to_morpho_1"] = MorphologyToShapeIntersection(
             postsynaptic=dict(
                 cell_types=["test_cell_pc_2"],

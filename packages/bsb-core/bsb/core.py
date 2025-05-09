@@ -428,8 +428,9 @@ class Scaffold:
                 self.run_after_connectivity(pipelines=False)
                 self._workflow.next_phase()
         finally:
-            # After compilation we should flag the storage as having existed before so that
-            # the `clear`, `redo` and `append` flags take effect on a second `compile` pass.
+            # After compilation we should flag the storage as having existed before
+            # so that the `clear`, `redo` and `append` flags take effect on a second
+            # `compile` pass.
             self.storage._preexisted = True
             del self._workflow
 
@@ -580,17 +581,20 @@ class Scaffold:
 
     def connect_cells(self, pre_set, post_set, src_locs, dest_locs, name):
         """
-        Connect cells from a presynaptic placement set to cells of a postsynaptic placement set,
-        and into a connectivity set.
-        The description of the hemitype (source or target cell population) connection location
-        is stored as a list of 3 ids: the cell index (in the placement set), morphology branch
-        index, and the morphology branch section index.
-        If no morphology is attached to the hemitype, then the morphology indexes can be set to -1.
+        Connect cells from a presynaptic placement set to cells of a postsynaptic
+        placement set, and into a connectivity set.
+        The description of the hemitype (source or target cell population)
+        connection location is stored as a list of 3 ids: the cell index
+        (in the placement set), morphology branch index, and the morphology branch
+        section index. If no morphology is attached to the hemitype,
+        then the morphology indexes can be set to -1.
 
         :param bsb.storage.interfaces.PlacementSet pre_set: presynaptic placement set
         :param bsb.storage.interfaces.PlacementSet post_set: postsynaptic placement set
-        :param list[list[int, int, int]] src_locs: list of the presynaptic `connection location`.
-        :param list[list[int, int, int]] dest_locs: list of the postsynaptic `connection location`.
+        :param list[list[int, int, int]] src_locs: list of the presynaptic
+          `connection location`.
+        :param list[list[int, int, int]] dest_locs: list of the postsynaptic
+          `connection location`.
         :param str name: Name to give to the `ConnectivitySet`
         """
         cs = self.require_connectivity_set(pre_set.cell_type, post_set.cell_type, name)

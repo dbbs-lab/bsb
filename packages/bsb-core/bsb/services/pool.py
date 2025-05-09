@@ -424,17 +424,18 @@ class Job(abc.ABC):
 
     def _dep_completed(self, dep):
         # Earlier we registered this callback on the completion of our dependencies.
-        # When a dep completes we end up here and we discard it as a dependency as it has
-        # finished. If the dep returns an error remove the job from the pool, since the dependency have failed.
+        # When a dep completes we end up here, and we discard it as a dependency as it has
+        # finished. If the dep returns an error remove the job from the pool,
+        # since the dependency have failed.
         self._deps.discard(dep)
         if dep._status is not JobStatus.SUCCESS:
             self.cancel("Job killed for dependency failure")
         else:
-            # When all our dependencies have been discarded we can queue ourselves. Unless the
-            # pool is serial, then the pool itself just runs all jobs in order.
+            # When all our dependencies have been discarded we can queue ourselves.
+            # Unless the pool is serial, then the pool itself just runs all jobs in order.
             if not self._deps and self._comm.get_size() > 1:
-                # self._pool is set when the pool first tried to enqueue us, but we were still
-                # waiting for deps, in the `_enqueue` method below.
+                # self._pool is set when the pool first tried to enqueue us, but we were
+                # still waiting for deps, in the `_enqueue` method below.
                 self._enqueue(self._pool)
 
     def _enqueue(self, pool):
@@ -807,8 +808,8 @@ class JobPool:
             # Raise any unhandled errors
             self.raise_unhandled()
         except:
-            # If any exception (including SystemExit and KeyboardInterrupt) happen on main, we should
-            # broadcast the abort to all worker nodes.
+            # If any exception (including SystemExit and KeyboardInterrupt) happen on main
+            # we should broadcast the abort to all worker nodes.
             self._workers_raise_unhandled = True
             raise
         finally:

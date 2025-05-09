@@ -123,14 +123,15 @@ class VolumeFiller:
 
         :param bsb.voxels.VoxelSet voxels: List of voxels in which to place the particles.
         :param list[dict] particles: List of dictionary for each particle to place.
-            Each dictionary needs to contain the "name" (str), "radius" (float) of particle.
-            It should also store the "count" of particle (int | list[int]) either in total or
-            for each voxel and "voxels" (list[int]) which gives in which voxel the placement will
-            append.
-        :param bool check_pack: If True, will check the packing factor before placing particles in
-            the voxels.
-        :raise PackingError: If check_pack is True and the resulting packing factor is greater than
-            0.4.
+            Each dictionary needs to contain the "name" (str), "radius" (float) of
+            particle.
+            It should also store the "count" of particle (int | list[int]) either in total
+            or for each voxel and "voxels" (list[int]) which gives in which voxel the
+            placement will append.
+        :param bool check_pack: If True, will check the packing factor before placing
+            particles in the voxels.
+        :raise PackingError: If check_pack is True and the resulting packing factor is
+            greater than 0.4.
         """
         # Amount of spatial dimensions
         self.dimensions = voxels.get_raw(copy=False).shape[1]
@@ -139,7 +140,8 @@ class VolumeFiller:
         # Max particle type radius
         self.max_radius = max([pt["radius"] for pt in self.particle_types])
         self.min_radius = min([pt["radius"] for pt in self.particle_types])
-        # Set initial radius for collision/rearrangement to 2 times the largest particle type radius
+        # Set initial radius for collision/rearrangement to 2 times
+        # the largest particle type radius
         self.search_radius = self.max_radius * 2
         # Create a list of voxels where the particles can be placed.
         self.voxels.extend(
@@ -187,7 +189,8 @@ class VolumeFiller:
         radius = particle_type["radius"]
         if len(voxel_counts) != len(self.voxels):
             raise Exception(
-                f"Particle system voxel mismatch. Given {len(voxel_counts)} expected {len(self.voxels)}"
+                f"Particle system voxel mismatch. "
+                f"Given {len(voxel_counts)} expected {len(self.voxels)}"
             )
         for voxel, count in zip(self.voxels, voxel_counts, strict=False):
             particle_type["placed"] = particle_type.get("placed", 0) + count

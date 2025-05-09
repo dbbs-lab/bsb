@@ -123,7 +123,10 @@ class CsvImportPlacement(ImportPlacement):
                     inner,
                     desc="saved",
                     total=len(chunked_cache),
-                    bar_format="{l_bar}{bar} [ {n_fmt}/{total_fmt} time left: {remaining}, time spent: {elapsed}]",
+                    bar_format=(
+                        "{l_bar}{bar} [ {n_fmt}/{total_fmt} time left: {remaining}, "
+                        "time spent: {elapsed}]"
+                    ),
                 )
             for chunk, data in inner:
                 additional = np.array(data[1], dtype=float).T

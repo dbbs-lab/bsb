@@ -736,8 +736,8 @@ class cfgdict(builtins.dict):
             import traceback
 
             raise CastError(
-                f"Couldn't cast {self.get_node_name()}.{key} from '{value}' into a {self._elem_type.__name__}"
-                + "\n"
+                f"Couldn't cast {self.get_node_name()}.{key} from '{value}' "
+                + f"into a {self._elem_type.__name__}\n"
                 + traceback.format_exc()
             ) from None
         else:
@@ -947,7 +947,8 @@ class ConfigurationReferenceAttribute(ConfigurationAttribute):
     def resolve_reference(self, instance, remote, key):
         if key not in remote:
             raise CfgReferenceError(
-                f"Reference '{key}' of {self.get_node_name(instance)} does not exist in {remote.get_node_name()}"
+                f"Reference '{key}' of {self.get_node_name(instance)} "
+                f"does not exist in {remote.get_node_name()}"
             )
         value = remote[key]
         if self.populate:
@@ -995,7 +996,8 @@ class ConfigurationReferenceListAttribute(ConfigurationReferenceAttribute):
             remote_keys = builtins.list(iter(value))
         except TypeError:
             raise CfgReferenceError(
-                f"Reference list '{value}' of {self.get_node_name(instance)} is not iterable."
+                f"Reference list '{value}' of "
+                f"{self.get_node_name(instance)} is not iterable."
             ) from None
         # Store the referring values to the references key.
         setattr(instance, self.get_ref_key(), remote_keys)

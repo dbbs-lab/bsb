@@ -230,22 +230,29 @@ class BsbOption:
 
         :param name: Unique name for identification
         :type name: str
-        :param cli: Positional arguments for the :class:`.CLIOptionDescriptor` constructor.
+        :param cli: Positional arguments for the :class:`.CLIOptionDescriptor`
+          constructor.
         :type cli: iterable
-        :param cli: Positional arguments for the :class:`.CLIOptionDescriptor` constructor.
+        :param cli: Positional arguments for the :class:`.CLIOptionDescriptor`
+          constructor.
         :type cli: iterable
-        :param env: Positional arguments for the :class:`.EnvOptionDescriptor` constructor.
+        :param env: Positional arguments for the :class:`.EnvOptionDescriptor`
+          constructor.
         :type env: iterable
-        :param script: Positional arguments for the :class:`.ScriptOptionDescriptor` constructor.
+        :param script: Positional arguments for the :class:`.ScriptOptionDescriptor`
+          constructor.
         :type script: iterable
         :param description: Description of the option's purpose for the user.
         :type description: str
-        :param flag: Indicates that the option is a flag and should toggle on a default off boolean when given.
+        :param flag: Indicates that the option is a flag and should toggle on a default
+          off boolean when given.
         :type flag: boolean
-        :param inverted: Used only for flags. Indicates that the flag is default on and is toggled off when given.
+        :param inverted: Used only for flags. Indicates that the flag is default on and is
+          toggled off when given.
         :param list: Indicates that the option takes multiple values.
         :type list: boolean
-        :param readonly: Indicates that an option can be accessed but not be altered from the ``bsb.options`` module.
+        :param readonly: Indicates that an option can be accessed but not be altered from
+          the ``bsb.options`` module.
         :type readonly: boolean
         :param action: Indicates that the option should execute its ``action`` method.
         :type action: boolean

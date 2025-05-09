@@ -275,7 +275,8 @@ class Storage:
     def assert_support(self, feature):
         if not self.supports(feature):
             raise NotImplementedError(
-                f"The '{self._engine._format}' engine lacks support for the '{feature}' feature."
+                f"The '{self._engine._format}' engine lacks support "
+                f"for the '{feature}' feature."
             )
 
     def get_placement_set(self, type, chunks=None, labels=None, morphology_labels=None):

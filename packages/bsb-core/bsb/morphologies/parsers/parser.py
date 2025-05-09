@@ -79,9 +79,11 @@ class BsbParser(MorphologyParser, classmap_entry="bsb"):
         tag_map = {1: "soma", 2: "axon", 3: "dendrites"}
         if self.tags is not None:
             tag_map.update((int(k), v) for (k, v) in self.tags.items())
-        # `data` is the raw SWC data, `samples` and `parents` are the graph nodes and edges.
+        # `data` is the raw SWC data,
+        # `samples` and `parents` are the graph nodes and edges.
         samples = data[:, 0].astype(int)
-        # Map possibly irregular sample IDs (SWC spec allows this) to an ordered 0 to N map.
+        # Map possibly irregular sample IDs (SWC spec allows this)
+        # to an ordered 0 to N map.
         id_map = dict(zip(samples, itertools.count()))
         id_map[-1] = -1
         # Create an adjacency list of the graph described in the SWC data
@@ -103,14 +105,15 @@ class BsbParser(MorphologyParser, classmap_entry="bsb"):
         radii = np.empty(_len)
         tags = np.empty(_len, dtype=int)
         labels = EncodedLabels.none(_len)
-        # Now turn each "node branch" into an actual branch by looking up the node data in the
-        # samples array. We copy over the node data into several contiguous matrices that will
-        # form the basis of the Morphology data structure.
+        # Now turn each "node branch" into an actual branch by looking up the node data in
+        # the samples array. We copy over the node data into several contiguous matrices
+        # that will form the basis of the Morphology data structure.
         ptr = 0
         for parent, branch_nodes in node_branches:
             node_data = data[branch_nodes]
             nptr = ptr + len(node_data)
-            # Example with the points data matrix: copy over the swc data into contiguous arr
+            # Example with the points data matrix:
+            # copy over the swc data into contiguous arr
             points[ptr:nptr] = node_data[:, 2:5]
             # Then create a partial view into that data matrix for the branch
             branch_points = points[ptr:nptr]
@@ -222,10 +225,10 @@ class MorphIOParser(MorphologyParser, classmap_entry="morphio"):
 
         with file.provide_locally() as (fp, encoding):
             morpho_io = morphio.Morphology(fp, self.flags)
-        # We create shared buffers for the entire morphology, which optimize operations on the
-        # entire morphology such as `.flatten`, subtree transformations and IO.  The branches
-        # have views on those buffers, and as long as no points are added or removed, we can
-        # keep working in shared buffer mode.
+        # We create shared buffers for the entire morphology, which optimize operations on
+        # the entire morphology such as `.flatten`, subtree transformations and IO.
+        # The branches have views on those buffers, and as long as no points are added or
+        # removed, we can keep working in shared buffer mode.
         soma = _MorphIoSomaWrapper(morpho_io.soma)
         _len = len(morpho_io.points) + len(soma.points)
         points = np.empty((_len, 3))

@@ -470,7 +470,8 @@ def _get_dynamic_class(node_cls, kwargs):
     except DynamicClassInheritanceError:
         mapped_class_msg = _get_mapped_class_msg(loaded_cls_name, classmap)
         raise UnfitClassCastError(
-            f"'{loaded_cls_name}'{mapped_class_msg} is not a valid class as it does not inherit from {node_cls.__name__}"
+            f"'{loaded_cls_name}'{mapped_class_msg} is not a valid class as it does not"
+            f" inherit from {node_cls.__name__}"
         ) from None
     except DynamicClassError:
         mapped_class_msg = _get_mapped_class_msg(loaded_cls_name, classmap)
@@ -484,7 +485,8 @@ def _get_pluggable_class(node_cls, kwargs):
     plugin_label = node_cls._config_plugin_name or node_cls.__name__
     if node_cls._config_plugin_key not in kwargs:
         raise CastError(
-            f"Pluggable node must contain a '{node_cls._config_plugin_key}' attribute to select a {plugin_label}"
+            f"Pluggable node must contain a '{node_cls._config_plugin_key}' attribute "
+            f"to select a {plugin_label}"
         )
     plugin_name = kwargs[node_cls._config_plugin_key]
     plugins = node_cls.__plugins__()

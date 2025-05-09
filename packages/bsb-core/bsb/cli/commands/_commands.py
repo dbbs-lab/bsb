@@ -210,7 +210,8 @@ class BsbSimulate(BaseCommand, name="simulate"):
         root = pathlib.Path(getattr(context.arguments, "output_folder", "./"))
         if not root.is_dir() or not os.access(root, os.W_OK):
             return report(
-                f"Output provided '{root.absolute()}' is not an existing directory with write access.",
+                f"Output provided '{root.absolute()}' "
+                + "is not an existing directory with write access.",
                 level=0,
             )
         try:

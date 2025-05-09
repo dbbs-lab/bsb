@@ -47,20 +47,23 @@ class TestGeometricShapes(unittest.TestCase, NumpyTestCase):
         self.assertClose(
             mbb[0],
             expected_mbb[0],
-            "The minimal bounding box returned by find_mbb method is not the expected one",
+            "The minimal bounding box returned by find_mbb method "
+            "is not the expected one",
         )
         self.assertClose(
             mbb[1],
             expected_mbb[1],
-            "The minimal bounding box returned by find_mbb method is not the expected one",
+            "The minimal bounding box returned by find_mbb method "
+            "is not the expected one",
         )
         sc.translate(-translation_vec)
         expected_mbb -= translation_vec
 
-    # Create a sphere, add it to a ShapeComposition object and test the minimal bounding box,
-    # inside_mbox, inside_shapes and generate_point_cloud methods
+    # Create a sphere, add it to a ShapeComposition object and test the minimal bounding
+    # box, inside_mbox, inside_shapes and generate_point_cloud methods
     def test_sphere(self):
-        # Create a ShapesComposition object; In this test the size of the voxel is not important.
+        # Create a ShapesComposition object; In this test the size of the voxel is not
+        # important.
         conf = dict(voxel_size=25, shapes=[], labels=[])
         sc = ShapesComposition(conf)
         self.assertEqual(None, sc.generate_point_cloud())
@@ -86,15 +89,18 @@ class TestGeometricShapes(unittest.TestCase, NumpyTestCase):
         self.assertClose(
             mbb[0],
             expected_mbb[0],
-            "The minimal bounding box returned by find_mbb method is not the expected one",
+            "The minimal bounding box returned by find_mbb method "
+            "is not the expected one",
         )
         self.assertClose(
             mbb[1],
             expected_mbb[1],
-            "The minimal bounding box returned by find_mbb method is not the expected one",
+            "The minimal bounding box returned by find_mbb method "
+            "is not the expected one",
         )
 
-        # The point of coordinates (0,0,50) is inside the sphere, while (200,200,200) is not.
+        # The point of coordinates (0,0,50) is inside the sphere,
+        # while (200,200,200) is not.
         # We test check_mbox, check_inside with these two points
         point_to_check = np.array([[0, 0, 50], [200, 200, 200]], dtype=np.float64)
         inside_mbox = sc.inside_mbox(point_to_check)
@@ -127,8 +133,8 @@ class TestGeometricShapes(unittest.TestCase, NumpyTestCase):
         )
 
         # Test generate_point_cloud method.
-        # The expected number of points is given by the volume of the sphere divided by the voxel
-        # side to the third.
+        # The expected number of points is given by the volume of the sphere divided
+        # by the voxel side to the third.
         # The points should be inside the sphere.
         volume = 4 * (np.pi * configuration["radius"] ** 3) / 3.0
         self._check_points_inside(sc, volume, conf["voxel_size"])
@@ -139,10 +145,11 @@ class TestGeometricShapes(unittest.TestCase, NumpyTestCase):
             np.allclose(np.linalg.norm(wireframe[:, 0, :, 0].T - origin, axis=1), radius)
         )
 
-    # Create an ellipsoid, add it to a ShapeComposition object and test the minimal bounding box,
-    # inside_mbox, inside_shapes and generate_point_cloud methods
+    # Create an ellipsoid, add it to a ShapeComposition object and test the minimal
+    # bounding box, inside_mbox, inside_shapes and generate_point_cloud methods
     def test_ellipsoid(self):
-        # Create a ShapesComposition object; In this test the size of the voxel is not important.
+        # Create a ShapesComposition object; In this test the size of the voxel is not
+        # important.
         conf = dict(voxel_size=25, shapes=[], labels=[])
         sc = ShapesComposition(conf)
 
@@ -169,15 +176,18 @@ class TestGeometricShapes(unittest.TestCase, NumpyTestCase):
         self.assertClose(
             mbb[0],
             expected_mbb[0],
-            "The minimal bounding box returned by find_mbb method is not the expected one",
+            "The minimal bounding box returned by find_mbb method "
+            "is not the expected one",
         )
         self.assertClose(
             mbb[1],
             expected_mbb[1],
-            "The minimal bounding box returned by find_mbb method is not the expected one",
+            "The minimal bounding box returned by find_mbb method "
+            "is not the expected one",
         )
 
-        # The point of coordinates (0,0,5) is inside the ellipsoid, while (20,20,20) is not.
+        # The point of coordinates (0,0,5) is inside the ellipsoid,
+        # while (20,20,20) is not.
         # We test check_mbox, check_inside with these two points
         point_to_check = np.array([[0, 0, 5], [20, 20, 20]], dtype=np.float64)
         inside_mbox = sc.inside_mbox(point_to_check)
@@ -210,7 +220,8 @@ class TestGeometricShapes(unittest.TestCase, NumpyTestCase):
         )
 
         # Test generate_point_cloud method.
-        # The expected number of points is given by the volume of the ellipsoid divided by the voxel side to the third
+        # The expected number of points is given by the volume of the ellipsoid divided by
+        # the voxel side to the third
         # The points should be inside the ellipsoid.
         volume = (
             np.pi
@@ -234,10 +245,11 @@ class TestGeometricShapes(unittest.TestCase, NumpyTestCase):
             self.assertTrue(-1e-5 <= coord[1] <= 50)
             self.assertTrue(-10 <= coord[2] <= 10)
 
-    # Create a cylinder, add it to a ShapeComposition object and test the minimal bounding box,
-    # inside_mbox, inside_shapes and generate_point_cloud methods
+    # Create a cylinder, add it to a ShapeComposition object and test the minimal bounding
+    # box, inside_mbox, inside_shapes and generate_point_cloud methods
     def test_cylinder(self):
-        # Create a ShapesComposition object; In this test the size of the voxel is not important.
+        # Create a ShapesComposition object; In this test the size of the voxel is not
+        # important.
         conf = dict(voxel_size=25, shapes=[], labels=[])
         sc = ShapesComposition(conf)
 
@@ -266,15 +278,18 @@ class TestGeometricShapes(unittest.TestCase, NumpyTestCase):
         self.assertClose(
             mbb[0],
             expected_mbb[0],
-            "The minimal bounding box returned by find_mbb method is not the expected one",
+            "The minimal bounding box returned by find_mbb method "
+            "is not the expected one",
         )
         self.assertClose(
             mbb[1],
             expected_mbb[1],
-            "The minimal bounding box returned by find_mbb method is not the expected one",
+            "The minimal bounding box returned by find_mbb method "
+            "is not the expected one",
         )
 
-        # The point of coordinates (0,0,5) is inside the cylinder, while (200,200,200) is not.
+        # The point of coordinates (0,0,5) is inside the cylinder,
+        # while (200,200,200) is not.
         # We test check_mbox, check_inside with these two points
         point_to_check = np.array([[0, 0, 5], [200, 200, 200]], dtype=np.float64)
         inside_mbox = sc.inside_mbox(point_to_check)
@@ -307,7 +322,8 @@ class TestGeometricShapes(unittest.TestCase, NumpyTestCase):
         )
 
         # Test generate_point_cloud method.
-        # The expected number of points is given by the volume of the cylinder divided by the voxel side to the third
+        # The expected number of points is given by the volume of the cylinder divided by
+        # the voxel side to the third
         # The points should be inside the cylinder.
         height = np.linalg.norm(configuration["top_center"] - configuration["origin"])
         volume = np.pi * height * configuration["radius"] ** 2
@@ -340,10 +356,11 @@ class TestGeometricShapes(unittest.TestCase, NumpyTestCase):
                 <= np.absolute(cylinder.top_center[1] - cylinder.origin[1])
             )
 
-    # Create a parallelepiped, add it to a ShapeComposition object and test the minimal bounding
-    # box, inside_mbox, inside_shapes and generate_point_cloud methods
+    # Create a parallelepiped, add it to a ShapeComposition object and test the minimal
+    # bounding box, inside_mbox, inside_shapes and generate_point_cloud methods
     def test_parallelepiped(self):
-        # Create a ShapesComposition object; In this test the size of the voxel is not important.
+        # Create a ShapesComposition object; In this test the size of the voxel is not
+        # important.
         conf = dict(voxel_size=5, shapes=[], labels=[])
         sc = ShapesComposition(conf)
 
@@ -370,15 +387,18 @@ class TestGeometricShapes(unittest.TestCase, NumpyTestCase):
         self.assertClose(
             mbb[0],
             expected_mbb[0],
-            "The minimal bounding box returned by find_mbb method is not the expected one",
+            "The minimal bounding box returned by find_mbb method "
+            "is not the expected one",
         )
         self.assertClose(
             mbb[1],
             expected_mbb[1],
-            "The minimal bounding box returned by find_mbb method is not the expected one",
+            "The minimal bounding box returned by find_mbb method "
+            "is not the expected one",
         )
 
-        # The point of coordinates (0,0,0) is inside the parallelepiped, while (10,10,10) is not.
+        # The point of coordinates (0,0,0) is inside the parallelepiped,
+        # while (10,10,10) is not.
         # We test check_mbox, check_inside with these two points
         point_to_check = np.array([[0, 0, 0], [10, 100, 10]], dtype=np.float64)
         inside_mbox = sc.inside_mbox(point_to_check)
@@ -411,8 +431,8 @@ class TestGeometricShapes(unittest.TestCase, NumpyTestCase):
         )
 
         # Test generate_point_cloud method.
-        # The expected number of points is given by the volume of the parallelepiped divided by the
-        # voxel side to the third.
+        # The expected number of points is given by the volume of the parallelepiped
+        # divided by the voxel side to the third.
         # The points should be inside the parallelepiped.
         volume = (
             np.linalg.norm(configuration["side_vector_1"])
@@ -435,10 +455,11 @@ class TestGeometricShapes(unittest.TestCase, NumpyTestCase):
         self.assertTrue(np.alltrue(wireframe.reshape(3, 16).T - expected_mbb[0] >= -1e-5))
         self.assertTrue(np.alltrue(wireframe.reshape(3, 16).T - expected_mbb[1] <= 1e-5))
 
-    # Create a cuboid, add it to a ShapeComposition object and test the minimal bounding box,
-    # inside_mbox, inside_shapes and generate_point_cloud methods
+    # Create a cuboid, add it to a ShapeComposition object and test the minimal bounding
+    # box, inside_mbox, inside_shapes and generate_point_cloud methods
     def test_cuboid(self):
-        # Create a ShapesComposition object; In this test the size of the voxel is not important.
+        # Create a ShapesComposition object; In this test the size of the voxel is not
+        # important.
         conf = dict(voxel_size=25, shapes=[], labels=[])
         sc = ShapesComposition(conf)
 
@@ -462,12 +483,14 @@ class TestGeometricShapes(unittest.TestCase, NumpyTestCase):
         self.assertClose(
             mbb[0],
             expected_mbb[0],
-            "The minimal bounding box returned by find_mbb method is not the expected one",
+            "The minimal bounding box returned by find_mbb method "
+            "is not the expected one",
         )
         self.assertClose(
             mbb[1],
             expected_mbb[1],
-            "The minimal bounding box returned by find_mbb method is not the expected one",
+            "The minimal bounding box returned by find_mbb method "
+            "is not the expected one",
         )
 
         # The point of coordinates (1,1,1) is inside the cuboid, while (10,10,10) is not.
@@ -503,7 +526,8 @@ class TestGeometricShapes(unittest.TestCase, NumpyTestCase):
         )
 
         # Test generate_point_cloud method.
-        # The expected number of points is given by the volume of the cuboid divided by the voxel side to the third
+        # The expected number of points is given by the volume of the cuboid divided by
+        # the voxel side to the third
         # The points should be inside the cuboid.
         volume = (
             configuration["side_length_1"]
@@ -524,10 +548,11 @@ class TestGeometricShapes(unittest.TestCase, NumpyTestCase):
         self.assertTrue(np.alltrue(wireframe.reshape(3, 16).T - expected_mbb[0] >= -1e-5))
         self.assertTrue(np.alltrue(wireframe.reshape(3, 16).T - expected_mbb[1] <= 1e-5))
 
-    # Create a cone, add it to a ShapeComposition object and test the minimal bounding box,
+    # Create a cone, add it to a ShapeComposition object and test the minimal bounding box
     # inside_mbox, inside_shapes and generate_point_cloud methods
     def test_cone(self):
-        # Create a ShapesComposition object; In this test the size of the voxel is not important.
+        # Create a ShapesComposition object; In this test the size of the voxel is not
+        # important.
         conf = dict(voxel_size=50, shapes=[], labels=[])
         sc = ShapesComposition(conf)
 
@@ -555,12 +580,14 @@ class TestGeometricShapes(unittest.TestCase, NumpyTestCase):
         self.assertClose(
             mbb[0],
             expected_mbb[0],
-            "The minimal bounding box returned by find_mbb method is not the expected one",
+            "The minimal bounding box returned by find_mbb method "
+            "is not the expected one",
         )
         self.assertClose(
             mbb[1],
             expected_mbb[1],
-            "The minimal bounding box returned by find_mbb method is not the expected one",
+            "The minimal bounding box returned by find_mbb method "
+            "is not the expected one",
         )
 
         # The point of coordinates (0,0,50) is inside the cone, while (0,0,-50) is not.
@@ -596,8 +623,8 @@ class TestGeometricShapes(unittest.TestCase, NumpyTestCase):
         )
 
         # Test generate_point_cloud method.
-        # The expected number of points is given by the volume of the cone divided by the voxel side
-        # to the third.
+        # The expected number of points is given by the volume of the cone divided by
+        # the voxel side to the third.
         # The points should be inside the cone.
         cone_height = np.linalg.norm(configuration["origin"] - configuration["apex"])
         volume = (np.pi * cone_height * configuration["radius"] ** 2) / 3.0
@@ -685,16 +712,19 @@ class TestGeometricShapes(unittest.TestCase, NumpyTestCase):
         self.assertClose(
             mbb[0],
             expected_mbb[0],
-            "The minimal bounding box returned by find_mbb method is not the expected one",
+            "The minimal bounding box returned by find_mbb method "
+            "is not the expected one",
         )
         self.assertClose(
             mbb[1],
             expected_mbb[1],
-            "The minimal bounding box returned by find_mbb method is not the expected one",
+            "The minimal bounding box returned by find_mbb method "
+            "is not the expected one",
         )
 
         # Test generate_point_cloud method for the composition of shapes.
-        # The expected number of points is given by the sum of the volumes the voxel side to the third
+        # The expected number of points is given by the sum of the volumes
+        # the voxel side to the third
         # The points should be inside the cone.
         sphere_volume = 4.0 / 3.0 * np.pi * config_sphere["radius"] ** 3
         cylinder_volume = (

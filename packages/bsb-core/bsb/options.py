@@ -9,7 +9,12 @@ environment variables or project settings).
   import bsb.options
   from bsb import BsbOption
 
-  class MyOption(BsbOption, cli=("my_setting",), env=("MY_SETTING",), script=("my_setting", "my_alias")):
+  class MyOption(
+    BsbOption,
+    cli=("my_setting",),
+    env=("MY_SETTING",),
+    script=("my_setting", "my_alias")
+    ):
       def get_default(self):
           return 4
 
@@ -110,7 +115,8 @@ def register_option(name, option):
     if name in _options:
         if type(_options[name]) is not type(option):
             raise OptionError(
-                f"The '{name}' option name is already taken by {_options[name].__class__}."
+                f"The '{name}' option name is already taken by "
+                f"{_options[name].__class__}."
             )
     else:
         _options[name] = option
@@ -161,7 +167,8 @@ def _register_project_option(option):  # pragma: nocover
 
     if path[-1] in section:
         raise OptionError(
-            f"The '{'.'.join(path)}' tag is already taken by {section[path[-1]].__class__}."
+            f"The '{'.'.join(path)}' tag is already taken by "
+            f"{section[path[-1]].__class__}."
         )
     else:
         section[path[-1]] = option

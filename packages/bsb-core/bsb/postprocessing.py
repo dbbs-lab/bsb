@@ -85,9 +85,11 @@ class SpoofDetails(AfterConnectivityHook):
             to_morphologies = to_type.list_all_morphologies()
             if len(to_morphologies) == 0:
                 raise MorphologyDataError(
-                    f"Can't spoof detailed connection without morphologies for '{to_type.name}'"
+                    "Can't spoof detailed connection without morphologies for "
+                    f"'{to_type.name}'"
                 )
-        # If they are entities or relays, steal the first morphology of the other cell type.
+        # If they are entities or relays,
+        # steal the first morphology of the other cell type.
         # Under no circumstances should entities or relays be represented as actual
         # morphologies, so this should not matter: the data just needs to be spoofed for
         # other parts of the scaffold to function.
@@ -130,7 +132,9 @@ class SpoofDetails(AfterConnectivityHook):
             morpho_map=morpho_map,
         )
         report(
-            f"Spoofed details of {len(connectivity_matrix)} connections between {connection_type.presynaptic.type.name} and {connection_type.postsynaptic.type.name}",
+            f"Spoofed details of {len(connectivity_matrix)} connections between "
+            f"{connection_type.presynaptic.type.name} and "
+            f"{connection_type.postsynaptic.type.name}",
             level=2,
         )
 

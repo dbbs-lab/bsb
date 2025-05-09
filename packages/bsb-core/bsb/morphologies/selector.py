@@ -100,7 +100,10 @@ class NeuroMorphoSelector(NameSelector, classmap_entry="from_neuromorpho"):
 
     @classmethod
     def _swc_url(cls, archive, name):
-        return f"{cls._url}{cls._files}{urllib.parse.quote(archive.lower())}/CNG%20version/{name}.CNG.swc"
+        return (
+            f"{cls._url}{cls._files}{urllib.parse.quote(archive.lower())}/"
+            f"CNG%20version/{name}.CNG.swc"
+        )
 
     @classmethod
     def _scrape_nm(cls, names):

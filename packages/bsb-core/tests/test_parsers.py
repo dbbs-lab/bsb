@@ -96,7 +96,8 @@ class TestFileRef(unittest.TestCase):
         # Checking str keys order.
         self.assertEqual(
             str(tree["refs"]["whats the"]["nested secrets"]),
-            "<parsed file config '{'vim': 'is hard', 'and': 'convoluted'}' at '/refs/whats the/nested secrets'>",
+            "<parsed file config '{'vim': 'is hard', 'and': 'convoluted'}'"
+            + " at '/refs/whats the/nested secrets'>",
         )
         self.assertEqual(tree["refs"]["whats the"], tree["refs"]["omitted_doc"])
         content["get"]["a"] = "secret"
@@ -136,8 +137,8 @@ class TestFileRef(unittest.TestCase):
                 pathlib.Path(__file__).parent / "data" / "configs" / "doubleref.txt"
             ),
         )
-        # Only the latest ref is included because the literal_eval keeps only the latest value
-        # for similar keys
+        # Only the latest ref is included because the literal_eval keeps only the latest
+        # value for similar keys
         self.assertNotIn("oh yea", tree["refs"]["whats the"])
         self.assertIn("for", tree["refs"]["whats the"])
         self.assertIn("another", tree["refs"]["whats the"]["for"])

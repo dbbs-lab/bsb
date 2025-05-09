@@ -63,7 +63,7 @@ class TestTopology(unittest.TestCase):
     def test_partition_chunking(self):
         r, l_ = single_layer()
         cs = np.array([100, 100, 100])
-        # Test 100x150x100 layer producing 2 100x100x100 chunks on top of eachother
+        # Test 100x150x100 layer producing 2 100x100x100 chunks on top of each other
         self.assertEqual([[0, 0, 0], [0, 0, 1]], l_.to_chunks(cs).tolist())
         # Test translation by whole chunk
         l_.data.x += cs[0]
@@ -100,7 +100,8 @@ class TestStack(
                 b=dict(type="group", children=["layer0"]),
             ),
             partitions=dict(
-                # we set the origin to rhomboid1 so that every partition is shifted by this value
+                # we set the origin to rhomboid1 so that every partition is shifted by
+                # this value
                 rhomboid1=dict(
                     type="rhomboid", dimensions=[10, 10, 10], origin=[0, 0, 10]
                 ),

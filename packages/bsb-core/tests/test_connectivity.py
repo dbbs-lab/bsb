@@ -1025,8 +1025,8 @@ class TestOutputNamingConnect(
     RandomStorageFixture, NetworkFixture, unittest.TestCase, engine_name="hdf5"
 ):
     """
-    Test that connectivity sets can only be formed according to output naming as specified in:
-    https://github.com/dbbs-lab/bsb-core/issues/823
+    Test that connectivity sets can only be formed according to output naming
+     as specified in: https://github.com/dbbs-lab/bsb-core/issues/823
     """
 
     def setUp(self):

@@ -241,7 +241,8 @@ class VolumetricRotations(RotationDistributor, classmap_entry="orientation_field
         # from which the rotation is processed.
         orientations = np.full((positions.shape[0], 3), self.default_vector, dtype=float)
         # Expected orientation_field shape is (3, L, W, D) where L, W and D are the sizes
-        # of the field. Here we want to filter on the space dimensions, so we move the axes.
+        # of the field. Here we want to filter on the space dimensions,
+        # so we move the axes.
         if filter_inside.any():
             orientations[filter_inside] = np.moveaxis(orientation_field, 0, -1)[
                 voxel_pos[filter_inside, 0],
@@ -352,7 +353,8 @@ class DistributorsNode:
         return self.__class__.morphologies.is_dirty(self)
 
     def _has_rdistr(self):
-        # This function checks if this distributor node has specified a rotation distributor
+        # This function checks if this distributor node has specified a rotation
+        # distributor
         return self.__class__.rotations.is_dirty(self)
 
 

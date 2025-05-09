@@ -196,8 +196,8 @@ class TestRedoCompilation(
         self.assertAll(positions2 != new_positions)
         positions2 = np.copy(positions)
         # test redo layer_placement should affect everything else
-        # since second_placement is also on cell1, third_placement depends on second_placement
-        # and cell_to_cell is affected by cell1 placement
+        # since second_placement is also on cell1, third_placement depends on
+        # second_placement and cell_to_cell is affected by cell1 placement
         self.network.compile(redo=True, only=["layer_placement"])
         self.assertAll(
             positions[:-2]

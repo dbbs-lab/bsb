@@ -1054,8 +1054,8 @@ class Branch:
         :type properties: dict
         :param children: list of child branches to attach to the branch
         :type children: list[bsb.morphologies.Branch]
-        :raises bsb.exceptions.MorphologyError: if a property of the branch does not have the same
-            size as its points
+        :raises bsb.exceptions.MorphologyError: if a property of the branch does not have
+            the same size as its points
         """
 
         self._points = _gutil.sanitize_ndarray(points, (-1, 3), float)
@@ -1072,7 +1072,8 @@ class Branch:
         mismatched = [str(k) for k, v in properties.items() if len(v) != len(points)]
         if mismatched:
             raise MorphologyError(
-                f"Morphology properties {', '.join(mismatched)} are not length {len(points)}"
+                f"Morphology properties {', '.join(mismatched)} are not "
+                f"length {len(points)}"
             )
         self._properties = {
             k: v if isinstance(v, np.ndarray) else np.array(v)
@@ -1409,7 +1410,8 @@ class Branch:
 
         if index < 0 or index >= len(self):
             raise IndexError(
-                f"Cannot insert branch at cutpoint: index {index} is out of range ({len(self)})"
+                f"Cannot insert branch at cutpoint: "
+                f"index {index} is out of range ({len(self)})"
             )
 
         if index == len(self.points) - 1:
@@ -1522,7 +1524,8 @@ class Branch:
         """
         if index < 0 or index >= len(self.points):
             raise IndexError(
-                f"Could not introduce point in branch at index {index}: out of bounds for branch length {len(self)}."
+                f"Could not introduce point in branch at index {index}: "
+                f"out of bounds for branch length {len(self)}."
             )
         self._on_mutate()
         old_labels = self.labels[index]
@@ -1702,7 +1705,8 @@ class Branch:
                 except IndexError:
                     break
 
-        # sorted because indexes are appended to reduced from the middle of the list (the first point with dist > epsilon)
+        # sorted because indexes are appended to reduced from the middle of the list
+        # (the first point with dist > epsilon)
         # then all points with smaller index  until 0, then all points with bigger index
         reduced = np.sort(np.unique(reduced))
         self.points = self.points[reduced]

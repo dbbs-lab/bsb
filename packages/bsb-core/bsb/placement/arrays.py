@@ -29,7 +29,8 @@ class ParallelArrayPlacement(NotParallel, PlacementStrategy):
     def boot(self):
         if self.angle % (np.pi) == np.pi / 2:
             raise ConfigurationError(
-                f"Parallel array angle should be not a multiple of pi/2 for '{self.name}'. Provided angle: {self.angle}"
+                "Parallel array angle should be not a multiple of pi/2 for "
+                f"'{self.name}'. Provided angle: {self.angle}"
             )
 
     def place(self, chunk, indicators):
@@ -44,8 +45,10 @@ class ParallelArrayPlacement(NotParallel, PlacementStrategy):
                 ldc = prt.data.ldc
                 # Add a random shift to the starting points of the arrays for variation.
                 x_shift = np.random.rand() * self.spacing_x
-                # Place cells equally spaced over the entire length of the X axis kept apart by the provided space.
-                # They are placed in straight lines, tilted by a certain angle by adding a shifting value.
+                # Place cells equally spaced over the entire length of the X axis kept
+                # apart by the provided space.
+                # They are placed in straight lines, tilted by a certain angle by adding
+                # a shifting value.
                 x_pos = np.arange(start=0.0, stop=width, step=self.spacing_x) + x_shift
                 if x_pos.shape[0] == 0:
                     # When the spacing_x of is larger than the simulation volume,
@@ -79,7 +82,8 @@ class ParallelArrayPlacement(NotParallel, PlacementStrategy):
                 epsilon = y_axis_distance / math.cos(self.angle) - radius * 2
                 if epsilon < 0:
                     raise PackingError(
-                        f"Not enough space between cells placed on the same row for '{self.name}'."
+                        "Not enough space between cells placed on the same row "
+                        f"for '{self.name}'."
                     )
                 # Storage array for the cells
                 cells = np.empty((cells_placed, 3))

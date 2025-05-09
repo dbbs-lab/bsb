@@ -56,7 +56,10 @@ def warn(message, category=None, stacklevel=2, log_exc=None):
 
         from .storage._util import cache
 
-        log = f"{message}\n\n{traceback.format_exception(type(log_exc), log_exc, log_exc.__traceback__)}"
+        log = (
+            f"{message}\n\n"
+            f"{traceback.format_exception(type(log_exc), log_exc, log_exc.__traceback__)}"
+        )
         id = cache.files.store(log)
         path = cache.files.id_to_file_path(id)
         message += f" See '{path}' for full error log."

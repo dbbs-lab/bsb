@@ -49,8 +49,9 @@ class _BoxRTree(BoxTreeInterface):
 
         :param boxes: Boxes to look for intersections with.
         :type boxes: Iterable[Tuple[float, float, float, float, float, float]]
-        :param unique: If ``True``, return a flat generator of unique results. If ``False``
-            (default), per box in ``boxes``, return a list of intersecting boxes.
+        :param unique: If ``True``, return a flat generator of unique results.
+            If ``False`` (default), per box in ``boxes``, return a list of
+            intersecting boxes.
         :returns: See ``unique``.
         :rtype: Iterator[list[Tuple[float, float, float, float, float, float]]] |
             Iterator[Tuple[float, float, float, float, float, float]]

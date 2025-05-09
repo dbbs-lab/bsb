@@ -1,5 +1,7 @@
 """
-This module registers all the options that the BSB provides out of the box. They are
+This module registers all the options that the BSB provides out of the box.
+
+They are
 registered using plugin registration. See `setup.py` for the setuptools metadata.
 """
 
@@ -16,8 +18,10 @@ class VerbosityOption(
     script=("verbosity",),
 ):
     """
-    Set the verbosity of the package. Verbosity 0 is completely silent, 1 is default,
-    2 is verbose, 3 is progress and 4 is debug.
+    Set the verbosity of the package.
+
+    Verbosity 0 is completely silent, 1 is default, 2 is verbose, 3 is progress and 4 is
+    debug.
     """
 
     def setter(self, value):
@@ -39,8 +43,9 @@ class ForceFlag(
     flag=True,
 ):
     """
-    Enable sudo mode. Will execute destructive actions without confirmation, error or user
-    interaction.
+    Enable sudo mode.
+
+    Will execute destructive actions without confirmation, error or user interaction.
     """
 
     def setter(self, value):
@@ -126,7 +131,7 @@ class DebugPoolFlag(
     flag=True,
 ):
     """
-    Debug job pools
+    Debug job pools.
     """
 
     def setter(self, value):

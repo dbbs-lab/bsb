@@ -1,6 +1,8 @@
 """
-Service module. Register or access interfaces that may be provided, mocked or missing, but
-should always behave neatly on import.
+Service module.
+
+Register or access interfaces that may be provided, mocked or missing, but should always
+behave neatly on import.
 """
 
 from ._util import ErrorModule as _ErrorModule
@@ -9,11 +11,11 @@ from .mpilock import MPILockModule as _MPILockModule
 
 MPI = _MPIService()
 """
-MPI service
+MPI service.
 """
 MPILock = _MPILockModule("mpilock")
 """
-MPILock service
+MPILock service.
 """
 
 from .pool import JobPool as _JobPool  # noqa
@@ -21,7 +23,7 @@ from .pool import WorkflowError, pool_cache
 
 JobPool = _JobPool
 """
-JobPool service
+JobPool service.
 """
 
 

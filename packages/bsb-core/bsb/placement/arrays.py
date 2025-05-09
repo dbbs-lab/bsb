@@ -13,14 +13,18 @@ from .strategy import PlacementStrategy
 @config.node
 class ParallelArrayPlacement(NotParallel, PlacementStrategy):
     """
-    Implementation of the placement of cells in parallel arrays
-    Cells are placed in rows on the plane defined by 2 selected axes.
+    Implementation of the placement of cells in parallel arrays Cells are placed in rows
+    on the plane defined by 2 selected axes.
     """
 
     spacing_x: float = config.attr(type=types.float(min=0), required=True)
-    """Space in between two cells along the main axis"""
+    """
+    Space in between two cells along the main axis.
+    """
     angle: float = config.attr(type=types.deg_to_radian(), required=True)
-    """Angle between the second axis and the axis of the rows of cells"""
+    """
+    Angle between the second axis and the axis of the rows of cells.
+    """
 
     def boot(self):
         if self.angle % (np.pi) == np.pi / 2:

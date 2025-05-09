@@ -53,7 +53,7 @@ class TestIssues(unittest.TestCase):
 
     def test_802(self):
         """
-        Test fixed positions with 0 positions
+        Test fixed positions with 0 positions.
         """
         with self.assertWarns(UserWarning):
             # Cobble some components together to test `positions=[]`

@@ -38,7 +38,7 @@ class TestMultiTypeCompilation(
     RandomStorageFixture, NetworkFixture, unittest.TestCase, engine_name="hdf5"
 ):
     """
-    Check if we can compile several types, connected together
+    Check if we can compile several types, connected together.
     """
 
     def setUp(self) -> None:

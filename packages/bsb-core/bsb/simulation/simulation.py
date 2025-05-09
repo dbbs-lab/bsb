@@ -28,23 +28,37 @@ class ProgressEvent:
 class Simulation:
     scaffold: Scaffold
     simulator: str
-    """Simulator name"""
+    """
+    Simulator name.
+    """
     name: str = config.attr(key=True)
-    """Name of the simulation"""
+    """
+    Name of the simulation.
+    """
     duration: float = config.attr(type=float, required=True)
-    """Duration of the simulation in milliseconds"""
+    """
+    Duration of the simulation in milliseconds.
+    """
     cell_models: cfgdict[CellModel] = config.slot(type=CellModel, required=True)
-    """Dictionary linking the cell population name to its model"""
+    """
+    Dictionary linking the cell population name to its model.
+    """
     connection_models: cfgdict[ConnectionModel] = config.slot(
         type=ConnectionModel, required=True
     )
-    """Dictionary linking the connection sets name to its model"""
+    """
+    Dictionary linking the connection sets name to its model.
+    """
     devices: cfgdict[DeviceModel] = config.slot(type=DeviceModel, required=True)
-    """Dictionary linking the device name to its model"""
+    """
+    Dictionary linking the device name to its model.
+    """
     post_prepare: cfglist[typing.Callable[[Simulation, typing.Any], None]] = config.list(
         type=cfgtypes.function_()
     )
-    """List of hook functions to call after the simulation has been prepared"""
+    """
+    List of hook functions to call after the simulation has been prepared.
+    """
 
     @staticmethod
     def __plugins__():

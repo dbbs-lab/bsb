@@ -64,8 +64,8 @@ class HasDependencies:
     @classmethod
     def sort_deps(cls, objects):
         """
-        Orders a given dictionary of objects by the class's default mechanism and
-        then apply the `after` attribute for further restrictions.
+        Orders a given dictionary of objects by the class's default mechanism and then
+        apply the `after` attribute for further restrictions.
         """
         objects = set(objects)
         ordered = []

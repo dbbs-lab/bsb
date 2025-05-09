@@ -63,8 +63,8 @@ def any_():
 
 def in_(container):
     """
-    Type validator. Checks whether the given value occurs in the given container.
-    Uses the `in` operator.
+    Type validator. Checks whether the given value occurs in the given container. Uses the
+    `in` operator.
 
     :param container: List of possible values
     :type container: list
@@ -129,8 +129,8 @@ class object_(TypeHandler):
     Type validator. Attempts to import the value, absolute, or relative to the
     `module_path` entries.
 
-    :param module_path: List of the modules that should be searched when doing a
-      relative import.
+    :param module_path: List of the modules that should be searched when doing a relative
+        import.
     :type module_path: list[str]
     :raises: TypeError when value can't be cast.
     :returns: Type validator function
@@ -162,11 +162,11 @@ class object_(TypeHandler):
 
 class class_(object_):
     """
-    Type validator. Attempts to import the value as the name of a class, relative to
-    the `module_path` entries, absolute or just returning it if it is already a class.
+    Type validator. Attempts to import the value as the name of a class, relative to the
+    `module_path` entries, absolute or just returning it if it is already a class.
 
-    :param module_path: List of the modules that should be searched when doing a
-      relative import.
+    :param module_path: List of the modules that should be searched when doing a relative
+        import.
     :type module_path: list[str]
     :raises: TypeError when value can't be cast.
     :returns: Type validator function
@@ -196,8 +196,8 @@ class function_(object_):
     Type validator. Attempts to import the value, absolute, or relative to the
     `module_path` entries, and verifies that it is callable.
 
-    :param module_path: List of the modules that should be searched when doing a
-      relative import.
+    :param module_path: List of the modules that should be searched when doing a relative
+        import.
     :type module_path: list[str]
     :raises: TypeError when value can't be cast.
     :returns: Type validator function
@@ -299,7 +299,7 @@ def str(strip=False, lower=False, upper=False, safe=True):
     # Compile a custom function to sanitize the string according to args
     safety_check = "\n if not isinstance(s, str):\n  raise TypeError()\n" if safe else ""
     fstr = f"def f(s):{safety_check} return str(s)"
-    for add, mod in zip((strip, lower, upper), ("strip", "lower", "upper")):
+    for add, mod in zip((strip, lower, upper), ("strip", "lower", "upper"), strict=False):
         if add:
             fstr += f".{mod}()"
     go_fish = builtins.dict()
@@ -315,8 +315,7 @@ def str(strip=False, lower=False, upper=False, safe=True):
 
 def int(min=None, max=None):
     """
-    Type validator. Attempts to cast the value to an int, optionally within some
-    bounds.
+    Type validator. Attempts to cast the value to an int, optionally within some bounds.
 
     :param min: Minimum valid value
     :type min: int
@@ -352,8 +351,7 @@ _float = float
 
 def float(min=None, max=None):
     """
-    Type validator. Attempts to cast the value to an float, optionally within some
-    bounds.
+    Type validator. Attempts to cast the value to an float, optionally within some bounds.
 
     :param min: Minimum valid value
     :type min: float
@@ -387,7 +385,7 @@ def float(min=None, max=None):
 def number(min=None, max=None):
     """
     Type validator. If the given value is an int returns an int, tries to cast to float
-    otherwise
+    otherwise.
 
     :param min: Minimum valid value
     :type min: float
@@ -444,15 +442,15 @@ def key():
 
 def scalar_expand(scalar_type, size=None, expand=None):
     """
-    Create a method that expands a scalar into an array with a specific size or uses
-    an expansion function.
+    Create a method that expands a scalar into an array with a specific size or uses an
+    expansion function.
 
     :param scalar_type: Type of the scalar
     :type scalar_type: type
     :param size: Expand the scalar to an array of a fixed size.
     :type size: int
     :param expand: A function that takes the scalar value as argument and returns the
-      expanded form.
+        expanded form.
     :type expand: Callable
     :returns: Type validator function
     :rtype: Callable
@@ -574,7 +572,9 @@ def fraction():
 
 class deg_to_radian(TypeHandler):
     """
-    Type validator. Type casts the value from degrees to radians.
+    Type validator.
+
+    Type casts the value from degrees to radians.
     """
 
     def __call__(self, value):
@@ -592,7 +592,9 @@ class deg_to_radian(TypeHandler):
 
 class distribution(TypeHandler):
     """
-    Type validator. Type casts the value or node to a distribution.
+    Type validator.
+
+    Type casts the value or node to a distribution.
     """
 
     def __call__(self, value, _key=None, _parent=None):
@@ -668,8 +670,8 @@ class evaluation(TypeHandler):
 
 def in_classmap():
     """
-    Type validator. Checks whether the given string occurs in the class map of a
-    dynamic node.
+    Type validator. Checks whether the given string occurs in the class map of a dynamic
+    node.
 
     :returns: Type validator function
     :rtype: Callable

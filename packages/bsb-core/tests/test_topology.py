@@ -166,7 +166,10 @@ class TestAllenVoxels(unittest.TestCase):
                     transform(0)
 
     def test_optional_struct_key(self):
-        """Test only if AllenStructure correctly assign default struct_name, the actual function is tested in test_val()"""
+        """
+        Test only if AllenStructure correctly assign default struct_name, the actual
+        function is tested in test_val()
+        """
         cfg = Configuration.default(
             partitions=dict(val=dict(type="allen")),
         )

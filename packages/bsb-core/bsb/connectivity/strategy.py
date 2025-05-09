@@ -33,11 +33,17 @@ class Hemitype:
     scaffold: Scaffold
 
     cell_types: list[CellType] = config.reflist(refs.cell_type_ref, required=True)
-    """List of cell types to use in connection."""
+    """
+    List of cell types to use in connection.
+    """
     labels: list[str] = config.attr(type=types.list())
-    """List of labels to filter the placement set by."""
+    """
+    List of labels to filter the placement set by.
+    """
     morphology_labels: list[str] = config.attr(type=types.list())
-    """List of labels to filter the morphologies by."""
+    """
+    List of labels to filter the morphologies by.
+    """
     morpho_loader: typing.Callable[[PlacementSet], MorphologySet] = config.attr(
         type=types.function_(),
         required=False,
@@ -45,15 +51,16 @@ class Hemitype:
         default=(lambda ps: ps.load_morphologies()),
     )
     """
-    Function to load the morphologies (MorphologySet) from a PlacementSet. This override
-    can allow temporary dynamic morphology generation during the connectivity phase, from
-    a much smaller, or empty, MorphologySet. It is useful for example when the task would
-    take too much disk space or time otherwise.
+    Function to load the morphologies (MorphologySet) from a PlacementSet.
+
+    This override can allow temporary dynamic morphology generation during the
+    connectivity phase, from a much smaller, or empty, MorphologySet. It is useful for
+    example when the task would take too much disk space or time otherwise.
     """
 
     def get_all_chunks(self):
         """
-        Get the list of all chunks where the cell types were placed
+        Get the list of all chunks where the cell types were placed.
 
         :return: List of Chunks
         :rtype: list[bsb.storage._chunks.Chunk]
@@ -86,8 +93,8 @@ class Hemitype:
 
 class HemitypeCollection:
     """
-    Class used to iterate over an ``Hemitype`` placement sets within a list of chunks,
-    and over its cell types.
+    Class used to iterate over an ``Hemitype`` placement sets within a list of chunks, and
+    over its cell types.
     """
 
     def __init__(self, hemitype: Hemitype, roi: list[Chunk]):
@@ -102,7 +109,6 @@ class HemitypeCollection:
         """
         List the placement sets for each cell type, filtered according to the class
         morphology labels and list of chunks.
-
 
         :rtype: list[bsb.storage.interfaces.PlacementSet]
         """
@@ -120,13 +126,21 @@ class HemitypeCollection:
 class ConnectionStrategy(abc.ABC, HasDependencies):
     scaffold: Scaffold
     name: str = config.attr(key=True)
-    """Name used to refer to the connectivity strategy"""
+    """
+    Name used to refer to the connectivity strategy.
+    """
     presynaptic: Hemitype = config.attr(type=Hemitype, required=True)
-    """Presynaptic (source) neuron population"""
+    """
+    Presynaptic (source) neuron population.
+    """
     postsynaptic: Hemitype = config.attr(type=Hemitype, required=True)
-    """Postsynaptic (target) neuron population"""
+    """
+    Postsynaptic (target) neuron population.
+    """
     depends_on: list[ConnectionStrategy] = config.reflist(refs.connectivity_ref)
-    """The list of strategies that must run before this one"""
+    """
+    The list of strategies that must run before this one.
+    """
     output_naming: str | None | dict[str, dict[str, str, None, list[str]]] = config.attr(
         type=types.or_(
             types.str(),
@@ -140,8 +154,10 @@ class ConnectionStrategy(abc.ABC, HasDependencies):
             types.list(type=types.str()),
         )
     )
-    """Specifies how to name the output ConnectivitySets in which the connections between
-    cell type pairs are stored."""
+    """
+    Specifies how to name the output ConnectivitySets in which the connections between
+    cell type pairs are stored.
+    """
 
     def __init_subclass__(cls, **kwargs):
         super(cls, cls).__init_subclass__(**kwargs)
@@ -166,15 +182,15 @@ class ConnectionStrategy(abc.ABC, HasDependencies):
     @abc.abstractmethod
     def connect(self, presyn_collection, postsyn_collection):
         """
-        Central method of each connection strategy. Given a pair of
-        ``HemitypeCollection`` (one for each connection side), should connect
-        cell population using the scaffold's (available as ``self.scaffold``)
+        Central method of each connection strategy. Given a pair of ``HemitypeCollection``
+        (one for each connection side), should connect cell population using the
+        scaffold's (available as ``self.scaffold``)
         :meth:`bsb.core.Scaffold.connect_cells` method.
 
-        :param bsb.connectivity.strategy.HemitypeCollection presyn_collection:
-          presynaptic filtered cell population.
+        :param bsb.connectivity.strategy.HemitypeCollection presyn_collection: presynaptic
+            filtered cell population.
         :param bsb.connectivity.strategy.HemitypeCollection postsyn_collection:
-          postsynaptic filtered cell population.
+            postsynaptic filtered cell population.
         """
         pass
 
@@ -189,19 +205,17 @@ class ConnectionStrategy(abc.ABC, HasDependencies):
     def connect_cells(self, pre_set, post_set, src_locs, dest_locs, tag=None):
         """
         Connect cells from a presynaptic placement set to cells of a postsynaptic
-        placement set, and produce a unique name to describe their connectivity set.
-        The description of the hemitype (source or target cell population)
-        `connection location` is stored as a list of 3 ids: the cell index (in the
-        placement set), morphology branch index, and the morphology branch section index.
-        If no morphology is attached to the hemitype, then the morphology indexes can be
-        set to -1.
+        placement set, and produce a unique name to describe their connectivity set. The
+        description of the hemitype (source or target cell population) `connection
+        location` is stored as a list of 3 ids: the cell index (in the placement set),
+        morphology branch index, and the morphology branch section index. If no morphology
+        is attached to the hemitype, then the morphology indexes can be set to -1.
 
         :param bsb.storage.interfaces.PlacementSet pre_set: presynaptic placement set
         :param bsb.storage.interfaces.PlacementSet post_set: postsynaptic placement set
-        :param list[list[int, int, int]] src_locs: list of the presynaptic
-            `connection location`.
-        :param list[list[int, int, int]] dest_locs: list of the postsynaptic
-            `connection location`.
+            :param list[list[int, int, int]] src_locs: list of the presynaptic `connection
+            location`. :param list[list[int, int, int]] dest_locs: list of the
+            postsynaptic `connection location`.
         """
         names = self.get_output_names(pre_set.cell_type, post_set.cell_type)
         between_msg = f"between {pre_set.cell_type.name} and {post_set.cell_type.name}"
@@ -245,9 +259,10 @@ class ConnectionStrategy(abc.ABC, HasDependencies):
 
     def queue(self, pool: JobPool):
         """
-        Specifies how to queue this connectivity strategy into a job pool. Can
-        be overridden, the default implementation asks each partition to chunk
-        itself and creates 1 placement job per chunk.
+        Specifies how to queue this connectivity strategy into a job pool.
+
+        Can be overridden, the default implementation asks each partition to chunk itself
+        and creates 1 placement job per chunk.
         """
         # Get the queued jobs of all the strategies we depend on.
         dep_jobs = set(

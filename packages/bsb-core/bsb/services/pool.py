@@ -35,7 +35,6 @@ A job has a couple of display variables that can be set: ``_cname`` for the
 class name, ``_name`` for the job name and ``_c`` for the chunk. These are used
 to display what the workers are doing during parallel execution. This is an experimental
 API and subject to sudden change in the future.
-
 """
 
 import abc
@@ -203,7 +202,7 @@ class _MissingMPIExecutor(ErrorModule):
 
 class _MPIPoolModule(MockModule):
     @property
-    def MPIExecutor(self) -> typing.Type["MPIExecutor"]:
+    def MPIExecutor(self) -> type["MPIExecutor"]:
         return _MissingMPIExecutor(
             "This is not a public interface. Use `.services.JobPool` instead."
         )
@@ -282,7 +281,7 @@ class SubmissionContext:
 
 class Job(abc.ABC):
     """
-    Dispatches the execution of a function through a JobPool
+    Dispatches the execution of a function through a JobPool.
     """
 
     def __init__(
@@ -302,8 +301,8 @@ class Job(abc.ABC):
         self._submit_ctx = submission_context
         self._completion_cbs = []
         self._status = JobStatus.PENDING
-        self._future: typing.Optional[concurrent.futures.Future] = None
-        self._thread: typing.Optional[threading.Thread] = None
+        self._future: concurrent.futures.Future | None = None
+        self._thread: threading.Thread | None = None
         self._res_file = None
         self._error = None
         self._cache_items: list[int] = [] if cache_items is None else cache_items
@@ -352,7 +351,7 @@ class Job(abc.ABC):
 
     def serialize(self):
         """
-        Convert the job to a (de)serializable representation
+        Convert the job to a (de)serializable representation.
         """
         name = self.__class__.__name__
         # First arg is to find the static `execute` method so that we don't have to
@@ -364,13 +363,14 @@ class Job(abc.ABC):
     @abc.abstractmethod
     def execute(job_owner, args, kwargs):
         """
-        Job handler
+        Job handler.
         """
         pass
 
     def run(self, timeout=None):
         """
-        Execute the job on the current process, in a thread, and return whether the job is still running.
+        Execute the job on the current process, in a thread, and return whether the job is
+        still running.
         """
         if self._thread is None:
 
@@ -451,7 +451,7 @@ class Job(abc.ABC):
             # call `_enqueue` again ourselves!
             self._pool = pool
 
-    def cancel(self, reason: typing.Optional[str] = None):
+    def cancel(self, reason: str | None = None):
         self.change_status(JobStatus.CANCELLED)
         self._error = JobCancelledError() if reason is None else JobCancelledError(reason)
         if self._future and not self._future.cancel():
@@ -549,7 +549,7 @@ class JobPool:
         self._comm = scaffold._comm
         self._unhandled_errors = []
         self._running_futures: list[concurrent.futures.Future] = []
-        self._mpipool: typing.Optional[MPIExecutor] = None
+        self._mpipool: MPIExecutor | None = None
         self._job_queue: list[Job] = []
         self._listeners = []
         self._max_wait = 60
@@ -706,7 +706,7 @@ class JobPool:
 
     def execute(self, return_results=False):
         """
-        Execute the jobs in the queue
+        Execute the jobs in the queue.
 
         In serial execution this runs all the jobs in the queue in First In First Out
         order. In parallel execution this enqueues all jobs into the MPIPool unless they
@@ -897,7 +897,7 @@ class JobPool:
 
     def get_required_cache_items(self):
         """
-        Returns the list of cache functions for all the jobs in the queue
+        Returns the list of cache functions for all the jobs in the queue.
 
         :return: set of cache function name
         :rtype: set[int]
@@ -915,7 +915,9 @@ class JobPool:
     def _update_cache_window(self):
         """
         Checks and updates if the cache buffer should be updated by looking at the job
-        statuses in the job queue. Only call on main.
+        statuses in the job queue.
+
+        Only call on main.
         """
         # Create a new cache window buffer
         new_buffer = np.zeros(1000, dtype=int)
@@ -932,6 +934,7 @@ class JobPool:
     def _read_required_cache_items(self):
         """
         Locks the cache window and read the still required cache items from rank 0.
+
         Only call on workers.
         """
         from mpi4py.MPI import UINT64_T

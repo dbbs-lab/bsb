@@ -1,5 +1,7 @@
 """
-Plugins module. Uses ``pkg_resources`` to detect installed plugins and loads them as
+Plugins module.
+
+Uses ``pkg_resources`` to detect installed plugins and loads them as
 categories.
 """
 

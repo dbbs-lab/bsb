@@ -15,9 +15,8 @@ from ...reporting import report
 
 class BaseParser(argparse.ArgumentParser):
     """
-    Inherits from argparse.ArgumentParser and overloads the ``error``
-    method so that when an error occurs, instead of exiting and exception
-    is thrown.
+    Inherits from argparse.ArgumentParser and overloads the ``error`` method so that when
+    an error occurs, instead of exiting and exception is thrown.
     """
 
     def error(self, message):

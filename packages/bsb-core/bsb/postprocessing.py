@@ -139,7 +139,9 @@ class SpoofDetails(AfterConnectivityHook):
 class Relay(AfterConnectivityHook):
     """
     Replaces connections on a cell with the relayed connections to the connection targets
-    of that cell. Not implemented yet.
+    of that cell.
+
+    Not implemented yet.
     """
 
     cell_types = config.reflist(refs.cell_type_ref)

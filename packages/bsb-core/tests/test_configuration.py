@@ -1141,8 +1141,10 @@ class TestTypes(unittest.TestCase):
 
     def test_class(self):
         """
-        Check that class retrieval fetches the right objects. The test is somewhat
-        complicated to make sure that this test can be run in a directory independent way.
+        Check that class retrieval fetches the right objects.
+
+        The test is somewhat complicated to make sure that this test can be run in a
+        directory independent way.
         """
 
         @config.root
@@ -1208,7 +1210,9 @@ class TestTypes(unittest.TestCase):
         self.assertRaises(FileNotFoundError, d.c.load_object)
 
     def test_mutexcl_required(self):
-        """test the types.mut_excl function"""
+        """
+        Test the types.mut_excl function.
+        """
 
         @config.node
         class TestClass:
@@ -1223,7 +1227,9 @@ class TestTypes(unittest.TestCase):
             TestClass()
 
     def test_mutexcl_optional(self):
-        """test the types.mut_excl function with optional values"""
+        """
+        Test the types.mut_excl function with optional values.
+        """
 
         @config.node
         class TestClass:
@@ -1233,7 +1239,9 @@ class TestTypes(unittest.TestCase):
         TestClass()
 
     def test_mutexcl_maxval(self):
-        """test the max variable"""
+        """
+        Test the max variable.
+        """
 
         @config.node
         class TestClass:
@@ -1243,7 +1251,9 @@ class TestTypes(unittest.TestCase):
         TestClass(a="1", b="6")
 
     def test_mutexcl_threecase(self):
-        """test the types.mut_excl function with three arguments"""
+        """
+        Test the types.mut_excl function with three arguments.
+        """
 
         @config.node
         class TestClass:
@@ -1610,7 +1620,9 @@ class TestScripting(RandomStorageFixture, unittest.TestCase, engine_name="fs"):
         self.assertIsNotNone(_attrs._booted_root(cfg), "now it should be booted")
 
     def test_updates(self):
-        """Test if tree is updated correctly"""
+        """
+        Test if tree is updated correctly.
+        """
         cfg = Configuration.default()
         cfg.morphologies = ["dummy_neuron.swc"]
         cfg.partitions.add("base_layer", thickness=100)
@@ -1636,7 +1648,7 @@ class TestScripting(RandomStorageFixture, unittest.TestCase, engine_name="fs"):
 class TestNodeClass(unittest.TestCase):
     def test_standalone_node_name(self):
         """
-        Test the node name of a node without any name information
+        Test the node name of a node without any name information.
         """
 
         @config.node
@@ -1647,7 +1659,7 @@ class TestNodeClass(unittest.TestCase):
 
     def test_standalone_named_node_name(self):
         """
-        Test the node name of a node with name information
+        Test the node name of a node with name information.
         """
 
         @config.node
@@ -1658,7 +1670,7 @@ class TestNodeClass(unittest.TestCase):
 
     def test_standalone_keyed_node_name(self):
         """
-        Test the node name of a node with key information
+        Test the node name of a node with key information.
         """
 
         @config.node

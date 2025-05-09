@@ -27,9 +27,13 @@ def overlap_boxes(box1_min, box1_max, box2_min, box2_max):
 class MorphologyToShapeIntersection(ConnectionStrategy):
     postsynaptic = config.attr(type=ShapeHemitype, required=True)
     affinity = config.attr(type=types.fraction(), required=True, hint=0.1)
-    """Ratio of apositions to keep over the total number of contact points"""
+    """
+    Ratio of apositions to keep over the total number of contact points.
+    """
     pruning_ratio = config.attr(type=types.fraction(), required=True, hint=0.1)
-    """Ratio of conections to keep over the total number of apositions"""
+    """
+    Ratio of conections to keep over the total number of apositions.
+    """
 
     def get_region_of_interest(self, chunk):
         lpre, upre = self.presynaptic._get_rect_ext(tuple(chunk.dimensions))
@@ -64,7 +68,7 @@ class MorphologyToShapeIntersection(ConnectionStrategy):
         morpho_set = pre_ps.load_morphologies()
         pre_morphos = morpho_set.iter_morphologies(cache=True, hard_cache=True)
 
-        for pre_id, (pre_coord, morpho) in enumerate(zip(pre_pos, pre_morphos)):
+        for pre_id, (pre_coord, morpho) in enumerate(zip(pre_pos, pre_morphos, strict=False)):
             # Get the branches
             branches = morpho.get_branches()
 

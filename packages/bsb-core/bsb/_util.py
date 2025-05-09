@@ -13,7 +13,7 @@ ichain = _it.chain.from_iterable
 
 def merge_dicts(a, b):
     """
-    Merge 2 dictionaries and their subdictionaries
+    Merge 2 dictionaries and their subdictionaries.
     """
     for key in b:
         if key in a and isinstance(a[key], dict) and isinstance(b[key], dict):
@@ -25,7 +25,8 @@ def merge_dicts(a, b):
 
 def obj_str_insert(__str__):
     """
-    Decorator to insert the return value of __str__ into '<classname {returnvalue} at 0x...>'
+    Decorator to insert the return value of __str__ into '<classname {returnvalue} at
+    0x...>'.
     """
 
     @_ft.wraps(__str__)
@@ -39,9 +40,10 @@ def obj_str_insert(__str__):
 @_ctxlib.contextmanager
 def suppress_stdout():
     """
-    Context manager that attempts to silence regular stdout and stderr. Some binary
-    components may yet circumvene this if they access the underlying OS's stdout directly,
-    like streaming to `/dev/stdout`.
+    Context manager that attempts to silence regular stdout and stderr.
+
+    Some binary components may yet circumvene this if they access the underlying OS's
+    stdout directly, like streaming to `/dev/stdout`.
     """
     with open(_os.devnull, "w") as devnull:
         old_stdout = _sys.stdout
@@ -56,7 +58,9 @@ def suppress_stdout():
 
 
 def get_qualified_class_name(x):
-    """Return an object's module and class name"""
+    """
+    Return an object's module and class name.
+    """
     if _inspect.isclass(x):
         return f"{x.__module__}.{str(x.__name__)}"
     return f"{x.__class__.__module__}.{str(x.__class__.__name__)}"
@@ -64,7 +68,9 @@ def get_qualified_class_name(x):
 
 def listify_input(value):
     """
-    Turn any non-list values into a list containing the value. Sequences will be
+    Turn any non-list values into a list containing the value.
+
+    Sequences will be
     converted to a list using `list()`, `None` will  be replaced by an empty list.
     """
     if value is None:
@@ -118,12 +124,15 @@ def immutable():
 
 
 def unique(iter_: _t.Iterable[_t.Any]):
-    """Return a new list containing all the unique elements of an iterator"""
+    """
+    Return a new list containing all the unique elements of an iterator.
+    """
     return [*set(iter_)]
 
 
 def rotation_matrix_from_vectors(vec1, vec2):
-    """Find the rotation matrix that aligns vec1 to vec2
+    """
+    Find the rotation matrix that aligns vec1 to vec2.
 
     :param vec1: A 3d "source" vector
     :param vec2: A 3d "destination" vector

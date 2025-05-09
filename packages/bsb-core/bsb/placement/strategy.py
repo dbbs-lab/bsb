@@ -26,8 +26,9 @@ if typing.TYPE_CHECKING:
 @config.dynamic(attr_name="strategy", required=True)
 class PlacementStrategy(abc.ABC, HasDependencies):
     """
-    Quintessential interface of the placement module. Each placement strategy defines an
-    approach to placing neurons into a volume.
+    Quintessential interface of the placement module.
+
+    Each placement strategy defines an approach to placing neurons into a volume.
     """
 
     scaffold: "Scaffold"
@@ -121,9 +122,10 @@ class PlacementStrategy(abc.ABC, HasDependencies):
 
     def queue(self, pool, chunk_size):
         """
-        Specifies how to queue this placement strategy into a job pool. Can be overridden,
-        the default implementation asks each partition to chunk itself and creates 1
-        placement job per chunk.
+        Specifies how to queue this placement strategy into a job pool.
+
+        Can be overridden, the default implementation asks each partition to chunk itself
+        and creates 1 placement job per chunk.
         """
         # Get the queued jobs of all the strategies we depend on.
         deps = set(
@@ -142,9 +144,10 @@ class PlacementStrategy(abc.ABC, HasDependencies):
 
     def get_indicators(self):
         """
-        Return indicators per cell type. Indicators collect all configuration information
-        into objects that can produce guesses as to how many cells of a type should be
-        placed in a volume.
+        Return indicators per cell type.
+
+        Indicators collect all configuration information into objects that can produce
+        guesses as to how many cells of a type should be placed in a volume.
         """
         return {
             ct.name: self.__class__.indicator_class(self, ct) for ct in self.cell_types
@@ -194,8 +197,8 @@ class FixedPositions(PlacementStrategy):
 @config.node
 class Entities(PlacementStrategy):
     """
-    Implementation of the placement of entities that do not have a 3D position,
-    but that need to be connected with other cells of the network.
+    Implementation of the placement of entities that do not have a 3D position, but that
+    need to be connected with other cells of the network.
     """
 
     def queue(self, pool, chunk_size):

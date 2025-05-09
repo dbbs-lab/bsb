@@ -20,7 +20,7 @@ class Intersectional:
         # `np.meshgrid` below.
         bounds = list(
             np.arange(l1 - u2 + c, u1 - l2 + c + 1)
-            for l1, l2, u1, u2, c in zip(lpre, lpost, upre, upost, chunk)
+            for l1, l2, u1, u2, c in zip(lpre, lpost, upre, upost, chunk, strict=False)
         )
         # Flatten and stack the meshgrid coordinates into a list.
         clist = np.column_stack(

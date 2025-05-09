@@ -12,6 +12,7 @@ from .geometric_shapes import ShapesComposition
 class ShapeHemitype(Hemitype):
     """
     Class representing a population of cells to connect with a ConnectionStrategy.
+
     These cells' morphology is implemented as a ShapesComposition.
     """
 
@@ -24,13 +25,13 @@ class ShapeHemitype(Hemitype):
         """
         Get the list of minimal bounding box containing all cells in the `ShapeHemitype`.
 
-        :param chunks: List of chunks containing the cell types
-            (see bsb.connectivity.strategy.Hemitype.get_all_chunks)
+        :param chunks: List of chunks containing the cell types (see
+            bsb.connectivity.strategy.Hemitype.get_all_chunks)
         :type chunks: list[bsb.storage._chunks.Chunk]
         :param chunk_dimension: Size of a chunk
         :type chunk_dimension: float
-        :return: List of bounding boxes in the form
-            [min_x, min_y, min_z, max_x, max_y, max_z] for each chunk containing cells.
+        :return: List of bounding boxes in the form [min_x, min_y, min_z, max_x, max_y,
+            max_z] for each chunk containing cells.
         :rtype: list[numpy.ndarray[float, float, float, float, float, float]]
         """
         return [
@@ -55,9 +56,13 @@ class ShapeToShapeIntersection(ConnectionStrategy):
     presynaptic = config.attr(type=ShapeHemitype, required=True)
     postsynaptic = config.attr(type=ShapeHemitype, required=True)
     affinity = config.attr(type=types.fraction(), required=True, hint=0.1)
-    """Ratio of apositions to keep over the total number of contact points"""
+    """
+    Ratio of apositions to keep over the total number of contact points.
+    """
     pruning_ratio = config.attr(type=types.fraction(), required=True, hint=0.1)
-    """Ratio of conections to keep over the total number of apositions"""
+    """
+    Ratio of conections to keep over the total number of apositions.
+    """
 
     def get_region_of_interest(self, chunk):
         # Filter postsyn chunks that overlap the presyn chunk.

@@ -1,5 +1,5 @@
 """
-Topology module
+Topology module.
 """
 
 from ._layout import box_layout

@@ -40,7 +40,7 @@ class AdapterProgress:
         steps = itertools.chain(np.arange(0, self._duration, step), (self._duration,))
         a, b = itertools.tee(steps)
         next(b, None)
-        yield from zip(a, b)
+        yield from zip(a, b, strict=False)
 
     def complete(self):
         return
@@ -120,7 +120,7 @@ class SimulatorAdapter(abc.ABC):
 
     def collect(self, results):
         """
-        Collect the output the simulations that completed
+        Collect the output the simulations that completed.
 
         :return: Collected simulation results.
         :rtype: list[~bsb.simulation.results.SimulationResult]

@@ -9,7 +9,7 @@ from .strategy import PlacementStrategy
 
 class _VoxelBasedFiller:
     """
-    Internal mixin for filler placement strategies
+    Internal mixin for filler placement strategies.
     """
 
     def _fill_system(self, chunk, indicators, check_pack=True):
@@ -145,7 +145,7 @@ class VolumeFiller:
         self.voxels.extend(
             ParticleVoxel(ldc, size)
             for ldc, size in zip(
-                voxels.as_spatial_coords(copy=False), voxels.get_size_matrix(copy=False)
+                voxels.as_spatial_coords(copy=False), voxels.get_size_matrix(copy=False), strict=False
             )
         )
         if check_pack:
@@ -187,7 +187,7 @@ class VolumeFiller:
             raise Exception(
                 f"Particle system voxel mismatch. Given {len(voxel_counts)} expected {len(self.voxels)}"
             )
-        for voxel, count in zip(self.voxels, voxel_counts):
+        for voxel, count in zip(self.voxels, voxel_counts, strict=False):
             particle_type["placed"] = particle_type.get("placed", 0) + count
             placement_matrix = np.random.rand(count, self.dimensions)
             for in_voxel_pos in placement_matrix:
@@ -233,13 +233,14 @@ class VolumeFiller:
 
     def get_packing_factor(self, particles=None, volume=None):
         """
-        Calculate the packing factor of the volume where particles will be placed.
-        It corresponds to the ratio of the sum of the particles' volume over the volume itself.
+        Calculate the packing factor of the volume where particles will be placed. It
+        corresponds to the ratio of the sum of the particles' volume over the volume
+        itself.
 
-        :param list[bsb.placement.particle.Particle] | None particles: List of Particle to place.
-            If None, it will use the ParticleSystem particle_types list.
-        :param float | None volume: Size of the volume in which the particles will be placed.
-            If None, it will use the total volume of the voxels of the ParticleSystem.
+        :param list[bsb.placement.particle.Particle] | None particles: List of Particle to
+        place.     If None, it will use the ParticleSystem particle_types list. :param
+        float | None volume: Size of the volume in which the particles will be placed. If
+        None, it will use the total volume of the voxels of the ParticleSystem.
         :return: Packing factor
         :rtype: float
         """

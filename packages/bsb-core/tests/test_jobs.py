@@ -127,7 +127,9 @@ class TestSerialAndParallelScheduler(
 
     @timeout(1)
     def test_single_job(self):
-        """Test the execution of a single lambda function"""
+        """
+        Test the execution of a single lambda function.
+        """
         with self.network.create_job_pool(quiet=True) as pool:
             job = pool.queue(lambda scaffold, x, y: x * y, (5, 0.1))
             self.assertEqual(job.status, JobStatus.PENDING)
@@ -140,7 +142,7 @@ class TestSerialAndParallelScheduler(
     @timeout(1)
     def test_single_job_fail(self):
         """
-        Test if a division by zero error is propagated back
+        Test if a division by zero error is propagated back.
         """
         with self.network.create_job_pool(quiet=True) as pool:
             job = pool.queue(lambda scaffold, x, y: x / y, (5, 0))
@@ -152,7 +154,9 @@ class TestSerialAndParallelScheduler(
 
     @timeout(1)
     def test_multiple_jobs(self):
-        """Test the execution of a set of lambda function"""
+        """
+        Test the execution of a set of lambda function.
+        """
         with self.network.create_job_pool(quiet=True) as pool:
             job1 = pool.queue(lambda scaffold, x, y: x * y, (5, 0.1))
             job2 = pool.queue(lambda scaffold, x, y: x * y, (6, 0.1))
@@ -186,7 +190,7 @@ class TestSerialAndParallelScheduler(
     @timeout(1)
     def test_cancel_job(self):
         """
-        Cancel a job
+        Cancel a job.
         """
         with self.network.create_job_pool(quiet=True) as pool:
             t = time.time()
@@ -202,7 +206,9 @@ class TestSerialAndParallelScheduler(
     @timeout(1)
     def test_cancel_bygone_job(self):
         """
-        Attempt to cancel a job after running. Should yield a 'could not cancel' warning.
+        Attempt to cancel a job after running.
+
+        Should yield a 'could not cancel' warning.
         """
         with self.network.create_job_pool(quiet=True) as pool:
             job = pool.queue(sleep_y, (5, 0.5))
@@ -214,7 +220,9 @@ class TestSerialAndParallelScheduler(
 
     @timeout(1)
     def test_job_result_before_run(self):
-        """Test result exception before the pool has ran"""
+        """
+        Test result exception before the pool has ran.
+        """
 
         with self.network.create_job_pool(quiet=True) as pool:
             job = pool.queue(sleep_y, (5, 0.5))
@@ -223,7 +231,9 @@ class TestSerialAndParallelScheduler(
 
     @timeout(1)
     def test_job_result_after_run(self):
-        """Test result exception after the pool has ran"""
+        """
+        Test result exception after the pool has ran.
+        """
 
         with self.network.create_job_pool(quiet=True) as pool:
             job = pool.queue(sleep_y, (5, 0.5))
@@ -233,7 +243,9 @@ class TestSerialAndParallelScheduler(
 
     @timeout(3)
     def test_placement_job(self):
-        """Test the execution of placement job"""
+        """
+        Test the execution of placement job.
+        """
         self.network.placement.add(
             "test_strat",
             FixedPositions(
@@ -263,7 +275,9 @@ class TestParallelScheduler(
 
     @timeout(3)
     def test_double_pool(self):
-        """Test whether we can open multiple pools sequentially"""
+        """
+        Test whether we can open multiple pools sequentially.
+        """
         with self.network.create_job_pool(quiet=True) as pool:
             job = pool.queue(sleep_y, (5, 0.1))
             results = pool.execute(return_results=True)
@@ -277,7 +291,9 @@ class TestParallelScheduler(
 
     @timeout(3)
     def test_submitting_closed(self):
-        """Test that you can't submit a job after the pool has executed already"""
+        """
+        Test that you can't submit a job after the pool has executed already.
+        """
         with self.network.create_job_pool(quiet=True) as pool:
             pool.execute()
         with self.assertRaises(JobPoolError):
@@ -286,7 +302,9 @@ class TestParallelScheduler(
     @timeout(3)
     def test_cancel_running_job(self):
         """
-        Attempt to cancel a job while running. Should yield a 'could not cancel' warning.
+        Attempt to cancel a job while running.
+
+        Should yield a 'could not cancel' warning.
         """
 
         def try_cancel(progress: PoolProgress):
@@ -304,7 +322,9 @@ class TestParallelScheduler(
 
     @timeout(3)
     def test_cancel_queued_job(self):
-        """Cancel a job that has been queued, but has not started yet."""
+        """
+        Cancel a job that has been queued, but has not started yet.
+        """
 
         def job_killer(progress: PoolProgress):
             if (
@@ -326,7 +346,8 @@ class TestParallelScheduler(
     @timeout(3)
     def test_dependencies(self):
         """
-        Test that when the pool starts the jobs without dependencies are queued, and those with dependencies are not.
+        Test that when the pool starts the jobs without dependencies are queued, and those
+        with dependencies are not.
         """
         outcome = True
 
@@ -358,7 +379,9 @@ class TestParallelScheduler(
 
     @timeout(3)
     def test_dependency_failure(self):
-        """Test that when a dependency fails, the dependents are cancelled"""
+        """
+        Test that when a dependency fails, the dependents are cancelled.
+        """
         with self.network.create_job_pool(fail_fast=False, quiet=True) as pool:
             job = pool.queue(sleep_fail, (4, 0.2))
             job2 = pool.queue(sleep_y, (5, 0.1), deps=[job])
@@ -374,7 +397,10 @@ class TestParallelScheduler(
             self.assertEqual(job3.status, JobStatus.SUCCESS)
 
     def test_fail_fast(self):
-        """Test that when a single job fails, main raises the error and further execution is aborted."""
+        """
+        Test that when a single job fails, main raises the error and further execution is
+        aborted.
+        """
         with self.network.create_job_pool(fail_fast=True, quiet=True) as pool:
             _job = pool.queue(sleep_fail, (4, 0.01))
             _job3 = pool.queue(sleep_y, (4, 0.01))
@@ -391,7 +417,9 @@ class TestParallelScheduler(
 
     @timeout(3)
     def test_listeners(self):
-        """Test that listeners are called and max_wait is set correctly"""
+        """
+        Test that listeners are called and max_wait is set correctly.
+        """
         i = 0
 
         def spy_lt(progress: PoolProgress):
@@ -555,7 +583,9 @@ class TestPoolCache(RandomStorageFixture, unittest.TestCase, engine_name="hdf5")
 
     @timeout(3)
     def test_cache_registration(self):
-        """Test that when a cache is hit, it is registered in the scaffold"""
+        """
+        Test that when a cache is hit, it is registered in the scaffold.
+        """
         self.network.placement.withcache.place(None, None)
         self.assertEqual(
             [self.id_cache],
@@ -564,7 +594,9 @@ class TestPoolCache(RandomStorageFixture, unittest.TestCase, engine_name="hdf5")
 
     @timeout(3)
     def test_method_detection(self):
-        """Test that we can detect which jobs need which items"""
+        """
+        Test that we can detect which jobs need which items.
+        """
         self.assertEqual(
             [self.id_cache],
             get_node_cache_items(self.network.placement.withcache),
@@ -572,7 +604,9 @@ class TestPoolCache(RandomStorageFixture, unittest.TestCase, engine_name="hdf5")
 
     @timeout(3)
     def test_pool_required_cache(self):
-        """Test that the pool knows which cache items are required"""
+        """
+        Test that the pool knows which cache items are required.
+        """
         with self.network.create_job_pool() as pool:
             self.assertEqual(set(), pool.get_required_cache_items())
             pool.queue_placement(self.network.placement.withcache, [0, 0, 0])
@@ -593,7 +627,9 @@ class TestPoolCache(RandomStorageFixture, unittest.TestCase, engine_name="hdf5")
     )
     @timeout(3)
     def test_cache_survival(self):
-        """Test that the required cache items survive until the jobs are done."""
+        """
+        Test that the required cache items survive until the jobs are done.
+        """
 
         @config.node
         class TestNode(PlacementStrategy):

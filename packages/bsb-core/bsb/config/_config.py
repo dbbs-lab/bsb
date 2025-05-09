@@ -60,7 +60,7 @@ class Configuration:
 
     name: str = config.attr()
     """
-    Descriptive name of the model
+    Descriptive name of the model.
     """
     components: cfglist[CodeDependencyNode] = config.list(
         type=CodeDependencyNode,
@@ -73,7 +73,6 @@ class Configuration:
     )
     """
     List of package requirement specifiers the model depends on.
-    
     """
     morphologies: cfglist[MorphologyDependencyNode] = config.list(
         type=types.or_(MorphologyDependencyNode, MorphologyPipelineNode),
@@ -86,41 +85,41 @@ class Configuration:
         required=True,
     )
     """
-    Network storage configuration
+    Network storage configuration.
     """
     network: NetworkNode = config.attr(
         type=NetworkNode,
         required=True,
     )
     """
-    Network description
+    Network description.
     """
     regions: cfgdict[str, Region] = config.dict(
         type=Region,
     )
     """
-    Network regions
+    Network regions.
     """
     partitions: cfgdict[str, Partition] = config.dict(
         type=Partition,
         required=True,
     )
     """
-    Network partitions
+    Network partitions.
     """
     cell_types: cfgdict[str, CellType] = config.dict(
         type=CellType,
         required=True,
     )
     """
-    Network cell types
+    Network cell types.
     """
     placement: cfgdict[str, PlacementStrategy] = config.dict(
         type=PlacementStrategy,
         required=True,
     )
     """
-    Network placement strategies
+    Network placement strategies.
     """
     after_placement: cfgdict[str, AfterPlacementHook] = config.dict(
         type=AfterPlacementHook,
@@ -130,7 +129,7 @@ class Configuration:
         required=True,
     )
     """
-    Network connectivity strategies
+    Network connectivity strategies.
     """
     after_connectivity: cfgdict[str, AfterConnectivityHook] = config.dict(
         type=AfterConnectivityHook,
@@ -139,7 +138,7 @@ class Configuration:
         type=Simulation,
     )
     """
-    Network simulation configuration
+    Network simulation configuration.
     """
     __module__ = "bsb.config"
 

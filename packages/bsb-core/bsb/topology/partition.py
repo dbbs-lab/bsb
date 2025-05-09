@@ -104,7 +104,7 @@ class Partition(abc.ABC):
         :param chunk: The chunk to calculate voxels for.
         :type chunk: bsb.storage._chunks.Chunk
         :returns: The set of voxels that together make up the shape of this partition in
-          this chunk.
+            this chunk.
         :rtype: bsb.voxels.VoxelSet
         """
         pass
@@ -176,16 +176,26 @@ class Rhomboid(Partition, classmap_entry="rhomboid"):
     """
 
     dimensions: list[float] = config.attr(type=types.list(type=float, size=3))
-    """Sizes of the partition for each axis."""
+    """
+    Sizes of the partition for each axis.
+    """
     can_scale: bool = config.attr(type=bool, default=True)
-    """Boolean flag to authorize rescaling of the partition dimensions"""
+    """
+    Boolean flag to authorize rescaling of the partition dimensions.
+    """
     origin: list[float] = config.attr(type=types.list(type=float, size=3))
-    """Coordinate of the origin of the partition"""
+    """
+    Coordinate of the origin of the partition.
+    """
     can_move: bool = config.attr(type=bool, default=True)
-    """Boolean flag to authorize the translation of the partition"""
+    """
+    Boolean flag to authorize the translation of the partition.
+    """
     orientation: list[float] = config.attr(type=types.list(type=float, size=3))
     can_rotate: bool = config.attr(type=bool, default=True)
-    """Boolean flag to authorize the rotation of the partition"""
+    """
+    Boolean flag to authorize the rotation of the partition.
+    """
 
     def volume(self, chunk=None):
         if chunk is not None:
@@ -230,7 +240,7 @@ class Rhomboid(Partition, classmap_entry="rhomboid"):
         low_r = np.floor(self.ldc / chunk_size).astype(int)
         high_r = np.ceil(self.mdc / chunk_size).astype(int)
         # Create a grid that includes all the chunk coordinates within those data
-        coords = np.mgrid[tuple(range(low, high) for low, high in zip(low_r, high_r))]
+        coords = np.mgrid[tuple(range(low, high) for low, high in zip(low_r, high_r, strict=False))]
         # Order the coordinate grid into a list of chunk coordinates.
         return np.column_stack(tuple(dim.ravel() for dim in coords))
 
@@ -239,8 +249,8 @@ class Rhomboid(Partition, classmap_entry="rhomboid"):
         Return an approximation of this partition intersected with a chunk as a list of
         voxels.
 
-        Default implementation creates a parallelepiped intersection between the
-        LDC, MDC and chunk data.
+        Default implementation creates a parallelepiped intersection between the LDC, MDC
+        and chunk data.
         """
         low = np.maximum(self.ldc, chunk.ldc)
         high = np.minimum(self.mdc, chunk.mdc)
@@ -279,18 +289,23 @@ class Rhomboid(Partition, classmap_entry="rhomboid"):
 @config.node
 class Layer(Rhomboid, classmap_entry="layer"):
     """
-    Partition that occupies the full space of its containing region
-    except on a defined axis, where it is limited. This creates a stratum
-    within the region along the chosen axis.
+    Partition that occupies the full space of its containing region except on a defined
+    axis, where it is limited.
+
+    This creates a stratum within the region along the chosen axis.
     """
 
     dimensions = config.unset()
     thickness: float = config.attr(type=float, required=True)
-    """Thickness of the layer along its axis"""
+    """
+    Thickness of the layer along its axis.
+    """
     axis: typing.Literal["x"] | typing.Literal["y"] | typing.Literal["z"] = config.attr(
         type=types.in_(["x", "y", "z"]), default="z"
     )
-    """Axis along which the layer will be limited."""
+    """
+    Axis along which the layer will be limited.
+    """
 
     def get_layout(self, hint):
         axis = ["x", "y", "z"].index(self.axis)
@@ -354,50 +369,74 @@ class Voxels(Partition, abc.ABC, classmap_entry=None):
 @config.node
 class NrrdVoxels(Voxels, classmap_entry="nrrd"):
     """
-    Voxel partition whose voxelset is loaded from an NRRD file. By default it includes all the
-    nonzero voxels in the file, but other masking conditions can be specified. Additionally, data
-    can be associated to each voxel by inclusion of (multiple) source NRRD files.
+    Voxel partition whose voxelset is loaded from an NRRD file.
+
+    By default it includes all the nonzero voxels in the file, but other masking
+    conditions can be specified. Additionally, data can be associated to each voxel by
+    inclusion of (multiple) source NRRD files.
     """
 
     source: NrrdDependencyNode = config.attr(
         type=NrrdDependencyNode,
         required=types.mut_excl("source", "sources", required=False),
     )
-    """Path to the NRRD file containing volumetric data to associate with the partition.
-    If source is set, then sources should not be set."""
+    """
+    Path to the NRRD file containing volumetric data to associate with the partition.
+
+    If source is set, then sources should not be set.
+    """
     sources: NrrdDependencyNode = config.list(
         type=NrrdDependencyNode,
         required=types.mut_excl("source", "sources", required=False),
     )
-    """List of paths to NRRD files containing volumetric data to associate with the Partition.
-    If sources is set, then source should not be set."""
+    """
+    List of paths to NRRD files containing volumetric data to associate with the
+    Partition.
+
+    If sources is set, then source should not be set.
+    """
     mask_value: int = config.attr(type=int)
-    """Integer value to filter in mask_source (if it is set, otherwise sources/source) to create a 
-    mask of the voxel set(s) used as input."""
+    """
+    Integer value to filter in mask_source (if it is set, otherwise sources/source) to
+    create a mask of the voxel set(s) used as input.
+    """
     mask_source: NrrdDependencyNode = config.attr(type=NrrdDependencyNode)
-    """Path to the NRRD file containing the volumetric annotation data of the Partition."""
+    """
+    Path to the NRRD file containing the volumetric annotation data of the Partition.
+    """
     mask_only: bool = config.attr(type=bool, default=False)
-    """Flag to indicate no voxel data needs to be stored"""
+    """
+    Flag to indicate no voxel data needs to be stored.
+    """
     voxel_size: int = config.attr(type=int, required=True)
-    """Size of each voxel."""
+    """
+    Size of each voxel.
+    """
     keys: list[str] = config.attr(type=types.list(str))
-    """List of names to assign to each source of the Partition."""
+    """
+    List of names to assign to each source of the Partition.
+    """
     sparse: bool = config.attr(type=bool, default=True)
     """
-    Boolean flag to expect a sparse or dense mask. If the mask selects most
+    Boolean flag to expect a sparse or dense mask.
+
+    If the mask selects most
     voxels, use ``dense``, otherwise use ``sparse``.
     """
     strict: bool = config.attr(type=bool, default=True)
-    """Boolean flag to check the sources and the mask sizes. 
-    When the flag is True, sources and mask should have exactly the same sizes;
-    otherwise, sources sizes should be greater than mask sizes."""
+    """
+    Boolean flag to check the sources and the mask sizes.
+
+    When the flag is True, sources and mask should have exactly the same sizes; otherwise,
+    sources sizes should be greater than mask sizes.
+    """
 
     def get_mask(self):
         """
         Get the mask to apply on the sources' data of the partition.
 
-        :returns: A tuple of arrays, one for each dimension of the mask, containing the indices of
-            the non-zero elements in that dimension.
+        :returns: A tuple of arrays, one for each dimension of the mask, containing the
+            indices of the non-zero elements in that dimension.
         """
 
         mask_shape = self._validate()
@@ -498,26 +537,35 @@ class NrrdVoxels(Voxels, classmap_entry="nrrd"):
 @config.node
 class AllenStructure(NrrdVoxels, classmap_entry="allen"):
     """
-    Partition based on the Allen Institute for Brain Science mouse brain region ontology, later
-    referred as Allen Mouse Brain Region Hierarchy (AMBRH)
+    Partition based on the Allen Institute for Brain Science mouse brain region ontology,
+    later referred as Allen Mouse Brain Region Hierarchy (AMBRH)
     """
 
     struct_id: int = config.attr(
         type=int, required=types.mut_excl("struct_id", "struct_name", required=False)
     )
-    """Id of the region to filter within the annotation volume according to the AMBRH.
-    If struct_id is set, then struct_name should not be set."""
+    """
+    Id of the region to filter within the annotation volume according to the AMBRH.
+
+    If struct_id is set, then struct_name should not be set.
+    """
     struct_name: str = config.attr(
         type=types.str(strip=True, lower=True),
         required=types.mut_excl("struct_id", "struct_name", required=False),
         key=True,
     )
-    """Name or acronym of the region to filter within the annotation volume according to the AMBRH.
-    If struct_name is set, then struct_id should not be set."""
+    """
+    Name or acronym of the region to filter within the annotation volume according to the
+    AMBRH.
+
+    If struct_name is set, then struct_id should not be set.
+    """
 
     @config.property(type=int)
     def voxel_size(self):
-        """Size of each voxel."""
+        """
+        Size of each voxel.
+        """
         return self._voxel_size if self._voxel_size is not None else 25
 
     @voxel_size.setter

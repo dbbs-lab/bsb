@@ -34,6 +34,7 @@ class ConfigurationParser(abc.ABC):
 class ParsesReferences:
     """
     Mixin to decorate parse function of ConfigurationParser.
+
     Allows for imports and references inside configuration files.
     """
 
@@ -42,7 +43,9 @@ class ParsesReferences:
         parse = cls.parse
 
         def parse_with_references(self, content, path=None):
-            """Traverse the parsed tree and resolve any `$ref` and `$import`"""
+            """
+            Traverse the parsed tree and resolve any `$ref` and `$import`
+            """
             content, meta = parse(self, content, path)
             content = parsed_dict(content)
             self.root = content
@@ -194,8 +197,8 @@ def get_configuration_parser_classes():
 
 def get_configuration_parser(parser, **kwargs):
     """
-    Create an instance of a configuration parser that can parse configuration
-    strings into configuration trees, or serialize trees into strings.
+    Create an instance of a configuration parser that can parse configuration strings into
+    configuration trees, or serialize trees into strings.
 
     Configuration trees can be cast into Configuration objects.
     """

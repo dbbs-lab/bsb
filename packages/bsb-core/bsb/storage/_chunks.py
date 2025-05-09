@@ -105,7 +105,7 @@ Chunklike = Chunk | np.typing.ArrayLike
 
 def chunklist(chunks) -> list[Chunk]:
     """
-    Convert an iterable of chunk like objects to a sorted unique chunklist
+    Convert an iterable of chunk like objects to a sorted unique chunklist.
     """
     return sorted(set(c if isinstance(c, Chunk) else Chunk(c, None) for c in chunks))
 

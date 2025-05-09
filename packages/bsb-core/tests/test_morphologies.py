@@ -1009,7 +1009,9 @@ class TestBranchInsertion(NumpyTestCase, unittest.TestCase):
         self.assertEqual(self.m.adjacency_dictionary, target)
 
     def test_skip_in_branch_boundary(self):
-        """Test that we can skip a boundary that's in a continuum of points"""
+        """
+        Test that we can skip a boundary that's in a continuum of points.
+        """
         parser_noskip = BsbParser()
         parser_skip = BsbParser(skip_boundary_labels=["soma"])
         swc_data = [
@@ -1028,7 +1030,9 @@ class TestBranchInsertion(NumpyTestCase, unittest.TestCase):
         self.assertEqual(5, m_skip.branches[1].points[0, 0])
 
     def test_skip_branchpoint_boundary(self):
-        """Test that we can skip a boundary that's at a branch point"""
+        """
+        Test that we can skip a boundary that's at a branch point.
+        """
         parser_noskip = BsbParser()
         parser_skip = BsbParser(skip_boundary_labels=["soma"])
         swc_data = [
@@ -1050,7 +1054,9 @@ class TestBranchInsertion(NumpyTestCase, unittest.TestCase):
         self.assertEqual(7, m_skip.branches[2].points[0, 0])
 
     def test_skip_str_tagged_boundary(self):
-        """Test that we can skip a boundary that's at a branch point"""
+        """
+        Test that we can skip a boundary that's at a branch point.
+        """
         parser_skip = BsbParser(skip_boundary_labels=["blabla"], tags={2: "blabla"})
         swc_data = [
             [1, 1, 3, 3, 3, 1, -1],
@@ -1065,7 +1071,9 @@ class TestBranchInsertion(NumpyTestCase, unittest.TestCase):
         self.assertEqual(5, m_skip.branches[1].points[0, 0])
 
     def test_skip_list_tagged_boundary(self):
-        """Test that we can skip a boundary that's at a branch point"""
+        """
+        Test that we can skip a boundary that's at a branch point.
+        """
         parser_skip = BsbParser(skip_boundary_labels=["blabla"], tags={2: ["blabla"]})
         swc_data = [
             [1, 1, 3, 3, 3, 1, -1],
@@ -1080,7 +1088,9 @@ class TestBranchInsertion(NumpyTestCase, unittest.TestCase):
         self.assertEqual(5, m_skip.branches[1].points[0, 0])
 
     def test_skip_compound_boundary(self):
-        """Test that we can skip a boundary that's at a branch point"""
+        """
+        Test that we can skip a boundary that's at a branch point.
+        """
         parser_skip = BsbParser(
             skip_boundary_labels=["A", "B"], tags={2: "A", 3: "B", 4: ["A", "B"]}
         )
@@ -1284,7 +1294,7 @@ class TestMorphologyPipelineNode(
 ):
     def test_single_source(self):
         """
-        Test a simple pipeline on 1 morpho
+        Test a simple pipeline on 1 morpho.
         """
         cfg = Configuration.default(
             morphologies=[

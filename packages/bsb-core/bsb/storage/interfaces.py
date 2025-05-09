@@ -28,7 +28,7 @@ class StorageNode:
         return cls._plugins
 
 
-class Interface(abc.ABC):
+class Interface(abc.ABC):  # noqa: B024  # Child classes are abstract
     _iface_engine_key = None
 
     def __init__(self, engine):
@@ -57,7 +57,6 @@ class Engine(Interface):
 
       Collective actions can only be performed from all nodes, or deadlocks occur. This
       means in particular that they may not be called from component code.
-
     """
 
     def __init__(self, root, comm):
@@ -73,7 +72,9 @@ class Engine(Interface):
     @property
     def root(self):
         """
-        The unique identifier for the storage. Usually pathlike, but can be anything.
+        The unique identifier for the storage.
+
+        Usually pathlike, but can be anything.
         """
         return self._root
 
@@ -93,7 +94,9 @@ class Engine(Interface):
     @property
     def format(self):
         """
-        Name of the type of engine. Automatically set through the plugin system.
+        Name of the type of engine.
+
+        Automatically set through the plugin system.
         """
         return self._format
 
@@ -118,11 +121,12 @@ class Engine(Interface):
     @abc.abstractmethod
     def recognizes(root, comm):
         """
-        Must return whether the given root argument is recognized as a valid storage object.
+        Must return whether the given root argument is recognized as a valid storage
+        object.
 
         :param root: The unique identifier for the storage
-        :param mpi4py.MPI.Comm comm: MPI communicator that shares control
-          over the Storage.
+        :param mpi4py.MPI.Comm comm: MPI communicator that shares control over the
+            Storage.
         """
         pass
 
@@ -194,9 +198,10 @@ class Engine(Interface):
 
     def read_only(self):
         """
-        A context manager that enters the engine into readonly mode. In
-        readonly mode the engine does not perform any locking, write-operations or network
-        synchronization, and errors out if a write operation is attempted.
+        A context manager that enters the engine into readonly mode.
+
+        In readonly mode the engine does not perform any locking, write-operations or
+        network synchronization, and errors out if a write operation is attempted.
         """
         self._readonly = True
         return ReadOnlyManager(self)
@@ -332,7 +337,7 @@ class FileStore(Interface, engine_key="files"):
 
     def get(self, id) -> "StoredFile":
         """
-        Return a StoredFile wrapper
+        Return a StoredFile wrapper.
         """
         if not self.has(id):
             raise FileNotFoundError(f"File with id '{id}' not found.")
@@ -506,9 +511,9 @@ class PlacementSet(Interface):
     @abc.abstractmethod
     def load_rotations(self):
         """
-        Load the rotation data of the placement set
-        :returns: A rotation set
-        :rtype: ~bsb.morphologies.RotationSet
+        Load the rotation data of the placement set :returns: A rotation set :rtype:
+
+        ~bsb.morphologies.RotationSet.
         """
         pass
 
@@ -562,11 +567,11 @@ class PlacementSet(Interface):
         :type rotations: ~bsb.morphologies.RotationSet
         :param morphologies: Cell morphologies
         :type morphologies: ~bsb.morphologies.MorphologySet
-        :param additional: Additional datasets with 1 value per cell, will be stored
-          under its key in the dictionary
+        :param additional: Additional datasets with 1 value per cell, will be stored under
+            its key in the dictionary
         :type additional: dict[str, numpy.ndarray]
         :param count: Amount of entities to place. Excludes the use of any positional,
-          rotational or morphological data.
+            rotational or morphological data.
         :type count: int
         """
         pass
@@ -648,8 +653,8 @@ class PlacementSet(Interface):
     @abc.abstractmethod
     def get_labelled(self, labels=None):
         """
-        Should return the ids of the cells labelled with given labels.
-        If labels are not provided, will filter non labelled cells.
+        Should return the ids of the cells labelled with given labels. If labels are not
+        provided, will filter non labelled cells.
 
         :param labels: List of labels
         :type labels: list[str]
@@ -692,7 +697,7 @@ class PlacementSet(Interface):
         :raises: DatasetNotFoundError if no morphologies are found.
         """
         mset = self.load_morphologies() if morpho_cache is None else morpho_cache
-        expansion = [*zip([0] * 4 + [1] * 4, ([0] * 2 + [1] * 2) * 2, [0, 1] * 4)]
+        expansion = [*zip([0] * 4 + [1] * 4, ([0] * 2 + [1] * 2) * 2, [0, 1] * 4, strict=False)]
 
         def _box_of(m, o, r):
             oo = (m["ldc"], m["mdc"])
@@ -769,14 +774,14 @@ class MorphologyRepository(Interface, engine_key="morphologies"):
     @abc.abstractmethod
     def save(self, name, morphology, overwrite=False):
         """
-        Store a morphology
+        Store a morphology.
 
         :param name: Key to store the morphology under.
         :type name: str
         :param morphology: Morphology to store
         :type morphology: bsb.morphologies.Morphology
         :param overwrite: Overwrite any stored morphology that already exists under that
-          name
+            name
         :type overwrite: bool
         :returns: The stored morphology
         :rtype: ~bsb.storage.interfaces.StoredMorphology
@@ -786,7 +791,7 @@ class MorphologyRepository(Interface, engine_key="morphologies"):
     @abc.abstractmethod
     def has(self, name):
         """
-        Check whether a morphology under the given name exists
+        Check whether a morphology under the given name exists.
 
         :param name: Key of the stored morphology.
         :type name: str
@@ -838,6 +843,7 @@ class MorphologyRepository(Interface, engine_key="morphologies"):
     def get_all_meta(self):
         """
         Get the metadata of all stored morphologies.
+
         :returns: Metadata dictionary
         :rtype: dict
         """
@@ -847,6 +853,7 @@ class MorphologyRepository(Interface, engine_key="morphologies"):
     def set_all_meta(self, all_meta):
         """
         Set the metadata of all stored morphologies.
+
         :param all_meta: Metadata dictionary.
         :type all_meta: dict
         """
@@ -855,7 +862,7 @@ class MorphologyRepository(Interface, engine_key="morphologies"):
     @abc.abstractmethod
     def update_all_meta(self, meta):
         """
-        Update the metadata of stored morphologies with the provided key values
+        Update the metadata of stored morphologies with the provided key values.
 
         :param meta: Metadata dictionary.
         :type meta: str
@@ -916,13 +923,15 @@ class ConnectivitySet(Interface):
     @abc.abstractmethod
     def exists(engine, tag):
         """
-        Must check the existence of the connectivity set
+        Must check the existence of the connectivity set.
         """
         pass
 
     def require(self, engine, tag):
         """
-        Must make sure the connectivity set exists. The default
+        Must make sure the connectivity set exists.
+
+        The default
         implementation uses the class's ``exists`` and ``create`` methods.
         """
         if not self.exists(engine, tag):
@@ -931,7 +940,7 @@ class ConnectivitySet(Interface):
     @abc.abstractmethod
     def clear(self, chunks=None):
         """
-        Must clear (some chunks of) the placement set
+        Must clear (some chunks of) the placement set.
         """
         pass
 
@@ -972,8 +981,8 @@ class ConnectivitySet(Interface):
     @abc.abstractmethod
     def get_global_chunks(self, direction, local_):
         """
-        Must list all the global chunks that contain data coming from a ``local`` chunk
-        in the given ``direction``
+        Must list all the global chunks that contain data coming from a ``local`` chunk in
+        the given ``direction``
         """
         pass
 
@@ -1028,9 +1037,9 @@ class ConnectivitySet(Interface):
         Must load all the connections from ``direction`` perspective in ``local_``.
 
         :returns: The local connection locations, a vector of the global connection chunks
-          (1 chunk id per connection), and the global connections locations. To identify a
-          cell in the global connections, use the corresponding chunk id from the second
-          return value.
+            (1 chunk id per connection), and the global connections locations. To identify
+            a cell in the global connections, use the corresponding chunk id from the
+            second return value.
         :rtype: Tuple[numpy.ndarray, numpy.ndarray, numpy.ndarray]
         """
         pass
@@ -1070,15 +1079,16 @@ class ConnectivityIterator:
         :rtype: Tuple[numpy.ndarray, numpy.ndarray]
         """
         for _, pre_locs, _, post_locs in self.chunk_iter():
-            yield from zip(pre_locs, post_locs)
+            yield from zip(pre_locs, post_locs, strict=False)
 
     def chunk_iter(self):
         """
         Iterate over the connection data chunk by chunk.
 
-        :returns: The presynaptic chunk, presynaptic locations, postsynaptic chunk,
-          and postsynaptic locations.
-        :rtype: Tuple[~bsb.storage._chunks.Chunk, numpy.ndarray, ~bsb.storage._chunks.Chunk, numpy.ndarray]
+        :returns: The presynaptic chunk, presynaptic locations, postsynaptic chunk, and
+            postsynaptic locations.
+        :rtype: Tuple[~bsb.storage._chunks.Chunk, numpy.ndarray,
+            ~bsb.storage._chunks.Chunk, numpy.ndarray]
         """
         yield from (
             self._offset_block(*data)
@@ -1134,7 +1144,7 @@ class ConnectivityIterator:
         pre_locs = np.empty((sum(lens), 3), dtype=int)
         post_locs = np.empty((sum(lens), 3), dtype=int)
         ptr = 0
-        for len_, pre_block, post_block in zip(lens, pre_blocks, post_blocks):
+        for len_, pre_block, post_block in zip(lens, pre_blocks, post_blocks, strict=False):
             pre_locs[ptr : ptr + len_] = pre_block
             post_locs[ptr : ptr + len_] = post_block
             ptr += len_

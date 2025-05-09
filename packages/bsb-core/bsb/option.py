@@ -16,8 +16,10 @@ from .reporting import warn
 
 class OptionDescriptor:
     """
-    Base option property descriptor. Can be inherited from to create a cascading property
-    such as the default CLI, env & script descriptors.
+    Base option property descriptor.
+
+    Can be inherited from to create a cascading property such as the default CLI, env &
+    script descriptors.
     """
 
     def __init_subclass__(cls, slug=None, **kwargs):
@@ -143,8 +145,9 @@ class ScriptOptionDescriptor(OptionDescriptor, slug="script"):
 
 class ProjectOptionDescriptor(OptionDescriptor, slug="project"):
     """
-    Descriptor that retrieves and stores values in the `pyproject.toml` file. Traverses
-    up the filesystem tree until one is found.
+    Descriptor that retrieves and stores values in the `pyproject.toml` file.
+
+    Traverses up the filesystem tree until one is found.
     """
 
     def __init__(self, *tags):
@@ -200,7 +203,9 @@ class ProjectOptionDescriptor(OptionDescriptor, slug="project"):
 
 class BsbOption:
     """
-    Base option class. Can be subclassed to create new options.
+    Base option class.
+
+    Can be subclassed to create new options.
     """
 
     def __init__(self, positional=False):
@@ -262,7 +267,8 @@ class BsbOption:
 
     def get(self, prio=None):
         """
-        Get the option's value. Cascades the script, cli, env & default descriptors together.
+        Get the option's value. Cascades the script, cli, env & default descriptors
+        together.
 
         :returns: option value
         """

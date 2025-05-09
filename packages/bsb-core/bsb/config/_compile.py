@@ -6,11 +6,12 @@ _reserved_keywords = ["_parent", "_key"]
 
 def _wrap_reserved(t):
     """
-    Wrap a type handler in a wrapper that accepts all reserved keyword arguments that
-    the config system will push into the type handler call, and pass only those that
-    the original type handler accepts. This way type handlers can accept any
-    combination of the reserved keyword args without raising TypeErrors when they do
-    not accept one.
+    Wrap a type handler in a wrapper that accepts all reserved keyword arguments that the
+    config system will push into the type handler call, and pass only those that the
+    original type handler accepts.
+
+    This way type handlers can accept any combination of the reserved keyword args without
+    raising TypeErrors when they do not accept one.
     """
     from .types import TypeHandler
 

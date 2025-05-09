@@ -313,8 +313,8 @@ class TestPlacementStrategies(
 
     def test_regression_issue_879(self):
         """
-        If different partitions share chunks, these chunks should be dealt
-        only once by the placement strategy.
+        If different partitions share chunks, these chunks should be dealt only once by
+        the placement strategy.
         """
         cfg = get_test_config("single")
         cfg.partitions.add("test_layer2", {"thickness": 50.0})
@@ -518,8 +518,10 @@ class TestVoxelDensities(RandomStorageFixture, unittest.TestCase, engine_name="h
     @skip_parallel
     def test_packing_factor_warning(self):
         """
-        Test that particle placement warns for high density packing. Skipped during parallel because the warning
-        is raised on a worker and can't be asserted on all nodes.
+        Test that particle placement warns for high density packing.
+
+        Skipped during parallel because the warning is raised on a worker and can't be
+        asserted on all nodes.
         """
         cfg = self._config_packing_fact()
         cfg.cell_types["test_cell"] = dict(spatial=dict(radius=1, count=100))

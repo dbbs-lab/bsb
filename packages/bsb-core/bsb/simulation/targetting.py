@@ -199,13 +199,19 @@ class CylindricalTargetting(
     """
 
     origin: np.ndarray[float] = config.attr(type=types.ndarray(shape=(2,), dtype=float))
-    """Coordinates of the base of the cylinder for each non main axis"""
+    """
+    Coordinates of the base of the cylinder for each non main axis.
+    """
     axis: typing.Literal["x"] | typing.Literal["y"] | typing.Literal["z"] = config.attr(
         type=types.in_(["x", "y", "z"]), default="y"
     )
-    """Main axis of the cylinder"""
+    """
+    Main axis of the cylinder.
+    """
     radius: float = config.attr(type=float, required=True)
-    """Radius of the cylinder"""
+    """
+    Radius of the cylinder.
+    """
 
     @FractionFilter.filter
     def get_targets(self, adapter, simulation, simdata):

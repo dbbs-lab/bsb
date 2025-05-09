@@ -34,7 +34,9 @@ class Region(abc.ABC):
     children: list[Region | Partition] = config.reflist(
         refs.regional_ref, backref="region", required=True
     )
-    """Reference to Regions or Partitions belonging to this region."""
+    """
+    Reference to Regions or Partitions belonging to this region.
+    """
 
     @property
     def data(self):
@@ -70,8 +72,9 @@ class Region(abc.ABC):
 class RegionGroup(Region, classmap_entry="group"):
     """
     Base implementation of Region.
-    Any transformation on the region will be directly
-    applied to its children (Regions or Partitions).
+
+    Any transformation on the region will be directly applied to its children (Regions or
+    Partitions).
     """
 
     def rotate(self, rotation):
@@ -96,14 +99,18 @@ class Stack(RegionGroup, classmap_entry="stack"):
     axis: typing.Literal["x"] | typing.Literal["y"] | typing.Literal["z"] = config.attr(
         type=types.in_(["x", "y", "z"]), default="z"
     )
-    """Axis along which the stack's children will be stacked"""
+    """
+    Axis along which the stack's children will be stacked.
+    """
     anchor: Region | Partition = config.ref(refs.regional_ref)
-    """Reference to one child of the stack, which origin will become the origin of the stack"""
+    """
+    Reference to one child of the stack, which origin will become the origin of the stack.
+    """
 
     def _resolve_anchor_offset(self, children, axis_idx):
         """
-        Check if the anchor is one of the children of the stack and
-        if so, return the offset so the anchor is at the origin of the stack.
+        Check if the anchor is one of the children of the stack and if so, return the
+        offset so the anchor is at the origin of the stack.
         """
         children_owners = [child._owner for child in children]
         if self.anchor is not None and self.anchor in children_owners:

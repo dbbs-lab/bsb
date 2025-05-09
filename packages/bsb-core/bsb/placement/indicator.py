@@ -74,7 +74,7 @@ class PlacementIndicator:
     def guess(self, chunk=None, voxels=None):
         """
         Estimate the count of cell to place based on the cell_type's PlacementIndications.
-        Float estimates are converted to int using an acceptance-rejection method.
+        Float estimates are converted to int using an acceptance- rejection method.
 
         :param chunk: if provided, will estimate the number of cell within the Chunk.
         :type chunk: bsb.storage._chunks.Chunk

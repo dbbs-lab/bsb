@@ -109,7 +109,7 @@ class CsvImportPlacement(ImportPlacement):
 
     def _flush(self, indicators):
         cell_types = self.get_considered_cell_types()
-        iter = zip(cell_types, self._cache.values())
+        iter = zip(cell_types, self._cache.values(), strict=False)
         if self.progress_bar:
             iter = tqdm(
                 iter,
@@ -132,7 +132,7 @@ class CsvImportPlacement(ImportPlacement):
                     np.array(data[0]),
                     chunk,
                     additional={
-                        name: col for name, col in zip(self._other_colnames, additional)
+                        name: col for name, col in zip(self._other_colnames, additional, strict=False)
                     },
                 )
         self._reset_cache()

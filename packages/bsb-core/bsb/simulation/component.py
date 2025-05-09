@@ -1,11 +1,10 @@
-import abc
 
 from .. import config
 from .._util import obj_str_insert
 
 
 @config.node
-class SimulationComponent(abc.ABC):
+class SimulationComponent:
     name: str = config.attr(key=True)
 
     @property

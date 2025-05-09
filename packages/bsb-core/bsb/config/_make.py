@@ -123,9 +123,9 @@ class NodeKwargs(dict):
 
 def compose_nodes(*node_classes):
     """
-    Create a composite mixin class of the given classes. Inherit from the returned class
-    to inherit from more than one node class.
+    Create a composite mixin class of the given classes.
 
+    Inherit from the returned class to inherit from more than one node class.
     """
     meta = type("ComposedMetaclass", tuple(type(cls) for cls in node_classes), {})
     return meta("CompositionMixin", node_classes, {})

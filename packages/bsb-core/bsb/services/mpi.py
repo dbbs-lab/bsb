@@ -8,6 +8,7 @@ from ._util import MockModule
 class MPIService:
     """
     Interface for MPI Communication context.
+
     This class will also emulate MPI Communication context in single node context.
     """
 

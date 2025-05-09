@@ -1,5 +1,5 @@
 """
-bsb.config module
+bsb.config module.
 
 Contains the dynamic attribute system; Use ``@bsb.config.root/node/dynamic/pluggable`` to
 decorate your classes and add class attributes using ``x =

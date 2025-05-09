@@ -42,12 +42,12 @@ class TestVoxelSet(bsb_test.NumpyTestCase, unittest.TestCase):
         self.empty = vs.empty()
         self.all = dict(
             _ic(
-                zip((f"regular_{i}" for i in _ico()), self.regulars),
-                zip((f"irregular_{i}" for i in _ico()), self.irregulars),
-                zip((f"unequal_{i}" for i in _ico()), self.unequals),
-                zip((f"zero_sized_{i}" for i in _ico()), self.zero_sized),
-                zip((f"dupes_{i}" for i in _ico()), self.dupes),
-                zip((f"empty_{i}" for i in _ico()), (self.empty,)),
+                zip((f"regular_{i}" for i in _ico()), self.regulars, strict=False),
+                zip((f"irregular_{i}" for i in _ico()), self.irregulars, strict=False),
+                zip((f"unequal_{i}" for i in _ico()), self.unequals, strict=False),
+                zip((f"zero_sized_{i}" for i in _ico()), self.zero_sized, strict=False),
+                zip((f"dupes_{i}" for i in _ico()), self.dupes, strict=False),
+                zip((f"empty_{i}" for i in _ico()), (self.empty,), strict=False),
             )
         )
 
@@ -78,8 +78,8 @@ class TestVoxelSet(bsb_test.NumpyTestCase, unittest.TestCase):
         ]
         self.data_dict = dict(
             _ic(
-                zip((f"data1d_{i}" for i in _ico()), self.data1d),
-                zip((f"data2d_{i}" for i in _ico()), self.data2d),
+                zip((f"data1d_{i}" for i in _ico()), self.data1d, strict=False),
+                zip((f"data2d_{i}" for i in _ico()), self.data2d, strict=False),
             )
         )
         self.data_keys = [
@@ -381,7 +381,7 @@ class TestVoxelSet(bsb_test.NumpyTestCase, unittest.TestCase):
                     self.assertIs(tuple, type(bounds), "should be tuple")
                     self.assertEqual(3, len(bounds[0]), "3 dim")
                     self.assertEqual(3, len(bounds[1]), "3 dim")
-                    self.assertTrue(all(a <= b for a, b in zip(*bounds)), "min max")
+                    self.assertTrue(all(a <= b for a, b in zip(*bounds, strict=False)), "min max")
         with self.assertRaises(EmptyVoxelSetError):
             _empty = self.empty.bounds
         self.unequals[0]
@@ -485,8 +485,8 @@ class TestVoxelSet(bsb_test.NumpyTestCase, unittest.TestCase):
             ["0", "1", "2", "a", "b"], cat._data.keys, "should add unnumbered cols"
         )
         self.assertTrue(
-            np.all(cat._data[3:, :3] == None),
-            "unum cols should be first",  # noqa: E711
+            np.all(cat._data[3:, :3] == None),  # noqa: E711
+            "unum cols should be first",
         )
 
     def test_concatenate_partial_same_datakeys(self):

@@ -106,7 +106,6 @@ def _bad_flag(flag: bool):
 
 class Scaffold:
     """
-
     This is the main object of the bsb package, it represents a network and puts together
     all the pieces that make up the model description such as the
     :class:`~.config.Configuration` with the technical side like the
@@ -243,7 +242,9 @@ class Scaffold:
 
     def clear(self):
         """
-        Clears the storage. This deletes any existing network data!
+        Clears the storage.
+
+        This deletes any existing network data!
         """
         self.storage.renew(self)
 
@@ -261,9 +262,10 @@ class Scaffold:
 
     def resize(self, x=None, y=None, z=None):
         """
-        Updates the topology boundary indicators. Use before placement, updates
-        only the abstract topology tree, does not rescale, prune or otherwise
-        alter already existing placement data.
+        Updates the topology boundary indicators.
+
+        Use before placement, updates only the abstract topology tree, does not rescale,
+        prune or otherwise alter already existing placement data.
         """
         from .topology._layout import box_layout
 
@@ -481,7 +483,7 @@ class Scaffold:
         chunk=None,
     ):
         """
-        Place cells inside the scaffold
+        Place cells inside the scaffold.
 
         .. code-block:: python
 
@@ -631,9 +633,9 @@ class Scaffold:
 
     def get_connectivity_set(self, tag=None, pre=None, post=None) -> ConnectivitySet:
         """
-        Return a connectivity set from its name according to the output formatter.
-        The name can be specified directly with tag or with deduced from pre and post
-        if there is only one connectivity set matching this pair.
+        Return a connectivity set from its name according to the output formatter. The
+        name can be specified directly with tag or with deduced from pre and post if there
+        is only one connectivity set matching this pair.
 
         :param tag: Unique identifier of the connectivity set in the output formatter
         :type tag: str
@@ -849,11 +851,10 @@ class Scaffold:
 
     def register_pool_cached_item(self, id, cleanup):
         """
-        Registers a cleanup function for items cached during a parallel workflow.
-        Internal use only.
+        Registers a cleanup function for items cached during a parallel workflow. Internal
+        use only.
 
-        :param id: Id of the cached item. Should be unique but identical across MPI
-          nodes
+        :param id: Id of the cached item. Should be unique but identical across MPI nodes
         :param cleanup: A callable that cleans up the cached item.
         """
         if id in self._pool_cache:

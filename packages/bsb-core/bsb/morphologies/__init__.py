@@ -1,5 +1,5 @@
 """
-Morphology module
+Morphology module.
 """
 
 # This is a note to myself, should expand into docs:
@@ -34,7 +34,7 @@ from ..voxels import VoxelSet
 class MorphologySet:
     """
     Associates a set of :class:`StoredMorphologies
-    <bsb.storage.interfaces.StoredMorphology>` to cells
+    <bsb.storage.interfaces.StoredMorphology>` to cells.
     """
 
     def __init__(self, loaders, m_indices=None, /, labels=None):
@@ -132,11 +132,11 @@ class MorphologySet:
         """
         Iterate over the morphologies in a MorphologySet with full control over caching.
 
-        :param cache: Use :ref:`Soft caching<soft-caching>` (1 copy stored in mem per cache miss, 1 copy
-          created from that per cache hit).
+        :param cache: Use :ref:`Soft caching<soft-caching>` (1 copy stored in mem per
+            cache miss, 1 copy created from that per cache hit).
         :type cache: bool
-        :param hard_cache: Use :ref:`Hard caching<hard-caching>` (1 copy stored on the loader, always
-          same copy returned from that loader forever).
+        :param hard_cache: Use :ref:`Hard caching<hard-caching>` (1 copy stored on the
+            loader, always same copy returned from that loader forever).
         """
         if hard_cache:
 
@@ -240,7 +240,9 @@ class MorphologySet:
 
 class RotationSet:
     """
-    Set of rotations. Returned rotations are of :class:`scipy.spatial.transform.Rotation`
+    Set of rotations.
+
+    Returned rotations are of :class:`scipy.spatial.transform.Rotation`
     """
 
     def __init__(self, data):
@@ -418,8 +420,8 @@ class SubTree:
         Return a depth-first flattened array of all or the selected branches.
 
         :param list labels: Names of the labels to select.
-        :returns: List of all branches, or the ones fully labelled with any of
-          the given labels.
+        :returns: List of all branches, or the ones fully labelled with any of the given
+            labels.
         :rtype: list
         """
         root_iter = (branch_iter(root) for root in self.roots)
@@ -528,9 +530,9 @@ class SubTree:
 
     def rotate(self, rotation, center=None):
         """
-        Rotate the entire Subtree with respect to the center.
-        The rotation angles are assumed to be in degrees.
-        If the center is not provided, the Subtree will rotate from [0, 0, 0].
+        Rotate the entire Subtree with respect to the center. The rotation angles are
+        assumed to be in degrees. If the center is not provided, the Subtree will rotate
+        from [0, 0, 0].
 
         :param rotation: Scipy rotation
         :type rotation: scipy.spatial.transform.Rotation | list[float,float,float]
@@ -557,14 +559,15 @@ class SubTree:
 
     def root_rotate(self, rot, downstream_of=0):
         """
-        Rotate the subtree emanating from each root around the start of that root
-        If downstream_of is provided, will rotate points starting from the index provided (only for
-        subtrees with a single root).
+        Rotate the subtree emanating from each root around the start of that root If
+        downstream_of is provided, will rotate points starting from the index provided
+        (only for subtrees with a single root).
 
         :param rot: Scipy rotation to apply to the subtree.
         :type rot: scipy.spatial.transform.Rotation
-        :param downstream_of: index of the point in the subtree from which the rotation should be
-            applied. This feature works only when the subtree has only one root branch.
+        :param downstream_of: index of the point in the subtree from which the rotation
+            should be applied. This feature works only when the subtree has only one root
+            branch.
         :returns: rotated Morphology
         :rtype: bsb.morphologies.SubTree
         """
@@ -611,7 +614,7 @@ class SubTree:
 
     def center(self):
         """
-        Center the morphology on the origin
+        Center the morphology on the origin.
         """
         self.translate(-self.origin)
         return self
@@ -642,7 +645,9 @@ class SubTree:
 
     def simplify_branches(self, epsilon):
         """
-        Apply Ramer–Douglas–Peucker algorithm to all points of all branches of the SubTree.
+        Apply Ramer–Douglas–Peucker algorithm to all points of all branches of the
+        SubTree.
+
         :param epsilon: Epsilon to be used in the algorithm.
         """
         for branch in self.branches:
@@ -749,7 +754,7 @@ class Morphology(SubTree):
     def __eq__(self, other):
         return len(self.branches) == len(other.branches) and all(
             b1.is_terminal == b2.is_terminal and (not b1.is_terminal or b1 == b2)
-            for b1, b2 in zip(self.branches, other.branches)
+            for b1, b2 in zip(self.branches, other.branches, strict=False)
         )
 
     def __lt__(self, other):
@@ -782,7 +787,7 @@ class Morphology(SubTree):
                 next(_p[k].dtype for b in branches if k in (_p := b._properties))
                 for k in all_props
             ]
-            props = {k: np.empty(len_, dtype=t) for k, t in zip(all_props, types)}
+            props = {k: np.empty(len_, dtype=t) for k, t in zip(all_props, types, strict=False)}
             labels = EncodedLabels.concatenate(*(b._labels for b in branches))
             ptr = 0
             for branch in self.branches:
@@ -814,7 +819,8 @@ class Morphology(SubTree):
     @property
     def adjacency_dictionary(self):
         """
-        Return a dictonary associating to each key (branch index) a list of adjacent branch indices
+        Return a dictonary associating to each key (branch index) a list of adjacent
+        branch indices.
         """
         branches = self.branches
         idmap = {b: n for n, b in enumerate(branches)}
@@ -845,7 +851,7 @@ class Morphology(SubTree):
     def get_label_mask(self, labels):
         """
         Get a mask corresponding to all the points labelled with 1 or more of the given
-        labels
+        labels.
         """
         self.optimize()
         return self.labels.get_mask(labels)
@@ -913,7 +919,7 @@ class Morphology(SubTree):
             nbranch = None
             # Make all the sub branches. Connect the first to the parent, and store the
             # last in the map, for children to be connected to.
-            for start, end in zip(starts, ends):
+            for start, end in zip(starts, ends, strict=False):
                 nbranch = Branch(*buffers.get_shared(ptr + start, ptr + end))
                 # Store where this branch came from, for loc mapping.
                 nbranch._copied_from_branch = og_id
@@ -967,6 +973,7 @@ class Morphology(SubTree):
     def to_swc(self, file):
         """
         Create a SWC file from a Morphology.
+
         :param file: path to write to
         """
         file_data = _morpho_to_swc(self)
@@ -1027,8 +1034,10 @@ def _copy_api(cls, wrap=lambda self: self):
 @_copy_api(SubTree, lambda self: SubTree([self]))
 class Branch:
     """
-    A vector based representation of a series of point in space. Can be a root or
-    connected to a parent branch. Can be a terminal branch or have multiple children.
+    A vector based representation of a series of point in space.
+
+    Can be a root or connected to a parent branch. Can be a terminal branch or have
+    multiple children.
     """
 
     def __init__(self, points, radii, labels=None, properties=None, children=None):
@@ -1118,7 +1127,7 @@ class Branch:
     @property
     def size(self):
         """
-        Returns the amount of points on this branch
+        Returns the amount of points on this branch.
 
         :returns: Number of points on the branch.
         :rtype: int
@@ -1153,7 +1162,6 @@ class Branch:
         .. warning::
 
            Constructing a kd-tree takes time and should only be used for repeat queries.
-
         """
         import scipy.spatial
 
@@ -1251,8 +1259,8 @@ class Branch:
     @property
     def fractal_dim(self):
         """
-        Return the fractal dimension of this branch, computed as the coefficient
-        of the line fitting the log-log plot of path vs euclidean distances of its points.
+        Return the fractal dimension of this branch, computed as the coefficient of the
+        line fitting the log-log plot of path vs euclidean distances of its points.
         """
         if len(self.points) == 0:
             raise EmptyBranchError("Empty branch has no fractal dimension") from None
@@ -1283,8 +1291,10 @@ class Branch:
     @property
     def labels(self):
         """
-        Return the labels of the points on this branch. Labels are represented as a number
-        that is associated to a set of labels. See :ref:`Labels <morphology_labels>` for more info.
+        Return the labels of the points on this branch.
+
+        Labels are represented as a number that is associated to a set of labels. See
+        :ref:`Labels <morphology_labels>` for more info.
         """
         return self._labels
 
@@ -1387,7 +1397,8 @@ class Branch:
 
         :param branch: Branch to be attached
         :type branch: :class:`Branch <bsb.morphologies.Branch>`
-        :param index: Index or coordinates of the cutpoint; if coordinates are given, the closest point to the coordinates is used.
+        :param index: Index or coordinates of the cutpoint; if coordinates are given, the
+            closest point to the coordinates is used.
         :type: numpy.ndarray | int
         """
         index = np.array(index, copy=False)
@@ -1454,7 +1465,7 @@ class Branch:
             self.points[:, 2],
             self.radii,
             self.labels.walk(),
-            *self._properties.values(),
+            *self._properties.values(), strict=False,
         )
 
     def contains_labels(self, labels):
@@ -1469,7 +1480,7 @@ class Branch:
 
     def get_points_labelled(self, labels):
         """
-        Filter out all points with certain labels
+        Filter out all points with certain labels.
 
         :param labels: The labels to check for.
         :type labels: list[str] | numpy.ndarray[str]
@@ -1480,7 +1491,7 @@ class Branch:
 
     def get_label_mask(self, labels):
         """
-        Return a mask for the specified labels
+        Return a mask for the specified labels.
 
         :param labels: The labels to check for.
         :type labels: list[str] | numpy.ndarray[str]
@@ -1491,9 +1502,9 @@ class Branch:
 
     def introduce_point(self, index, position, radius=None, labels=None, properties=None):
         """
-        Insert a new point at ``index``, before the existing point at ``index``.
-        Radius, labels and extra properties can be set or will be copied from the
-        existing point at ``index``.
+        Insert a new point at ``index``, before the existing point at ``index``. Radius,
+        labels and extra properties can be set or will be copied from the existing point
+        at ``index``.
 
         :param index: Index of the new point.
         :type index: int
@@ -1572,7 +1583,7 @@ class Branch:
         Return the branch as a vector of arclengths in the closed interval [0, 1]. An
         arclength is the distance each point to the start of the branch along the branch
         axis, normalized by total branch length. A point at the start will have an
-        arclength close to 0, and a point near the end an arclength close to 1
+        arclength close to 0, and a point near the end an arclength close to 1.
 
         :returns: Vector of branch points as arclengths.
         :rtype: :class:`numpy.ndarray`
@@ -1604,10 +1615,13 @@ class Branch:
 
     def get_axial_distances(self, idx_start=0, idx_end=-1, return_max=False):
         """
-        Return the displacements or its max value of a subset of branch points from its axis vector.
-        :param idx_start = 0: index of the first point of the subset.
-        :param idx_end = -1: index of the last point of the subset.
-        :param return_max = False: if True the function only returns the max value of displacements, otherwise the entire array.
+        Return the displacements or its max value of a subset of branch points from its
+        axis vector.
+
+        :param int idx_start: index of the first point of the subset.
+        :param int idx_end: index of the last point of the subset.
+        :param bool return_max: if True the function only returns the max value of
+            displacements, otherwise the entire array.
         """
         start = self.points[idx_start]
         end = self.points[idx_end]
@@ -1629,7 +1643,7 @@ class Branch:
 
     def delete_point(self, index):
         """
-        Remove a point from the branch
+        Remove a point from the branch.
 
         :param int index: index position of the point to remove
         :returns: the branch where the point has been removed
@@ -1644,10 +1658,12 @@ class Branch:
 
     def simplify(self, epsilon, idx_start=0, idx_end=-1):
         """
-        Apply Ramer–Douglas–Peucker algorithm to all points or a subset of points of the branch.
-        :param epsilon: Epsilon to be used in the algorithm.
-        :param idx_start = 0: Index of the first element of the subset of points to be reduced.
-        :param epsilon = -1: Index of the last element of the subset of points to be reduced.
+        Apply Ramer–Douglas–Peucker algorithm to all points or a subset of points of the
+        branch.
+
+        :param epsilon: Epsilon to be used in the algorithm. :param idx_start = 0: Index
+            of the first element of the subset of points to be reduced. :param epsilon =
+            -1: Index of the last element of the subset of points to be reduced.
         """
         if len(self.points) < 3:
             return

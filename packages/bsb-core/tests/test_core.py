@@ -15,7 +15,9 @@ class TestCore(
         super().setUp()
 
     def test_from_storage(self):
-        """Use the `from_storage` function to load a network."""
+        """
+        Use the `from_storage` function to load a network.
+        """
         self.network.compile(clear=True)
         core.from_storage(self.network.storage.root)
 
@@ -31,7 +33,7 @@ class TestCore(
 
     def test_set_netw_config(self):
         """
-        Test resetting the configuration object
+        Test resetting the configuration object.
         """
         self.network.configuration = Configuration.default(
             regions=dict(x=dict(children=[]))
@@ -59,7 +61,7 @@ class TestCore(
 
     def test_get_placement_sets(self):
         """
-        Test that placement sets for cell types are automatically initialized
+        Test that placement sets for cell types are automatically initialized.
         """
         self.network.cell_types.add("my_type", spatial=dict(radius=2, density=1))
         pslist = self.network.get_placement_sets()

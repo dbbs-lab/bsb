@@ -105,7 +105,7 @@ class CsvImportConnectivity(ImportConnectivity):
                 post_block = []
                 other_block = []
                 for i, line in enumerate(reader):
-                    ids = [map_(_safe_int(line[c])) for c, map_ in zip(cols, mappers)]
+                    ids = [map_(_safe_int(line[c])) for c, map_ in zip(cols, mappers, strict=False)]
                     other = [_safe_float(line[c]) for c in other_cols]
                     if ids[0] > -1 and ids[1] > -1:
                         pre_block.append(ids[0])

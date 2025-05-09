@@ -410,9 +410,13 @@ class CodeDependencyNode(FileDependencyNode):
     """
 
     module: str = config.attr(type=str, required=types.shortform())
-    """Should be either the path to a python file or a import like string"""
+    """
+    Should be either the path to a python file or a import like string.
+    """
     attr: str = config.attr(type=str)
-    """Attribute to extract from the loaded script"""
+    """
+    Attribute to extract from the loaded script.
+    """
 
     @config.property
     def file(self):
@@ -504,7 +508,7 @@ class NrrdDependencyNode(FilePipelineMixin, FileDependencyNode):
 
 class MorphologyOperationCallable(OperationCallable):
     """
-    Hello
+    Hello.
     """
 
     def __call__(self, obj: Morphology, **kwargs: typing.Any) -> Morphology:
@@ -522,6 +526,7 @@ class MorphologyOperation(Operation):
 class MorphologyDependencyNode(FilePipelineMixin, FileDependencyNode):
     """
     Configuration dependency node to load morphology files.
+
     The content of these files will be stored in bsb.morphologies.Morphology instances.
     """
 
@@ -529,8 +534,10 @@ class MorphologyDependencyNode(FilePipelineMixin, FileDependencyNode):
     name: str = config.attr(type=str, default=None, required=False)
     parser: MorphologyParser = config.attr(type=MorphologyParser, default={})
     """
-    Name associated to the morphology. If not provided, the program will use the name of the file 
-    in which the morphology is stored. 
+    Name associated to the morphology.
+
+    If not provided, the program will use the name of the file in which the morphology is
+    stored.
     """
 
     def store_content(self, content, *args, encoding=None, meta=None):
@@ -579,7 +586,8 @@ class MorphologyDependencyNode(FilePipelineMixin, FileDependencyNode):
 
     def store_object(self, morpho, hash_):
         """
-        Save a morphology into the circuit file under the name of this instance morphology.
+        Save a morphology into the circuit file under the name of this instance
+        morphology.
 
         :param hash_: Hash key to store as metadata with the morphology
         :type hash_: str

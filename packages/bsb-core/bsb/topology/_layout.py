@@ -5,10 +5,11 @@ import numpy as np
 
 class Layout:
     """
-    Container class for all types of partition data. The layout swaps the data of the
-    partition with temporary layout associated data, and tries out experimental changes
-    to the partition data, if the layout process fails, the original partition data is
-    reinstated.
+    Container class for all types of partition data.
+
+    The layout swaps the data of the partition with temporary layout associated data, and
+    tries out experimental changes to the partition data, if the layout process fails, the
+    original partition data is reinstated.
     """
 
     def __init__(self, data, owner=None, children=None, frozen=False):
@@ -63,9 +64,11 @@ class Layout:
 class PartitionData(abc.ABC):
     """
     The partition data is a class that stores the description of a partition for a
-    partition. This allows the Partition interface to define mutating operations such as
-    translate, rotate, scale; for a dry-run we only have to swap out the actual data with
-    temporary data, and the mutation is prevented.
+    partition.
+
+    This allows the Partition interface to define mutating operations such as translate,
+    rotate, scale; for a dry-run we only have to swap out the actual data with temporary
+    data, and the mutation is prevented.
     """
 
     @abc.abstractmethod

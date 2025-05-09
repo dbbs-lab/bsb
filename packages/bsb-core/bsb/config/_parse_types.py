@@ -6,9 +6,13 @@ from ..exceptions import ConfigurationWarning, FileImportError, ParserError
 
 class parsed_node:
     _key = None
-    """Key to reference the node"""
+    """
+    Key to reference the node.
+    """
     _parent: parsed_node = None
-    """Parent node"""
+    """
+    Parent node.
+    """
 
     def location(self):
         return "/" + "/".join(str(part) for part in self._location_parts([]))
@@ -41,7 +45,7 @@ def _traverse_wrap(node, iter):
 class parsed_dict(dict, parsed_node):
     def merge(self, other):
         """
-        Recursively merge the values of another dictionary into us
+        Recursively merge the values of another dictionary into us.
         """
         for key, value in other.items():
             if key in self and isinstance(self[key], dict) and isinstance(value, dict):
@@ -64,7 +68,7 @@ class parsed_dict(dict, parsed_node):
 
     def rev_merge(self, other):
         """
-        Recursively merge ourselves onto another dictionary
+        Recursively merge ourselves onto another dictionary.
         """
         m = parsed_dict(other)
         _traverse_wrap(m, m.items())

@@ -81,7 +81,7 @@ def _super(cls, attr):
     for c in list(cls.__mro__)[1:]:
         try:
             return getattr(c, attr)
-        except:
+        except Exception:
             pass
 
 

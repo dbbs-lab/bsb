@@ -79,7 +79,7 @@ def get_option_classes():
 
 def get_option_descriptor(name):
     """
-    Return an option
+    Return an option.
 
     :param name: Name of the option to look for.
     :type name: str
@@ -169,7 +169,7 @@ def _register_project_option(option):  # pragma: nocover
 
 def get_project_option(tag):
     """
-    Find a project option
+    Find a project option.
 
     :param tag: dot-separated path of the option. e.g. ``networks.config_link``.
     :type tag: str
@@ -329,7 +329,7 @@ def get_option(tag, prio=None):
     :param tag: Name the option is registered with.
     :type tag: str
     :param prio: Give priority to a type of value. Can be any of 'script', 'cli',
-      'project', 'env'.
+        'project', 'env'.
     :type prio: str
     :returns: (Possibly prioritized) value of the option.
     :rtype: Any
@@ -372,7 +372,7 @@ _om = _OptionsModule(__name__)
 # Copy the module magic from the original module.
 _om.__dict__.update(_module_magic)
 # Copy over the intended API from the original module.
-for _key, _value in zip(_post_freeze, map(globals().get, _post_freeze)):
+for _key, _value in zip(_post_freeze, map(globals().get, _post_freeze), strict=False):
     _om.__dict__[_key] = _value
 # Set the module's public API.
 _om.__dict__["__all__"] = sorted([k for k in vars(_om) if not k.startswith("_")])

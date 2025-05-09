@@ -60,8 +60,10 @@ class CellType:
     """
     entity = config.attr(type=bool, default=False)
     """
-    Whether this cell type is an entity type. Entity types don't have representations in
-    space, but can still be connected and simulated.
+    Whether this cell type is an entity type.
+
+    Entity types don't have representations in space, but can still be connected and
+    simulated.
     """
 
     def __boot__(self):
@@ -95,7 +97,7 @@ class CellType:
 
     def get_placement_set(self, *args, **kwargs):
         """
-        Retrieve this cell type's placement data
+        Retrieve this cell type's placement data.
 
         :param chunks: When given, restricts the placement data to these chunks.
         :type chunks: list[bsb.storage._chunks.Chunk]
@@ -122,15 +124,17 @@ class CellType:
 
     def clear_placement(self):
         """
-        Clear all the placement data associated with this cell type. Connectivity data
-        will remain, but be invalid.
+        Clear all the placement data associated with this cell type.
+
+        Connectivity data will remain, but be invalid.
         """
         self.get_placement_set().clear()
 
     def clear_connections(self):
         """
-        Clear all the connectivity data associated with this cell type. Any connectivity
-        set that this cell type is a part of will be entirely removed.
+        Clear all the connectivity data associated with this cell type.
+
+        Any connectivity set that this cell type is a part of will be entirely removed.
         """
         for conn_set in self.scaffold.get_connectivity_sets():
             if self is conn_set.pre_type or self is conn_set.post_type:

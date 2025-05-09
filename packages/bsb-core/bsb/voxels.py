@@ -50,7 +50,7 @@ class VoxelData(np.ndarray):
 
     def copy(self):
         """
-        Return a new copy of the voxel data
+        Return a new copy of the voxel data.
         """
         new = super().copy()
         new._keys = self._keys.copy()
@@ -216,7 +216,7 @@ class VoxelSet:
     @property
     def is_empty(self):
         """
-        Whether the set contain any voxels
+        Whether the set contain any voxels.
 
         :rtype: bool
         """
@@ -225,7 +225,7 @@ class VoxelSet:
     @property
     def has_data(self):
         """
-        Whether the set has any data associated to the voxels
+        Whether the set has any data associated to the voxels.
 
         :rtype: bool
         """
@@ -380,7 +380,7 @@ class VoxelSet:
             ln = [len(s) for s in sets]
             data = np.empty((sum(ln), md), dtype=object)
             ptr = 0
-            for len_, fill in zip(ln, fillers):
+            for len_, fill in zip(ln, fillers, strict=False):
                 if fill is not None:
                     if not fill.keys:
                         cols = slice(None, fill.shape[1])
@@ -508,7 +508,7 @@ class VoxelSet:
     def inside(self, positions):
         mask = np.zeros(len(positions), dtype=bool)
         ldc, mdc = self._box_bounds()
-        for _voxel in zip(ldc, mdc):
+        for _voxel in zip(ldc, mdc, strict=False):
             mask |= np.all((positions >= ldc) & (positions < mdc), axis=1)
         return mask
 
@@ -622,7 +622,7 @@ def _eq_sides(sides, n):
 
 # https://stackoverflow.com/a/24769712/1016004
 def _is_broadcastable(shape1, shape2):
-    for a, b in zip(shape1[::-1], shape2[::-1]):
+    for a, b in zip(shape1[::-1], shape2[::-1], strict=False):
         if a == 1 or b == 1 or a == b:
             pass
         else:

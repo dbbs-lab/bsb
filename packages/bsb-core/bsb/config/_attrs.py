@@ -89,8 +89,8 @@ def dynamic(
     **kwargs,
 ):
     """
-    Decorate a class to be castable to a dynamically configurable class using
-    a class configuration attribute.
+    Decorate a class to be castable to a dynamically configurable class using a class
+    configuration attribute.
 
     *Example*: Register a required string attribute ``class`` (this is the default):
 
@@ -198,9 +198,9 @@ def attr(**kwargs):
     """
     Create a configuration attribute.
 
-    Only works when used inside a class decorated with the :func:`node
-    <.config.node>`, :func:`dynamic <.config.dynamic>`,  :func:`root <.config.root>`
-    or  :func:`pluggable <.config.pluggable>` decorators.
+    Only works when used inside a class decorated with the :func:`node <.config.node>`,
+    :func:`dynamic <.config.dynamic>`,  :func:`root <.config.root>` or  :func:`pluggable
+    <.config.pluggable>` decorators.
 
     :param type: Type of the attribute's value.
     :type type: Callable
@@ -208,8 +208,8 @@ def attr(**kwargs):
     :type required: bool
     :param default: Default value.
     :type default: Any
-    :param call_default: Should the default value be used (False) or called (True).
-      Use this to prevent mutable default values.
+    :param call_default: Should the default value be used (False) or called (True). Use
+        this to prevent mutable default values.
     :type call_default: bool
     :param key: If set, the key of the parent is stored on this attribute.
     """
@@ -250,15 +250,16 @@ def reflist(reference, **kwargs):
 
 def slot(**kwargs):
     """
-    Create an attribute slot that is required to be overriden by child or plugin
-    classes.
+    Create an attribute slot that is required to be overriden by child or plugin classes.
     """
     return ConfigurationAttributeSlot(**kwargs)
 
 
 def property(val=None, /, type=None, **kwargs):
     """
-    Create a configuration property attribute. You may provide a value or a callable. Call
+    Create a configuration property attribute.
+
+    You may provide a value or a callable. Call
     `setter` on the return value as you would with a regular property.
     """
     if type is None:
@@ -276,8 +277,10 @@ def property(val=None, /, type=None, **kwargs):
 
 def provide(value):
     """
-    Provide a value for a parent class' attribute. Can be a value or a callable, a
-    readonly configuration property will be created from it either way.
+    Provide a value for a parent class' attribute.
+
+    Can be a value or a callable, a readonly configuration property will be created from
+    it either way.
     """
     prop = property(value)
 
@@ -298,6 +301,7 @@ def provide(value):
 def list(**kwargs):
     """
     Create a configuration attribute that holds a list of configuration values.
+
     Best used only for configuration nodes. Use an :func:`attr` in combination with a
     :func:`types.list <.config.types.list>` type for simple values.
     """
@@ -306,8 +310,9 @@ def list(**kwargs):
 
 def dict(**kwargs):
     """
-    Create a configuration attribute that holds a key value pairs of configuration
-    values. Best used only for configuration nodes. Use an :func:`attr` in combination
+    Create a configuration attribute that holds a key value pairs of configuration values.
+
+    Best used only for configuration nodes. Use an :func:`attr` in combination
     with a :func:`types.dict <.config.types.dict>` type for simple values.
     """
     return ConfigurationDictAttribute(**kwargs)
@@ -315,8 +320,8 @@ def dict(**kwargs):
 
 def catch_all(**kwargs):
     """
-    Catches any unknown key with a value that can be cast to the given type and
-    collects them under the attribute name.
+    Catches any unknown key with a value that can be cast to the given type and collects
+    them under the attribute name.
     """
     return ConfigurationAttributeCatcher(**kwargs)
 
@@ -412,7 +417,9 @@ def _unset_nodes(top_node):
 
 class ConfigurationAttribute:
     """
-    Base implementation of all the different configuration attributes. Call the factory
+    Base implementation of all the different configuration attributes.
+
+    Call the factory
     function :func:`.attr` instead.
     """
 

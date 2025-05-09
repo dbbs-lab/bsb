@@ -268,11 +268,13 @@ def inside_mbox(
 @config.dynamic(attr_name="type", default="shape", auto_classmap=True)
 class GeometricShape(abc.ABC):
     """
-    Base class for geometric shapes
+    Base class for geometric shapes.
     """
 
     epsilon = config.attr(type=float, required=False, default=1.0e-3)
-    """Tolerance value to compare coordinates."""
+    """
+    Tolerance value to compare coordinates.
+    """
 
     def __init__(self, **kwargs):
         self.mbb_min, self.mbb_max = self.find_mbb()
@@ -299,6 +301,7 @@ class GeometricShape(abc.ABC):
     def get_volume(self):  # pragma: no cover
         """
         Get the volume of the geometric shape.
+
         :return: The volume of the geometric shape.
         :rtype: float
         """
@@ -353,9 +356,9 @@ class GeometricShape(abc.ABC):
     @abc.abstractmethod
     def wireframe_points(self, nb_points_1=30, nb_points_2=30):  # pragma: no cover
         """
-        Generate a wireframe to plot the geometric shape.
-        If a sampling of points is needed (e.g. for sphere), the wireframe is based on a
-        grid of shape (nb_points_1, nb_points_2).
+        Generate a wireframe to plot the geometric shape. If a sampling of points is
+        needed (e.g. for sphere), the wireframe is based on a grid of shape (nb_points_1,
+        nb_points_2).
 
         :param int nb_points_1: number of points sampled along the first dimension
         :param int nb_points_2: number of points sampled along the second dimension
@@ -377,16 +380,22 @@ class ShapesComposition:
         required=types.same_size("shapes", "labels", required=True),
         hint=[{"type": "sphere", "radius": 40.0, "center": [0.0, 0.0, 0.0]}],
     )
-    """List of GeometricShape that make up the neuron."""
+    """
+    List of GeometricShape that make up the neuron.
+    """
     labels = config.list(
         type=types.list(),
         required=types.same_size("shapes", "labels", required=True),
         hint=[["soma", "dendrites", "axon"]],
     )
-    """List of lists of labels associated to each geometric shape."""
+    """
+    List of lists of labels associated to each geometric shape.
+    """
     voxel_size = config.attr(type=float, required=False, default=1.0)
-    """Dimension of the side of a voxel, used to determine how many points must be 
-    generated to represent the geometric shape."""
+    """
+    Dimension of the side of a voxel, used to determine how many points must be generated
+    to represent the geometric shape.
+    """
 
     def __init__(self, **kwargs):
         # The two corners individuating the minimal bounding box.
@@ -397,10 +406,10 @@ class ShapesComposition:
 
     def add_shape(self, shape: GeometricShape, labels: list[str]):
         """
-        Add a geometric shape to the collection
+        Add a geometric shape to the collection.
 
-        :param GeometricShape shape: A GeometricShape to add to the collection.
-        :param list[str] labels: A list of labels for the geometric shape to add.
+        :param GeometricShape shape: A GeometricShape to add to the collection. :param
+            list[str] labels: A list of labels for the geometric shape to add.
         """
         # Update mbb
         if len(self._shapes) == 0:
@@ -511,7 +520,7 @@ class ShapesComposition:
             return np.concatenate(
                 [
                     shape.generate_point_cloud(numpts)
-                    for shape, numpts in zip(self._shapes, self.compute_n_points())
+                    for shape, numpts in zip(self._shapes, self.compute_n_points(), strict=False)
                 ]
             )
         else:
@@ -523,9 +532,9 @@ class ShapesComposition:
         nb_points_2=30,
     ) -> tuple[list, list, list] | None:
         """
-        Generate the wireframes of a collection of shapes.
-        If a sampling of points is needed for certain shapes (e.g. for sphere), their
-        wireframe is based on a grid of shape (nb_points_1, nb_points_2).
+        Generate the wireframes of a collection of shapes. If a sampling of points is
+        needed for certain shapes (e.g. for sphere), their wireframe is based on a grid of
+        shape (nb_points_1, nb_points_2).
 
         :param int nb_points_1: number of points sampled along the first dimension
         :param int nb_points_2: number of points sampled along the second dimension
@@ -590,15 +599,21 @@ class Ellipsoid(GeometricShape, classmap_entry="ellipsoid"):
     origin = config.attr(
         type=types.ndarray(shape=(3,), dtype=float), required=True, hint=[0.0, 0.0, 0.0]
     )
-    """The coordinates of the center of the ellipsoid."""
+    """
+    The coordinates of the center of the ellipsoid.
+    """
     lambdas = config.attr(
         type=types.ndarray(shape=(3,), dtype=float), required=True, hint=[1.0, 0.5, 2.0]
     )
-    """The length of the three semi-axes."""
+    """
+    The length of the three semi-axes.
+    """
 
     @config.property(type=types.ndarray(shape=(3,)), required=True)
     def v0(self):
-        """The versor on which the first semi-axis lies."""
+        """
+        The versor on which the first semi-axis lies.
+        """
         return self._v0
 
     @v0.setter
@@ -607,7 +622,9 @@ class Ellipsoid(GeometricShape, classmap_entry="ellipsoid"):
 
     @config.property(type=types.ndarray(shape=(3,)), required=True)
     def v1(self):
-        """The versor on which the second semi-axis lies."""
+        """
+        The versor on which the second semi-axis lies.
+        """
         return self._v1
 
     @v1.setter
@@ -616,7 +633,9 @@ class Ellipsoid(GeometricShape, classmap_entry="ellipsoid"):
 
     @config.property(type=types.ndarray(shape=(3,)), required=True)
     def v2(self):
-        """The versor on which the third semi-axis lies."""
+        """
+        The versor on which the third semi-axis lies.
+        """
         return self._v2
 
     @v2.setter
@@ -713,13 +732,19 @@ class Cone(GeometricShape, classmap_entry="cone"):
     apex = config.attr(
         type=types.ndarray(shape=(3,), dtype=float), required=True, hint=[0.0, 1.0, 0.0]
     )
-    """The coordinates of the apex of the cone."""
+    """
+    The coordinates of the apex of the cone.
+    """
     origin = config.attr(
         type=types.ndarray(shape=(3,), dtype=float), required=True, hint=[0.0, 0.0, 0.0]
     )
-    """The coordinates of the center of the cone's base."""
+    """
+    The coordinates of the center of the cone's base.
+    """
     radius = config.attr(type=float, required=False, default=1.0)
-    """The radius of the base circle."""
+    """
+    The radius of the base circle.
+    """
 
     def find_mbb(self):
         # Vectors identifying half of the sides of the base rectangle in xy
@@ -837,13 +862,19 @@ class Cylinder(GeometricShape, classmap_entry="cylinder"):
     origin = config.attr(
         type=types.ndarray(shape=(3,), dtype=float), required=True, hint=[0.0, 0.0, 0.0]
     )
-    """The coordinates of the center of the bottom circle of the cylinder."""
+    """
+    The coordinates of the center of the bottom circle of the cylinder.
+    """
     top_center = config.attr(
         type=types.ndarray(shape=(3,), dtype=float), required=True, hint=[0.0, 2.0, 0.0]
     )
-    """The coordinates of the center of the top circle of the cylinder."""
+    """
+    The coordinates of the center of the top circle of the cylinder.
+    """
     radius = config.attr(type=float, required=False, default=1.0)
-    """The radius of the base circle."""
+    """
+    The radius of the base circle.
+    """
 
     def find_mbb(self):
         height = np.linalg.norm(self.top_center - self.origin)
@@ -949,9 +980,13 @@ class Sphere(GeometricShape, classmap_entry="sphere"):
     origin = config.attr(
         type=types.ndarray(shape=(3,), dtype=float), required=True, hint=[0.0, 0.0, 0.0]
     )
-    """The coordinates of the center of the sphere."""
+    """
+    The coordinates of the center of the sphere.
+    """
     radius = config.attr(type=float, required=False, default=1.0)
-    """The radius of the sphere."""
+    """
+    The radius of the sphere.
+    """
 
     def find_mbb(self):
         # Find the minimum bounding box, to avoid computing it every time
@@ -1021,15 +1056,23 @@ class Cuboid(GeometricShape, classmap_entry="cuboid"):
     origin = config.attr(
         type=types.ndarray(shape=(3,), dtype=float), required=True, hint=[0.0, 0.0, 0.0]
     )
-    """The coordinates of the center of the barycenter of the bottom rectangle."""
+    """
+    The coordinates of the center of the barycenter of the bottom rectangle.
+    """
     top_center = config.attr(
         type=types.ndarray(shape=(3,), dtype=float), required=True, hint=[0.0, 1.0, 0.0]
     )
-    """The coordinates of the center of the barycenter of the top rectangle."""
+    """
+    The coordinates of the center of the barycenter of the top rectangle.
+    """
     side_length_1 = config.attr(type=float, required=False, default=1.0)
-    """Length of one side of the base rectangle."""
+    """
+    Length of one side of the base rectangle.
+    """
     side_length_2 = config.attr(type=float, required=False, default=1.0)
-    """Length of the other side of the base rectangle."""
+    """
+    Length of the other side of the base rectangle.
+    """
 
     def find_mbb(self):
         # Extrema of the cuboid centered at the origin
@@ -1166,28 +1209,39 @@ class Cuboid(GeometricShape, classmap_entry="cuboid"):
 class Parallelepiped(GeometricShape, classmap_entry="parallelepiped"):
     """
     A generic parallelepiped, described by the vectors (following the right-hand
-    orientation) of the sides in cartesian coordinates
+    orientation) of the sides in cartesian coordinates.
     """
 
     origin = config.attr(
         type=types.ndarray(shape=(3,), dtype=float), required=True, hint=[0.0, 0.0, 0.0]
     )
-    """The coordinates of the left-bottom edge."""
+    """
+    The coordinates of the left-bottom edge.
+    """
     side_vector_1 = config.attr(
         type=types.ndarray(shape=(3,), dtype=float), required=True, hint=[1.0, 0.0, 0.0]
     )
-    """The first vector identifying the parallelepiped (using the right-hand orientation:
-        the thumb)."""
+    """
+    The first vector identifying the parallelepiped (using the right-hand orientation:
+
+    the thumb).
+    """
     side_vector_2 = config.attr(
         type=types.ndarray(shape=(3,), dtype=float), required=True, hint=[0.0, 1.0, 0.0]
     )
-    """The second vector identifying the parallelepiped (using the right-hand orientation:
-        the index)."""
+    """
+    The second vector identifying the parallelepiped (using the right-hand orientation:
+
+    the index).
+    """
     side_vector_3 = config.attr(
         type=types.ndarray(shape=(3,), dtype=float), required=True, hint=[0.0, 0.0, 1.0]
     )
-    """The third vector identifying the parallelepiped (using the right-hand orientation:
-        the middle finger)."""
+    """
+    The third vector identifying the parallelepiped (using the right-hand orientation:
+
+    the middle finger).
+    """
 
     def find_mbb(self):
         extrema = np.vstack(

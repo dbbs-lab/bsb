@@ -36,7 +36,7 @@ class Distributor(abc.ABC):
 
         :param partitions: The partitions the cells were placed in.
         :type context: Additional context information such as the placement indications
-          and partitions.
+            and partitions.
         :type context: ~bsb.placement.distributor.DistributionContext
         :returns: An array with the property data
         :rtype: numpy.ndarray
@@ -89,8 +89,8 @@ class RandomMorphologies(MorphologyDistributor, classmap_entry="random"):
 
     def distribute(self, positions, morphologies, context):
         """
-        Uses the morphology selection indicators to select morphologies and
-        returns a MorphologySet of randomly assigned morphologies
+        Uses the morphology selection indicators to select morphologies and returns a
+        MorphologySet of randomly assigned morphologies.
         """
         return np.random.default_rng().integers(len(morphologies), size=len(positions))
 
@@ -177,11 +177,15 @@ class RandomRotations(RotationDistributor, classmap_entry="random"):
 @config.node
 class VolumetricRotations(RotationDistributor, classmap_entry="orientation_field"):
     orientation_path = config.attr(required=True, type=NrrdDependencyNode)
-    """Path to the nrrd file containing the volumetric orientation field. It provides a rotation 
-    for each voxel considered. Its shape should be (3, L, W, D) where L, W and D are the sizes of 
-    the field."""
+    """
+    Path to the nrrd file containing the volumetric orientation field.
+
+    It provides a rotation for each voxel considered. Its shape should be (3, L, W, D)
+    where L, W and D are the sizes of the field.
+    """
     orientation_resolution = config.attr(required=False, default=25.0, type=float)
-    """Voxel size resolution of the orientation field.
+    """
+    Voxel size resolution of the orientation field.
     """
     default_vector = config.attr(
         required=False,
@@ -189,7 +193,8 @@ class VolumetricRotations(RotationDistributor, classmap_entry="orientation_field
         call_default=True,
         type=ndarray(),
     )
-    """Default orientation vector of each position.
+    """
+    Default orientation vector of each position.
     """
     space_origin = config.attr(
         required=False,
@@ -197,22 +202,23 @@ class VolumetricRotations(RotationDistributor, classmap_entry="orientation_field
         call_default=True,
         type=ndarray(),
     )
-    """Origin point for the orientation field.
+    """
+    Origin point for the orientation field.
     """
 
     def distribute(self, positions, context):
         """
-        Rotates according to a volumetric orientation field of specific resolution.
-        For each position, find the equivalent voxel in the volumetric orientation field and apply
-        the rotation from the default_vector to the corresponding orientation vector.
-        Positions outside the orientation field will not be rotated.
+        Rotates according to a volumetric orientation field of specific resolution. For
+        each position, find the equivalent voxel in the volumetric orientation field and
+        apply the rotation from the default_vector to the corresponding orientation
+        vector. Positions outside the orientation field will not be rotated.
 
-        :param positions: Placed positions under consideration. Its shape is (N, 3) where N is the
-            number of positions.
+        :param positions: Placed positions under consideration. Its shape is (N, 3) where
+            N is the number of positions.
         :param context: The placement indicator and partitions.
         :type context: ~bsb.placement.distributor.DistributionContext
-        :returns: A RotationSet object containing the 3D Euler angles in degrees for the rotation
-            of each position.
+        :returns: A RotationSet object containing the 3D Euler angles in degrees for the
+            rotation of each position.
         :rtype: RotationSet
         """
 

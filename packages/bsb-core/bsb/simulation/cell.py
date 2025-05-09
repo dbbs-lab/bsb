@@ -18,7 +18,7 @@ class CellModel(SimulationComponent):
 
     cell_type: "CellType" = config.ref(refs.cell_type_ref, key="name")
     """
-    The cell type that this model represents
+    The cell type that this model represents.
     """
     parameters: cfglist[Parameter] = config.list(type=Parameter)
     """

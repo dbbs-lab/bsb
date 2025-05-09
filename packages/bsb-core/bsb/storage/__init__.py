@@ -1,15 +1,15 @@
 """
-This module imports all supported storage engines, objects that read and write data,
-which are present as subfolders of the `engine` folder, and provides them
-transparently to the user, as a part of the :class:`Storage <.storage.Storage>`
-factory class. The module scans the :mod:`.storage.interfaces` module for any class
-that inherits from :class:`Interface <.storage.interfaces.Interface>`  to collect all
-Feature Interfaces and then scans the ``storage.engines.*`` submodules for any class
-that provides an implementation of those features.
+This module imports all supported storage engines, objects that read and write data, which
+are present as subfolders of the `engine` folder, and provides them transparently to the
+user, as a part of the :class:`Storage <.storage.Storage>` factory class. The module scans
+the :mod:`.storage.interfaces` module for any class that inherits from :class:`Interface
+<.storage.interfaces.Interface>`  to collect all Feature Interfaces and then scans the
+``storage.engines.*`` submodules for any class that provides an implementation of those
+features.
 
 These features, because they all follow the same interface can then be passed on to
-consumers and can be used independent of the underlying storage engine, which is the
-end goal of this module.
+consumers and can be used independent of the underlying storage engine, which is the end
+goal of this module.
 """
 
 import functools
@@ -91,18 +91,20 @@ def create_engine(name, root, comm):
 
     :param str name: The name of the engine to create.
     :param object root: An object that uniquely describes the storage, such as a filename
-      or path. The value to be provided depends on the engine. For the hdf5 engine
-      the filename has to be provided.
+        or path. The value to be provided depends on the engine. For the hdf5 engine the
+        filename has to be provided.
     :param bsb.services.mpi.MPIService comm: MPI communicator that shares control over the
-      Engine interface.
+        Engine interface.
     """
     return get_engine_support(name)["Engine"](root, comm)
 
 
 class NotSupported:
     """
-    Utility class that throws a ``NotSupported`` error when it is used. This is the
-    default "implementation" of every storage feature that isn't provided by an engine.
+    Utility class that throws a ``NotSupported`` error when it is used.
+
+    This is the default "implementation" of every storage feature that isn't provided by
+    an engine.
     """
 
     _iface_engine_key = None
@@ -136,14 +138,14 @@ class Storage:
 
     def __init__(self, engine, root, comm=None, main=0, missing_ok=True):
         """
-        Create a Storage provider based on a specific `engine` uniquely identified
-        by the root object.
+        Create a Storage provider based on a specific `engine` uniquely identified by the
+        root object.
 
         :param engine: The name of the storage engine.
         :type engine: str
-        :param root: An object that uniquely describes the storage, such as a filename
-          or path. The value to be provided depends on the engine. For the hdf5 engine
-          the filename has to be provided.
+        :param root: An object that uniquely describes the storage, such as a filename or
+            path. The value to be provided depends on the engine. For the hdf5 engine the
+            filename has to be provided.
         :type root: object
         :param comm: MPI communicator that shares control over this Storage.
         :type comm: mpi4py.MPI.Comm
@@ -218,8 +220,8 @@ class Storage:
 
     def create(self):
         """
-        Create the minimal requirements at the root for other features to function and
-        for the existence check to pass.
+        Create the minimal requirements at the root for other features to function and for
+        the existence check to pass.
         """
         return self._engine.create()
 
@@ -237,8 +239,9 @@ class Storage:
 
     def remove(self):
         """
-        Remove the storage and all data contained within. This is an irreversible
-        destructive action!
+        Remove the storage and all data contained within.
+
+        This is an irreversible destructive action!
         """
         self._engine.remove()
 

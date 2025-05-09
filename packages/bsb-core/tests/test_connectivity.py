@@ -465,7 +465,7 @@ class TestConnWithSubCellLabels(
                 np.unique(mids),
                 f"expected only PC, stellate found in {schunk} without tag_21",
             )
-        for mid, (b, p) in zip(mids, sloc[:, 1:]):
+        for mid, (b, p) in zip(mids, sloc[:, 1:], strict=False):
             m = morphos[mid]
             labels = m.branches[b].labels
             self.assertEqual(
@@ -810,7 +810,9 @@ class TestOutputNamingSingle(unittest.TestCase):
         )
 
     def test_output_naming_dict(self):
-        """Test that we can specify cell pair outputs"""
+        """
+        Test that we can specify cell pair outputs.
+        """
         self.cfg.connectivity.x.output_naming = {"A": {"B": "zzz"}}
         self.assertEqual(["zzz"], self.cfg.connectivity.x.get_output_names())
         self.assertEqual(
@@ -821,7 +823,9 @@ class TestOutputNamingSingle(unittest.TestCase):
         )
 
     def test_output_naming_dict_list(self):
-        """Test that we can specify cell pair outputs"""
+        """
+        Test that we can specify cell pair outputs.
+        """
         self.cfg.connectivity.x.output_naming = {"A": {"B": ["zzz", "bb"]}}
         self.assertEqual(["zzz", "bb"], self.cfg.connectivity.x.get_output_names())
         self.assertEqual(
@@ -832,7 +836,9 @@ class TestOutputNamingSingle(unittest.TestCase):
         )
 
     def test_output_naming_dict_blocked(self):
-        """Test that we skip nulled output names"""
+        """
+        Test that we skip nulled output names.
+        """
         self.cfg.connectivity.x.output_naming = {"A": {"B": None}}
         self.assertEqual([], self.cfg.connectivity.x.get_output_names())
         self.assertEqual(
@@ -843,7 +849,9 @@ class TestOutputNamingSingle(unittest.TestCase):
         )
 
     def test_output_naming_dict_missing(self):
-        """Test that we infer missing output names according to naming convention"""
+        """
+        Test that we infer missing output names according to naming convention.
+        """
         self.cfg.connectivity.x.output_naming = {}
         self.assertEqual(["x"], self.cfg.connectivity.x.get_output_names())
         self.assertEqual(

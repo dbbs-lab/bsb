@@ -28,12 +28,13 @@ class Convergence(ConnectionStrategy):
 @config.node
 class AllToAll(ConnectionStrategy):
     """
-    All to all connectivity between two neural populations
+    All to all connectivity between two neural populations.
     """
 
     affinity: float = config.attr(type=types.float(0.0, 1.0), required=False, default=1.0)
-    """Probability for each individual connection to be, default is 1, 
-    i.e. all connected."""
+    """
+    Probability for each individual connection to be, default is 1, i.e. all connected.
+    """
 
     def connect(self, pre, post):
         for from_ps in pre.placement:
@@ -95,7 +96,9 @@ class FixedIndegree(InvertedRoI, ConnectionStrategy):
     """
 
     indegree: int = config.attr(type=int, required=True)
-    """Number of postsynaptic cell to connect to each presynaptic cell."""
+    """
+    Number of postsynaptic cell to connect to each presynaptic cell.
+    """
 
     def connect(self, pre, post):
         _connect_fixed_degree(self, pre, post, self.indegree, True)
@@ -109,7 +112,9 @@ class FixedOutdegree(ConnectionStrategy):
     """
 
     outdegree: int = config.attr(type=int, required=True)
-    """Number of presynaptic cell to connect to each postsynaptic cell."""
+    """
+    Number of presynaptic cell to connect to each postsynaptic cell.
+    """
 
     def connect(self, pre, post):
         _connect_fixed_degree(self, pre, post, self.outdegree, False)

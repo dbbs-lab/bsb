@@ -1,4 +1,3 @@
-
 from .. import config
 from .._util import obj_str_insert
 

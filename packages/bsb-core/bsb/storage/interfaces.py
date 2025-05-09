@@ -697,7 +697,9 @@ class PlacementSet(Interface):
         :raises: DatasetNotFoundError if no morphologies are found.
         """
         mset = self.load_morphologies() if morpho_cache is None else morpho_cache
-        expansion = [*zip([0] * 4 + [1] * 4, ([0] * 2 + [1] * 2) * 2, [0, 1] * 4, strict=False)]
+        expansion = [
+            *zip([0] * 4 + [1] * 4, ([0] * 2 + [1] * 2) * 2, [0, 1] * 4, strict=False)
+        ]
 
         def _box_of(m, o, r):
             oo = (m["ldc"], m["mdc"])
@@ -1144,7 +1146,9 @@ class ConnectivityIterator:
         pre_locs = np.empty((sum(lens), 3), dtype=int)
         post_locs = np.empty((sum(lens), 3), dtype=int)
         ptr = 0
-        for len_, pre_block, post_block in zip(lens, pre_blocks, post_blocks, strict=False):
+        for len_, pre_block, post_block in zip(
+            lens, pre_blocks, post_blocks, strict=False
+        ):
             pre_locs[ptr : ptr + len_] = pre_block
             post_locs[ptr : ptr + len_] = post_block
             ptr += len_

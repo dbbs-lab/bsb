@@ -145,7 +145,9 @@ class VolumeFiller:
         self.voxels.extend(
             ParticleVoxel(ldc, size)
             for ldc, size in zip(
-                voxels.as_spatial_coords(copy=False), voxels.get_size_matrix(copy=False), strict=False
+                voxels.as_spatial_coords(copy=False),
+                voxels.get_size_matrix(copy=False),
+                strict=False,
             )
         )
         if check_pack:

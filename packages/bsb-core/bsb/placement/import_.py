@@ -132,7 +132,10 @@ class CsvImportPlacement(ImportPlacement):
                     np.array(data[0]),
                     chunk,
                     additional={
-                        name: col for name, col in zip(self._other_colnames, additional, strict=False)
+                        name: col
+                        for name, col in zip(
+                            self._other_colnames, additional, strict=False
+                        )
                     },
                 )
         self._reset_cache()

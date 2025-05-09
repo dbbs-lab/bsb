@@ -381,7 +381,9 @@ class TestVoxelSet(bsb_test.NumpyTestCase, unittest.TestCase):
                     self.assertIs(tuple, type(bounds), "should be tuple")
                     self.assertEqual(3, len(bounds[0]), "3 dim")
                     self.assertEqual(3, len(bounds[1]), "3 dim")
-                    self.assertTrue(all(a <= b for a, b in zip(*bounds, strict=False)), "min max")
+                    self.assertTrue(
+                        all(a <= b for a, b in zip(*bounds, strict=False)), "min max"
+                    )
         with self.assertRaises(EmptyVoxelSetError):
             _empty = self.empty.bounds
         self.unequals[0]

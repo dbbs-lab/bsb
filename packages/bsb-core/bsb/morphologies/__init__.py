@@ -787,7 +787,9 @@ class Morphology(SubTree):
                 next(_p[k].dtype for b in branches if k in (_p := b._properties))
                 for k in all_props
             ]
-            props = {k: np.empty(len_, dtype=t) for k, t in zip(all_props, types, strict=False)}
+            props = {
+                k: np.empty(len_, dtype=t) for k, t in zip(all_props, types, strict=False)
+            }
             labels = EncodedLabels.concatenate(*(b._labels for b in branches))
             ptr = 0
             for branch in self.branches:
@@ -977,7 +979,7 @@ class Morphology(SubTree):
         :param file: path to write to
         """
         file_data = _morpho_to_swc(self)
-        if isinstance(file, (str, Path)):
+        if isinstance(file, str | Path):
             np.savetxt(
                 file,
                 file_data,
@@ -1465,7 +1467,8 @@ class Branch:
             self.points[:, 2],
             self.radii,
             self.labels.walk(),
-            *self._properties.values(), strict=False,
+            *self._properties.values(),
+            strict=False,
         )
 
     def contains_labels(self, labels):
@@ -1625,7 +1628,11 @@ class Branch:
         """
         start = self.points[idx_start]
         end = self.points[idx_end]
-        versor = (end - start) / np.linalg.norm(end - start) if np.any(end != start) else np.zeros(3)
+        versor = (
+            (end - start) / np.linalg.norm(end - start)
+            if np.any(end != start)
+            else np.zeros(3)
+        )
         displacements = np.linalg.norm(
             np.cross(
                 versor,
@@ -1741,7 +1748,7 @@ def _morpho_to_swc(morpho):
             raise MorphologyDataError(
                 f"Couldn't convert morphology radii to SWC: {e}."
                 " Note that SWC files cannot store multi-dimensional radii"
-            )
+            ) from None
         nid += len(b) - 1 if len(b) > 1 else len(b)
         bmap[b] = ids[-1]
         data[ids, 6] = ids

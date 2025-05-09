@@ -132,8 +132,13 @@ class NeuroMorphoSelector(NameSelector, classmap_entry="from_neuromorpho"):
                         + " are not valid NeuroMorpho names."
                     )
                 swc_urls = {n: cls._swc_url(metas[n]["archive"], n) for n in names}
-                req = lambda n: requests.get(swc_urls[n], verify=False)
-                sub = lambda n: (executor.submit(req, n), n)
+
+                def req(n):
+                    return requests.get(swc_urls[n], verify=False)
+
+                def sub(n):
+                    return executor.submit(req, n), n
+
                 futures = dict(map(sub, names))
                 morphos = {n: None for n in names}
                 with tempfile.TemporaryDirectory() as tempdir:

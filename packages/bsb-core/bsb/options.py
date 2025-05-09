@@ -32,13 +32,13 @@ from ._options import ProfilingOption, VerbosityOption
 # Store the module magic for unpolluted namespace copy
 _module_magic = globals().copy()
 
-import sys
-import types
+import sys  # noqa: E402
+import types  # noqa: E402
 
-from . import option as _bsboptmod
-from .exceptions import OptionError, ReadOnlyOptionError
-from .plugins import discover
-from .reporting import report
+from . import option as _bsboptmod  # noqa: E402
+from .exceptions import OptionError, ReadOnlyOptionError  # noqa: E402
+from .plugins import discover  # noqa: E402
+from .reporting import report  # noqa: E402
 
 _options = {}
 _project_options = {}

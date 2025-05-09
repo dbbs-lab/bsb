@@ -161,5 +161,9 @@ class TestProfiling(
                     print(filename)
                     found += 1
                     os.remove(filename)
-            self.assertEqual(found, world.Get_size(), f"should have found {world.Get_size()} profiling file(s)")
+            self.assertEqual(
+                found,
+                world.Get_size(),
+                f"should have found {world.Get_size()} profiling file(s)",
+            )
         bsb.options.profiling = False

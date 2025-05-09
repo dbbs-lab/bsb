@@ -69,7 +69,9 @@ class ShapeToMorphologyIntersection(ConnectionStrategy):
         morpho_set = post_ps.load_morphologies()
         post_morphos = morpho_set.iter_morphologies(cache=True, hard_cache=True)
 
-        for post_id, (post_coord, morpho) in enumerate(zip(post_pos, post_morphos, strict=False)):
+        for post_id, (post_coord, morpho) in enumerate(
+            zip(post_pos, post_morphos, strict=False)
+        ):
             # Get the branches
             branches = morpho.get_branches()
 

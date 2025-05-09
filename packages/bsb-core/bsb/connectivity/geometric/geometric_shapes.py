@@ -520,7 +520,9 @@ class ShapesComposition:
             return np.concatenate(
                 [
                     shape.generate_point_cloud(numpts)
-                    for shape, numpts in zip(self._shapes, self.compute_n_points(), strict=False)
+                    for shape, numpts in zip(
+                        self._shapes, self.compute_n_points(), strict=False
+                    )
                 ]
             )
         else:

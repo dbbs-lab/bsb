@@ -186,7 +186,7 @@ class PlacementIndicator:
             raise IndicatorError(
                 "No configuration indicators found for the number of"
                 + f"'{self._cell_type.name}' in '{self._strat.name}'"
-            )
+            ) from None
         if not np.allclose(estimate, estimate // 1):
             # 1.2 cells == 0.8 probability for 1, 0.2 probability for 2
             return (

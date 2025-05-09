@@ -149,7 +149,7 @@ class object_(TypeHandler):
             else:
                 obj = value
         except Exception as e:
-            raise TypeError(msg + builtins.str(e))
+            raise TypeError(msg + builtins.str(e)) from None
         return obj
 
     def __inv__(self, value):
@@ -376,7 +376,7 @@ def float(min=None, max=None):
                 raise Exception()
             return v
         except Exception:
-            raise TypeError(f"Could not cast {value} to an {handler_name}.")
+            raise TypeError(f"Could not cast {value} to an {handler_name}.") from None
 
     type_handler.__name__ = handler_name
     return type_handler
@@ -415,7 +415,7 @@ def number(min=None, max=None):
                     raise Exception()
             return v
         except Exception:
-            raise TypeError(f"Could not cast {value} to a {handler_name}.")
+            raise TypeError(f"Could not cast {value} to a {handler_name}.") from None
 
     type_handler.__name__ = handler_name
     return type_handler
@@ -431,7 +431,7 @@ def key():
     """
 
     def type_handler(value):
-        if not isinstance(value, (builtins.int, builtins.str)):
+        if not isinstance(value, (builtins.int | builtins.str)):
             raise TypeError(f"{type(value)} is not an int or str")
         else:
             return value
@@ -515,7 +515,9 @@ def list(type=builtins.str, size=None):
             for i, e in enumerate(v):
                 v[i] = type(e)
         except Exception:
-            raise TypeError(f"Couldn't cast element {i} of {value} into {type.__name__}")
+            raise TypeError(
+                f"Couldn't cast element {i} of {value} into {type.__name__}"
+            ) from None
         if size is not None and len(v) != size:
             raise ValueError(f"Couldn't cast {value} into a {size} element list")
         return v
@@ -544,7 +546,9 @@ def dict(type=builtins.str):
             for k, e in v.items():
                 v[k] = type(e)
         except Exception:
-            raise TypeError(f"Couldn't cast {k} of {value} into {type.__name__}")
+            raise TypeError(
+                f"Couldn't cast {k} of {value} into {type.__name__}"
+            ) from None
         return v
 
     type_handler.__name__ = f"dict of {type.__name__}"
@@ -801,7 +805,7 @@ class ndarray(TypeHandler):
             except Exception:
                 raise TypeError(
                     f"Couldn't cast array of {getattr(value, 'shape', 'unknown')} shape into an array of {self.shape} shape."
-                )
+                ) from None
         return result
 
     @property

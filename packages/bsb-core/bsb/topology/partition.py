@@ -223,7 +223,9 @@ class Rhomboid(Partition, classmap_entry="rhomboid"):
     def surface(self, chunk=None):
         if chunk is not None:
             # Gets the xz "square" from a volume
-            sq = lambda v: np.array(v)[[0, 1]]
+            def sq(v):
+                return np.array(v)[[0, 1]]
+
             ldc = sq(self.ldc)
             mdc = sq(self.mdc)
             cl = sq(chunk.ldc)
@@ -240,7 +242,9 @@ class Rhomboid(Partition, classmap_entry="rhomboid"):
         low_r = np.floor(self.ldc / chunk_size).astype(int)
         high_r = np.ceil(self.mdc / chunk_size).astype(int)
         # Create a grid that includes all the chunk coordinates within those data
-        coords = np.mgrid[tuple(range(low, high) for low, high in zip(low_r, high_r, strict=False))]
+        coords = np.mgrid[
+            tuple(range(low, high) for low, high in zip(low_r, high_r, strict=False))
+        ]
         # Order the coordinate grid into a list of chunk coordinates.
         return np.column_stack(tuple(dim.ravel() for dim in coords))
 
@@ -674,12 +678,19 @@ class AllenStructure(NrrdVoxels, classmap_entry="allen"):
         :raises: NodeNotFoundError
         """
         if isinstance(id, str):
-            treat = lambda s: s.strip().lower()
+
+            def treat(s):
+                return s.strip().lower()
+
             name = treat(id)
-            find = lambda x: treat(x["name"]) == name or treat(x["acronym"]) == name
-        elif isinstance(id, (int, float)):
+
+            def find(x):
+                return treat(x["name"]) == name or treat(x["acronym"]) == name
+        elif isinstance(id, (int | float)):
             id = int(id)
-            find = lambda x: x["id"] == id
+
+            def find(x):
+                return x["id"] == id
         else:
             raise TypeError(f"Argument must be a string or a number. {type(id)} given.")
         try:

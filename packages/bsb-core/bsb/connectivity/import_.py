@@ -93,7 +93,7 @@ class CsvImportConnectivity(ImportConnectivity):
                 raise ConfigurationError(
                     f"'{self.pre_header}' or '{self.post_header}' not found in "
                     f"'{self.source.file.uri}' column headers {headers}."
-                )
+                ) from None
             other_cols = [r for r in range(len(headers)) if r not in cols]
             self._other_colnames = [headers[c] for c in other_cols]
             for pre_chunks, post_chunks in passover_iter:
@@ -105,7 +105,10 @@ class CsvImportConnectivity(ImportConnectivity):
                 post_block = []
                 other_block = []
                 for i, line in enumerate(reader):
-                    ids = [map_(_safe_int(line[c])) for c, map_ in zip(cols, mappers, strict=False)]
+                    ids = [
+                        map_(_safe_int(line[c]))
+                        for c, map_ in zip(cols, mappers, strict=False)
+                    ]
                     other = [_safe_float(line[c]) for c in other_cols]
                     if ids[0] > -1 and ids[1] > -1:
                         pre_block.append(ids[0])

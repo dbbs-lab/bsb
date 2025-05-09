@@ -105,7 +105,7 @@ def dynamic(
 
     .. code-block:: python
 
-        @dynamic(attr_name='type', required=False, default='pkg.DefaultClass')
+        @dynamic(attr_name="type", required=False, default="pkg.DefaultClass")
         class Example:
             pass
 
@@ -173,7 +173,7 @@ def pluggable(key, plugin_name=None):
 
     .. code-block:: python
 
-        @pluggable('attr', 'my_plugin')
+        @pluggable("attr", "my_plugin")
         class PluginNode:
             pass
 
@@ -223,13 +223,7 @@ def ref(reference, **kwargs):
     Configuration references are attributes that transform their value into the value
     of another node or value in the document::
 
-      {
-        "keys": {
-            "a": 3,
-            "b": 5
-        },
-        "simple_ref": "a"
-      }
+      {"keys": {"a": 3, "b": 5}, "simple_ref": "a"}
 
     With ``simple_ref = config.ref(lambda root, here: here["keys"])`` the value ``a``
     will be looked up in the configuration object (after all values have been cast) at
@@ -263,7 +257,9 @@ def property(val=None, /, type=None, **kwargs):
     `setter` on the return value as you would with a regular property.
     """
     if type is None:
-        type = lambda v: v
+
+        def type(v):
+            return v
 
     def decorator(val):
         prop = val if callable(val) else lambda s: val
@@ -645,7 +641,7 @@ class cfglist(builtins.list):
             raise CastError(
                 f"Couldn't cast element {index} from '{item}'"
                 + f" into a {self._elem_type.__name__}: {e}"
-            )
+            ) from None
 
     def _postset(self, items):
         root = _strict_root(self)
@@ -725,7 +721,7 @@ class cfgdict(builtins.dict):
         except KeyError:
             raise AttributeError(
                 self.get_node_name() + f" object has no attribute '{name}'"
-            )
+            ) from None
 
     def __setitem__(self, key, value):
         if key in self:
@@ -743,7 +739,7 @@ class cfgdict(builtins.dict):
                 f"Couldn't cast {self.get_node_name()}.{key} from '{value}' into a {self._elem_type.__name__}"
                 + "\n"
                 + traceback.format_exc()
-            )
+            ) from None
         else:
             super().__setitem__(key, value)
             root = _strict_root(value)
@@ -1000,7 +996,7 @@ class ConfigurationReferenceListAttribute(ConfigurationReferenceAttribute):
         except TypeError:
             raise CfgReferenceError(
                 f"Reference list '{value}' of {self.get_node_name(instance)} is not iterable."
-            )
+            ) from None
         # Store the referring values to the references key.
         setattr(instance, self.get_ref_key(), remote_keys)
         if self.should_resolve_on_set(instance):

@@ -109,7 +109,7 @@ class FileDependency:
                 raise FileNotFoundError()
         except (TypeError, FileNotFoundError):
             if self.file_store is None:
-                raise FileNotFoundError(f"Can't find {self}")
+                raise FileNotFoundError(f"Can't find {self}") from None
             content = self.get_content()
             with _tf.TemporaryDirectory() as dirpath:
                 name = "file"
@@ -364,7 +364,7 @@ def _get_scheme(scheme: str) -> FileScheme:
     try:
         return schemes[scheme]()
     except KeyError:
-        raise KeyError(f"{scheme} is not a known file scheme.")
+        raise KeyError(f"{scheme} is not a known file scheme.") from None
 
 
 @config.node

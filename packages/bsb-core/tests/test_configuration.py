@@ -374,7 +374,7 @@ class TestConfigProperties(unittest.TestCase):
 
             @pget.setter
             def pget(self, value):
-                if not isinstance(value, (type(None), int)):
+                if not isinstance(value, (type(None) | int)):
                     raise ValueError()
 
             @config.property()
@@ -383,7 +383,7 @@ class TestConfigProperties(unittest.TestCase):
 
             @pget2.setter
             def pget2(self, value):
-                if not isinstance(value, (type(None), int)):
+                if not isinstance(value, (type(None) | int)):
                     raise ValueError()
 
             @config.property(type=str)
@@ -392,7 +392,7 @@ class TestConfigProperties(unittest.TestCase):
 
             @pget3.setter
             def pget3(self, value):
-                if not isinstance(value, (type(None), str)):
+                if not isinstance(value, (type(None) | str)):
                     raise ValueError()
 
             @config.property(type=int)
@@ -401,7 +401,7 @@ class TestConfigProperties(unittest.TestCase):
 
             @pget4.setter
             def pget4(self, value):
-                if not isinstance(value, (type(None), int)):
+                if not isinstance(value, (type(None) | int)):
                     raise ValueError()
 
         t = Test()

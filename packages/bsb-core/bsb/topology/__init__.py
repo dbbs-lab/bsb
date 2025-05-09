@@ -117,5 +117,5 @@ __all__ = [
     "Partition",
     "Region",
     "RegionGroup",
-    "Stack"
+    "Stack",
 ]

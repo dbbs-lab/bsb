@@ -95,8 +95,9 @@ class TestAllToAll(
         n = 100 * 100
         # apply central limit theorem to compare to N(0,1). Threshold rejection is 0.001
         self.assertLess(
-            np.abs(nb_conn - n * affinity) / (np.sqrt(n * affinity * (1 - affinity))), 3.27,
-            "This test should fail only once in every 1000 trials"
+            np.abs(nb_conn - n * affinity) / (np.sqrt(n * affinity * (1 - affinity))),
+            3.27,
+            "This test should fail only once in every 1000 trials",
         )
 
 

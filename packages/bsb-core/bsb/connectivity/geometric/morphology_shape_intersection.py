@@ -68,7 +68,9 @@ class MorphologyToShapeIntersection(ConnectionStrategy):
         morpho_set = pre_ps.load_morphologies()
         pre_morphos = morpho_set.iter_morphologies(cache=True, hard_cache=True)
 
-        for pre_id, (pre_coord, morpho) in enumerate(zip(pre_pos, pre_morphos, strict=False)):
+        for pre_id, (pre_coord, morpho) in enumerate(
+            zip(pre_pos, pre_morphos, strict=False)
+        ):
             # Get the branches
             branches = morpho.get_branches()
 

@@ -18,8 +18,8 @@ MPILock = _MPILockModule("mpilock")
 MPILock service.
 """
 
-from .pool import JobPool as _JobPool  # noqa
-from .pool import WorkflowError, pool_cache
+from .pool import JobPool as _JobPool  # noqa E402  # needs to be imported after MPIService
+from .pool import WorkflowError, pool_cache  # noqa E402  # needs to be imported after MPIService
 
 JobPool = _JobPool
 """

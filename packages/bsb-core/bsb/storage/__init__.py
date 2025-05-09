@@ -406,7 +406,7 @@ def get_engine_node(engine_name):
     except KeyError:
         raise RuntimeError(
             f"Broken storage engine plugin '{engine_name}' is missing a StorageNode."
-        )
+        ) from None
 
 
 def view_support(engine=None):

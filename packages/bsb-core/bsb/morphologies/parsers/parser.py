@@ -68,7 +68,7 @@ class BsbParser(MorphologyParser, classmap_entry="bsb"):
                 and (swc_data := [float(x) for x in line.split() if x != ""])
             ]
         except Exception:
-            raise RuntimeError("Could not parse SWC content")
+            raise RuntimeError("Could not parse SWC content") from None
         err_lines = ", ".join(str(i) for i, d in enumerate(data) if len(d) != 7)
         if err_lines:
             raise ValueError(f"SWC incorrect on lines: {err_lines}")

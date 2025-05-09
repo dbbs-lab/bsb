@@ -440,7 +440,7 @@ def _try_catch(catch, node, key, value):
     try:
         return catch(node, key, value)
     except Exception:
-        raise UncaughtAttributeError()
+        raise UncaughtAttributeError() from None
 
 
 def _get_dynamic_class(node_cls, kwargs):
@@ -553,7 +553,7 @@ def _get_module_object(object_name, module_name, object_path):
     try:
         return getattr(module_ref, object_name)
     except Exception:
-        raise DynamicObjectNotFoundError(f"'{object_path}' not found.")
+        raise DynamicObjectNotFoundError(f"'{object_path}' not found.") from None
 
 
 def make_dictable(node_cls):

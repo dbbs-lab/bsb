@@ -84,7 +84,7 @@ class Project:
         remote = f"https://{dep_package}.readthedocs.io"
 
         if self._local_only:
-            return str(local_folder), None
+            return remote, str(local_folder / "objects.inv")
         else:
             return remote, (None, str(local_folder / "objects.inv"))
 

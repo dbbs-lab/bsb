@@ -24,10 +24,11 @@ jobs:
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5
-      - run: echo "UV_PYTHON=3.11" >> $GITHUB_ENV
 
       - name: Derive appropriate SHAs for base and head for `nx affected` commands
         id: setSHAs
         uses: nrwl/nx-set-shas@v4
 
       - run: ./nx affected -t docs
+        env:
+          UV_PYTHON: 3.11

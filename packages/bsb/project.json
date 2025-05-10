@@ -38,7 +38,6 @@
       "cache": true
     },
     "iso-docs": {
-      "dependsOn": ["sync"],
       "executor": "@nxlv/python:run-commands",
       "outputs": ["{projectRoot}/docs/_build/iso-html"],
       "options": {
@@ -52,7 +51,6 @@
     },
     "docs": {
       "dependsOn": [
-        "sync",
         "bsb-arbor:iso-docs",
         "bsb-core:iso-docs",
         "bsb-hdf5:iso-docs",

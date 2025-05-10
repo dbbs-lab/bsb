@@ -1,0 +1,28 @@
+[project]
+name = ""
+version = "0"
+description = """
+    This is a monorepo-only meta-package for package managers,
+    tools and IDEs to use as an anchor. Do not attempt to publish.
+"""
+requires-python = ">=3.11"
+dependencies = [
+    "bsb",
+    "bsb-arbor",
+    "bsb-core",
+    "bsb-hdf5",
+    "bsb-json",
+    "bsb-test",
+    "bsb-yaml",
+    "sphinxext-bsb",
+]
+
+[tool.uv.sources]
+bsb-core = { path = "../packages/bsb-core", editable = true }
+sphinxext-bsb = { path = "../libs/sphinxext-bsb", editable = true }
+bsb-hdf5 = { path = "../packages/bsb-hdf5", editable = true }
+bsb-arbor = { path = "../packages/bsb-arbor", editable = true }
+bsb-json = { path = "../packages/bsb-json", editable = true }
+bsb-test = { path = "../packages/bsb-test", editable = true }
+bsb-yaml = { path = "../packages/bsb-yaml", editable = true }
+bsb = { path = "../packages/bsb", editable = true }

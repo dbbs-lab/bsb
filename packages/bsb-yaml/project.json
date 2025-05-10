@@ -71,7 +71,6 @@
       "cache": true
     },
     "iso-docs": {
-      "dependsOn": ["sync"],
       "executor": "@nxlv/python:run-commands",
       "outputs": ["{projectRoot}/docs/_build/iso-html"],
       "options": {
@@ -79,6 +78,7 @@
           "npx rimraf _build/iso-html/",
           "uv run sphinx-build -b html . _build/iso-html"
         ],
+        "parallel": false,
         "cwd": "{projectRoot}/docs/"
       },
       "cache": true

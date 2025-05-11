@@ -19,7 +19,7 @@ _root = "/morphologies"
 
 class MetaEncoder(json.JSONEncoder):
     """
-    Encodes morphology metadata to JSON
+    Encodes morphology metadata to JSON.
     """
 
     def default(self, o):
@@ -129,7 +129,7 @@ class MorphologyRepository(Resource, IMorphologyRepository):
             len(points), buffer=data[:, 4].astype(int), labels=labelsets
         )
         prop_names = root["data"].attrs["properties"]
-        props = dict(zip(prop_names, np.rollaxis(data[:, 5:], 1)))
+        props = dict(zip(prop_names, np.rollaxis(data[:, 5:], 1), strict=False))
         parents = {-1: None}
         branch_id = itertools.count()
         roots = []

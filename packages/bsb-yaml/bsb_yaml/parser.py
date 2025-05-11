@@ -12,7 +12,7 @@ class YAMLConfigurationParser(ParsesReferences, ConfigurationParser):
 
     def parse(self, content, path=None):
         """
-        Parse the YAML
+        Parse the YAML.
 
         :param content: File contents
         :type content: str

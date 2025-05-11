@@ -1,5 +1,5 @@
 """
-Arbor simulation adapter for the BSB framework
+Arbor simulation adapter for the BSB framework.
 """
 
 from bsb import SimulationBackendPlugin

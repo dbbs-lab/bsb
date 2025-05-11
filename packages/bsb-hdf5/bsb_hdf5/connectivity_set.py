@@ -62,7 +62,9 @@ class ConnectivitySet(Resource, IConnectivitySet):
     @handles_class_handles("a")
     def create(cls, engine, pre_type, post_type, tag=None, handle=HANDLED):
         """
-        Create the structure for this connectivity set in the HDF5 file. Connectivity sets
+        Create the structure for this connectivity set in the HDF5 file.
+
+        Connectivity sets
         are stored under ``/connectivity/<tag>``.
         """
         if tag is None:
@@ -189,7 +191,7 @@ class ConnectivitySet(Resource, IConnectivitySet):
                 block_idx = np.lexsort((src_block[:, 0], dst_block[:, 0]))
                 yield src, dst, src_block[block_idx], dst_block[block_idx]
             else:
-                for src, sln in zip(iter(src_chunks), lns):
+                for src, sln in zip(iter(src_chunks), lns, strict=False):
                     block_idx = (src_block[:, 0] >= 0) & (src_block[:, 0] < sln)
                     yield src, dst, src_block[block_idx], dst_block[block_idx]
                     src_block[:, 0] -= sln
@@ -383,11 +385,11 @@ class ConnectivitySet(Resource, IConnectivitySet):
           tuple[numpy.ndarray, numpy.ndarray]]
         """
         itr = CSIterator(self, direction, local_, global_)
-        for direction in get_dir_iter(direction):
-            for lchunk in itr.get_local_iter(direction, local_):
-                for gchunk in itr.get_global_iter(direction, lchunk, global_):
-                    conns = self.load_block_connections(direction, lchunk, gchunk)
-                    yield direction, lchunk, gchunk, conns
+        for loc_direction in get_dir_iter(direction):
+            for lchunk in itr.get_local_iter(loc_direction, local_):
+                for gchunk in itr.get_global_iter(loc_direction, lchunk, global_):
+                    conns = self.load_block_connections(loc_direction, lchunk, gchunk)
+                    yield loc_direction, lchunk, gchunk, conns
 
     @handles_handles("r")
     def load_block_connections(self, direction, local_, global_, handle=HANDLED):

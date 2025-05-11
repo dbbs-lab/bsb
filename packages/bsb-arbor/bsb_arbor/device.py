@@ -7,13 +7,13 @@ from bsb import DeviceModel, Targetting, config, types
 @config.dynamic(attr_name="device", auto_classmap=True, classmap_entry=None)
 class ArborDevice(DeviceModel):
     device: config.ConfigurationAttribute
-    """Optional importable reference to the device strategy"""
+    """Optional importable reference to the device strategy."""
     targetting = config.attr(type=Targetting, required=True)
-    """Targets of the device, which should be either a population or a nest rule"""
+    """Targets of the device, which should be either a population or a nest rule."""
     resolution = config.attr(type=float)
-    """Time resolution of the device"""
+    """Time resolution of the device."""
     sampling_policy = config.attr(type=types.in_(["exact"]))
-    """Policy used to sample simulation data from the device"""
+    """Policy used to sample simulation data from the device."""
 
     def __init__(self, **kwargs):
         self._probe_ids = []
@@ -39,7 +39,7 @@ class ArborDevice(DeviceModel):
 
     def get_meta(self):
         attrs = ("name", "sampling_policy", "resolution")
-        return dict(zip(attrs, (getattr(self, attr) for attr in attrs)))
+        return dict(zip(attrs, (getattr(self, attr) for attr in attrs), strict=False))
 
     @abc.abstractmethod
     def implement_probes(self, simdata, target):

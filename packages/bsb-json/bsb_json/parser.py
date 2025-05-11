@@ -1,5 +1,7 @@
 """
-JSON parsing module. Built on top of the Python ``json`` module. Adds JSON imports and
+JSON parsing module.
+
+Built on top of the Python ``json`` module. Adds JSON imports and
 references.
 """
 

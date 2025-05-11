@@ -16,6 +16,7 @@ HANDLED = None
 def handles_handles(handle_type, handler=lambda args: args[0]._engine):
     """
     Decorator for :class:`~.resource.Resource` methods to lock and open hdf5 files.
+
     By default, the first argument of the decorated function should be the Resource.
     """
 
@@ -56,18 +57,18 @@ def handles_handles(handle_type, handler=lambda args: args[0]._engine):
 
 def handles_static_handles(handle_type):
     """
-    Decorator for static methods to lock and open hdf5 files
-    The :class:`~bsb.storage.interfaces.Engine` handler is expected
-    to be the first argument of the decorated function
+    Decorator for static methods to lock and open hdf5 files The
+    :class:`~bsb.storage.interfaces.Engine` handler is expected to be the first argument
+    of the decorated function.
     """
     return handles_handles(handle_type, handler=lambda args: args[0])
 
 
 def handles_class_handles(handle_type):
     """
-    Decorator for class methods to lock and open hdf5 files
-    The :class:`~bsb.storage.interfaces.Engine` handler is expected
-    to be the second argument of the decorated function
+    Decorator for class methods to lock and open hdf5 files The
+    :class:`~bsb.storage.interfaces.Engine` handler is expected to be the second argument
+    of the decorated function.
     """
     return handles_handles(handle_type, handler=lambda args: args[1])
 
@@ -87,7 +88,7 @@ class Resource:
 
     def create(self, data, *args, **kwargs):
         with self._engine._write(), self._engine._handle("a") as f:
-            f.create_dataset(self._path, data=data, *args, **kwargs)
+            f.create_dataset(self._path, data=data, *args, **kwargs)  # noqa: B026
 
     def keys(self):
         with self._engine._read(), self._engine._handle("r") as f:

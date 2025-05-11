@@ -1,21 +1,23 @@
+import contextlib
+import importlib.metadata
 import itertools
 from inspect import isclass
 from types import FunctionType
-import importlib.metadata
 
 import docutils.parsers.rst.directives
-from bsb.config import get_config_attributes
-from bsb.config._make import MISSING
-from bsb.config._attrs import (
-    ConfigurationListAttribute,
-    ConfigurationDictAttribute,
-)
-from bsb.config.parsers import get_configuration_parser_classes
-from bsb.config.types import class_
 from docutils import nodes
 from docutils.parsers.rst import Directive
 from docutils.statemachine import StringList
 from sphinx.util.docutils import SphinxDirective
+
+from bsb.config import get_config_attributes
+from bsb.config._attrs import (
+    ConfigurationDictAttribute,
+    ConfigurationListAttribute,
+)
+from bsb.config._make import MISSING
+from bsb.config.parsers import get_configuration_parser_classes
+from bsb.config.types import class_
 
 from .project import Project
 
@@ -110,7 +112,9 @@ class AutoconfigDirective(SphinxDirective):
         ]
         return self.collapse_empties(lines)
 
-    def collapse_empties(self, lines, chars=[("(", ")"), ("[", "]"), ("{", "}")]):
+    def collapse_empties(self, lines, chars=None):
+        if chars is None:
+            chars = [("(", ")"), ("[", "]"), ("{", "}")]
         outlines = []
         skip = False
         for i in range(len(lines)):
@@ -209,10 +213,8 @@ class AutoconfigDirective(SphinxDirective):
         # for the attribute descriptor to use as an instance.
         shim = type("AttrShim", (), {})()
         setattr(shim, f"_{attr.attr_name}", example)
-        try:
+        with contextlib.suppress(Exception):
             example = attr.tree(shim)
-        except Exception:
-            pass
         # Hope we have a default value.
         return example
 
@@ -374,3 +376,12 @@ def setup(app):
         "parallel_read_safe": True,
         "parallel_write_safe": True,
     }
+
+
+__all__ = [
+    "AutoconfigDirective",
+    "AutoconfigNode",
+    "ComponentIntro",
+    "Project",
+    "setup"
+]

@@ -9,10 +9,10 @@ authors = [
   { name = "Dimitri Rodarie", email = "dimitri.rodarie@unipv.it" }
 ]
 version = "4.2.3"
-dynamic = ["description"]
-requires-python = ">=3.10,<4"
 readme = "README.md"
 license = { file = "LICENSE" }
+requires-python = ">=3.10,<4"
+dynamic = ["description"]
 classifiers = ["License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"]
 dependencies = [
     "bsb-core",
@@ -25,8 +25,9 @@ test = [
     "coverage>=7.3",
 ]
 docs = [
-    "sphinxext-bsb>=0.2.7",
     "furo~=2024.0",
+    "sphinxext-bsb>=0.2.7",
+    "docformatter>=1.7.6",
 ]
 dev = [
     "bsb-json[test,docs]",
@@ -72,6 +73,14 @@ indent-style = "space"
 skip-magic-trailing-comma = false
 line-ending = "auto"
 docstring-code-line-length = "dynamic"
+
+[tool.docformatter]
+recursive = true
+in-place = true
+wrap-summaries = 90
+wrap-descriptions = 90
+pre-summary-newline = true
+make-summary-multi-line = true
 
 [tool.ruff.lint]
 select = [ "E", "F", "UP", "B", "SIM", "I" ]

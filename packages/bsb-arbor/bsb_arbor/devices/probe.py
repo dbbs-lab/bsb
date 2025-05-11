@@ -23,7 +23,7 @@ class Probe(ArborDevice):
 
     def prepare_samples(self, sim, comm):
         super().prepare_samples(sim, comm)
-        for probe_id, handle in zip(self._probe_ids, self._handles):
+        for probe_id, handle in zip(self._probe_ids, self._handles, strict=False):
             self.adapter.result.add(ProbeRecorder(self, sim, probe_id, handle))
 
 

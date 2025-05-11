@@ -1,3 +1,4 @@
+import contextlib
 import json
 import time
 from uuid import uuid4
@@ -49,14 +50,12 @@ class FileStore(Resource, IFileStore):
                 content = content.encode(encoding)
             content = np.array(content)
             if overwrite:
-                try:
+                with contextlib.suppress(KeyError):
                     del store[id]
-                except KeyError:
-                    pass
             try:
                 ds = store.create_dataset(id, data=content)
             except ValueError:
-                raise Exception(f"File `{id}` already exists in store.")
+                raise Exception(f"File `{id}` already exists in store.") from None
             if encoding:
                 ds.attrs["encoding"] = encoding
             ds.attrs["meta"] = json.dumps(meta)
@@ -89,7 +88,7 @@ class FileStore(Resource, IFileStore):
         Set the active configuration for this network.
 
         :param config: The active configuration that will be loaded when this storage
-          object is.
+            object is.
         :type config: ~bsb.config.Configuration
         """
         id = self._active_config_id()

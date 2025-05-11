@@ -11,3 +11,5 @@ jobs:
     uses: ./.github/workflows/build.yml
   docs:
     uses: ./.github/workflows/docs.yml
+  ruff:
+    uses: ./.github/workflows/ruff.yml

@@ -35,8 +35,8 @@ class ArborSimulationData(SimulationData):
 
 class ReceiverCollection(list):
     """
-    Receiver collections store the incoming connections and deduplicate them into
-    multiple targets.
+    Receiver collections store the incoming connections and deduplicate them into multiple
+    targets.
     """
 
     def __init__(self):
@@ -54,7 +54,7 @@ class ReceiverCollection(list):
 class SingleReceiverCollection(list):
     """
     The single receiver collection redirects all incoming connections to the same
-    receiver
+    receiver.
     """
 
     def append(self, rcv):
@@ -89,14 +89,14 @@ class Population:
 
     def __getitem__(self, item):
         # Boolean masking, kind of
-        if getattr(item, "dtype", None) == bool or _all_bools(item):
+        if getattr(item, "dtype", None) == bool or _all_bools(item):  # noqa: E721
             if len(item) != len(self):
                 raise ValueError(
                     f"Dimension mismatch between population ({len(self)}) "
                     f"and mask ({len(item)})"
                 )
             return self._subpop_np(np.array(self)[item])
-        elif getattr(item, "dtype", None) == int or _all_ints(item):
+        elif getattr(item, "dtype", None) == int or _all_ints(item):  # noqa: E721
             if getattr(item, "ndim", None) == 0:
                 return self._subpop_one(item)
             return self._subpop_np(np.array(self)[item])
@@ -294,7 +294,9 @@ class ArborAdapter(SimulatorAdapter):
         self.simdata: dict[ArborSimulation, ArborSimulationData] = {}
 
     def prepare(self, simulation: "ArborSimulation") -> ArborSimulationData:
-        """Prepares the arbor simulation engine with the given simulation."""
+        """
+        Prepares the arbor simulation engine with the given simulation.
+        """
         simdata = self._create_simdata(simulation)
         try:
             context = arbor.context(arbor.proc_allocation(threads=simulation.threads))

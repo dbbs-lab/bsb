@@ -9,32 +9,33 @@ authors = [
   { name = "Dimitri Rodarie", email = "dimitri.rodarie@unipv.it" }
 ]
 version = "4.1.1"
-dynamic = ["description"]
-requires-python = ">=3.10,<3.12"
 readme = 'README.md'
 license = { file = "LICENSE" }
+requires-python = ">=3.10,<3.12"
+dynamic = ["description"]
 classifiers = ["License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"]
 dependencies = [
     "numpy~=1.21",
     "bsb-core~=5.0",
-    "arborize~=4.0",
+    "arborize~=4.1",
     "arbor~=0.10; sys_platform != 'win32'",
-    "arborize[arbor]~=4.0; sys_platform != 'win32'"
+    "arborize[arbor]~=4.1; sys_platform != 'win32'"
 ]
 
 [project.optional-dependencies]
 test = [
   "bsb-core[parallel]",
   "bsb-hdf5~=5.0",
+  "bsb-test",
   "coverage>=7.3",
 ]
 docs = [
-    "sphinx~=8.1",
     "furo~=2024.0",
-    "sphinxext-bsb>=0.2.7"
+    "sphinxext-bsb>=0.2.7",
+    "docformatter>=1.7.6",
 ]
 dev = [
-    "bsb-test[test,docs]",
+    "bsb-arbor[test,docs]",
     "pre-commit~=3.5",
     "ruff>=0.8.2",
     "snakeviz~=2.1",
@@ -55,6 +56,7 @@ arbor = "bsb_arbor"
 bsb-core = { path = "../bsb-core", editable = true }
 bsb-hdf5 = { path = "../bsb-hdf5", editable = true }
 bsb-test = { path = "../bsb-test", editable = true }
+sphinxext-bsb = { path = "../../libs/sphinxext-bsb", editable = true }
 
 [tool.coverage.run]
 branch = true
@@ -75,6 +77,14 @@ indent-style = "space"
 skip-magic-trailing-comma = false
 line-ending = "auto"
 docstring-code-line-length = "dynamic"
+
+[tool.docformatter]
+recursive = true
+in-place = true
+wrap-summaries = 90
+wrap-descriptions = 90
+pre-summary-newline = true
+make-summary-multi-line = true
 
 [tool.ruff.lint]
 select = [ "E", "F", "UP", "B", "SIM", "I" ]

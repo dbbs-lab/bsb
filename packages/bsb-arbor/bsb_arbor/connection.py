@@ -43,9 +43,9 @@ class ArborConnection(ConnectionModel):
     gap = config.attr(type=bool, default=False)
     """Is this synapce a gap junction?"""
     weight = config.attr(type=float, required=True)
-    """weight of the connection between the presynaptic and the postsynaptic cells"""
+    """Weight of the connection between the presynaptic and the postsynaptic cells."""
     delay = config.attr(type=float, required=True)
-    """delay of the transmission between the presynaptic and the postsynaptic cells"""
+    """Delay of the transmission between the presynaptic and the postsynaptic cells."""
 
     def create_gap_junctions_on(self, gj_on_gid, conns):
         for pre_loc, post_loc in conns:

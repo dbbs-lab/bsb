@@ -98,7 +98,9 @@ class PlacementSet(
     @handles_class_handles("a")
     def create(cls, engine, cell_type, handle=HANDLED):
         """
-        Create the structure for this placement set in the HDF5 file. Placement sets are
+        Create the structure for this placement set in the HDF5 file.
+
+        Placement sets are
         stored under ``/placement/<tag>``.
         """
         tag = cell_type.name
@@ -126,15 +128,15 @@ class PlacementSet(
         """
         Load the cell positions.
 
-        :raises: DatasetNotFoundError when there is no rotation information for this
-           cell type.
+        :raises: DatasetNotFoundError when there is no rotation information for this cell
+            type.
         """
         try:
             positions = self._position_chunks.load(handle=handle)
         except DatasetNotFoundError:
             raise DatasetNotFoundError(
                 f"No position information for the '{self.tag}' placement set."
-            )
+            ) from None
         else:
             if self._labels:
                 mask = self.get_label_mask(self._labels, handle=handle)
@@ -147,8 +149,8 @@ class PlacementSet(
         """
         Load the cell rotations.
 
-        :raises: DatasetNotFoundError when there is no rotation information for this
-           cell type.
+        :raises: DatasetNotFoundError when there is no rotation information for this cell
+            type.
         """
         data = self._rotation_chunks.load(handle=handle)
         if len(data) == 0 and len(self) != 0:
@@ -165,7 +167,8 @@ class PlacementSet(
 
         :param handle: hdf5 file handler
         :type handle: :class:`h5py.File`
-        :param allow_empty: If False (default), will raise an error in absence of morphologies,
+        :param allow_empty: If False (default), will raise an error in absence of
+         morphologies,
         :type allow_empty: bool
         :returns: MorphologySet object containing the loader of all morphologies
         :rtype: bsb.morphologies.MorphologySet
@@ -317,7 +320,7 @@ class PlacementSet(
         :param chunk: The chunk to store data in.
         :type chunk: ~bsb.storage._chunks.Chunk
         :param count: Amount of entities to place. Excludes the use of any positional,
-          rotational or morphological data.
+            rotational or morphological data.
         :type count: int
         :param additional: Additional data to attach to chunk
         :type additional: dict
@@ -485,8 +488,10 @@ class PlacementSet(
 
     @handles_handles("r")
     def convert_to_local(self, ids, handle=HANDLED):
-        """Converts a list of global ids to local ids, if the PlacementSet is not separated in chunks check the ids within a range on the full
-        size of the PS"""
+        """
+        Converts a list of global ids to local ids, if the PlacementSet is not separated
+        in chunks check the ids within a range on the full size of the PS.
+        """
 
         if self._chunks is None or not len(self._chunks):
             return ids
@@ -517,7 +522,8 @@ class PlacementSet(
             filter_ids_of_local_chunks
         ]  # filter also the list of Chunk id
 
-        # Compute converted ids  by taking the GlobalId - OffsetonGlobalChunks + OffsetOnLocalChunks
+        # Compute converted ids  by taking
+        # the GlobalId - OffsetonGlobalChunks + OffsetOnLocalChunks
         converted_ids = np.zeros(len(filtered_ids), dtype=int)
 
         for i, my_id in enumerate(filtered_ids):

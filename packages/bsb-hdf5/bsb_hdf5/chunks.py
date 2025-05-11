@@ -19,8 +19,8 @@ from .resource import HANDLED, handles_handles
 
 class ChunkLoader:
     """
-    :class:`~.resource.Resource` mixin to organize chunked properties
-    and collections within itself.
+    :class:`~.resource.Resource` mixin to organize chunked properties and collections
+    within itself.
 
     :param properties: An iterable of functions that construct :class:`.ChunkedProperty`.
     :type: Iterable
@@ -139,7 +139,9 @@ class ChunkLoader:
 class ChunkedProperty:
     """
     Chunked properties are stored inside the ``chunks`` group of the :class:`.ChunkLoader`
-    they belong to. Inside the ``chunks`` group another group is created per chunk, inside
+    they belong to.
+
+    Inside the ``chunks`` group another group is created per chunk, inside
     of which a dataset exists per property.
     """
 
@@ -270,7 +272,9 @@ class ChunkedProperty:
 class ChunkedCollection(ChunkedProperty):
     """
     Chunked collections are stored inside the ``chunks`` group of the
-    :class:`.ChunkLoader` they belong to. Inside the ``chunks`` group another group is
+    :class:`.ChunkLoader` they belong to.
+
+    Inside the ``chunks`` group another group is
     created per chunk, inside which a group exists per collection. Arbitrarily named
     datasets can be stored inside of this collection.
     """

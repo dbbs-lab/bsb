@@ -9,21 +9,21 @@ from .device import ArborDevice
 @config.node
 class ArborSimulation(Simulation):
     resolution = config.attr(type=types.float(min=0.0), default=0.1)
-    """Simulation time step size in milliseconds"""
+    """Simulation time step size in milliseconds."""
     profiling = config.attr(type=bool)
-    """Flag to perform profiling during the simulation"""
+    """Flag to perform profiling during the simulation."""
     cell_models: config._attrs.cfgdict[ArborCell] = config.dict(
         type=ArborCell, required=True
     )
-    """dictionary of cell models in the simulation"""
+    """Dictionary of cell models in the simulation."""
     connection_models: config._attrs.cfgdict[ArborConnection] = config.dict(
         type=ArborConnection, required=True
     )
-    """dictionary of connection models in the simulation"""
+    """Dictionary of connection models in the simulation."""
     devices: config._attrs.cfgdict[ArborDevice] = config.dict(
         type=ArborDevice, required=True
     )
-    """dictionary of devices in the simulation"""
+    """Dictionary of devices in the simulation."""
 
     @config.property(default=1)
     def threads(self):

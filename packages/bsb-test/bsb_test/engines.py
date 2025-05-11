@@ -480,7 +480,7 @@ class TestMorphologyRepository(NumpyTestCase, RandomStorageFixture, engine_name=
                     f"points shape changed: from {m.points.shape} to {lm.points.shape}",
                 )
                 self.assertClose(m.points, lm.points, "points changed")
-                for i, (b1, b2) in enumerate(zip(m.branches, lm.branches)):
+                for i, (b1, b2) in enumerate(zip(m.branches, lm.branches, strict=False)):
                     self.assertEqual(
                         b1.points.shape,
                         b2.points.shape,

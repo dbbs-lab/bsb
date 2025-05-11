@@ -22,7 +22,8 @@ class TestPlacementSet(_TestPlacementSet, unittest.TestCase, engine_name="hdf5")
         local_ids = ps.convert_to_local(glob_ids)
         self.assertAll(
             local_ids == np.array([19, 27, 0]),
-            " [0,3] should have been discarded, [44,77,25] should have been converted to [19,27,0]",
+            " [0,3] should have been discarded, "
+            "[44,77,25] should have been converted to [19,27,0]",
         )
         # test when the selected chunks do not have any of the cell ids
         ps.set_chunk_filter([(0, 0, 1)])
@@ -32,7 +33,8 @@ class TestPlacementSet(_TestPlacementSet, unittest.TestCase, engine_name="hdf5")
         res_array = np.full(pop_size, False)
         self.assertAll(
             local_ids == res_array,
-            "If selected chunk has no one of the ids it should return an array of pop_size size filled with False values",
+            "If selected chunk has no one of the ids "
+            "it should return an array of pop_size size filled with False values",
         )
 
 

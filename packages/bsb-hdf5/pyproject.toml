@@ -5,7 +5,7 @@ build-backend = "flit_core.buildapi"
 [project]
 name = "bsb-hdf5"
 authors = [
-  { name = "Robin De Schepper", email = "robingilbert.deschepper@unipv.it" },
+  { name = "Robin De Schepper", email = "robin@alexandria.sc" },
   { name = "Dimitri Rodarie", email = "dimitri.rodarie@unipv.it" }
 ]
 version = "5.0.4"
@@ -29,7 +29,8 @@ docs = [
     "toml~=0.10",
     "furo~=2024.0",
     "sphinx-copybutton~=0.5",
-    "sphinxext-bsb>=0.2.7"
+    "sphinxext-bsb>=0.2.7",
+    "docformatter>=1.7.6",
 ]
 dev  = [
     "bsb-hdf5[test,docs]",
@@ -49,8 +50,9 @@ name = "bsb_hdf5"
 hdf5 = "bsb_hdf5"
 
 [tool.uv.sources]
-bsb-test = { path = "../bsb-test", editable = true }
+bsb-core = { path = "../bsb-core", editable = true }
 bsb-hdf5 = { path = "../bsb-hdf5", editable = true }
+bsb-test = { path = "../bsb-test", editable = true }
 sphinxext-bsb = { path = "../../libs/sphinxext-bsb", editable = true }
 
 [tool.coverage.run]
@@ -72,6 +74,14 @@ indent-style = "space"
 skip-magic-trailing-comma = false
 line-ending = "auto"
 docstring-code-line-length = "dynamic"
+
+[tool.docformatter]
+recursive = true
+in-place = true
+wrap-summaries = 90
+wrap-descriptions = 90
+pre-summary-newline = true
+make-summary-multi-line = true
 
 [tool.ruff.lint]
 select = [ "E", "F", "UP", "B", "SIM", "I" ]

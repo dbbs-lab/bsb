@@ -44,8 +44,7 @@
       "outputs": [],
       "options": {
         "lintFilePatterns": [
-          "sphinxext_bsb",
-          "tests"
+          "sphinxext/bsb"
         ]
       },
       "cache": true

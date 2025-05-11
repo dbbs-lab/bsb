@@ -65,8 +65,8 @@ class TestPluginTesting(unittest.TestCase):
 
     def test_cached_spoof(self):
         """
-        Test that plugin categories that have caches get invalidated and take the
-        spoofed plugins into account.
+        Test that plugin categories that have caches get invalidated and take the spoofed
+        plugins into account.
         """
         pre_spoof = [*discover("simulation_backends").keys()]
         with plugin_context(

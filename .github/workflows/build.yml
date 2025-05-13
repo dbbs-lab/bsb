@@ -1,6 +1,10 @@
 name: Build and test BSB
 
-on: [workflow_call]
+on: [ workflow_call ]
+
+env:
+  NEST_VERSION: 3.7
+  NEST_FOLDER: ${{ github.workspace }}/.nx/installation/_nest_repo
 
 jobs:
   build:
@@ -29,6 +33,13 @@ jobs:
 
       - name: Install uv
         uses: astral-sh/setup-uv@v5
+
+      - name: Cache NEST
+        id: cache-nest
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.NEST_FOLDER }}
+          key: ${{ runner.os }}-${{ matrix.python-version }}-nest
 
       - name: Derive appropriate SHAs for base and head for `nx affected` commands
         id: setSHAs

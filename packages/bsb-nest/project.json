@@ -1,8 +1,8 @@
 {
-  "name": "bsb",
+  "name": "bsb-nest",
   "$schema": "../../.nx/installation/node_modules/nx/schemas/project-schema.json",
   "projectType": "library",
-  "sourceRoot": "./",
+  "sourceRoot": "packages/bsb-nest/bsb_nest",
   "targets": {
     "lock": {
       "executor": "@nxlv/python:lock",
@@ -10,7 +10,23 @@
         "update": false
       }
     },
+    "install-nest": {
+      "executor": "@nxlv/python:run-commands",
+      "outputs": [
+        "{workspaceRoot}/.nx/installation/_nest_repo"
+      ],
+      "options": {
+        "commands": [
+          "uv pip install cmake cython~=3.0.12",
+          "uv run bash install-nest.sh"
+        ],
+        "parallel": false,
+        "cwd": "{projectRoot}"
+      },
+      "cache": true
+    },
     "sync": {
+      "dependsOn": ["bsb-nest:install-nest"],
       "executor": "@nxlv/python:sync",
       "options": {}
     },
@@ -28,12 +44,55 @@
     },
     "build": {
       "executor": "@nxlv/python:build",
-      "outputs": ["{projectRoot}/dist"],
+      "outputs": [
+        "{projectRoot}/dist"
+      ],
       "options": {
         "outputPath": "{projectRoot}/dist",
         "publish": true,
         "lockedVersions": false,
         "bundleLocalDependencies": false
+      },
+      "cache": true
+    },
+    "lint": {
+      "executor": "@nxlv/python:ruff-check",
+      "outputs": [],
+      "options": {
+        "lintFilePatterns": [
+          "bsb_nest",
+          "tests"
+        ]
+      },
+      "cache": true
+    },
+    "format": {
+      "executor": "@nxlv/python:ruff-format",
+      "outputs": [],
+      "options": {
+        "filePatterns": [
+          "bsb_nest",
+          "tests"
+        ]
+      },
+      "cache": true
+    },
+    "test": {
+      "dependsOn": ["bsb-nest:sync"],
+      "executor": "@nxlv/python:run-commands",
+      "outputs": [
+        "{workspaceRoot}/coverage/{projectRoot}"
+      ],
+      "options": {
+        "commands": [
+          "uv run coverage run -p -m unittest discover -v -s ./tests",
+          "mpiexec -n 2 uv run coverage run -p -m unittest discover -v -s ./tests",
+          "uv run coverage combine",
+          "uv run coverage xml -i -o ../../coverage/packages/bsb-nest/coverage.xml",
+          "uv run coverage html -i -d ../../coverage/packages/bsb-nest/html"
+        ],
+        "parallel": false,
+        "cwd": "{projectRoot}"
       },
       "cache": true
     },
@@ -43,21 +102,15 @@
       "options": {
         "commands": [
           "npx rimraf _build/iso-html/",
-          "uv run sphinx-build -v -b html . _build/iso-html"
+          "uv run sphinx-build -b html . _build/iso-html"
         ],
+        "parallel": false,
         "cwd": "{projectRoot}/docs/"
       },
       "cache": true
     },
     "docs": {
-      "dependsOn": [
-        "bsb-arbor:iso-docs",
-        "bsb-core:iso-docs",
-        "bsb-hdf5:iso-docs",
-        "bsb-json:iso-docs",
-        "bsb-nest:iso-docs",
-        "bsb-yaml:iso-docs"
-      ],
+      "dependsOn": ["bsb-core:iso-docs"],
       "executor": "@nxlv/python:run-commands",
       "outputs": ["{projectRoot}/docs/_build/html"],
       "options": {

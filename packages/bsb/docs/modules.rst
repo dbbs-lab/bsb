@@ -12,3 +12,6 @@
 
 :doc:`bsb-arbor <bsb_arbor:bsb_arbor/modules>`
 ----------------------------------------------
+
+:doc:`bsb-nest <bsb_nest:bsb_nest/modules>`
+-------------------------------------------

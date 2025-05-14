@@ -81,7 +81,7 @@ class Project:
 
     def interbsb(self, dep_package):
         local_folder = self._root_folder / f"../{dep_package}/docs/_build/iso-html"
-        remote = f"https://{dep_package}.readthedocs.io"
+        remote = f"https://{dep_package}.readthedocs.io/en/latest"
 
         if self._local_only:
             return remote, str(local_folder / "objects.inv")

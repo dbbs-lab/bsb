@@ -4,7 +4,7 @@ on: [ workflow_call ]
 
 env:
   NEST_VERSION: 3.7
-  NEST_FOLDER: ${{ github.workspace }}/.nx/installation/_nest_repo
+  NEST_FOLDER: ${{ github.workspace }}/.nx/installation/nest
 
 jobs:
   build:
@@ -24,6 +24,8 @@ jobs:
           sudo apt install openmpi-bin libopenmpi-dev
           # Install `libhdf5` for `morphio`
           sudo apt install libhdf5-dev
+          # Install `libgsl-dev` for conductance-based NEST models 
+          sudo apt install libgsl-dev
 
       - name: Install nodejs
         run: |

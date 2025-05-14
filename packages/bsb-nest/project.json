@@ -13,7 +13,7 @@
     "install-nest": {
       "executor": "@nxlv/python:run-commands",
       "outputs": [
-        "{workspaceRoot}/.nx/installation/_nest_repo"
+        "{workspaceRoot}/.nx/installation/nest"
       ],
       "options": {
         "commands": [

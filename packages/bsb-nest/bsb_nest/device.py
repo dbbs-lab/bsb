@@ -1,20 +1,21 @@
 import abc
-import typing
 import warnings
 
 import nest
-from bsb import DeviceModel, SimulationData, Targetting, config, refs, types
-
-if typing.TYPE_CHECKING:
-    from .adapter import NestAdapter
-    from .simulation import NestSimulation
+from bsb import DeviceModel, Targetting, config, refs, types
 
 
 @config.node
 class NestRule:
+    """
+    Interface to connect a device directly through the NEST interface.
+    """
     rule = config.attr(type=str, required=True)
+    """Connection rule to connect """
     constants = config.catch_all(type=types.any_())
+    """Dictionary of parameters for the targetting rule."""
     cell_models = config.reflist(refs.sim_cell_model_ref)
+    """Reference to the Nest cell model to target with the Device"""
 
 
 @config.dynamic(attr_name="device", auto_classmap=True, default="external")
@@ -32,17 +33,17 @@ class NestDevice(DeviceModel):
 
     def get_dict_targets(
         self,
-        adapter: "NestAdapter",
-        simulation: "NestSimulation",
-        simdata: "SimulationData",
+        adapter,
+        simulation,
+        simdata,
     ) -> dict:
         """
         Get a dictionary from a target group to its NEST Collection
         for each target group of the device.
 
-        :param bsb_nest.NestAdapter adapter:
-        :param bsb_nest.NestSimulation simulation: Nest simulation instance
-        :param bsb.SimulationData simdata: Simulation data instance
+        :param bsb_nest.adapter.NestAdapter adapter:
+        :param bsb_nest.simulation.NestSimulation simulation: Nest simulation instance
+        :param bsb.simulation.adapter.SimulationData simdata: Simulation data instance
         :return: dictionary of device target group to NEST Collection
         :rtype: dict
         """
@@ -66,16 +67,16 @@ class NestDevice(DeviceModel):
 
     def get_target_nodes(
         self,
-        adapter: "NestAdapter",
-        simulation: "NestSimulation",
-        simdata: "SimulationData",
+        adapter,
+        simulation,
+        simdata,
     ):
         """
         Get the NEST Collection of the targets of the device.
 
-        :param bsb_nest.NestAdapter adapter:
-        :param bsb_nest.NestSimulation simulation: Nest simulation instance
-        :param bsb.SimulationData simdata: Simulation data instance
+        :param bsb_nest.adapter.NestAdapter adapter:
+        :param bsb_nest.simulation.NestSimulation simulation: Nest simulation instance
+        :param bsb.simulation.adapter.SimulationData simdata: Simulation data instance
         :return: Flattened NEST collection with all the targets of the device
         """
         targets_dict = self.get_dict_targets(adapter, simulation, simdata)
@@ -112,24 +113,30 @@ class NestDevice(DeviceModel):
     @abc.abstractmethod
     def implement(
         self,
-        adapter: "NestAdapter",
-        simulation: "NestSimulation",
-        simdata: "SimulationData",
+        adapter,
+        simulation,
+        simdata,
     ):
         """
         Create, connect and register the Nest device.
 
-        :param bsb_nest.NestAdapter adapter:
-        :param bsb_nest.NestSimulation simulation: Nest simulation instance
-        :param bsb.SimulationData simdata: Simulation data instance
+        :param bsb_nest.adapter.NestAdapter adapter:
+        :param bsb_nest.simulation.NestSimulation simulation: Nest simulation instance
+        :param bsb.simulation.adapter.SimulationData simdata: Simulation data instance
         """
         pass
 
 
 @config.node
 class ExtNestDevice(NestDevice, classmap_entry="external"):
+    """
+    Class interfacing Nest devices.
+    """
+
     nest_model = config.attr(type=str, required=True)
+    """Importable reference to the NEST model describing the device type."""
     constants = config.dict(type=types.or_(types.number(), str))
+    """Dictionary of the constants values to assign to the device model."""
 
     def implement(self, adapter, simulation, simdata):
         simdata.devices[self] = device = nest.Create(

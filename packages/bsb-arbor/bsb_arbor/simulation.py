@@ -8,6 +8,10 @@ from .device import ArborDevice
 
 @config.node
 class ArborSimulation(Simulation):
+    """
+    Interface between the scaffold model and the Arbor simulator.
+    """
+
     resolution = config.attr(type=types.float(min=0.0), default=0.1)
     """Simulation time step size in milliseconds."""
     profiling = config.attr(type=bool)

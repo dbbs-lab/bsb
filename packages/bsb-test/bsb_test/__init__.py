@@ -9,7 +9,6 @@ import contextlib
 import glob as _glob
 import os as _os
 import random
-import typing
 import unittest
 from collections import defaultdict
 from importlib.metadata import EntryPoint
@@ -44,9 +43,6 @@ from .parallel import (
     skip_serial,
     timeout,
 )
-
-if typing.TYPE_CHECKING:
-    from bsb import Configuration, Scaffold, Storage
 
 
 class NetworkFixture:

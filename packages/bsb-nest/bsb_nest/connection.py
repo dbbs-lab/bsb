@@ -13,17 +13,32 @@ from .exceptions import NestConnectError
 
 @config.node
 class NestSynapseSettings:
+    """
+    Class interfacing a NEST synapse model.
+    """
+
     model = config.attr(type=str, default="static_synapse")
+    """Importable reference to the NEST model describing the synapse type."""
     weight = config.attr(type=float, required=True)
+    """Weight of the connection between the presynaptic and the postsynaptic cells."""
     delay = config.attr(type=float, required=True)
+    """Delay of the transmission between the presynaptic and the postsynaptic cells."""
     receptor_type = config.attr(type=int)
+    """Index of the postsynaptic receptor to target."""
     constants = config.catch_all(type=nest_parameter())
+    """Dictionary of the constants values to assign to the synapse model."""
 
 
 @config.node
 class NestConnectionSettings:
+    """
+    Class interfacing a NEST connection rule.
+    """
+
     rule = config.attr(type=str)
+    """Importable reference to the Nest connection rule used to connect the cells."""
     constants = config.catch_all(type=types.any_())
+    """Dictionary of parameters to assign to the connection rule."""
 
 
 class LazySynapseCollection:
@@ -50,8 +65,13 @@ class LazySynapseCollection:
 
 @config.dynamic(attr_name="model_strategy", required=False)
 class NestConnection(compose_nodes(NestConnectionSettings, ConnectionModel)):
-    tag = config.attr(type=str)
+    """
+    Class interfacing a NEST connection, including its connection rule and synaptic
+    parameters.
+    """
+
     synapse = config.attr(type=NestSynapseSettings, required=True)
+    """Nest synapse model with its parameters."""
 
     def create_connections(self, simdata, pre_nodes, post_nodes, cs, comm):
         import nest

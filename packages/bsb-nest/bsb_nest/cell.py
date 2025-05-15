@@ -7,7 +7,9 @@ from .distributions import NestRandomDistribution, nest_parameter
 @config.node
 class NestCell(CellModel):
     model = config.attr(type=str, default="iaf_psc_alpha")
+    """Importable reference to the NEST model describing the cell type."""
     constants = config.dict(type=nest_parameter())
+    """Dictionary of the constants values to assign to the cell model."""
 
     def create_population(self, simdata):
         n = len(simdata.placement[self])

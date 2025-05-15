@@ -14,7 +14,9 @@
     }
   ],
   "release": {
-    "projects": ["*"]
+    "projects": [
+      "*"
+    ]
   },
   "generators": {
     "@nxlv/python:uv-project": {
@@ -28,5 +30,6 @@
       "unitTestRunner": "pytest",
       "codeCoverage": true
     }
-  }
+  },
+  "$schema": "./node_modules/nx/schemas/nx-schema.json"
 }

@@ -3,10 +3,7 @@ import typing
 
 import errr
 import nest.random.hl_api_random as _distributions
-from bsb import DistributionCastError, TypeHandler, config, types
-
-if typing.TYPE_CHECKING:
-    from bsb import Scaffold
+from bsb import DistributionCastError, Scaffold, TypeHandler, config, types
 
 _available_distributions = [d for d in _distributions.__all__]
 

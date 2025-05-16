@@ -20,7 +20,8 @@ build:
     build:
       html:
         - ./nx run bsb:docs
-        - mv packages/bsb/docs/_build/html $READTHEDOCS_OUTPUT/html
+        - mkdir -p "$READTHEDOCS_OUTPUT/html"
+        - mv packages/bsb/docs/_build/html/* "$READTHEDOCS_OUTPUT/html"
         - ls $READTHEDOCS_OUTPUT/html
 
 # Build documentation in the docs/ directory with Sphinx

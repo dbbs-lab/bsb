@@ -16,6 +16,8 @@ build:
       - cd packages/bsb && UV_PROJECT_ENVIRONMENT=$READTHEDOCS_VIRTUALENV_PATH uv sync --all-extras
     install:
       - "true"
+    pre_build:
+      - npm install --no-save rimraf
     build:
       html:
         - ./nx run bsb:docs

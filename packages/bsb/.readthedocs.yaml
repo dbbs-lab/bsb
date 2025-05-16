@@ -5,6 +5,9 @@ build:
   tools:
     python: "3.11"
     nodejs: "22"
+  apt_packages:
+    - libopenmpi-dev
+    - openmpi-bin
   jobs:
     create_environment:
       - asdf plugin add uv

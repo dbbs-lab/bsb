@@ -54,7 +54,7 @@ class TransceiverModel(NeuronConnection, classmap_entry="transceiver"):
         self.create_receivers(simdata, cs)
 
     def create_transmitters(self, simdata: "NeuronSimulationData", cs: "ConnectivitySet"):
-        for cm, pop in simdata.populations.items():
+        for cm, pop in simdata.populations.items():  # noqa: B007
             if cm.cell_type == cs.pre_type:
                 break
         else:
@@ -71,14 +71,14 @@ class TransceiverModel(NeuronConnection, classmap_entry="transceiver"):
             cell.insert_transmitter(gid, point, source=self.source)
 
     def create_receivers(self, simdata: "NeuronSimulationData", cs: "ConnectivitySet"):
-        for post_cm, post_pop in simdata.populations.items():
+        for post_cm, post_pop in simdata.populations.items():  # noqa: B007
             if post_cm.cell_type == cs.post_type:
                 break
         else:
             raise AdapterError(f"No pop found for {cs.pre_type.name}")
         pre, post = cs.load_connections().incoming().to(simdata.chunks).all()
         transmitters = simdata.transmap[self]["receivers"]
-        for pre_loc, post_loc in zip(pre[:, :2], post):
+        for pre_loc, post_loc in zip(pre[:, :2], post, strict=False):
             gid = transmitters[tuple(pre_loc)]
             cell = post_pop[post_loc[0]]
             for spec in self.synapses:

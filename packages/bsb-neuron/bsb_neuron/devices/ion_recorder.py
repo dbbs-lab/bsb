@@ -15,9 +15,8 @@ class IonRecorder(NeuronDevice):
         raise NotImplementedError(
             "Ion recorder not re-implemented yet. Open an issue if you need it."
         )
-        cell = location.cell
-        section = location.section
-        recorders = []
+        cell = location.cell  # noqa: F821
+        section = location.section  # noqa: F821
         if self.record_concentration:
             icon = IonicConcentrationRecorder(cell, section, self.ion)
             self.adapter.result.add(icon)
@@ -33,7 +32,6 @@ class _IonicRecorder:
         cls._slug = str(slug)
 
     def __init__(self, cell, section, ion):
-        from patch import p
 
         self.inputs = (cell, section, ion)
         self.vectors = self._record(ion, section(0.5))

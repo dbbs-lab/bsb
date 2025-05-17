@@ -14,9 +14,9 @@ classifiers = [
 dependencies = [
   "numpy~=1.21",
   "bsb-core~=6.0",
-  "arborize~=4.1",
+  "arborize~=6.0",
   "arbor~=0.10; sys_platform != 'win32'",
-  "arborize[arbor]~=4.1; sys_platform != 'win32'"
+  "arborize[arbor]~=6.0; sys_platform != 'win32'"
 ]
 
   [[project.authors]]
@@ -72,6 +72,10 @@ editable = true
 
 [tool.uv.sources.sphinxext-bsb]
 path = "../../libs/sphinxext-bsb"
+editable = true
+
+[tool.uv.sources.arborize]
+path = "../../libs/arborize"
 editable = true
 
 [tool.coverage.run]

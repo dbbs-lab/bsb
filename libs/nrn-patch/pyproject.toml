@@ -1,20 +1,3 @@
-[tool.coverage.run]
-branch = true
-source = [ "nrn_patch" ]
-
-[tool.coverage.report]
-exclude_lines = ['if TYPE_CHECKING:']
-show_missing = true
-
-[tool.pytest.ini_options]
-addopts = """
- --cov
- --cov-report html:'../../coverage/libs/nrn-patch/html'
- --cov-report xml:'../../coverage/libs/nrn-patch/coverage.xml'
- --html='../../reports/libs/nrn-patch/unittests/html/index.html'
- --junitxml='../../reports/libs/nrn-patch/unittests/junit.xml'
-"""
-
 [build-system]
 requires = ["flit_core >=3.2,<4"]
 build-backend = "flit_core.buildapi"
@@ -25,15 +8,10 @@ version = "6.0.0-a1"
 authors = [{ name = "Robin De Schepper", email = "robingilbert.deschepper@unipv.it" }]
 readme = "README.md"
 license = { file = "LICENSE" }
-classifiers = [
-    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Operating System :: OS Independent",
-]
 dynamic = ["description"]
+classifiers = [
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"
+]
 python_requires = ">=3.10"
 dependencies = [
     "nmodl-glia[neuron]~=6.0",
@@ -42,15 +20,13 @@ dependencies = [
     "NEURON>=8.0,<10.0; sys_platform != 'win32'",
 ]
 
-[project.urls]
-Home = "https://github.com/dbbs-lab/patch"
-
 [project.entry-points."glia.package"]
 extensions = "patch.extensions:package"
 
 [project.optional-dependencies]
 parallel = ["mpi4py~=3.0"]
 test = [
+    "nrn-patch[parallel]",
     "coverage~=7.0"
 ]
 docs = [
@@ -59,56 +35,50 @@ docs = [
     "sphinx-rtd-theme~=2.0",
 ]
 dev = [
-    "nrn-patch[test, docs]",
+    "nrn-patch[test,docs]",
     "pre-commit~=3.0",
-    "black~=24.0",
 ]
+
+[tool.uv.sources.nmodl-glia]
+path = "../nmodl-glia"
+editable = true
 
 [tool.flit.module]
 name = "patch"
 
 [dependency-groups]
-dev = [
-  "autopep8>=2.3.1",
-  "ruff>=0.8.2",
-  "pytest>=8.3.4",
-  "pytest-sugar>=1.0.0",
-  "pytest-cov>=6.0.0",
-  "pytest-html>=4.1.1",
-]
+dev = ["nrn-patch[dev]"]
 
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+[tool.coverage.run]
+branch = true
+source = [ "nrn_patch" ]
+
+[tool.coverage.report]
+exclude_lines = ['if TYPE_CHECKING:']
+show_missing = true
 
 [tool.ruff]
-exclude = [
-  ".ruff_cache",
-  ".svn",
-  ".tox",
-  ".venv",
-  "dist",
-]
-
-line-length = 88
+exclude = [ ".ruff_cache", ".svn", ".tox", ".venv", "dist" ]
+line-length = 90
 indent-width = 4
 
-[tool.ruff.lint]
-select = [
-  # pycodestyle
-  "E",
-  # Pyflakes
-  "F",
-  # pyupgrade
-  "UP",
-  # flake8-bugbear
-  "B",
-  # flake8-simplify
-  "SIM",
-  # isort
-  "I",
-]
-ignore = []
+  [tool.ruff.format]
+  quote-style = "double"
+  indent-style = "space"
+  skip-magic-trailing-comma = false
+  line-ending = "auto"
+  docstring-code-line-length = "dynamic"
 
-fixable = ["ALL"]
-unfixable = []
+  [tool.ruff.lint]
+  select = [ "E", "F", "UP", "B", "SIM", "I" ]
+  ignore = [ ]
+  fixable = [ "ALL" ]
+  unfixable = [ ]
+
+[tool.docformatter]
+recursive = true
+in-place = true
+wrap-summaries = 90
+wrap-descriptions = 90
+pre-summary-newline = true
+make-summary-multi-line = true

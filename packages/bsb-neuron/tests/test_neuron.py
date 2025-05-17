@@ -1,10 +1,8 @@
 import importlib
 import itertools
-import traceback
 import unittest
 from copy import copy
 
-from arborize import define_model
 from bsb.core import Scaffold
 from bsb.services import MPI
 from bsb.simulation import get_simulation_adapter
@@ -107,7 +105,7 @@ class TestNeuronMultichunk(
     def test_4ch_manual(self):
         """
         Tests runnability of the NEURON adapter with 4 chunks filled with 12x3 single
-        compartment HH cells and ExpSyn synapses connected manually
+        compartment HH cells and ExpSyn synapses connected manually.
         """
         sim = self.network.simulations.test
         adapter = get_simulation_adapter(sim.simulator)
@@ -223,7 +221,7 @@ class TestNeuronSmallChunk(
     def test_smallch_manual(self):
         """
         Tests runnability of the NEURON adapter with 500 chunks filled with 12x3 single
-        compartment HH cells and ExpSyn synapses manually connected
+        compartment HH cells and ExpSyn synapses manually connected.
         """
         sim = self.network.simulations.test
         adapter = get_simulation_adapter(sim.simulator)
@@ -338,7 +336,7 @@ class TestNeuronMultiBranch(
     def test_500ch_multibranch_manualconn(self):
         """
         Tests runnability of the NEURON adapter with 500 chunks filled with 12x3 single
-        compartment HH cells and ExpSyn synapses connected manually
+        compartment HH cells and ExpSyn synapses connected manually.
         """
         sim = self.network.simulations.test
         adapter = get_simulation_adapter(sim.simulator)
@@ -459,7 +457,8 @@ class TestNeuronMultiBranchLoop(
     def test_500ch_manualloop(self):
         """
         Tests runnability of the NEURON adapter with 500 chunks filled with 12x3 single
-        compartment HH cells and ExpSyn synapses connected manually with loop (within cell and cs)
+        compartment HH cells and ExpSyn synapses connected manually with loop (within cell
+        and cs)
         """
         sim = self.network.simulations.test
         adapter = get_simulation_adapter(sim.simulator)

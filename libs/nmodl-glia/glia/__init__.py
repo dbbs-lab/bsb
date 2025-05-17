@@ -13,6 +13,8 @@ from .assets import Catalogue, Mod, Package
 from .exceptions import *
 from .neuron import MechAccessor
 
+__version__ = "6.0.0-a1"
+
 _manager = Glia()
 
 

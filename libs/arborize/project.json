@@ -28,9 +28,7 @@
     },
     "build": {
       "executor": "@nxlv/python:build",
-      "outputs": [
-        "{projectRoot}/dist"
-      ],
+      "outputs": ["{projectRoot}/dist"],
       "options": {
         "outputPath": "{projectRoot}/dist",
         "publish": true,
@@ -64,11 +62,17 @@
     "test": {
       "executor": "@nxlv/python:run-commands",
       "outputs": [
-        "{workspaceRoot}/reports/{projectRoot}/unittests",
         "{workspaceRoot}/coverage/{projectRoot}"
       ],
       "options": {
-        "command": "uv run pytest tests/",
+        "commands": [
+          "uv run coverage run -p -m unittest discover -v -s ./tests",
+          "mpiexec -n 2 uv run coverage run -p -m unittest discover -v -s ./tests",
+          "uv run coverage combine",
+          "uv run coverage xml -i -o ../../coverage/libs/arborize/coverage.xml",
+          "uv run coverage html -i -d ../../coverage/libs/arborize/html"
+        ],
+        "parallel": false,
         "cwd": "{projectRoot}"
       },
       "cache": true

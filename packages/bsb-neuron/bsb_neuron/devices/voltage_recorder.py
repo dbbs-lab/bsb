@@ -8,7 +8,7 @@ class VoltageRecorder(NeuronDevice, classmap_entry="voltage_recorder"):
     locations = config.attr(type=LocationTargetting, default={"strategy": "soma"})
 
     def implement(self, adapter, simulation, simdata):
-        for model, pop in self.targetting.get_targets(
+        for _model, pop in self.targetting.get_targets(
             adapter, simulation, simdata
         ).items():
             for target in pop:

@@ -9,7 +9,7 @@ class SynapseRecorder(NeuronDevice, classmap_entry="synapse_recorder"):
     synapse_types = config.list()
 
     def implement(self, adapter, simulation, simdata):
-        for model, pop in self.targetting.get_targets(
+        for _model, pop in self.targetting.get_targets(
             adapter, simulation, simdata
         ).items():
             for target in pop:

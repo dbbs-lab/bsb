@@ -21,7 +21,10 @@ class VoltageClamp(NeuronDevice, classmap_entry="vclamp"):
             clamped = False
             for location in self.locations.get_locations(target):
                 if clamped:
-                    warnings.warn(f"Multiple voltage clamps placed on {target}")
+                    warnings.warn(
+                        f"Multiple voltage clamps placed on {target}",
+                        stacklevel=2,
+                    )
                 self._add_clamp(
                     simdata.results,
                     location,

@@ -11,7 +11,7 @@ class CurrentClamp(NeuronDevice, classmap_entry="current_clamp"):
     duration = config.attr(type=float, default=None)
 
     def implement(self, adapter, simulation, simdata):
-        for model, pop in self.targetting.get_targets(
+        for _model, pop in self.targetting.get_targets(
             adapter, simulation, simdata
         ).items():
             for target in pop:

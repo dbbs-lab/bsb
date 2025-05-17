@@ -66,9 +66,6 @@ def _should_skip_load():
 
 class Glia:
     def __init__(self):
-        from . import __version__
-
-        self.version = __version__
         self._compiled = False
         self._loaded = False
         self.entry_points = []

@@ -13,7 +13,7 @@ import glia._fs
 import glia._mpi
 from glia import Mod, Package, get_cache_path
 
-from . import _shared
+from tests._shared import skipParallel, skipUnlessTestMods, skipIfInstalled
 
 
 def run_cli_command(command, xfail=False, **kwargs):
@@ -47,15 +47,15 @@ class TestCLI(unittest.TestCase):
         self.assertNotEqual("", result.output, "Should show help message")
         self.assertEqual(0, result.exit_code)
 
-    @_shared.skipParallel
-    @_shared.skipUnlessTestMods
+    @skipParallel
+    @skipUnlessTestMods
     def test_compile(self):
         result = run_cli_command(["compile"])
         self.assertEqual(0, result.exit_code)
         self.assertRegex(result.output, r"(\d+) out of (\1) passed")
 
-    @_shared.skipParallel
-    @_shared.skipIfInstalled()
+    @skipParallel
+    @skipIfInstalled()
     def test_compile_nopkg(self):
         result = run_cli_command(["compile"])
         self.assertEqual(0, result.exit_code)
@@ -65,7 +65,7 @@ class TestCLI(unittest.TestCase):
         result = run_cli_command(["list"])
         self.assertEqual(0, result.exit_code)
 
-    @_shared.skipUnlessTestMods
+    @skipUnlessTestMods
     def test_show(self):
         result = run_cli_command(["show", "AMPA"])
         self.assertEqual(0, result.exit_code)
@@ -75,7 +75,7 @@ class TestCLI(unittest.TestCase):
         self.assertIn('Unknown ASSET "doesntexist"', result.output)
         self.assertEqual(2, result.exit_code)
 
-    @_shared.skipUnlessTestMods
+    @skipUnlessTestMods
     def test_show_pkg(self):
         # todo: test this test
         result = run_cli_command(["show-pkg", "glia_test_mods"])
@@ -86,11 +86,11 @@ class TestCLI(unittest.TestCase):
         self.assertIn('Unknown PACKAGE "doesntexist"', result.output)
         self.assertEqual(2, result.exit_code)
 
-    @_shared.skipUnlessTestMods
+    @skipUnlessTestMods
     def test_test(self):
         result = run_cli_command(["test", "Na"])
 
-    @_shared.skipUnlessTestMods
+    @skipUnlessTestMods
     def test_test_unknown(self):
         result = run_cli_command(["test", "unknown"], xfail=True)
         self.assertIn("[?] unknown", result.output)
@@ -102,7 +102,7 @@ class TestCLI(unittest.TestCase):
             glia._fs._install_dirs.user_cache_dir, result.output, "wrong cache dir"
         )
 
-    @_shared.skipParallel
+    @skipParallel
     def test_cache_clear(self):
         pre_test = glia._fs.read_cache()
         with TemporaryDirectory() as tmp:

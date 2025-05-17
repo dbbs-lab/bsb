@@ -10,7 +10,7 @@ class SpikeGenerator(NeuronDevice, classmap_entry="spike_generator"):
     parameters = config.catch_all(type=types.any_())
 
     def implement(self, adapter, simulation, simdata):
-        for model, pop in self.targetting.get_targets(
+        for _model, pop in self.targetting.get_targets(
             adapter, simulation, simdata
         ).items():
             for target in pop:

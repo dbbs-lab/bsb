@@ -1,16 +1,10 @@
 import importlib
-import itertools
-import traceback
 import unittest
-from copy import copy
 
 from arborize import define_model
 from bsb import Configuration
-from bsb.services import MPI
-from bsb.simulation import get_simulation_adapter
 from bsb_test import (
     ConfigFixture,
-    MorphologiesFixture,
     NetworkFixture,
     RandomStorageFixture,
 )
@@ -32,7 +26,7 @@ class TestArborizedModel(
 ):
 
     def setUp(self):
-        print("CHECK : {}".format(neuron_installed()))
+        print(f"CHECK : {neuron_installed()}")
         super().setUp()
         hh_soma = {
             "cable_types": {
@@ -62,7 +56,8 @@ class TestArborizedModel(
         reverse_model = model_handler.__inv__(self.model)
         self.assertEqual(reverse_model, "model_definition")
 
-        # Now i check if a ModelDefinition is correctly converted into a Configuration tree
+        # Now i check if a ModelDefinition is correctly converted
+        # into a Configuration tree
         cfg_tree = self.cfg.__tree__()
         new_cfg = Configuration(cfg_tree)
 

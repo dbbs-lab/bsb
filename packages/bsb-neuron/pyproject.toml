@@ -1,48 +1,20 @@
-[tool.coverage.run]
-branch = true
-source = [ "bsb_neuron" ]
-
-[tool.coverage.report]
-exclude_lines = [ "if TYPE_CHECKING:" ]
-show_missing = true
-
-[tool.pytest.ini_options]
-addopts = """
- --cov
- --cov-report html:'../../coverage/packages/bsb-neuron/html'
- --cov-report xml:'../../coverage/packages/bsb-neuron/coverage.xml'
- --html='../../reports/packages/bsb-neuron/unittests/html/index.html'
- --junitxml='../../reports/packages/bsb-neuron/unittests/junit.xml'
-"""
-
-[tool.ruff]
-exclude = [ ".ruff_cache", ".svn", ".tox", ".venv", "dist" ]
-line-length = 88
-indent-width = 4
-
-  [tool.ruff.lint]
-  select = [ "E", "F", "UP", "B", "SIM", "I" ]
-  ignore = [ ]
-  fixable = [ "ALL" ]
-  unfixable = [ ]
-
-[tool.uv.sources.bsb-core]
-path = "../bsb-core"
-editable = true
+[build-system]
+requires = [ "flit_core >=3.2,<4" ]
+build-backend = "flit_core.buildapi"
 
 [project]
 name = "bsb-neuron"
 version = "6.0.0-a2"
 readme = "README.md"
+requires-python = ">=3.10,<4"
+dynamic = [ "description" ]
 classifiers = [
   "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"
 ]
-dynamic = [ "description" ]
-requires-python = ">=3.10"
 dependencies = [
   "bsb-core~=6.0",
-  "nrn-patch~=4.0; sys_platform != 'win32'",
-  "arborize[neuron]~=4.1; sys_platform != 'win32'"
+  "nrn-patch~=6.0; sys_platform != 'win32'",
+  "arborize[neuron]~=6.0; sys_platform != 'win32'"
 ]
 
   [[project.authors]]
@@ -56,16 +28,89 @@ dependencies = [
   [project.license]
   file = "LICENSE"
 
-[dependency-groups]
-dev = [
-  "autopep8>=2.3.1",
-  "ruff>=0.8.2",
-  "pytest>=8.3.4",
-  "pytest-sugar>=1.0.0",
-  "pytest-cov>=6.0.0",
-  "pytest-html>=4.1.1"
+  [project.optional-dependencies]
+  parallel = [ "bsb-core[parallel]" ]
+  test = [
+  "bsb-core[parallel]",
+  "bsb-test~=6.0",
+  "bsb-hdf5~=6.0",
+  "coverage~=7.0"
+]
+  docs = [
+  "furo~=2024.0",
+  "sphinxext-bsb>=0.2.7",
+  "docformatter>=1.7.6"
+]
+  dev = [
+  "bsb-neuron[test,docs]",
+  "pre-commit~=3.5",
+  "snakeviz~=2.1",
+  "ruff>=0.8.2"
 ]
 
-[build-system]
-requires = [ "flit_core >=3.2,<4" ]
-build-backend = "flit_core.buildapi"
+[dependency-groups]
+dev = ["bsb-neuron[dev]"]
+
+[project.entry-points."bsb.simulation_backends"]
+neuron = "bsb_neuron"
+
+[tool.flit.module]
+name = "bsb_neuron"
+
+[tool.uv.sources.bsb-core]
+path = "../bsb-core"
+editable = true
+
+[tool.uv.sources.bsb-hdf5]
+path = "../bsb-hdf5"
+editable = true
+
+[tool.uv.sources.bsb-test]
+path = "../bsb-test"
+editable = true
+
+[tool.uv.sources.sphinxext-bsb]
+path = "../../libs/sphinxext-bsb"
+editable = true
+
+[tool.uv.sources.nrn-patch]
+path = "../../libs/nrn-patch"
+editable = true
+
+[tool.uv.sources.arborize]
+path = "../../libs/arborize"
+editable = true
+
+[tool.coverage.run]
+branch = true
+source = [ "bsb_neuron" ]
+
+[tool.coverage.report]
+exclude_lines = [ "if TYPE_CHECKING:" ]
+show_missing = true
+
+[tool.ruff]
+exclude = [ ".ruff_cache", ".svn", ".tox", ".venv", "dist" ]
+line-length = 90
+indent-width = 4
+
+  [tool.ruff.format]
+  quote-style = "double"
+  indent-style = "space"
+  skip-magic-trailing-comma = false
+  line-ending = "auto"
+  docstring-code-line-length = "dynamic"
+
+  [tool.ruff.lint]
+  select = [ "E", "F", "UP", "B", "SIM", "I" ]
+  ignore = [ ]
+  fixable = [ "ALL" ]
+  unfixable = [ ]
+
+[tool.docformatter]
+recursive = true
+in-place = true
+wrap-summaries = 90
+wrap-descriptions = 90
+pre-summary-newline = true
+make-summary-multi-line = true

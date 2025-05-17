@@ -4,7 +4,6 @@ import typing
 
 import numpy as np
 from bsb import (
-    MPI,
     AdapterError,
     AdapterProgress,
     Chunk,
@@ -38,7 +37,7 @@ class NeuronResult(SimulationResult):
         v = p.record(obj)
 
         def flush(segment):
-            if "units" not in annotations.keys():
+            if "units" not in annotations:
                 annotations["units"] = "mV"
             segment.analogsignals.append(
                 AnalogSignal(list(v), sampling_period=p.dt * ms, **annotations)
@@ -61,8 +60,8 @@ def fill_parameter_data(parameters, data):
 class NeuronAdapter(SimulatorAdapter):
     initial = -65
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, comm=None):
+        super().__init__(comm=comm)
         self.network = None
         self.next_gid = 0
 
@@ -72,7 +71,7 @@ class NeuronAdapter(SimulatorAdapter):
 
         return engine
 
-    def prepare(self, simulation, comm=None):
+    def prepare(self, simulation):
         self.simdata[simulation] = NeuronSimulationData(
             simulation, result=NeuronResult(simulation)
         )
@@ -97,14 +96,14 @@ class NeuronAdapter(SimulatorAdapter):
     def load_balance(self, simulation):
         simdata = self.simdata[simulation]
         chunk_stats = simulation.scaffold.storage.get_chunk_stats()
-        size = MPI.get_size()
-        all_chunks = [Chunk.from_id(int(chunk), None) for chunk in chunk_stats.keys()]
+        size = self.comm.get_size()
+        all_chunks = [Chunk.from_id(int(chunk), None) for chunk in chunk_stats]
         simdata.node_chunk_alloc = [all_chunks[rank::size] for rank in range(0, size)]
         simdata.chunk_node_map = {}
         for node, chunks in enumerate(simdata.node_chunk_alloc):
             for chunk in chunks:
                 simdata.chunk_node_map[chunk] = node
-        simdata.chunks = simdata.node_chunk_alloc[MPI.get_rank()]
+        simdata.chunks = simdata.node_chunk_alloc[self.comm.get_rank()]
         simdata.placement = {
             model: model.get_placement_set(chunks=simdata.chunks)
             for model in simulation.cell_models.values()
@@ -121,7 +120,7 @@ class NeuronAdapter(SimulatorAdapter):
             self.engine.finitialize(self.initial)
             duration = max(sim.duration for sim in simulations)
             progress = AdapterProgress(duration)
-            for oi, i in progress.steps(step=1):
+            for _oi, i in progress.steps(step=1):
                 pc.psolve(i)
                 tick = progress.tick(i)
                 for listener in self._progress_listeners:
@@ -183,7 +182,7 @@ class NeuronAdapter(SimulatorAdapter):
         pre_types = set(cs.pre_type for cs in simulation.get_connectivity_sets().values())
         for pre_type in sorted(pre_types, key=lambda pre_type: pre_type.name):
             data = []
-            for cm, cs in simulation.get_connectivity_sets().items():
+            for _cm, cs in simulation.get_connectivity_sets().items():
                 if cs.pre_type != pre_type:
                     continue
                 pre, _ = cs.load_connections().as_globals().all()
@@ -226,10 +225,18 @@ class NeuronAdapter(SimulatorAdapter):
                 # Store a map of the local chunk transmitters to their GIDs
                 transmap[cm] = {
                     "transmitters": dict(
-                        zip(map(tuple, local_cm_transmitters), map(int, idx_tm + offset))
+                        zip(
+                            map(tuple, local_cm_transmitters),
+                            map(int, idx_tm + offset),
+                            strict=False
+                        )
                     ),
                     "receivers": dict(
-                        zip(map(tuple, local_cm_receivers), map(int, idx_rcv + offset))
+                        zip(
+                            map(tuple, local_cm_receivers),
+                            map(int, idx_rcv + offset),
+                            strict=False
+                        )
                     ),
                 }
 
@@ -240,8 +247,8 @@ class NeuronAdapter(SimulatorAdapter):
     def better_concat(self, items):
         if not items:
             raise RuntimeError("Can not concat 0 items")
-        l = sum(len(x) for x in items)
-        r = np.empty((l, items[0].shape[1]), dtype=items[0].dtype)
+        l_ = sum(len(x) for x in items)
+        r = np.empty((l_, items[0].shape[1]), dtype=items[0].dtype)
         ptr = 0
         for x in items:
             r[ptr : ptr + len(x)] = x
@@ -276,12 +283,15 @@ class NeuronPopulation(list):
 
     def __getitem__(self, item):
         # Boolean masking, kind of
-        if getattr(item, "dtype", None) == bool or _all_bools(item):
+        if getattr(item, "dtype", None) is bool or _all_bools(item):
             if len(self) == len(item):
-                return NeuronPopulation(self._model, [p for p, b in zip(self, item) if b])
+                return NeuronPopulation(
+                    self._model,
+                    [p for p, b in zip(self, item, strict=False) if b]
+                )
             else:
                 raise SimulationError
-        elif getattr(item, "dtype", None) == int or _all_ints(item):
+        elif getattr(item, "dtype", None) is int or _all_ints(item):
             if getattr(item, "ndim", None) == 0:
                 return super().__getitem__(item)
             return NeuronPopulation(self._model, [self[i] for i in item])

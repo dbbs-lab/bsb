@@ -15,7 +15,7 @@ class NeuronCell(CellModel):
     def create_instances(self, count, ids, pos, morpho: "MorphologySet", rot, additional):
         def dictzip():
             yield from (
-                dict(zip(additional.keys(), values[:-1]))
+                dict(zip(additional.keys(), values[:-1], strict=False))
                 for values in itertools.zip_longest(
                     *additional.values(), itertools.repeat(count)
                 )
@@ -36,7 +36,8 @@ class NeuronCell(CellModel):
     def _create(self, id, pos, morpho, rot, additional):
         if morpho is None:
             raise RuntimeError(
-                f"Cell {id} of {self.name} has no morphology, can't use {self.__class__.__name__} to construct it."
+                f"Cell {id} of {self.name} has no morphology, "
+                f"can't use {self.__class__.__name__} to construct it."
             )
         instance = self.create(id, pos, morpho, rot, additional)
         instance.id = id

@@ -54,13 +54,20 @@
       "cache": true
     },
     "test": {
+      "dependsOn": ["bsb-neuron:sync"],
       "executor": "@nxlv/python:run-commands",
       "outputs": [
-        "{workspaceRoot}/reports/{projectRoot}/unittests",
         "{workspaceRoot}/coverage/{projectRoot}"
       ],
       "options": {
-        "command": "uv run pytest tests/",
+        "commands": [
+          "uv run coverage run -p -m unittest discover -v -s ./tests",
+          "mpiexec -n 2 uv run coverage run -p -m unittest discover -v -s ./tests",
+          "uv run coverage combine",
+          "uv run coverage xml -i -o ../../coverage/packages/bsb-neuron/coverage.xml",
+          "uv run coverage html -i -d ../../coverage/packages/bsb-neuron/html"
+        ],
+        "parallel": false,
         "cwd": "{projectRoot}"
       },
       "cache": true

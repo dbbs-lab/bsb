@@ -1,62 +1,78 @@
 [build-system]
-requires = ["flit_core >=3.2,<4"]
+requires = [ "flit_core >=3.2,<4" ]
 build-backend = "flit_core.buildapi"
 
 [project]
 name = "bsb-nest"
-authors = [
-    {name = "Robin De Schepper", email = "robin@alexandria.sc"},
-    {name = "Dimitri Rodarie", email = "dimitri.rodarie@unipv.it"},
-]
-version = "4.3.2"
+version = "4.3.3-0"
 readme = "README.md"
-license = {file = "LICENSE"}
 requires-python = ">=3.10,<4"
-dynamic = ["description"]
-classifiers = ["License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"]
-dependencies = [
-    "bsb-core~=5.0"
+dynamic = [ "description" ]
+classifiers = [
+  "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"
 ]
+dependencies = [ "bsb-core~=5.0" ]
 
-[project.optional-dependencies]
-parallel = ["bsb-core[parallel]"]
-test = [
-    "bsb-core[parallel]",
-    "bsb-test~=4.0",
-    "bsb-hdf5~=5.0",
-    # Required to load the Brunel config file
-    "bsb-arbor~=4.0",
-    "coverage~=7.0"
-]
-docs = [
-    "furo~=2024.0",
-    "sphinxext-bsb>=0.2.7",
-    "docformatter>=1.7.6",
-]
-dev = [
-    "bsb-nest[test, docs]",
-    "pre-commit~=3.5",
-    "snakeviz~=2.1",
-    "ruff>=0.8.2",
-]
+  [[project.authors]]
+  name = "Robin De Schepper"
+  email = "robin@alexandria.sc"
 
-[dependency-groups]
-dev = [
-  "bsb-nest[dev]",
+  [[project.authors]]
+  name = "Dimitri Rodarie"
+  email = "dimitri.rodarie@unipv.it"
+
+  [project.license]
+  file = "LICENSE"
+
+  [project.optional-dependencies]
+  parallel = [ "bsb-core[parallel]" ]
+  test = [
+  "bsb-core[parallel]",
+  "bsb-test~=4.0",
+  "bsb-hdf5~=5.0",
+  "bsb-arbor~=4.0",
+  "coverage~=7.0"
+]
+  docs = [
+  "furo~=2024.0",
+  "sphinxext-bsb>=0.2.7",
+  "docformatter>=1.7.6"
+]
+  dev = [
+  "bsb-nest[test, docs]",
+  "pre-commit~=3.5",
+  "snakeviz~=2.1",
+  "ruff>=0.8.2"
 ]
 
 [project.entry-points."bsb.simulation_backends"]
 nest = "bsb_nest"
 
+[dependency-groups]
+dev = [ "bsb-nest[dev]" ]
+
 [tool.flit.module]
 name = "bsb_nest"
 
-[tool.uv.sources]
-bsb-core = { path = "../bsb-core", editable = true }
-bsb-hdf5 = { path = "../bsb-hdf5", editable = true }
-bsb-arbor = { path = "../bsb-arbor", editable = true }
-bsb-test = { path = "../bsb-test", editable = true }
-sphinxext-bsb = { path = "../../libs/sphinxext-bsb", editable = true }
+[tool.uv.sources.bsb-core]
+path = "../bsb-core"
+editable = true
+
+[tool.uv.sources.bsb-hdf5]
+path = "../bsb-hdf5"
+editable = true
+
+[tool.uv.sources.bsb-arbor]
+path = "../bsb-arbor"
+editable = true
+
+[tool.uv.sources.bsb-test]
+path = "../bsb-test"
+editable = true
+
+[tool.uv.sources.sphinxext-bsb]
+path = "../../libs/sphinxext-bsb"
+editable = true
 
 [tool.coverage.run]
 branch = true
@@ -71,12 +87,18 @@ exclude = [ ".ruff_cache", ".svn", ".tox", ".venv", "dist" ]
 line-length = 90
 indent-width = 4
 
-[tool.ruff.format]
-quote-style = "double"
-indent-style = "space"
-skip-magic-trailing-comma = false
-line-ending = "auto"
-docstring-code-line-length = "dynamic"
+  [tool.ruff.format]
+  quote-style = "double"
+  indent-style = "space"
+  skip-magic-trailing-comma = false
+  line-ending = "auto"
+  docstring-code-line-length = "dynamic"
+
+  [tool.ruff.lint]
+  select = [ "E", "F", "UP", "B", "SIM", "I" ]
+  ignore = [ ]
+  fixable = [ "ALL" ]
+  unfixable = [ ]
 
 [tool.docformatter]
 recursive = true
@@ -85,9 +107,3 @@ wrap-summaries = 90
 wrap-descriptions = 90
 pre-summary-newline = true
 make-summary-multi-line = true
-
-[tool.ruff.lint]
-select = [ "E", "F", "UP", "B", "SIM", "I" ]
-ignore = [ ]
-fixable = [ "ALL" ]
-unfixable = [ ]

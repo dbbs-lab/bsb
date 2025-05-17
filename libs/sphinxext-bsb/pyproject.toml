@@ -3,7 +3,7 @@ branch = true
 source = [ "sphinxext_bsb" ]
 
 [tool.coverage.report]
-exclude_lines = ['if TYPE_CHECKING:']
+exclude_lines = [ "if TYPE_CHECKING:" ]
 show_missing = true
 
 [tool.pytest.ini_options]
@@ -15,20 +15,38 @@ addopts = """
  --junitxml='../reports/sphinxext-bsb/unittests/junit.xml'
 """
 
-[project]
-name = "sphinxext-bsb"
-version = "0.2.7"
-description = "BSB Sphinx documentation extension"
-requires-python = ">=3.10"
-readme = 'README.md'
-dependencies = [
-    "bsb-core",
-    "sphinx>=8.1",
-    "sphinx-design~=0.6",
-]
-
 [tool.flit.module]
 name = "sphinxext.bsb"
+
+[tool.ruff]
+exclude = [ ".ruff_cache", ".svn", ".tox", ".venv", "dist" ]
+line-length = 90
+indent-width = 4
+
+  [tool.ruff.format]
+  quote-style = "double"
+  indent-style = "space"
+  skip-magic-trailing-comma = false
+  line-ending = "auto"
+  docstring-code-line-length = "dynamic"
+
+  [tool.ruff.lint]
+  select = [ "E", "F", "UP", "B", "SIM", "I" ]
+  ignore = [ ]
+  fixable = [ "ALL" ]
+  unfixable = [ ]
+
+[tool.uv.sources.bsb-core]
+path = "../../packages/bsb-core"
+editable = true
+
+[project]
+name = "sphinxext-bsb"
+version = "0.2.8-0"
+description = "BSB Sphinx documentation extension"
+requires-python = ">=3.10"
+readme = "README.md"
+dependencies = [ "bsb-core", "sphinx>=8.1", "sphinx-design~=0.6" ]
 
 [dependency-groups]
 dev = [
@@ -37,50 +55,9 @@ dev = [
   "pytest>=8.3.4",
   "pytest-sugar>=1.0.0",
   "pytest-cov>=6.0.0",
-  "pytest-html>=4.1.1",
+  "pytest-html>=4.1.1"
 ]
 
 [build-system]
-requires = ["flit_core >=3.2,<4"]
+requires = [ "flit_core >=3.2,<4" ]
 build-backend = "flit_core.buildapi"
-
-[tool.ruff]
-exclude = [
-  ".ruff_cache",
-  ".svn",
-  ".tox",
-  ".venv",
-  "dist",
-]
-line-length = 90
-indent-width = 4
-
-[tool.ruff.format]
-quote-style = "double"
-indent-style = "space"
-skip-magic-trailing-comma = false
-line-ending = "auto"
-docstring-code-line-length = "dynamic"
-
-[tool.ruff.lint]
-select = [
-  # pycodestyle
-  "E",
-  # Pyflakes
-  "F",
-  # pyupgrade
-  "UP",
-  # flake8-bugbear
-  "B",
-  # flake8-simplify
-  "SIM",
-  # isort
-  "I",
-]
-ignore = []
-
-fixable = ["ALL"]
-unfixable = []
-
-[tool.uv.sources]
-bsb-core = { path = "../../packages/bsb-core", editable = true }

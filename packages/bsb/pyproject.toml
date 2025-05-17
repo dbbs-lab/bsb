@@ -1,18 +1,11 @@
 [build-system]
 build-backend = "setuptools.build_meta"
-requires = ["setuptools"]
+requires = [ "setuptools" ]
 
 [project]
 name = "bsb"
-authors = [
-  { name = "Robin De Schepper", email = "robin@alexandria.sc" },
-  { name = "Dimitri Rodarie", email = "dimitri.rodarie@unipv.it" }
-]
-
-maintainers = [{ name = "Dimitri Rodarie", email = "dimitri.rodarie@unipv.it" }]
-version = "4.4.2"
+version = "4.4.3-0"
 readme = "README.md"
-license = { file = "LICENSE" }
 requires-python = ">=3.10,<4"
 description = "Black-box component framework for multiscale neural modeling"
 classifiers = [
@@ -23,16 +16,30 @@ dependencies = [
   "bsb-hdf5",
   "bsb-arbor; sys_platform != 'win32'",
   "bsb-json",
-  "bsb-yaml",
+  "bsb-yaml"
 ]
 
+  [[project.authors]]
+  name = "Robin De Schepper"
+  email = "robin@alexandria.sc"
 
-[project.optional-dependencies]
-parallel = ["bsb-core[parallel]"]
-neuron = ["bsb-neuron~=4.2.2"]
-nest = ["bsb-nest~=4.3.2"]
-arbor = ["bsb-arbor~=4.1.1"]
-dev = [
+  [[project.authors]]
+  name = "Dimitri Rodarie"
+  email = "dimitri.rodarie@unipv.it"
+
+  [[project.maintainers]]
+  name = "Dimitri Rodarie"
+  email = "dimitri.rodarie@unipv.it"
+
+  [project.license]
+  file = "LICENSE"
+
+  [project.optional-dependencies]
+  parallel = [ "bsb-core[parallel]" ]
+  neuron = [ "bsb-neuron~=4.2.2" ]
+  nest = [ "bsb-nest~=4.3.2" ]
+  arbor = [ "bsb-arbor~=4.1.1" ]
+  dev = [
   "bsb-core[dev]",
   "bsb-hdf5[dev]",
   "bsb-json[dev]",
@@ -41,27 +48,41 @@ dev = [
   "bsb-test[dev]",
   "gitdb>=4.0.12",
   "gitpython>=3.1.44",
-  "smmap>=5.0.2",
+  "smmap>=5.0.2"
 ]
+
+  [project.urls]
+  Home = "https://github.com/dbbs-lab/bsb"
+  Documentation = "https://bsb.readthedocs.io/"
+  "Bug Tracker" = "https://github.com/dbbs-lab/bsb/issues/"
+  "Source Code" = "https://github.com/dbbs-lab/bsb/"
 
 [dependency-groups]
-dev = [
-  "bsb[dev]",
-]
+dev = [ "bsb[dev]" ]
 
 [tool.setuptools]
-packages = []
+packages = [ ]
 
-[tool.uv.sources]
-bsb-core = { path = "../bsb-core", editable = true }
-bsb-hdf5 = { path = "../bsb-hdf5", editable = true }
-bsb-json = { path = "../bsb-json", editable = true }
-bsb-yaml = { path = "../bsb-yaml", editable = true }
-bsb-arbor = { path = "../bsb-arbor", editable = true }
-bsb-test = { path = "../bsb-test", editable = true }
+[tool.uv.sources.bsb-core]
+path = "../bsb-core"
+editable = true
 
-[project.urls]
-Home = "https://github.com/dbbs-lab/bsb"
-Documentation = "https://bsb.readthedocs.io/"
-"Bug Tracker" = "https://github.com/dbbs-lab/bsb/issues/"
-"Source Code" = "https://github.com/dbbs-lab/bsb/"
+[tool.uv.sources.bsb-hdf5]
+path = "../bsb-hdf5"
+editable = true
+
+[tool.uv.sources.bsb-json]
+path = "../bsb-json"
+editable = true
+
+[tool.uv.sources.bsb-yaml]
+path = "../bsb-yaml"
+editable = true
+
+[tool.uv.sources.bsb-arbor]
+path = "../bsb-arbor"
+editable = true
+
+[tool.uv.sources.bsb-test]
+path = "../bsb-test"
+editable = true

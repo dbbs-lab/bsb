@@ -9,7 +9,7 @@ import sphinxext.bsb
 
 # Use sphinxext.bsb to help configure this monorepo package
 _project = sphinxext.bsb.Project(
-    "BSB NEST extension", Path(__file__).parent.parent, monorepo=True
+    "BSB NEURON extension", Path(__file__).parent.parent, monorepo=True
 )
 
 
@@ -32,7 +32,7 @@ intersphinx_mapping = {
     **_project.intersphinx,
 }
 
-autodoc_mock_imports = ["nest"]
+autodoc_mock_imports = ["neuron"]
 
 
 autoclass_content = "both"

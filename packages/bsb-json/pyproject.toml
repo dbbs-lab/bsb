@@ -4,14 +4,14 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "bsb-json"
-version = "4.2.4-0"
+version = "6.0.0-a2"
 readme = "README.md"
 requires-python = ">=3.10,<4"
 dynamic = [ "description" ]
 classifiers = [
   "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"
 ]
-dependencies = [ "bsb-core" ]
+dependencies = [ "bsb-core~=6.0" ]
 
   [[project.authors]]
   name = "Robin De Schepper"

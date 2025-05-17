@@ -11,6 +11,8 @@ dependencies = [
     "bsb-arbor",
     "bsb-core",
     "bsb-hdf5",
+    "bsb-nest",
+    "bsb-neuron",
     "bsb-json",
     "bsb-test",
     "bsb-yaml",

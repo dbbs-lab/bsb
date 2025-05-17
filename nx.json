@@ -14,9 +14,12 @@
     }
   ],
   "release": {
-    "projects": [
-      "*"
-    ]
+    "projects": ["*"],
+    "version": {
+      "generatorOptions": {
+        "lockArgs": "--prerelease=allow"
+      }
+    }
   },
   "generators": {
     "@nxlv/python:uv-project": {

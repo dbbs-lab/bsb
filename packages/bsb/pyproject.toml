@@ -4,7 +4,7 @@ requires = [ "setuptools" ]
 
 [project]
 name = "bsb"
-version = "4.4.3-0"
+version = "6.0.0-a2"
 readme = "README.md"
 requires-python = ">=3.10,<4"
 description = "Black-box component framework for multiscale neural modeling"
@@ -12,11 +12,13 @@ classifiers = [
   "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"
 ]
 dependencies = [
-  "bsb-core",
-  "bsb-hdf5",
+  "bsb-core~=6.0",
+  "bsb-hdf5~=6.0",
   "bsb-arbor; sys_platform != 'win32'",
-  "bsb-json",
-  "bsb-yaml"
+  "bsb-json~=6.0",
+  "bsb-yaml~=6.0",
+  "bsb-nest",
+  "bsb-neuron"
 ]
 
   [[project.authors]]
@@ -36,9 +38,9 @@ dependencies = [
 
   [project.optional-dependencies]
   parallel = [ "bsb-core[parallel]" ]
-  neuron = [ "bsb-neuron~=4.2.2" ]
-  nest = [ "bsb-nest~=4.3.2" ]
-  arbor = [ "bsb-arbor~=4.1.1" ]
+  neuron = [ "bsb-neuron~=6.0" ]
+  nest = [ "bsb-nest~=6.0" ]
+  arbor = [ "bsb-arbor~=6.0" ]
   dev = [
   "bsb-core[dev]",
   "bsb-hdf5[dev]",
@@ -62,6 +64,14 @@ dev = [ "bsb[dev]" ]
 
 [tool.setuptools]
 packages = [ ]
+
+[tool.uv.sources.bsb-nest]
+path = "../bsb-nest"
+editable = true
+
+[tool.uv.sources.bsb-neuron]
+path = "../bsb-neuron"
+editable = true
 
 [tool.uv.sources.bsb-core]
 path = "../bsb-core"

@@ -4,14 +4,14 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "bsb-nest"
-version = "4.3.3-0"
+version = "6.0.0-a2"
 readme = "README.md"
 requires-python = ">=3.10,<4"
 dynamic = [ "description" ]
 classifiers = [
   "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"
 ]
-dependencies = [ "bsb-core~=5.0" ]
+dependencies = [ "bsb-core~=6.0" ]
 
   [[project.authors]]
   name = "Robin De Schepper"
@@ -28,9 +28,9 @@ dependencies = [ "bsb-core~=5.0" ]
   parallel = [ "bsb-core[parallel]" ]
   test = [
   "bsb-core[parallel]",
-  "bsb-test~=4.0",
-  "bsb-hdf5~=5.0",
-  "bsb-arbor~=4.0",
+  "bsb-test~=6.0",
+  "bsb-hdf5~=6.0",
+  "bsb-arbor~=6.0",
   "coverage~=7.0"
 ]
   docs = [

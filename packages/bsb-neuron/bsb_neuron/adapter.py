@@ -17,13 +17,14 @@ from bsb import (
 from neo import AnalogSignal
 
 if typing.TYPE_CHECKING:
-    from bsb import Simulation
-
-    from .cell import NeuronCell
+    pass
 
 
 class NeuronSimulationData(SimulationData):
-    def __init__(self, simulation: "Simulation", result=None):
+    def __init__(self, simulation, result=None):
+        """
+        type simulation: bsb.simulation.simulation.Simulation
+        """
         super().__init__(simulation, result=result)
         self.cid_offsets = dict()
         self.connections = dict()
@@ -109,7 +110,10 @@ class NeuronAdapter(SimulatorAdapter):
             for model in simulation.cell_models.values()
         }
 
-    def run(self, *simulations: "Simulation"):
+    def run(self, *simulations):
+        """
+        :type simulations: list[bsb.simulation.simulation.Simulation]
+        """
         unprepared = [sim for sim in simulations if sim not in self.simdata]
         if unprepared:
             raise AdapterError(f"Unprepared for simulations: {', '.join(unprepared)}")
@@ -275,7 +279,10 @@ class NeuronAdapter(SimulatorAdapter):
 
 
 class NeuronPopulation(list):
-    def __init__(self, model: "NeuronCell", instances: list):
+    def __init__(self, model, instances: list):
+        """
+        :type model: bsb_neuron.cell.NeuronCell
+        """
         self._model = model
         super().__init__(instances)
         for instance in instances:

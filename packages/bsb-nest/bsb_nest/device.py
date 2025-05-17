@@ -41,7 +41,7 @@ class NestDevice(DeviceModel):
         Get a dictionary from a target group to its NEST Collection
         for each target group of the device.
 
-        :param bsb_nest.adapter.NestAdapter adapter:
+        :param bsb_nest.adapter.NestAdapter adapter: Nest adapter instance
         :param bsb_nest.simulation.NestSimulation simulation: Nest simulation instance
         :param bsb.simulation.adapter.SimulationData simdata: Simulation data instance
         :return: dictionary of device target group to NEST Collection

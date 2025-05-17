@@ -1,18 +1,20 @@
 import itertools
-from typing import TYPE_CHECKING
 
 from arborize import ModelDefinition, define_model
 from bsb import CellModel, config, types
-
-if TYPE_CHECKING:
-    from bsb.morphologies import MorphologySet
 
 
 @config.dynamic(
     attr_name="model_strategy", required=False, default="arborize", auto_classmap=True
 )
 class NeuronCell(CellModel):
-    def create_instances(self, count, ids, pos, morpho: "MorphologySet", rot, additional):
+    """
+    Class interfacing a NEURON cell model.
+    """
+    def create_instances(self, count, ids, pos, morpho, rot, additional):
+        """
+        type morpho: bsb.morphologies.MorphologySet
+        """
         def dictzip():
             yield from (
                 dict(zip(additional.keys(), values[:-1], strict=False))

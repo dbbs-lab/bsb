@@ -32,7 +32,7 @@ class NestSimulation(Simulation):
         required=True
     )
     """Dictionary of connection models in the simulation."""
-    devices: config._attrs.cfgdict[NestDevice]  = config.dict(
+    devices: config._attrs.cfgdict[NestDevice] = config.dict(
         type=NestDevice,
         required=True
     )

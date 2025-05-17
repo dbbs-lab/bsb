@@ -17,7 +17,7 @@ from .definitions import (
 from .schematic import Schematic
 from .schematics import bsb_schematic, file_schematic
 
-__version__ = "4.1.0"
+__version__ = "6.0.0-a2"
 __all__ = [
     "CableProperties",
     "CableType",

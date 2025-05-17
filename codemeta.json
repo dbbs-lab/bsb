@@ -66,6 +66,16 @@
             "givenName": "Claudia"
         },
         {
+            "id": "https://search.kg.ebrains.eu/instances/762bd286-9d46-4ac5-889f-63b08d33c895",
+            "type": "Person",
+            "affiliation": {
+                "type": "Organization",
+                "name": "DBBS Unipv"
+            },
+            "familyName": "D'Angelo",
+            "givenName": "Egidio"
+        },
+        {
             "id": "https://orcid.org/0000-0003-2496-2311",
             "type": "Person",
             "affiliation": {

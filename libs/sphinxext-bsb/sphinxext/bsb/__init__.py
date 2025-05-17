@@ -21,6 +21,7 @@ from bsb.config.types import class_
 
 from .project import Project
 
+__version__ = "6.0.0-a2"
 
 def example_function():
     pass

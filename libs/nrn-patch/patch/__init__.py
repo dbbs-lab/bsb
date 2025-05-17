@@ -27,6 +27,8 @@ from .core import (
 from .exceptions import NotConnectableError, NotConnectedError
 from .interpreter import PythonHocInterpreter
 
+__version__ = "6.0.0-a2"
+
 p: "PythonHocInterpreter"
 h: "PythonHocInterpreter"
 

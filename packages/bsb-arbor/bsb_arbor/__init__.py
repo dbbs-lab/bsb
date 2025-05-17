@@ -8,7 +8,7 @@ from .adapter import ArborAdapter
 from .devices import PoissonGenerator, Probe, SpikeRecorder
 from .simulation import ArborSimulation
 
-__version__ = "4.1.1"
+__version__ = "6.0.0-a2"
 __plugin__ = SimulationBackendPlugin(Simulation=ArborSimulation, Adapter=ArborAdapter)
 
 

@@ -1,0 +1,13 @@
+{
+  "full_name": "Me",
+  "email": "me@example.com",
+  "project_name": "Glia Package",
+  "project_slug": "{{ cookiecutter.project_name.lower().replace(' ', '_').replace('-', '_') }}",
+  "project_short_description": "My collection of NMODL assets.",
+  "version": "0.1.0",
+  "open_source_license": ["MIT license", "BSD license", "ISC license", "Apache Software License 2.0", "GNU General Public License v3", "Not open source"],
+  "_glia": {
+    "version": "4.0.2",
+    "specifier": "nmodl-glia~=4.0"
+  }
+}

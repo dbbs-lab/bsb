@@ -1,3 +1,4 @@
+import importlib.metadata
 import os
 import sys
 import unittest
@@ -14,7 +15,8 @@ class TestCLI(unittest.TestCase):
 
         # Ensure that the current interpreter can be detected from the subprocess via PATH
         os.environ["PATH"] += ":" + os.path.join(sys.prefix, "bin")
-        our_version = bytes(f"bsb {bsb.__version__}", encoding="utf-8")
+
+        our_version = bytes(f"bsb {importlib.metadata.version('bsb-core')}", encoding="utf-8")
         # Split on newlines to ignore any prepended spammy output in case of environment
         # specific warnings when running BSB commands.
         cli_version = subprocess.check_output(["bsb", "--version"]).split(b"\n")[-2]

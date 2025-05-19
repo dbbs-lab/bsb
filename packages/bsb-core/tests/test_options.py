@@ -1,4 +1,5 @@
 import contextlib
+import importlib.metadata
 import os
 import pathlib
 import tempfile
@@ -178,10 +179,10 @@ class TestScriptOption(unittest.TestCase):
         self.opt = options.get_option_descriptors()
 
     def test_script_get(self):
-        from bsb import __version__
+        version = importlib.metadata.version('bsb-core')
 
         ver = self.opt["version"].script
-        self.assertEqual(__version__, ver, "script get mismatch")
+        self.assertEqual(version, ver, "script get mismatch")
         with self.assertRaises(ReadOnlyOptionError):
             self.opt["version"].script = "5.0"
         # Read one without bindings:

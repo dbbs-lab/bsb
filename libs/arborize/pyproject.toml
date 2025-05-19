@@ -9,7 +9,12 @@ readme = "README.md"
 requires-python = ">=3.10"
 dynamic = ["description"]
 classifiers = ["License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"]
-dependencies = ["numpy~=1.21", "errr~=1.2", "morphio>=3.3.6,<4"]
+dependencies = [
+    "numpy~=1.21",
+ "errr~=1.2",
+ "morphio>=3.3.6,<4",
+ "sphinxext-bsb",
+]
 
   [[project.authors]]
   name = "Robin De Schepper"
@@ -29,6 +34,9 @@ dev = ["arborize[parallel,bluepyopt,neuron,arbor,docs,test]"]
 
 [dependency-groups]
 dev = ["arborize[dev]"]
+
+[tool.uv.sources]
+sphinxext-bsb = { path = "../sphinxext-bsb", editable = true }
 
 [tool.uv.sources.nmodl-glia]
 path = "../nmodl-glia"

@@ -1,81 +1,79 @@
+from pathlib import Path
+
+import sphinxext.bsb
+
 # Configuration file for the Sphinx documentation builder.
 #
-# This file only contains a selection of the most common options. For a full
-# list see the documentation:
+# For the full list of built-in configuration values, see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
-# -- Path setup --------------------------------------------------------------
+# Use sphinxext.bsb to help configure this monorepo package
+_project = sphinxext.bsb.Project(
+    "Arborize model builder", Path(__file__).parent.parent, monorepo=True
+)
 
-# If extensions (or modules to document with autodoc) are in another directory,
-# add these directories to sys.path here. If the directory is relative to the
-# documentation root, use os.path.abspath to make it absolute, like shown here.
-#
-import os
-import sys
-
-sys.path.insert(0, os.path.abspath("../.."))
 
 # -- Project information -----------------------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = "Arborize"
-copyright = "2020, Robin De Schepper"
-author = "Robin De Schepper"
+project = _project.name
+copyright = _project.copyright
+author = _project.authors
+release = _project.version
+version = _project.version
 
-init_file = os.path.join(
-    os.path.dirname(__file__), "..", "..", "arborize", "__init__.py"
-)
-with open(init_file, "r") as f:
-    for line in f:
-        if "__version__ = " in line:
-            exec(line.strip())
-            break
+# -- General configuration ---------------------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-# The short X.Y version
-version = ".".join(__version__.split(".")[0:2])
-# The full version, including alpha/beta/rc tags
-release = __version__
+extensions = [
+    "sphinx.ext.autodoc",
+    "sphinx.ext.todo",
+    "sphinx.ext.coverage",
+    "sphinx.ext.ifconfig",
+    "sphinx.ext.viewcode",
+    "sphinx.ext.intersphinx",
+    "sphinxemoji.sphinxemoji",
+    "sphinx_design",
+    "sphinx_copybutton",
+    *_project.extensions,
+]
 
 autodoc_mock_imports = [
     "glia",
     "patch",
     "mpi4py",
-    "mpi4py.MPI",
-    "rtree",
-    "rtree.index",
-    "h5py",
-    "joblib",
-    "numpy",
-    "sklearn",
-    "scipy",
-    "six",
-    "plotly",
-    "morphio",
+    "neuron"
 ]
 
-# -- General configuration ---------------------------------------------------
 
-# Add any Sphinx extension module names here, as strings. They can be
-# extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
-# ones.
-extensions = [
-    "sphinx.ext.autodoc",
-    "sphinx.ext.todo",
-    "sphinx.ext.coverage",
-    "sphinx.ext.imgmath",
-    "sphinx.ext.ifconfig",
-    "sphinx.ext.viewcode",
-]
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3", None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
+    "scipy": ("https://scipy.github.io/devdocs/", None),
+    "errr": ("https://errr.readthedocs.io/en/latest/", None),
+    "mpi4py": ("https://mpi4py.readthedocs.io/en/stable/", None),
+    **_project.intersphinx,
+}
 
-# Add any paths that contain templates here, relative to this directory.
+autoclass_content = "both"
+autodoc_typehints = "both"
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 templates_path = ["_templates"]
-
-# List of patterns, relative to source directory, that match files and
-# directories to ignore when looking for source files.
-# This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = []
+todo_include_todos = True
 
 
 # -- Options for HTML output -------------------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 html_theme = "furo"
-html_static_path = ["_static"]
+
+html_static_path = [*_project.html_static_path]
+html_favicon = _project.html_favicon
+
+html_theme_options = {
+    **_project.html_theme_options,
+}
+
+html_context = {
+    **_project.html_context,
+}

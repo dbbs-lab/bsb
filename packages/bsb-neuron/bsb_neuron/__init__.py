@@ -15,7 +15,6 @@ from .devices import (
 )
 from .simulation import NeuronSimulation
 
-__version__ = "6.0.0-a2"
 __plugin__ = SimulationBackendPlugin(Simulation=NeuronSimulation, Adapter=NeuronAdapter)
 
 __all__ = [

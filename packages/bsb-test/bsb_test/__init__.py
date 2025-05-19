@@ -2,8 +2,6 @@
 Helpers for better and more complete tests for component developers of the BSB framework.
 """
 
-__version__ = "6.0.0-a2"
-
 
 import contextlib
 import glob as _glob

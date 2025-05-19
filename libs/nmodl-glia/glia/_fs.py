@@ -1,4 +1,5 @@
 import datetime
+import importlib.metadata
 import json
 import os
 import sys
@@ -68,9 +69,7 @@ def get_neuron_mod_path(*paths):
 
 
 def get_local_pkg_path():
-    from . import __version__
-
-    return get_data_path(__version__.split(".")[0], "local")
+    return get_data_path(importlib.metadata.version('nmodl-glia').split(".")[0], "local")
 
 
 def _read_shared_storage(*path):

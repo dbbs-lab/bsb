@@ -15,7 +15,6 @@ from .devices import (
 from .simulation import NestSimulation
 
 __plugin__ = SimulationBackendPlugin(Simulation=NestSimulation, Adapter=NestAdapter)
-__version__ = "6.0.0-a2"
 
 __all__ = [
     "DCGenerator",

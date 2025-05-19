@@ -1,7 +1,7 @@
 """
 HDF5 storage engine for the BSB framework.
 """
-
+import importlib.metadata
 import json
 import os
 import shutil
@@ -11,14 +11,12 @@ import h5py
 import shortuuid
 from bsb import Engine, MPILock, config, report
 from bsb import StorageNode as IStorageNode
-from bsb import __version__ as bsb_version
 
 from .connectivity_set import ConnectivitySet
 from .file_store import FileStore
 from .morphology_repository import MorphologyRepository
 from .placement_set import PlacementSet
 
-__version__ = "6.0.0-a2"
 __all__ = [
     "PlacementSet",
     "ConnectivitySet",
@@ -147,8 +145,8 @@ class HDF5Engine(Engine):
     @on_main_until(lambda self: self.exists())
     def create(self):
         with self._handle("w") as handle:
-            handle.attrs["bsb_hdf5_version"] = __version__
-            handle.attrs["bsb_version"] = bsb_version
+            handle.attrs["bsb_hdf5_version"] = importlib.metadata.version('bsb-hdf5')
+            handle.attrs["bsb_version"] = importlib.metadata.version('bsb-core')
             handle.create_group("placement")
             handle.create_group("connectivity")
             handle.create_group("files")

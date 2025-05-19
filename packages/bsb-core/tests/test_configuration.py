@@ -1,3 +1,4 @@
+import importlib.metadata
 import inspect
 import json
 import os.path
@@ -1721,14 +1722,14 @@ class TestNodeComposition(unittest.TestCase):
 
 class TestPackageRequirements(RandomStorageFixture, unittest.TestCase, engine_name="fs"):
     def test_basic_version(self):
-        self.assertIsNone(get_missing_requirement_reason("bsb-core==" + bsb.__version__))
+        self.assertIsNone(get_missing_requirement_reason("bsb-core==" + importlib.metadata.version('bsb-core')))
 
     def test_invalid_requirement(self):
         self.assertIsNotNone(
-            get_missing_requirement_reason("==" + bsb.__version__ + "@@==@@")
+            get_missing_requirement_reason("==" + importlib.metadata.version('bsb-core') + "@@==@@")
         )
         with self.assertWarns(PackageRequirementWarning), self.assertRaises(CastError):
-            Configuration.default(packages=["==" + bsb.__version__ + "@@==@@"])
+            Configuration.default(packages=["==" + importlib.metadata.version('bsb-core') + "@@==@@"])
 
     def test_different_version(self):
         self.assertIsNotNone(get_missing_requirement_reason("bsb-core==0"))
@@ -1741,9 +1742,9 @@ class TestPackageRequirements(RandomStorageFixture, unittest.TestCase, engine_na
             Configuration.default(packages=["bsb-core-soup==4.0"])
 
     def test_installed_package(self):
-        self.assertIsNone(get_missing_requirement_reason(f"bsb-core~={bsb.__version__}"))
+        self.assertIsNone(get_missing_requirement_reason(f"bsb-core~={importlib.metadata.version('bsb-core')}"))
         # Should produce no warnings
-        cfg = Configuration.default(packages=[f"bsb-core~={bsb.__version__}"])
+        cfg = Configuration.default(packages=[f"bsb-core~={importlib.metadata.version('bsb-core')}"])
         # Checking that the config with package requirements can be saved in storage
         self.network = Scaffold(cfg, self.storage)
         # Checking if the config

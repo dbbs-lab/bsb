@@ -60,13 +60,11 @@ class FileSystemEngine(Engine):
 
     @on_main_until(lambda self: self.exists())
     def create(self):
-        version = importlib.metadata.version('bsb-core')
+        version = importlib.metadata.version("bsb-core")
         os.makedirs(os.path.join(self._root, "files"), exist_ok=True)
         os.makedirs(os.path.join(self._root, "file_meta"), exist_ok=True)
         path = Path(self._root) / "versions.txt"
-        path.write_text(
-            json.dumps({"bsb": version, "engine": "fs", "version": version})
-        )
+        path.write_text(json.dumps({"bsb": version, "engine": "fs", "version": version}))
 
     @on_main_until(lambda self: self.exists())
     def move(self, new_root):

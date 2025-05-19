@@ -83,6 +83,7 @@ def _config_property(name):
 
 def _get_linked_config(storage=None, update_stored_config=False):
     import bsb.config
+
     cfg = None
     try:
         cfg = storage.load_active_config()
@@ -122,7 +123,9 @@ class Scaffold:
     after_connectivity: dict[str, AfterConnectivityHook]
     simulations: dict[str, Simulation]
 
-    def __init__(self, config=None, storage=None, clear=False, comm=None, update_config=False):
+    def __init__(
+        self, config=None, storage=None, clear=False, comm=None, update_config=False
+    ):
         """
         Bootstraps a network object.
 
@@ -166,7 +169,9 @@ class Scaffold:
         if config is None:
             # No config given, check for linked configs, or stored configs, otherwise
             # make default config.
-            linked = _get_linked_config(storage, update_stored_config=update_config or clear)
+            linked = _get_linked_config(
+                storage, update_stored_config=update_config or clear
+            )
             if linked:
                 report(f"Pulling configuration from linked {linked}.", level=2)
                 config = linked

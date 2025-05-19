@@ -106,9 +106,7 @@ class Schematic:
         Generate the next unique name for an instance of this model.
         """
         if not self._frozen:
-            raise FrozenError(
-                "Schematic must be finished before naming instances of it."
-            )
+            raise FrozenError("Schematic must be finished before naming instances of it.")
         self._named += 1
         return f"{self._name}_{self._named}"
 
@@ -260,9 +258,7 @@ class Schematic:
 
     def _make_label_namer(self):
         sort_labels = self._make_label_sorter()
-        return lambda labels: "_".join(
-            l.replace("_", "__") for l in sort_labels(labels)
-        )
+        return lambda labels: "_".join(l.replace("_", "__") for l in sort_labels(labels))
 
 
 class Point:

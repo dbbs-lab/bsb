@@ -12,6 +12,7 @@ class NeuronConnection(ConnectionModel):
     """
     Class interfacing a NEURON connection.
     """
+
     def create_connections(self, simulation, simdata, connections):
         """
         Connect all the cell models with the defined connection models
@@ -31,6 +32,7 @@ class SynapseSpec:
     """
     Class interfacing a NEURON synapse model.
     """
+
     synapse = config.attr(type=str, required=types.shortform())
     """Name of the synapse model."""
     weight = config.attr(type=float, default=0.004)

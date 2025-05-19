@@ -23,17 +23,14 @@ class NestSimulation(Simulation):
     """Random seed for the simulations"""
 
     cell_models: config._attrs.cfgdict[NestCell] = config.dict(
-        type=NestCell,
-        required=True
+        type=NestCell, required=True
     )
     """Dictionary of cell models in the simulation."""
     connection_models: config._attrs.cfgdict[NestConnection] = config.dict(
-        type=NestConnection,
-        required=True
+        type=NestConnection, required=True
     )
     """Dictionary of connection models in the simulation."""
     devices: config._attrs.cfgdict[NestDevice] = config.dict(
-        type=NestDevice,
-        required=True
+        type=NestDevice, required=True
     )
     """Dictionary of devices in the simulation."""

@@ -32,7 +32,6 @@ class _IonicRecorder:
         cls._slug = str(slug)
 
     def __init__(self, cell, section, ion):
-
         self.inputs = (cell, section, ion)
         self.vectors = self._record(ion, section(0.5))
 

@@ -255,7 +255,9 @@ class Storage:
         """
         from ..core import Scaffold
 
-        return Scaffold(storage=self, comm=self._comm.get_communicator(), update_config=update_config)
+        return Scaffold(
+            storage=self, comm=self._comm.get_communicator(), update_config=update_config
+        )
 
     def load_active_config(self):
         """

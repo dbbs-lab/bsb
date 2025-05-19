@@ -64,7 +64,5 @@ class ArborConnection(ConnectionModel):
 
     def gap_junction(self, conn):
         l_ = arbor.cell_local_label(f"gap_{conn.to_compartment.id}")
-        g = arbor.cell_global_label(
-            int(conn.from_id), f"gap_{conn.from_compartment.id}"
-        )
+        g = arbor.cell_global_label(int(conn.from_id), f"gap_{conn.from_compartment.id}")
         return arbor.gap_junction_connection(g, l_, self.weight)

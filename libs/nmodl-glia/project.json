@@ -44,7 +44,7 @@
       "outputs": [],
       "options": {
         "lintFilePatterns": [
-          "nmodl_glia",
+          "glia",
           "tests"
         ]
       },
@@ -55,7 +55,7 @@
       "outputs": [],
       "options": {
         "filePatterns": [
-          "nmodl_glia",
+          "glia",
           "tests"
         ]
       },

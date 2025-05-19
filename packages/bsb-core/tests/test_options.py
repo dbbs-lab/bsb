@@ -179,7 +179,7 @@ class TestScriptOption(unittest.TestCase):
         self.opt = options.get_option_descriptors()
 
     def test_script_get(self):
-        version = importlib.metadata.version('bsb-core')
+        version = importlib.metadata.version("bsb-core")
 
         ver = self.opt["version"].script
         self.assertEqual(version, ver, "script get mismatch")

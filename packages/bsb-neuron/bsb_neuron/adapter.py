@@ -232,14 +232,14 @@ class NeuronAdapter(SimulatorAdapter):
                         zip(
                             map(tuple, local_cm_transmitters),
                             map(int, idx_tm + offset),
-                            strict=False
+                            strict=False,
                         )
                     ),
                     "receivers": dict(
                         zip(
                             map(tuple, local_cm_receivers),
                             map(int, idx_rcv + offset),
-                            strict=False
+                            strict=False,
                         )
                     ),
                 }
@@ -293,8 +293,7 @@ class NeuronPopulation(list):
         if getattr(item, "dtype", None) is bool or _all_bools(item):
             if len(self) == len(item):
                 return NeuronPopulation(
-                    self._model,
-                    [p for p, b in zip(self, item, strict=False) if b]
+                    self._model, [p for p, b in zip(self, item, strict=False) if b]
                 )
             else:
                 raise SimulationError

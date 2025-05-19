@@ -1,6 +1,7 @@
 """
 HDF5 storage engine for the BSB framework.
 """
+
 import importlib.metadata
 import json
 import os
@@ -145,8 +146,8 @@ class HDF5Engine(Engine):
     @on_main_until(lambda self: self.exists())
     def create(self):
         with self._handle("w") as handle:
-            handle.attrs["bsb_hdf5_version"] = importlib.metadata.version('bsb-hdf5')
-            handle.attrs["bsb_version"] = importlib.metadata.version('bsb-core')
+            handle.attrs["bsb_hdf5_version"] = importlib.metadata.version("bsb-hdf5")
+            handle.attrs["bsb_version"] = importlib.metadata.version("bsb-core")
             handle.create_group("placement")
             handle.create_group("connectivity")
             handle.create_group("files")

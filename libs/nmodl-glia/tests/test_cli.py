@@ -181,9 +181,9 @@ class TestPackagingCLI(unittest.TestCase):
     def test_add_synapse(self):
         mod_path = Path(__file__).parent / "data" / "mods" / "AMPA__0.mod"
         mod_source = mod_path.read_text()
-        assert (
-            "POINT_PROCESS AMPA\n" in mod_path.read_text()
-        ), "Source of AMPA was mutated"
+        assert "POINT_PROCESS AMPA\n" in mod_path.read_text(), (
+            "Source of AMPA was mutated"
+        )
         runner = CliRunner()
         with runner.isolated_filesystem():
             runner.invoke(glia._cli.glia, ["pkg", "new"], input="\n\n\n\n\n\n\n")

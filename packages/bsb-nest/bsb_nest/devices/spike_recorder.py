@@ -10,7 +10,6 @@ class SpikeRecorder(NestDevice, classmap_entry="spike_recorder"):
     weight = config.provide(1)
 
     def implement(self, adapter, simulation, simdata):
-
         nodes = self.get_target_nodes(adapter, simulation, simdata)
         device = self.register_device(simdata, nest.Create("spike_recorder"))
         self.connect_to_nodes(device, nodes)

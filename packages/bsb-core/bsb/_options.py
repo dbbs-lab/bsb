@@ -4,6 +4,7 @@ This module registers all the options that the BSB provides out of the box.
 They are
 registered using plugin registration. See `setup.py` for the setuptools metadata.
 """
+
 import importlib.metadata
 
 from .option import BsbOption
@@ -69,7 +70,7 @@ class VersionFlag(
     """
 
     def get_default(self):
-        return importlib.metadata.version('bsb-core')
+        return importlib.metadata.version("bsb-core")
 
     def action(self, namespace):
         report("bsb " + str(self.get()), level=1)

@@ -44,7 +44,7 @@
       "outputs": [],
       "options": {
         "lintFilePatterns": [
-          "nrn_patch",
+          "patch",
           "tests"
         ]
       },
@@ -55,7 +55,7 @@
       "outputs": [],
       "options": {
         "filePatterns": [
-          "nrn_patch",
+          "patch",
           "tests"
         ]
       },

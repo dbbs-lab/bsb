@@ -11,10 +11,12 @@ class NeuronCell(CellModel):
     """
     Class interfacing a NEURON cell model.
     """
+
     def create_instances(self, count, ids, pos, morpho, rot, additional):
         """
         type morpho: bsb.morphologies.MorphologySet
         """
+
         def dictzip():
             yield from (
                 dict(zip(additional.keys(), values[:-1], strict=False))

@@ -24,7 +24,6 @@ class Multimeter(NestDevice, classmap_entry="multimeter"):
                 )
 
     def implement(self, adapter, simulation, simdata):
-
         targets_dict = self.get_dict_targets(adapter, simulation, simdata)
         nodes = self._flatten_nodes_ids(targets_dict)
         inv_targets = self._invert_targets_dict(targets_dict)

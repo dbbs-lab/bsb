@@ -63,6 +63,7 @@ def connection(source, target, strict=True):
         raise NotConnectedError("Source is not connected to target.")
     return source._connections[target]
 
+
 __all__ = [
     "connection",
     "h",

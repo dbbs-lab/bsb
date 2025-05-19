@@ -2,7 +2,6 @@
 Helpers for better and more complete tests for component developers of the BSB framework.
 """
 
-
 import contextlib
 import glob as _glob
 import os as _os

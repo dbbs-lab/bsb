@@ -236,9 +236,7 @@ class default_ions_dict(dict):
         self._defaults = {
             "na": self._ion_class(rev_pot=50.0, int_con=10.0, ext_con=140.0),
             "k": self._ion_class(rev_pot=-77.0, int_con=54.4, ext_con=2.5),
-            "ca": self._ion_class(
-                rev_pot=132.4579341637009, int_con=5e-05, ext_con=2.0
-            ),
+            "ca": self._ion_class(rev_pot=132.4579341637009, int_con=5e-05, ext_con=2.0),
             "h": self._ion_class(rev_pot=0.0, int_con=1.0, ext_con=1.0),
         }
 
@@ -421,9 +419,7 @@ def _parse_cable_type(cls: typing.Type[Definition], cable_dict: CableTypeDict):
             def_.add_synapse(label, _parse_synapse_def(cls, label, v))
         return def_
     except Exception:
-        raise ModelDefinitionError(
-            f"{cable_dict} is not a valid cable type definition."
-        )
+        raise ModelDefinitionError(f"{cable_dict} is not a valid cable type definition.")
 
 
 def _parse_ion_def(cls: typing.Type[Definition], ion_dict: IonDict):

@@ -150,9 +150,7 @@ class Population:
                 ptr += stop - start
 
     def __iter__(self):
-        yield from itertools.chain.from_iterable(
-            range(r[0], r[1]) for r in self._ranges
-        )
+        yield from itertools.chain.from_iterable(range(r[0], r[1]) for r in self._ranges)
 
 
 class GIDManager:

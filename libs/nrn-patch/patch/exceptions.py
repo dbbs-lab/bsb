@@ -8,9 +8,7 @@ _make_tree(
         NotConnectedError=_e(),
         TransformError=_e(),
         HocError=_e(
-            HocConnectError=_e(),
-            HocRecordError=_e(),
-            HocSectionAccessError=_e()
+            HocConnectError=_e(), HocRecordError=_e(), HocSectionAccessError=_e()
         ),
         SimulationError=_e(),
         UninitializedError=_e(),
@@ -36,5 +34,5 @@ __all__ = [
     "ErrorHandlingError",
     "ParallelError",
     "ParallelConnectError",
-    "BroadcastError"
+    "BroadcastError",
 ]

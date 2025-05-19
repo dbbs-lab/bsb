@@ -10,6 +10,7 @@ class NestRule:
     """
     Interface to connect a device directly through the NEST interface.
     """
+
     rule = config.attr(type=str, required=True)
     """Connection rule to connect """
     constants = config.catch_all(type=types.any_())

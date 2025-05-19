@@ -14,7 +14,6 @@ from bsb_test import (
 )
 from bsb_test.configs import get_test_config_module
 
-import bsb
 from bsb import (
     CastError,
     CfgReferenceError,
@@ -1722,14 +1721,22 @@ class TestNodeComposition(unittest.TestCase):
 
 class TestPackageRequirements(RandomStorageFixture, unittest.TestCase, engine_name="fs"):
     def test_basic_version(self):
-        self.assertIsNone(get_missing_requirement_reason("bsb-core==" + importlib.metadata.version('bsb-core')))
+        self.assertIsNone(
+            get_missing_requirement_reason(
+                "bsb-core==" + importlib.metadata.version("bsb-core")
+            )
+        )
 
     def test_invalid_requirement(self):
         self.assertIsNotNone(
-            get_missing_requirement_reason("==" + importlib.metadata.version('bsb-core') + "@@==@@")
+            get_missing_requirement_reason(
+                "==" + importlib.metadata.version("bsb-core") + "@@==@@"
+            )
         )
         with self.assertWarns(PackageRequirementWarning), self.assertRaises(CastError):
-            Configuration.default(packages=["==" + importlib.metadata.version('bsb-core') + "@@==@@"])
+            Configuration.default(
+                packages=["==" + importlib.metadata.version("bsb-core") + "@@==@@"]
+            )
 
     def test_different_version(self):
         self.assertIsNotNone(get_missing_requirement_reason("bsb-core==0"))
@@ -1742,9 +1749,15 @@ class TestPackageRequirements(RandomStorageFixture, unittest.TestCase, engine_na
             Configuration.default(packages=["bsb-core-soup==4.0"])
 
     def test_installed_package(self):
-        self.assertIsNone(get_missing_requirement_reason(f"bsb-core~={importlib.metadata.version('bsb-core')}"))
+        self.assertIsNone(
+            get_missing_requirement_reason(
+                f"bsb-core~={importlib.metadata.version('bsb-core')}"
+            )
+        )
         # Should produce no warnings
-        cfg = Configuration.default(packages=[f"bsb-core~={importlib.metadata.version('bsb-core')}"])
+        cfg = Configuration.default(
+            packages=[f"bsb-core~={importlib.metadata.version('bsb-core')}"]
+        )
         # Checking that the config with package requirements can be saved in storage
         self.network = Scaffold(cfg, self.storage)
         # Checking if the config

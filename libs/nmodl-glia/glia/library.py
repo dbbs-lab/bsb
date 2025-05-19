@@ -1,9 +1,9 @@
 """
-    Import this module to load the Glia library into neuron::
+Import this module to load the Glia library into neuron::
 
-        import glia, glia.library
+    import glia, glia.library
 
-    Glia is now operational!
+Glia is now operational!
 """
 
 from . import _manager

@@ -54,8 +54,7 @@
       "outputs": [],
       "options": {
         "filePatterns": [
-          "sphinxext_bsb",
-          "tests"
+          "sphinxext/bsb"
         ]
       },
       "cache": true

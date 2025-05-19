@@ -104,10 +104,7 @@ def paint_cable_type_ions(decor: "arbor.decor", label: str, cable_type: "CableTy
             decor.paint(
                 f'"{label}"',
                 ion=ion_name,
-                **{
-                    k: _to_units(v, units[k])
-                    for k, v in dataclasses.asdict(ion).items()
-                },
+                **{k: _to_units(v, units[k]) for k, v in dataclasses.asdict(ion).items()},
             )
         except TypeError:
             # todo: drop when units are released
@@ -115,10 +112,7 @@ def paint_cable_type_ions(decor: "arbor.decor", label: str, cable_type: "CableTy
             decor.paint(
                 f'"{label}"',
                 ion_name=ion_name,
-                **{
-                    k: _to_units(v, units[k])
-                    for k, v in dataclasses.asdict(ion).items()
-                },
+                **{k: _to_units(v, units[k]) for k, v in dataclasses.asdict(ion).items()},
             )
 
 

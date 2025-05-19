@@ -24,7 +24,6 @@ class TestArborizedModel(
     config="neuron_minimal",
     engine_name="fs",
 ):
-
     def setUp(self):
         print(f"CHECK : {neuron_installed()}")
         super().setUp()

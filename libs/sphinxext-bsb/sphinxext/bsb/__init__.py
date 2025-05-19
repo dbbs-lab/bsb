@@ -21,6 +21,7 @@ from bsb.config.types import class_
 
 from .project import Project
 
+
 def example_function():
     pass
 
@@ -377,10 +378,4 @@ def setup(app):
     }
 
 
-__all__ = [
-    "AutoconfigDirective",
-    "AutoconfigNode",
-    "ComponentIntro",
-    "Project",
-    "setup"
-]
+__all__ = ["AutoconfigDirective", "AutoconfigNode", "ComponentIntro", "Project", "setup"]

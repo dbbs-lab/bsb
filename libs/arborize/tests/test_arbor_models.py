@@ -21,9 +21,7 @@ class TestModelBuilding(SchematicsFixture, unittest.TestCase):
             ptid = branch_endpoints[branch.parent] if branch.parent else arbor.mnpos
             branch_endpoints[branch] = ptid
 
-        assert (
-            len(self.schematic.cables) == self.schematic.arbor.morphology.num_branches
-        )
+        assert len(self.schematic.cables) == self.schematic.arbor.morphology.num_branches
         keys = [*branch_endpoints.keys()]
 
         def pid(i):

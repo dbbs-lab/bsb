@@ -37,9 +37,7 @@ def bsb_schematic(
                 itertools.count(), branch.points, branch.radii, branch.labels.walk()
             ):
                 endpoint = endpoint if pid == 0 else None
-                schematic.create_location(
-                    (bid, pid), coords, radius, [*labels], endpoint
-                )
+                schematic.create_location((bid, pid), coords, radius, [*labels], endpoint)
             endpoints.append((bid, pid))
     if definitions is not None:
         schematic.definition = definitions

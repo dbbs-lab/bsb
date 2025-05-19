@@ -46,7 +46,7 @@ except Exception:  # pragma: nocover
     warnings.warn(
         "Could not establish whether Patch supports installed NEURON version "
         f"`{_nrnver}`",
-        stacklevel=2
+        stacklevel=2,
     )
 
 
@@ -389,7 +389,7 @@ class ParallelContext(PythonHocObject):
             warnings.warn(
                 f"New GID ({gid}) registered after `spike_record` was called."
                 " This GID will not be recorded.",
-                stacklevel=2
+                stacklevel=2,
             )
         if id is None:
             id = self.id()

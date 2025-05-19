@@ -81,9 +81,9 @@ def _config_property(name):
     return prop.setter(fset)
 
 
-def _get_linked_config(storage=None):
+def _get_linked_config(storage=None, update_stored_config=False):
     import bsb.config
-
+    cfg = None
     try:
         cfg = storage.load_active_config()
     except Exception:
@@ -92,12 +92,12 @@ def _get_linked_config(storage=None):
         path = bsb.options.config
     else:
         path = cfg._meta.get("path", None)
-    if path and os.path.exists(path):
+    if path and os.path.exists(path) and (cfg is None or update_stored_config):
         with open(path) as f:
             cfg = bsb.config.parse_configuration_file(f, path=path)
             return cfg
     else:
-        return None
+        return cfg
 
 
 def _bad_flag(flag: bool):
@@ -122,7 +122,7 @@ class Scaffold:
     after_connectivity: dict[str, AfterConnectivityHook]
     simulations: dict[str, Simulation]
 
-    def __init__(self, config=None, storage=None, clear=False, comm=None):
+    def __init__(self, config=None, storage=None, clear=False, comm=None, update_config=False):
         """
         Bootstraps a network object.
 
@@ -144,7 +144,7 @@ class Scaffold:
         self._configuration = None
         self._storage = None
         self._comm = MPIService(comm)
-        self._bootstrap(config, storage, clear=clear)
+        self._bootstrap(config, storage, clear=clear, update_config=update_config)
 
     def __contains__(self, component):
         return getattr(component, "scaffold", None) is self
@@ -162,11 +162,11 @@ class Scaffold:
     def is_worker_process(self) -> bool:
         return bool(self._comm.get_rank())
 
-    def _bootstrap(self, config, storage, clear=False):
+    def _bootstrap(self, config, storage, clear=False, update_config=False):
         if config is None:
             # No config given, check for linked configs, or stored configs, otherwise
             # make default config.
-            linked = _get_linked_config(storage)
+            linked = _get_linked_config(storage, update_stored_config=update_config or clear)
             if linked:
                 report(f"Pulling configuration from linked {linked}.", level=2)
                 config = linked

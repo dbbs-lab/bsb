@@ -8,13 +8,19 @@ from ..device import NeuronDevice
 @config.node
 class VoltageClamp(NeuronDevice, classmap_entry="vclamp"):
     locations = config.attr(type=LocationTargetting, default={"strategy": "soma"})
+    """Location of the voltage clamp on the section"""
     voltage = config.attr(
         type=types.or_(float, types.list(type=float, size=3)), required=True
     )
+    """Voltage value during the step or three values for before, during and after the step"""
     before = config.attr(type=float, default=None)
+    """Delay before the voltage step"""
     duration = config.attr(type=float, default=None)
+    """Duration of the voltage step"""
     after = config.attr(type=float, default=None)
+    """Hold duration after voltage step"""
     holding = config.attr(type=float, default=None)
+    """Voltage value in the `before` and `after` delays"""
 
     def implement(self, adapter, simulation, simdata):
         for target in self.targetting.get_targets(adapter, simulation, simdata):

@@ -6,7 +6,9 @@ from ..device import NeuronDevice
 @config.node
 class SynapseRecorder(NeuronDevice, classmap_entry="synapse_recorder"):
     locations = config.attr(type=LocationTargetting, required=True)
+    """Location of the synapse recorder on the section"""
     synapse_types = config.list()
+    """List of synaptic types"""
 
     def implement(self, adapter, simulation, simdata):
         for _model, pop in self.targetting.get_targets(

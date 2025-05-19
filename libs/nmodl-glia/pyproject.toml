@@ -5,11 +5,10 @@ build-backend = "flit_core.buildapi"
 [project]
 name = "nmodl-glia"
 version = "6.0.0-a2"
-authors = [{name = "Robin De Schepper", email = "robingilbert.deschepper@unipv.it"}]
 readme = "README.md"
-license = {file = "LICENSE"}
-classifiers = ["License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"]
+requires-python = ">=3.10"
 dynamic = ["description"]
+classifiers = ["License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"]
 dependencies= [
     "click~=8.0",
     "appdirs~=1.0",
@@ -17,12 +16,16 @@ dependencies= [
     "cookiecutter~=2.0",
     "black>=24.0",
     "toml~=0.10",
-    "neuron>=8.2.6; sys_platform != 'win32'",
+    "neuron~=8.2.6; sys_platform != 'win32'",
     "importlib_metadata~=6.5"
 ]
 
-[project.scripts]
-glia = "glia._cli:glia"
+  [[project.authors]]
+  name = "Robin De Schepper"
+  email = "robin@alexandria.sc"
+
+  [project.license]
+  file = "LICENSE"
 
 [project.optional-dependencies]
 parallel = [
@@ -54,6 +57,9 @@ dev = [
 dev = [
     "nmodl-glia[dev]"
 ]
+
+[project.scripts]
+glia = "glia._cli:glia"
 
 [tool.uv.sources.nrn-patch]
 path = "../nrn-patch"

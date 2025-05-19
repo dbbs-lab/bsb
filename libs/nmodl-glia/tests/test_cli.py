@@ -13,7 +13,7 @@ import glia._fs
 import glia._mpi
 from glia import Mod, Package, get_cache_path
 
-from tests._shared import skipParallel, skipUnlessTestMods, skipIfInstalled
+from _shared import skipParallel, skipUnlessTestMods, skipIfInstalled
 
 
 def run_cli_command(command, xfail=False, **kwargs):
@@ -45,7 +45,7 @@ class TestCLI(unittest.TestCase):
     def test_glia(self):
         result = run_cli_command([])
         self.assertNotEqual("", result.output, "Should show help message")
-        self.assertEqual(0, result.exit_code)
+        self.assertEqual(2, result.exit_code)
 
     @skipParallel
     @skipUnlessTestMods

@@ -8,7 +8,7 @@ from patch.error_handler import (
     _suppress_nrn,
     catch_hoc_error,
 )
-from patch.exceptions import *
+from patch.exceptions import ErrorHandlingError, HocConnectError, HocError
 
 
 class TestErrorHandling(_shared.NeuronTestCase):
@@ -71,14 +71,12 @@ class TestErrorHandling(_shared.NeuronTestCase):
             def catch(self, error, context):
                 raise Exception("I crashed")
 
-        with self.assertRaises(ErrorHandlingError):
-            with catch_hoc_error(BrokenHandler):
+        with self.assertRaises(ErrorHandlingError), catch_hoc_error(BrokenHandler):
                 h.NetCon(5, 12)
 
     def test_missing_handle(self):
         class NoCatchHandler(ErrorHandler):
             required = []
 
-        with self.assertRaises(ErrorHandlingError):
-            with catch_hoc_error(NoCatchHandler):
+        with self.assertRaises(ErrorHandlingError), catch_hoc_error(NoCatchHandler):
                 h.NetCon(5, 12)

@@ -1,4 +1,3 @@
-import typing
 import warnings
 from functools import cache, wraps
 
@@ -21,12 +20,11 @@ from .exceptions import (
     BroadcastError,
     HocSectionAccessError,
     ParallelConnectError,
-    UninitializedError,
 )
 from .objects import (
     IClamp,
     NetCon,
-    PointProcess,
+    PointProcess,  # noqa: F401  # Function can be used by interpreter
     PythonHocObject,
     SEClamp,
     Section,
@@ -46,11 +44,10 @@ try:
         raise ImportError("Patch 3.0+ only supports NEURON v7.8.0 or higher.")
 except Exception:  # pragma: nocover
     warnings.warn(
-        f"Could not establish whether Patch supports installed NEURON version `{_nrnver}`"
+        "Could not establish whether Patch supports installed NEURON version "
+        f"`{_nrnver}`",
+        stacklevel=2
     )
-
-
-ParallelContextType: "ParallelContext"
 
 
 class TimeSingleton(Vector):
@@ -60,7 +57,7 @@ class TimeSingleton(Vector):
 
 
 class PythonHocInterpreter:
-    __pc: "ParallelContextType"
+    __pc: "ParallelContext"
     __point_processes = []
     __h = _h
 
@@ -76,8 +73,8 @@ class PythonHocInterpreter:
         Most PythonHocObject classes (all those provided by Patch for sure) are created
         before the PythonHocInterpreter class is available. Yet they require the class to
         combine the original pointer from ``h.<object>`` (e.g. ``h.Section``) with a
-        function that defers to their constructor so that you can call ``p.Section()``
-        and create a PythonHocObject wrapped around the underlying ``h`` pointer.
+        function that defers to their constructor so that you can call ``p.Section()`` and
+        create a PythonHocObject wrapped around the underlying ``h`` pointer.
 
         This function is called right after the PythonHocInterpreter class is created so
         that PythonHocObjects can place themselves in a queue and have themselves
@@ -197,7 +194,7 @@ class PythonHocInterpreter:
                 # We only set threshold for sending NetCon's, as setting it on receiving
                 # NetCons may break transmission:
                 # https://github.com/neuronsimulator/nrn/issues/2135
-                nc.threshold = kwargs["threshold"] if "threshold" in kwargs else -20.0
+                nc.threshold = kwargs.get("threshold", -20.0)
             else:
                 target = b
                 nc = self.parallel.gid_connect(gid, target)
@@ -326,7 +323,7 @@ class PythonHocInterpreter:
             self.__pc = pc
 
     @property
-    def parallel(self) -> "ParallelContextType":
+    def parallel(self) -> "ParallelContext":
         self._init_pc()
         return self.__pc
 
@@ -391,7 +388,8 @@ class ParallelContext(PythonHocObject):
         if self._warn_new_gids:
             warnings.warn(
                 f"New GID ({gid}) registered after `spike_record` was called."
-                " This GID will not be recorded."
+                " This GID will not be recorded.",
+                stacklevel=2
             )
         if id is None:
             id = self.id()
@@ -444,10 +442,10 @@ class ParallelContext(PythonHocObject):
 
     def broadcast(self, data, root=0):
         """
-        Broadcast either a Vector or arbitrary picklable data. If ``data`` is a
-        Vector, the Vectors are resized and filled with the data from the Vector in
-        the ``root`` node. If ``data`` is not a Vector, it is pickled, transmitted and
-        returned from this function to all nodes.
+        Broadcast either a Vector or arbitrary picklable data. If ``data`` is a Vector,
+        the Vectors are resized and filled with the data from the Vector in the ``root``
+        node. If ``data`` is not a Vector, it is pickled, transmitted and returned from
+        this function to all nodes.
 
         :param data: The data to broadcast to the nodes.
         :type data: :class:`Vector <.objects.Vector>` or any picklable object.
@@ -475,7 +473,8 @@ class ParallelContext(PythonHocObject):
                 # Send an empty vector so the other nodes don't hang.
                 transform(self).broadcast(transform(self._interpreter.Vector()), root)
                 raise BroadcastError(
-                    "NEURON HocObjects cannot be broadcasted, they need to be created on their own nodes."
+                    "NEURON HocObjects cannot be broadcasted, "
+                    "they need to be created on their own nodes."
                 )
         else:
             # If noone is sending a HocObject we proceed with picklable data broadcasting
@@ -488,7 +487,8 @@ class ParallelContext(PythonHocObject):
             try:
                 v = self._interpreter.Vector(list(pickle.dumps(data)))
             except Exception as e:
-                # Send an empty vector so the other nodes don't hang waiting for a broadcast.
+                # Send an empty vector
+                # so the other nodes don't hang waiting for a broadcast.
                 transform(self).broadcast(transform(self._interpreter.Vector()), root)
                 raise BroadcastError(str(e)) from None
         else:

@@ -16,10 +16,12 @@ from patch.exceptions import (
 @contextmanager
 def _suppress_nrn(stream=None, close=False):
     """
-    Makes NEURON (mostly) shut the fuck up.
+    Makes NEURON logging silent.
     """
     if stream is None:
-        stream = open(os.devnull, "w")
+        # stream was not provided as parameter so we initialize it
+        # and close it after yield
+        stream = open(os.devnull, "w")  # noqa: SIM115
         close = True
     old_stdout = sys.stdout
     old_stderr = sys.stderr
@@ -82,37 +84,36 @@ class ErrorHandler:
     def __init__(self, error, context):
         if not hasattr(self.__class__, "required"):
             raise ErrorHandlingError(
-                "Error context requirements missing for {}".format(
-                    self.__class__.__name__
-                )
+                f"Error context requirements missing for {self.__class__.__name__}"
             )
         for required_item in self.__class__.required:
             if required_item not in context:
                 raise ErrorHandlingError(
-                    "Required error context item '{}' for {} is missing".format(
-                        required_item, self.__class__.__name__
-                    )
+                    f"Required error context item '{required_item}' for "
+                    f"{self.__class__.__name__} is missing"
                 )
         self.__dict__.update(context)
         try:
             self.catch(error, context)
         except PatchError:
             raise
-        except Exception as e:
+        except Exception:
             raise ErrorHandlingError(
                 f"{self.__class__.__name__} errored out during error handling."
-            )
+            ) from None
 
     def catch(self, error, context):
         raise ErrorHandlingError(
-            "Catch method not implemented for {}".format(self.__class__.__name__)
+            f"Catch method not implemented for {self.__class__.__name__}"
         )
 
 
 def detector(error):
     """
     Pass this the error message and it returns a lambda function that you can pass a
-    string. Returns ``True`` if the string occurs in the error message, ``False``
+    string.
+
+    Returns ``True`` if the string occurs in the error message, ``False``
     otherwise.
     """
     return lambda trigger: error.lower().find(trigger) != -1
@@ -131,21 +132,18 @@ class CatchNetCon(ErrorHandler):
         if e("must be a point process or nullobject"):
             if e("arg 1"):
                 raise HocConnectError(
-                    "Source is not a point process. Transformed type: '{}'".format(
-                        type(self.nrn_source)
-                    )
+                    "Source is not a point process. Transformed type: "
+                    f"'{type(self.nrn_source)}'"
                 )
             if e("arg 2"):
                 raise HocConnectError(
-                    "Target is not a point process. Transformed type: '{}'".format(
-                        type(self.nrn_target)
-                    )
+                    "Target is not a point process. Transformed type: "
+                    f"'{type(self.nrn_target)}'"
                 )
         if e("interpreter stack type error"):
             raise HocConnectError(
-                "Incorrect types passed to NetCon. Source: {}, target: {}".format(
-                    type(self.nrn_source), type(self.nrn_target)
-                )
+                f"Incorrect types passed to NetCon. Source: {type(self.nrn_source)}, "
+                f"target: {type(self.nrn_target)}"
             )
 
 
@@ -163,7 +161,8 @@ class CatchSectionAccess(ErrorHandler):  #  pragma: nocover
         e = detector(error)
         if e("Section access unspecified"):
             raise HocSectionAccessError(
-                "This operation requires a Section on the stack or perhaps a `sec` keyword argument."
+                "This operation requires a Section on the stack "
+                "or perhaps a `sec` keyword argument."
             )
 
 
@@ -184,5 +183,6 @@ class CatchRecord(ErrorHandler):
         # Encountered this error locally, most likely on NEURON 7.7, don't cover
         if e("number was provided instead of a pointer"):  #  pragma: nocover
             raise HocRecordError(
-                f"Can't record {self.target}, its record pointer is a value. Make sure that you're recording `y._ref_x` rather than `y.x`."
+                f"Can't record {self.target}, its record pointer is a value. "
+                "Make sure that you're recording `y._ref_x` rather than `y.x`."
             )

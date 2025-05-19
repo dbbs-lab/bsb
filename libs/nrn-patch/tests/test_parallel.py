@@ -22,7 +22,6 @@ class TestSingleHostParallel(_shared.NeuronTestCase):
 
     def test_parallel_con(self):
         s = p.Section()
-        gid = 1
         s.push()
         p.ParallelCon(s, 202020)
         p.pop_section()
@@ -33,7 +32,6 @@ class TestSingleHostParallel(_shared.NeuronTestCase):
 
     def test_parallel_con_props(self):
         s = p.Section()
-        gid = 1
         pc = p.ParallelCon(s, 202021, delay=5, weight=3)
         self.assertEqual(5, pc.delay, "Delay not set")
         self.assertEqual(3, pc.weight[0], "Weight not set")
@@ -69,7 +67,7 @@ class TestParallelNetworks(_shared.NeuronTestCase):
         self.assertEqual(
             x,
             "Arbitrary",
-            msg="Arbitrary data mangled on node {}".format(p.parallel.id()),
+            msg=f"Arbitrary data mangled on node {p.parallel.id()}",
         )
 
         class Local:
@@ -77,10 +75,7 @@ class TestParallelNetworks(_shared.NeuronTestCase):
 
         self.assertRaises(BroadcastError, p.parallel.broadcast, Local())
         # Try sending from a different node
-        if p.parallel.id() == 0:
-            x = 5
-        else:
-            x = 12
+        x = 5 if p.parallel.id() == 0 else 12
         y = p.parallel.broadcast(x, root=1)
         self.assertEqual(y, 12, msg="Node specification ignored in broadcast.")
         self.assertRaises(BroadcastError, p.parallel.broadcast, p.NetStim())
@@ -143,7 +138,7 @@ class TestParallelPointProcess(_shared.NeuronTestCase):
 
     def test_synapse(self):
         """
-        Tests whether spikes get transferred across nodes
+        Tests whether spikes get transferred across nodes.
         """
         tpp, vpp = self._setup_synapse_parallel()
         tps, vps = self._setup_synapse_patch()
@@ -219,7 +214,7 @@ class TestParallelPointProcess(_shared.NeuronTestCase):
 
     def test_same_node_synapse(self):
         """
-        Tests whether spikes get transferred across nodes
+        Tests whether spikes get transferred across nodes.
         """
         tps, vps = self._setup_patch_across_nodes()
         tpn, vpn = self._setup_neuron_across_nodes()

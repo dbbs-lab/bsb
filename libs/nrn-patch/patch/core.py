@@ -9,8 +9,8 @@ if typing.TYPE_CHECKING:
 
 def transform(obj):
     """
-    Transform an object to its NEURON representation, if the ``__neuron__`` magic
-    method is present.
+    Transform an object to its NEURON representation, if the ``__neuron__`` magic method
+    is present.
     """
     if hasattr(obj, "__neuron__"):
         return obj.__neuron__()
@@ -39,7 +39,9 @@ def transform_record(obj):
 
 def transform_arc(obj, *args, **kwargs):
     """
-    Get an arclength object on a NEURON object. Calls the ``__arc__`` magic method
+    Get an arclength object on a NEURON object.
+
+    Calls the ``__arc__`` magic method
     on the callable object if present, otherwise returns the transformed object.
     """
     if hasattr(obj, "__arc__"):
@@ -132,5 +134,5 @@ def is_density_mechanism(obj: Union[str, "HocObject"]):
         return "neuron.DensityMechanism" in hname
     except TypeError as e:
         return "mechanism" in str(e)
-    except Exception as e:
+    except Exception:
         return False

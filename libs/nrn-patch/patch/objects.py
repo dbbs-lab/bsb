@@ -1,5 +1,5 @@
 import typing
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 from .core import _is_sequence, transform, transform_record
 from .error_handler import CatchRecord, catch_hoc_error
@@ -14,8 +14,8 @@ _had_pointers_wrapped = {}
 
 def _safe_call(method):
     """
-    Internal decorator to defer a method to the underlying NEURON object,
-    unpacking all args and returning the result to the decorated method.
+    Internal decorator to defer a method to the underlying NEURON object, unpacking all
+    args and returning the result to the decorated method.
     """
 
     def caller(self, *args, **kwargs):
@@ -123,8 +123,8 @@ class PythonHocObject:
 
     def _safe_call(self, func_name, *args, **kwargs):
         """
-        Unpacks all arguments to their NEURON variant and retrieves the naked
-        function from the HocObject then calls it.
+        Unpacks all arguments to their NEURON variant and retrieves the naked function
+        from the HocObject then calls it.
         """
         func = getattr(transform(self), func_name)
         args = [transform(a) for a in args]
@@ -184,7 +184,7 @@ class WrapsPointers:
                         is_ptr = ptr_str.startswith("<pointer") or ptr_str.startswith(
                             "data_handle"
                         )
-                    except:
+                    except Exception:
                         is_ptr = False
                     if is_ptr:
                         setattr(cls, k, PointerWrapper(k))
@@ -214,8 +214,8 @@ class Section(PythonHocObject, Connectable, WrapsPointers):
 
     def __arc__(self):
         """
-        Return the default arc-position (a point in the closed interval [0, 1]
-        that represents the position between start and end of the Section).
+        Return the default arc-position (a point in the closed interval [0, 1] that
+        represents the position between start and end of the Section).
 
         Defaults to 0.5
         """
@@ -268,15 +268,16 @@ class Section(PythonHocObject, Connectable, WrapsPointers):
 
     def connect_synapse(self, target, **kwargs):
         """
-        Connect a Segment of this Section to a target. Usually used to connect
-        the membrane potential to a point process.
+        Connect a Segment of this Section to a target.
+
+        Usually used to connect the membrane potential to a point process.
         """
         return self._interpreter.NetCon(self, target, **kwargs)
 
     def set_dimensions(self, length, diameter):
         """
-        Set the length and diameter of the piece of cable this Section will
-        represent in the simulation.
+        Set the length and diameter of the piece of cable this Section will represent in
+        the simulation.
         """
         self.L = length
         self.diam = diameter
@@ -292,7 +293,8 @@ class Section(PythonHocObject, Connectable, WrapsPointers):
         Add new 3D points to this section xyz data.
 
         :param points: A 2D array of xyz points.
-        :param diameters: A scalar or array of diameters corresponding to the points. Default value is the section diameter.
+        :param diameters: A scalar or array of diameters corresponding to the points.
+            Default value is the section diameter.
         :type diameters: float or array
         """
         if diameters is None:
@@ -300,7 +302,7 @@ class Section(PythonHocObject, Connectable, WrapsPointers):
         if not _is_sequence(diameters):
             diameters = [diameters for _ in range(len(points))]
         self.__neuron__().push()
-        for point, diameter in zip(points, diameters):
+        for point, diameter in zip(points, diameters, strict=False):
             self._interpreter.pt3dadd(*point, diameter)
         self._interpreter.pop_section()
 
@@ -321,7 +323,7 @@ class Section(PythonHocObject, Connectable, WrapsPointers):
 
     def wholetree(self):
         """
-        Return the whole tree of child Sections
+        Return the whole tree of child Sections.
 
         :rtype: List[patch.Section]
         """
@@ -338,7 +340,7 @@ class Section(PythonHocObject, Connectable, WrapsPointers):
             x = self.__arc__()
         if not hasattr(self, "recordings"):
             self.recordings = {}
-        if not x in self.recordings:
+        if x not in self.recordings:
             recorder = self._interpreter.Vector()
             recorder.record(self(x))
             self.recordings[x] = recorder
@@ -383,12 +385,13 @@ class Section(PythonHocObject, Connectable, WrapsPointers):
         :type x: float
         :param delay: Duration of the pre-step holding interval, from `0` to `delay` ms.
         :type delay: float
-        :param duration: Duration of the step interval, from `delay` to `delay + duration` ms.
+        :param duration: Duration of the step interval,
+         from `delay` to `delay + duration` ms.
         :type duration: float
         :param amplitude: Can be a single value to define the current during the step
           (`delay` to `delay + duration` ms), or a sequence to play after `delay` ms. This
           will play 1 value of the sequence into the clamp per timestep.
-        :type amplitude: Union[float, List[float]]
+        :type amplitude: float | list[float]
         :returns: The current clamp placed in the section.
         :rtype: :class:`.objects.SEClamp`
         """
@@ -424,7 +427,7 @@ class Section(PythonHocObject, Connectable, WrapsPointers):
         :param voltage: Can be a single value to define the voltage during the step
           (`delay` to `delay + duration` ms), or 3 values to define the pre-step, step and
           post-step voltages altogether.
-        :type voltage: Union[float, List[float]]
+        :type voltage: float | list[float]
         :param holding: If `voltage` is a single value, `holding` is used for the pre-step
           and post-step voltages.
         :type holding: float
@@ -441,8 +444,8 @@ class Section(PythonHocObject, Connectable, WrapsPointers):
 
     def push(self):
         """
-        Return a context manager that pushes this Section onto the section stack
-        and takes it off when the context is exited.
+        Return a context manager that pushes this Section onto the section stack and takes
+        it off when the context is exited.
         """
         transform(self).push()
 
@@ -518,14 +521,14 @@ class IClamp(PythonHocObject):
         return self.amp
 
     @amplitude.setter
-    def amplitude(self, amplitude: Union[float, Sequence[float]]):
+    def amplitude(self, amplitude: float | Sequence[float]):
         """
         Set the amplitude during current injection.
 
         :param amplitude: Can be a single value to define the current during the step
           (`delay` to `delay + duration` ms), or a sequence to play after `delay` ms. This
           will play 1 value of the sequence into the clamp per timestep.
-        :type amplitude: Union[float, List[float]]
+        :type amplitude: float | list[float]
         """
         if _is_sequence(amplitude):
             # If its a sequence play it as a vector into the clamp
@@ -585,7 +588,8 @@ class SEClamp(PythonHocObject):
         """
         Set the duration of the command potential clamping period.
 
-        :param duration: Duration of the step interval, from `delay` to `delay + duration` ms.
+        :param duration: Duration of the step interval,
+         from `delay` to `delay + duration` ms.
         :type duration: float
         """
         self.dur2 = duration
@@ -605,7 +609,7 @@ class SEClamp(PythonHocObject):
         is clamped.
 
         :param after: Duration of the post-step holding interval, from `delay + duration`
-          to `delay + duration + after` ms.
+            to `delay + duration + after` ms.
         :type after: float
         """
         self.dur3 = after
@@ -617,12 +621,12 @@ class SEClamp(PythonHocObject):
     @voltage.setter
     def voltage(self, voltage):
         """
-        Set the control potentials
+        Set the control potentials.
 
         :param voltage: Can be a single value to define the voltage during the step
           (`delay` to `delay + duration` ms), or 3 values to define the pre-step, step and
           post-step voltages altogether.
-        :type voltage: Union[float, List[float]]
+        :type voltage: float | list[float]
         """
         try:
             voltage = iter(voltage)
@@ -731,7 +735,6 @@ class PointProcess(PythonHocObject, Connectable, WrapsPointers):
         :param kwargs: All keyword arguments will be passed set on the
           :class:`NetStim <neuron:NetStim>`
         """
-        from . import connection
 
         if pattern is None:
             # No specific pattern given, create NetStim

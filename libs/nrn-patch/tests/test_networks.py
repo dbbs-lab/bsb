@@ -31,40 +31,39 @@ class TestNetworks(_shared.NeuronTestCase):
         se = p.ExpSyn(s1)
         se2 = p.ExpSyn(s2)
         se3 = p.ExpSyn(s3)
-        ns = se.stimulate(start=1, number=3, interval=1)
-        vs = se2.stimulate(pattern=[1, 2, 3])
-        vs2 = se3.stimulate(pattern=[random() * 2, random() + 2, random() * 2 + 3])
+        _ns = se.stimulate(start=1, number=3, interval=1)
+        _vs = se2.stimulate(pattern=[1, 2, 3])
+        _vs2 = se3.stimulate(pattern=[random() * 2, random() + 2, random() * 2 + 3])
         rs1 = s1.record()
         rs2 = s2.record()
         rs3 = s3.record()
-        t = p.time
+        _t = p.time
 
         p.finitialize()
         p.continuerun(10)
         self.assertGreater(
             max(list(rs1)), min(list(rs1)), "Flatline where stimulation was expected."
         )
-        for ns_y, vs_y in zip(rs1, rs2):
+        for ns_y, vs_y in zip(rs1, rs2, strict=False):
             self.assertAlmostEqual(ns_y, vs_y, delta=1e-6)
         equal = True
-        for vs_y, vs2_y in zip(rs2, rs3):
+        for vs_y, vs2_y in zip(rs2, rs3, strict=False):
             equal = abs(vs2_y - vs_y) < 1e-6
             if not equal:
                 break
-        equal = False
         self.assertFalse(equal, "Random and periodic VecStim yielded identical results.")
 
     def test_netcon_record(self):
         s1 = p.Section()
         se = p.ExpSyn(s1)
-        ns = se.stimulate(start=1, number=3, interval=1, weight=100)
-        r = s1.record()
+        _ns = se.stimulate(start=1, number=3, interval=1, weight=100)
+        _r = s1.record()
         s2 = p.Section()
-        r2 = s2.record()
+        _r2 = s2.record()
         syn = p.ExpSyn(s2)
         nc = s1.connect_synapse(syn)
         v = p.Vector()
-        t = p.time
+        _t = p.time
         nc.record(v)
         v2 = nc.record()
         v3 = nc.record()

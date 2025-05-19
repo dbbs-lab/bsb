@@ -62,3 +62,19 @@ def connection(source, target, strict=True):
             return target._connections[source]
         raise NotConnectedError("Source is not connected to target.")
     return source._connections[target]
+
+__all__ = [
+    "connection",
+    "h",
+    "is_density_mechanism",
+    "is_nrn_scalar",
+    "is_point_process",
+    "is_section",
+    "is_segment",
+    "p",
+    "PythonHocInterpreter",
+    "transform",
+    "transform_arc",
+    "transform_netcon",
+    "transform_record",
+]

@@ -12,7 +12,8 @@ class VoltageClamp(NeuronDevice, classmap_entry="vclamp"):
     voltage = config.attr(
         type=types.or_(float, types.list(type=float, size=3)), required=True
     )
-    """Voltage value during the step or three values for before, during and after the step"""
+    """Voltage value during the step or three values for before, during and after 
+    the step"""
     before = config.attr(type=float, default=None)
     """Delay before the voltage step"""
     duration = config.attr(type=float, default=None)

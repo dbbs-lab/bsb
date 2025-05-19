@@ -33,10 +33,12 @@ docs = [
     "sphinx~=7.2",
     "helveg--sphinx-code-tabs~=0.2",
     "sphinx-rtd-theme~=2.0",
+    "docformatter>=1.7.6"
 ]
 dev = [
     "nrn-patch[test,docs]",
     "pre-commit~=3.0",
+    "ruff>=0.8.2",
 ]
 
 [tool.uv.sources.nmodl-glia]
@@ -71,7 +73,7 @@ indent-width = 4
 
   [tool.ruff.lint]
   select = [ "E", "F", "UP", "B", "SIM", "I" ]
-  ignore = [ ]
+  ignore = [ "F822" ]
   fixable = [ "ALL" ]
   unfixable = [ ]
 

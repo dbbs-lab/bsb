@@ -5,7 +5,7 @@ from patch import p
 
 class TestClamps(_shared.NeuronTestCase):
     """
-    Test the current and voltage clamp mechanisms
+    Test the current and voltage clamp mechanisms.
     """
 
     def setUp(self):
@@ -22,13 +22,13 @@ class TestClamps(_shared.NeuronTestCase):
         s3.record()
         s4 = p.Section()
         s4.record()
-        p.time
+        _t = p.time
 
         cs = s1.iclamp(amplitude=10, delay=5)
         c = p.IClamp(sec=s2)
         c.amp = 10
         c.dur = 10
-        c2 = s3.iclamp(amplitude=10)
+        _c2 = s3.iclamp(amplitude=10)
         s4.iclamp(amplitude=[-10 for _ in range(int(10 / p.dt))])
 
         self.assertEqual(10, cs.amplitude, "fcall setter mismatch")

@@ -9,15 +9,15 @@ from patch.exceptions import HocRecordError
 
 class TestPatchRegistration(_shared.NeuronTestCase):
     """
-    Check that the registration of PythonHocObjects works. (Will almost never be relevant
+    Check that the registration of PythonHocObjects works.
+
+    (Will almost never be relevant
     since most actual HocObjects will be covered by Patch and use the registration queue
     rather than immediate registration; and any class names that don't correspond to an
     actual ``h.<name>`` function don't create a wrapper)
     """
 
     def test_registration(self):
-        from patch import p
-
         # Create a new PythonHocObject, no wrapper will be added as it does not exist in h
         class NewHocObject(patch.objects.PythonHocObject):
             pass
@@ -98,8 +98,6 @@ class TestPatch(_shared.NeuronTestCase):
         )
 
     def test_transform(self):
-        from neuron import h
-
         from patch import transform, transform_arc, transform_netcon, transform_record
 
         nrn_section1 = transform(p.Section())
@@ -318,7 +316,7 @@ class TestSectionRef(_shared.NeuronTestCase):
         s.connect(s2)
         s2.connect(s)
         sr = p.SectionRef(s)
-        sr2 = p.SectionRef(sec=s2)
+        _sr2 = p.SectionRef(sec=s2)
         self.assertIs(sr.section, s, "SectionRef section stored incorrectly.")
         self.assertIs(sr.sec, s, "SectionRef section stored incorrectly.")
         child = sr.child[0]
@@ -346,7 +344,7 @@ class TestSectionRef(_shared.NeuronTestCase):
         s.connect(s2)
         s2.connect(s)
         sr = p.SectionRef(transform(s))
-        sr2 = p.SectionRef(sec=s2)
+        _sr2 = p.SectionRef(sec=s2)
         self.assertIs(
             transform(sr.section),
             transform(s),

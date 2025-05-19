@@ -5,8 +5,8 @@ from patch import p
 
 class TestReferencing(_shared.NeuronTestCase):
     """
-    Test whether references to other objects are created and removed at the
-    proper moments.
+    Test whether references to other objects are created and removed at the proper
+    moments.
     """
 
     def setUp(self):
@@ -27,7 +27,7 @@ class TestReferencing(_shared.NeuronTestCase):
 
     def test_section_ref(self):
         """
-        Test whether connected sections keep eachother alive
+        Test whether connected sections keep eachother alive.
         """
         from neuron import h
 

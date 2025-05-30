@@ -17,6 +17,9 @@ dependencies = [
     "bsb-test",
     "bsb-yaml",
     "sphinxext-bsb",
+    "nrn-patch",
+    "nmodl-glia",
+    "arborize",
 ]
 
 [tool.uv.sources]
@@ -28,3 +31,6 @@ bsb-json = { path = "../packages/bsb-json", editable = true }
 bsb-test = { path = "../packages/bsb-test", editable = true }
 bsb-yaml = { path = "../packages/bsb-yaml", editable = true }
 bsb = { path = "../packages/bsb", editable = true }
+nrn-patch = { path = "../libs/nrn-patch", editable = true }
+nmodl-glia = { path = "../libs/nmodl-glia", editable = true }
+arborize = { path = "../libs/arborize", editable = true }

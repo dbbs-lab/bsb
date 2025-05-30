@@ -88,7 +88,9 @@ class PythonHocObject:
 
     def __repr__(self):
         ostr = object.__repr__(self)
-        return ostr[: ostr.rindex("at")] + "pointing to '" + str(self.__neuron__()) + "'>"
+        return (
+            ostr[: ostr.rindex("at")] + "pointing to '" + str(self.__neuron__()) + "'>"
+        )
 
     def __dir__(self) -> typing.Iterable[str]:
         return sorted(set(dir(transform(self))) | set(super().__dir__()))
@@ -419,17 +421,21 @@ class Section(PythonHocObject, Connectable, WrapsPointers):
         :param before: Duration of the pre-step holding interval, from `0` to `delay` ms.
         :type before: float
         :param duration: Duration of the step interval, from `delay` to `delay +
-        duration` ms.
+         duration` ms.
+
         :type duration: float
         :param after: Duration of the post-step holding interval, from `delay + duration`
           to `delay + duration + after` ms.
+
         :type after: float
         :param voltage: Can be a single value to define the voltage during the step
           (`delay` to `delay + duration` ms), or 3 values to define the pre-step, step and
           post-step voltages altogether.
+
         :type voltage: float | list[float]
         :param holding: If `voltage` is a single value, `holding` is used for the pre-step
           and post-step voltages.
+
         :type holding: float
         :returns: The single electrode voltage clamp placed in the section.
         :rtype: :class:`.objects.SEClamp`

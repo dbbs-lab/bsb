@@ -1,6 +1,6 @@
 {
   "name": "nrn-patch",
-  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "$schema": "../../.nx/installation/node_modules/nx/schemas/project-schema.json",
   "projectType": "library",
   "sourceRoot": "libs/nrn-patch/nrn_patch",
   "targets": {
@@ -28,9 +28,7 @@
     },
     "build": {
       "executor": "@nxlv/python:build",
-      "outputs": [
-        "{projectRoot}/dist"
-      ],
+      "outputs": ["{projectRoot}/dist"],
       "options": {
         "outputPath": "{projectRoot}/dist",
         "publish": true,
@@ -39,14 +37,23 @@
       },
       "cache": true
     },
+    "docs": {
+      "executor": "@nxlv/python:run-commands",
+      "outputs": ["{projectRoot}/docs/_build/html"],
+      "options": {
+        "commands": [
+          "npx rimraf _build/html/",
+          "uv run sphinx-build -nW -b html . _build/html"
+        ],
+        "cwd": "{projectRoot}/docs"
+      },
+      "cache": true
+    },
     "lint": {
       "executor": "@nxlv/python:ruff-check",
       "outputs": [],
       "options": {
-        "lintFilePatterns": [
-          "patch",
-          "tests"
-        ]
+        "lintFilePatterns": ["patch", "tests"]
       },
       "cache": true
     },
@@ -54,19 +61,14 @@
       "executor": "@nxlv/python:ruff-format",
       "outputs": [],
       "options": {
-        "filePatterns": [
-          "patch",
-          "tests"
-        ]
+        "filePatterns": ["patch", "tests"]
       },
       "cache": true
     },
     "test": {
       "dependsOn": ["nrn-patch:sync"],
       "executor": "@nxlv/python:run-commands",
-      "outputs": [
-        "{workspaceRoot}/coverage/{projectRoot}"
-      ],
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
       "options": {
         "commands": [
           "uv run coverage run --source patch -p -m unittest discover -v -s ./tests",

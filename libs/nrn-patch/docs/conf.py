@@ -50,8 +50,9 @@ templates_path = ["_templates"]
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = []
 
-intersphinx_mapping = {"neuron": ("https://neuronsimulator.github.io/nrn/", None)}
+intersphinx_mapping = {"neuron": ("https://nrn.readthedocs.io/en/latest/", None)}
 
+autodoc_mock_imports = ["neuron"]
 
 # -- Options for HTML output -------------------------------------------------
 

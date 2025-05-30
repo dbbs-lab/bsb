@@ -4,7 +4,7 @@ from typing import Union
 from .exceptions import NotConnectableError
 
 if typing.TYPE_CHECKING:
-    from neuron.hoc import HocObject
+    import neuron.hoc
 
 
 def transform(obj):
@@ -96,7 +96,7 @@ def is_nrn_scalar(obj):
         return False
 
 
-def is_point_process(obj: Union[str, "HocObject"]):
+def is_point_process(obj: Union[str, "neuron.hoc.HocObject"]):
     """
     Check if obj is a (name of a) PointProcess on the ``HocInterpreter``.
 
@@ -114,7 +114,7 @@ def is_point_process(obj: Union[str, "HocObject"]):
     return all(k in dir(obj) for k in ["get_loc", "has_loc", "loc", "get_segment"])
 
 
-def is_density_mechanism(obj: Union[str, "HocObject"]):
+def is_density_mechanism(obj: Union[str, "neuron.hoc.HocObject"]):
     """
     Check if obj is a (name of a) DensityMechanism on the ``HocInterpreter``.
 

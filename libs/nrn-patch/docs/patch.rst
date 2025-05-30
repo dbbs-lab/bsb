@@ -34,4 +34,4 @@ Module contents
    :members:
    :undoc-members:
    :show-inheritance:
-   :exclude-members: PythonHocInterpreter
+   :exclude-members: PythonHocInterpreter, transform

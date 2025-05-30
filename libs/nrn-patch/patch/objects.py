@@ -297,7 +297,8 @@ class Section(PythonHocObject, Connectable, WrapsPointers):
         :param points: A 2D array of xyz points.
         :param diameters: A scalar or array of diameters corresponding to the points.
             Default value is the section diameter.
-        :type diameters: float or array
+
+        :type diameters: float | list[float]
         """
         if diameters is None:
             diameters = [self.diam for _ in range(len(points))]
@@ -327,7 +328,7 @@ class Section(PythonHocObject, Connectable, WrapsPointers):
         """
         Return the whole tree of child Sections.
 
-        :rtype: List[patch.Section]
+        :rtype: List[patch.objects.Section]
         """
         return [Section(self._interpreter, s) for s in self.__neuron__().wholetree()]
 
@@ -355,7 +356,7 @@ class Section(PythonHocObject, Connectable, WrapsPointers):
 
         :param factory: Callable that creates a point process, is given the
           Section as first argument and passes on all other args.
-        :type factory: callable
+        :type factory: Callable
         :param store: Store the synapse on the Section in a ``synapses``
           attribute.
         :type store: bool

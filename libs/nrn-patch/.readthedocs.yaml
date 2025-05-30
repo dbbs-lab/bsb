@@ -21,4 +21,4 @@ build:
       html:
         - ./nx run nrn-patch:docs
         - mkdir -p "$READTHEDOCS_OUTPUT/html"
-        - mv packages/bsb/docs/_build/html/* "$READTHEDOCS_OUTPUT/html"
+        - mv libs/nrn-patch/docs/_build/html/* "$READTHEDOCS_OUTPUT/html"

@@ -348,6 +348,7 @@ class PythonHocInterpreter:
     @classmethod
     def _wrap_point_process(cls, point_process):
         # Create a function that has the right `f.__code__.co_name` for error messages.
+        scope = {}
         exec(
             f"""def {point_process}(self, target, *args, **kwargs):
             h = getattr(self, '_PythonHocInterpreter__h')
@@ -361,10 +362,12 @@ class PythonHocInterpreter:
             if hasattr(og_target, "__ref__"):
                 og_target.__ref__(point_process)
             point_process.__ref__(og_target)
-            return point_process"""
+            return point_process""",
+            globals(),
+            scope,
         )
 
-        return locals()[point_process]
+        return scope[point_process]
 
     def _setup_transfer(self):  # pragma: nocover
         v = self.__h.Vector()
@@ -435,7 +438,9 @@ class ParallelContext(PythonHocObject):
             time_vector = self._interpreter.Vector()
         if gid_vector is None:
             gid_vector = self._interpreter.Vector()
-        transform(self).spike_record(gids, transform(time_vector), transform(gid_vector))
+        transform(self).spike_record(
+            gids, transform(time_vector), transform(gid_vector)
+        )
         if gids == -1:
             self._warn_new_gids = True
         return time_vector, gid_vector

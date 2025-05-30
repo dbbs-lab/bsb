@@ -22,4 +22,3 @@ build:
         - ./nx run bsb-hdf5:docs
         - mkdir -p "$READTHEDOCS_OUTPUT/html"
         - mv packages/bsb-hdf5/docs/_build/html/* "$READTHEDOCS_OUTPUT/html"
-        - ls $READTHEDOCS_OUTPUT/html

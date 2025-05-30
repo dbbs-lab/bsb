@@ -22,4 +22,3 @@ build:
         - ./nx run bsb-json:docs
         - mkdir -p "$READTHEDOCS_OUTPUT/html"
         - mv packages/bsb-json/docs/_build/html/* "$READTHEDOCS_OUTPUT/html"
-        - ls $READTHEDOCS_OUTPUT/html

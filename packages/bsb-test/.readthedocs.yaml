@@ -22,4 +22,3 @@ build:
         - ./nx run bsb-test:docs
         - mkdir -p "$READTHEDOCS_OUTPUT/html"
         - mv packages/bsb-test/docs/_build/html/* "$READTHEDOCS_OUTPUT/html"
-        - ls $READTHEDOCS_OUTPUT/html

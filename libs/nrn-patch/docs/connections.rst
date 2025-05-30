@@ -44,7 +44,7 @@ In parallel simulations
 
 
 In Patch most of the parallel context is managed for you, and you can use the
-:func:`~.interpreter.PythonHocInterpreter.ParallelCon` method to either connect
+:meth:`~.interpreter.PythonHocInterpreter.ParallelCon` method to either connect
 an output (cell soma, axons, ...) to a GID or a GID to an input (synapse on
 postsynaptic cell, ...).
 

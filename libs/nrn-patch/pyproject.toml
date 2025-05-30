@@ -30,9 +30,9 @@ test = [
     "coverage~=7.0"
 ]
 docs = [
-    "sphinx~=7.2",
+    "sphinx~=8.0",
     "helveg--sphinx-code-tabs~=0.2",
-    "sphinx-rtd-theme~=2.0",
+    "sphinx-rtd-theme~=3.0",
     "docformatter>=1.7.6"
 ]
 dev = [

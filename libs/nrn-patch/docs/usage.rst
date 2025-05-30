@@ -9,7 +9,7 @@ Usage
 Be aware that the interface is currently incomplete, this means that most parts are still
 "just" NEURON. I've only patched holes I frequently encounter myself when using NEURON's
 :class:`~neuron.h.Section`, :class:`NetStim <neuron:NetStim>` and :class:`NetCon
-<neuron:Netcon>` functions. Feel free to open an issue or fork this project and open a
+<neuron:NetCon>` functions. Feel free to open an issue or fork this project and open a
 pull request for missing or broken parts of the interface.
 
 Philosophy
@@ -33,7 +33,7 @@ interface, it just patches up some of the more frequent and ridiculous gotchas.
 
 Patch supplies a new HOC interpreter ``p``, the
 :class:`~.interpreter.PythonHocInterpreter` which wraps the standard HOC interpreter
-:class:`neuron.h` provided by NEURON. Any objects returned will either be
+``neuron.h`` provided by NEURON. Any objects returned will either be
 :class:`~.objects.PythonHocObject`'s wrapping their corresponding NEURON object, or
 whatever NEURON returns.
 

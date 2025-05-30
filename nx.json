@@ -34,5 +34,5 @@
       "codeCoverage": true
     }
   },
-  "$schema": "./node_modules/nx/schemas/nx-schema.json"
+  "$schema": "./.nx/installation/node_modules/nx/schemas/project-schema.json"
 }

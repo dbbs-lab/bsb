@@ -5,9 +5,9 @@ Sections are cilindrical representations of pieces of a cell. They have a length
 diameter. Sections are the main building block of a simulation in NEURON.
 
 You can use the :meth:`~.objects.Section.connect` method to connect :class:`Sections
-<.objects.Section>` together.
+<~.objects.Section>` together.
 
-Sections can be subdivided into :class:`Segments <.objects.Segment>` by specifying
+Sections can be subdivided into :class:`Segments <~.objects.Segment>` by specifying
 ``nseg``, the simulator calculates the voltage for each segment, thereby affecting the
 spatial resolution of the simulation. The position of a segment is represented by its
 normalized position along the axis of the Segment. This means that a Segment at x=0.5
@@ -46,7 +46,7 @@ Retrieving segments
 -------------------
 
 
-:class:`Sections <.objects.Section>` can be called with an x to retrieve the segment at
+:class:`Sections <~.objects.Section>` can be called with an x to retrieve the segment at
 that x. The segments of a :class:`~.objects.Section` can also be iterated over.
 
 .. code-tabs::

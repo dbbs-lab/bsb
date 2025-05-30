@@ -328,7 +328,7 @@ class Section(PythonHocObject, Connectable, WrapsPointers):
         """
         Return the whole tree of child Sections.
 
-        :rtype: List[~.objects.Section]
+        :rtype: List[patch.objects.Section]
         """
         return [Section(self._interpreter, s) for s in self.__neuron__().wholetree()]
 

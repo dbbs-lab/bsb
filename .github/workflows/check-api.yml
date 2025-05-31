@@ -12,8 +12,8 @@ jobs:
         fetch-depth: 0
     - name: Install uv
       uses: astral-sh/setup-uv@v5
-    - name: bsb-core affected?
-      id: affected
+    - uses: nrwl/nx-set-shas@v4
+    - id: affected
       run: |
         echo "run_check=$(./nx show projects --affected | grep -q bsb-core && echo true || echo false)" >> $GITHUB_OUTPUT
     - name: Check public API

@@ -15,18 +15,16 @@ class CableProperties(Copy, Merge, Assert, Iterable):
     Ra: float = None
     cm: float = None
     """
-    Axial resistivity in ohm/cm
+    Axial resistivity in ohm/cm.
     """
 
     def to_dict(self) -> dict:
         return dataclasses.asdict(self)
 
 
-CablePropertiesDict = typing.TypedDict(
-    "CablePropertiesDict",
-    {"Ra": float, "cm": float},
-    total=False,
-)
+class CablePropertiesDict(typing.TypedDict, total=False):
+    Ra: float
+    cm: float
 
 
 @dataclasses.dataclass
@@ -39,11 +37,10 @@ class Ion(Copy, Merge, Assert, Iterable):
         return dataclasses.asdict(self)
 
 
-IonDict = typing.TypedDict(
-    "IonDict",
-    {"rev_pot": float, "int_con": float, "ext_con": float},
-    total=False,
-)
+class IonDict(typing.TypedDict, total=False):
+    rev_pot: float
+    int_con: float
+    ext_con: float
 
 
 class Mechanism:
@@ -73,15 +70,12 @@ class Synapse(Mechanism):
         return type(self)(self.parameters.copy(), to_mech_id(self.mech_id))
 
 
-ExpandedSynapseDict = typing.TypedDict(
-    "ExpandedSynapseDict",
-    {"mechanism": MechId, "parameters": dict[str, float]},
-    total=False,
-)
-SynapseDict = typing.Union[
-    dict[str, float],
-    ExpandedSynapseDict,
-]
+class ExpandedSynapseDict(typing.TypedDict, total=False):
+    mechanism: MechId
+    parameters: dict[str, float]
+
+
+SynapseDict = dict[str, float] | ExpandedSynapseDict
 
 
 def is_mech_id(mech_id):
@@ -206,7 +200,7 @@ class CableType:
             raise KeyError(f"A mechanism with id '{mech_id}' already exists.")
         self.mechs[mech_id] = mech
 
-    def add_synapse(self, label: typing.Union[str, MechId], synapse: Synapse):
+    def add_synapse(self, label: str | MechId, synapse: Synapse):
         mech_id = synapse.mech_id or to_mech_id(label)
         if not is_mech_id(mech_id):
             raise ValueError(f"'{mech_id}' is not a valid mechanism id.")
@@ -215,16 +209,11 @@ class CableType:
         self.synapses[label] = synapse
 
 
-CableTypeDict = typing.TypedDict(
-    "CableTypeDict",
-    {
-        "cable": CablePropertiesDict,
-        "ions": dict[str, IonDict],
-        "mechanisms": dict[MechId, dict[str, float]],
-        "synapses": dict[MechId, SynapseDict],
-    },
-    total=False,
-)
+class CableTypeDict(typing.TypedDict, total=False):
+    cable: CablePropertiesDict
+    ions: dict[str, IonDict]
+    mechanisms: dict[MechId, dict[str, float]]
+    synapses: dict[MechId, SynapseDict]
 
 
 class default_ions_dict(dict):
@@ -236,9 +225,7 @@ class default_ions_dict(dict):
         self._defaults = {
             "na": self._ion_class(rev_pot=50.0, int_con=10.0, ext_con=140.0),
             "k": self._ion_class(rev_pot=-77.0, int_con=54.4, ext_con=2.5),
-            "ca": self._ion_class(
-                rev_pot=132.4579341637009, int_con=5e-05, ext_con=2.0
-            ),
+            "ca": self._ion_class(rev_pot=132.4579341637009, int_con=5e-05, ext_con=2.0),
             "h": self._ion_class(rev_pot=0.0, int_con=1.0, ext_con=1.0),
         }
 
@@ -256,46 +243,56 @@ class default_ions_dict(dict):
 
 
 CT = typing.TypeVar("CT", bound=CableType)
-"""Type variable for cable types"""
+"""
+Type variable for cable types.
+"""
 CP = typing.TypeVar("CP", bound=CableProperties)
-"""Type variable for cable properties"""
-I = typing.TypeVar("I", bound=Ion)
-"""Type variable for ions"""
-M = typing.TypeVar("M", bound=Mechanism)
-"""Type variable for mechanisms"""
-S = typing.TypeVar("S", bound=Synapse)
-"""Type variable for synapses"""
+"""
+Type variable for cable properties.
+"""
+I = typing.TypeVar("I", bound=Ion)  # noqa: E741
+"""
+Type variable for ions.
+"""
+M = typing.TypeVar("M", bound=Mechanism)  # noqa: E741
+"""
+Type variable for mechanisms.
+"""
+S = typing.TypeVar("S", bound=Synapse)  # noqa: E741
+"""
+Type variable for synapses.
+"""
 
 
 class Definition(typing.Generic[CT, CP, I, M, S], abc.ABC):
     @classmethod
     @property
     @abstractmethod
-    def cable_type_class(cls) -> typing.Type[CT]:
+    def cable_type_class(cls) -> type[CT]:
         pass
 
     @classmethod
     @property
     @abstractmethod
-    def cable_properties_class(cls) -> typing.Type[CP]:
+    def cable_properties_class(cls) -> type[CP]:
         pass
 
     @classmethod
     @property
     @abstractmethod
-    def ion_class(cls) -> typing.Type[I]:
+    def ion_class(cls) -> type[I]:
         pass
 
     @classmethod
     @property
     @abstractmethod
-    def mechanism_class(cls) -> typing.Type[M]:
+    def mechanism_class(cls) -> type[M]:
         pass
 
     @classmethod
     @property
     @abstractmethod
-    def synapse_class(cls) -> typing.Type[S]:
+    def synapse_class(cls) -> type[S]:
         pass
 
     def __init__(self, use_defaults=False):
@@ -322,7 +319,7 @@ class Definition(typing.Generic[CT, CP, I, M, S], abc.ABC):
             raise KeyError(f"Cable type {label} already exists.")
         self._cable_types[label] = def_
 
-    def add_synapse_type(self, label: typing.Union[str, MechId], synapse: S):
+    def add_synapse_type(self, label: str | MechId, synapse: S):
         mech_id = synapse.mech_id or to_mech_id(label)
         if not is_mech_id(mech_id):
             raise ValueError(f"'{mech_id}' is not a valid synapse mechanism.")
@@ -364,14 +361,9 @@ class ModelDefinition(Definition[CableType, CableProperties, Ion, Mechanism, Syn
         return Synapse
 
 
-ModelDefinitionDict = typing.TypedDict(
-    "ModelDefinitionDict",
-    {
-        "cable_types": dict[str, CableTypeDict],
-        "synapse_types": dict[MechId, SynapseDict],
-    },
-    total=False,
-)
+class ModelDefinitionDict(typing.TypedDict, total=False):
+    cable_types: dict[str, CableTypeDict]
+    synapse_types: dict[MechId, SynapseDict]
 
 
 @typing.overload
@@ -402,7 +394,7 @@ def define_model(templ_or_def, def_dict=None, /, use_defaults=False) -> ModelDef
 D = typing.TypeVar("D", bound=Definition)
 
 
-def _parse_dict_def(cls: typing.Type[D], def_dict: ModelDefinitionDict) -> D:
+def _parse_dict_def(cls: type[D], def_dict: ModelDefinitionDict) -> D:
     model = cls()
     for label, def_input in def_dict.get("cable_types", {}).items():
         ct = _parse_cable_type(cls, def_input)
@@ -413,7 +405,7 @@ def _parse_dict_def(cls: typing.Type[D], def_dict: ModelDefinitionDict) -> D:
     return model
 
 
-def _parse_cable_type(cls: typing.Type[Definition], cable_dict: CableTypeDict):
+def _parse_cable_type(cls: type[Definition], cable_dict: CableTypeDict):
     try:
         def_ = cls.cable_type_class(cls.cable_properties_class)
         def_.cable = cls.cable_properties_class(**cable_dict.get("cable", {}))
@@ -425,28 +417,30 @@ def _parse_cable_type(cls: typing.Type[Definition], cable_dict: CableTypeDict):
         for label, v in cable_dict.get("synapses", {}).items():
             def_.add_synapse(label, _parse_synapse_def(cls, label, v))
         return def_
-    except Exception:
+    except Exception as e:
         raise ModelDefinitionError(
             f"{cable_dict} is not a valid cable type definition."
-        )
+        ) from e
 
 
-def _parse_ion_def(cls: typing.Type[Definition], ion_dict: IonDict):
+def _parse_ion_def(cls: type[Definition], ion_dict: IonDict):
     try:
         return cls.ion_class(**ion_dict)
-    except Exception:
-        raise ModelDefinitionError(f"{ion_dict} is not a valid ion definition.")
+    except Exception as e:
+        raise ModelDefinitionError(f"{ion_dict} is not a valid ion definition.") from e
 
 
-def _parse_mech_def(cls: typing.Type[Definition], mech_dict: dict[str, float]):
+def _parse_mech_def(cls: type[Definition], mech_dict: dict[str, float]):
     try:
         mech = cls.mechanism_class(mech_dict.copy())
         return mech
-    except Exception:
-        raise ModelDefinitionError(f"{mech_dict} is not a valid mechanism definition.")
+    except Exception as e:
+        raise ModelDefinitionError(
+            f"{mech_dict} is not a valid mechanism definition."
+        ) from e
 
 
-def _parse_synapse_def(cls: typing.Type[Definition], key, synapse_dict: SynapseDict):
+def _parse_synapse_def(cls: type[Definition], key, synapse_dict: SynapseDict):
     try:
         if "mechanism" in synapse_dict:
             # If `mechanism` is specified, it must be an expanded dict
@@ -464,8 +458,10 @@ def _parse_synapse_def(cls: typing.Type[Definition], key, synapse_dict: SynapseD
                 key,
             )
         return synapse
-    except Exception:
-        raise ModelDefinitionError(f"{synapse_dict} is not a valid synapse definition.")
+    except Exception as e:
+        raise ModelDefinitionError(
+            f"{synapse_dict} is not a valid synapse definition."
+        ) from e
 
 
 class mechdict(dict):

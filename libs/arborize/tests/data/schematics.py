@@ -2,7 +2,6 @@ import os as _os
 
 from arborize import file_schematic as _schema
 
-from .models import empty as _empty
 from .models import expsyn as _expsyn
 from .models import pas as _pas
 
@@ -16,17 +15,17 @@ def cell010():
 
 
 def p75():
-    with open(_mpath("P75.swc"), "r") as _file:
+    with open(_mpath("P75.swc")) as _file:
         return _schema(_file)
 
 
 def p75_pas():
-    with open(_mpath("P75.swc"), "r") as _file:
+    with open(_mpath("P75.swc")) as _file:
         return _schema(_file, definitions=_pas)
 
 
 def p75_expsyn():
-    with open(_mpath("P75.swc"), "r") as _file:
+    with open(_mpath("P75.swc")) as _file:
         return _schema(_file, definitions=_expsyn)
 
 

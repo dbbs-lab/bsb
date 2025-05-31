@@ -1,6 +1,6 @@
 import dataclasses
-import typing
-from typing import TYPE_CHECKING, Iterable
+from collections.abc import Iterable
+from typing import TYPE_CHECKING
 
 import numpy as np
 import numpy.typing as npt
@@ -24,7 +24,9 @@ def get_arclengths(pts: Iterable["Point"]) -> npt.NDArray[np.float_]:
     """
     Compute normalized cumulative arclengths from a sequence of points.
 
-    :param pts: Iterable of Point objects with a `coords` attribute representing coordinates.
+    :param pts: Iterable of Point objects with a `coords` attribute representing
+     coordinates.
+
     :type pts: Iterable[Point]
     :return: Normalized cumulative arclengths as a NumPy array.
     :rtype: numpy.ndarray
@@ -37,7 +39,7 @@ def get_arclengths(pts: Iterable["Point"]) -> npt.NDArray[np.float_]:
     return arcsums / arcsums[-1]
 
 
-MechIdTuple = typing.Union[tuple[str], tuple[str, str], tuple[str, str, str]]
+MechIdTuple = tuple[str] | tuple[str, str] | tuple[str, str, str]
 """
 Type alias for mechanism identifiers represented as tuples.
 
@@ -49,7 +51,7 @@ Can be a tuple with 1 to 3 strings, e.g.:
 This allows hierarchical or detailed identification of mechanisms.
 """
 
-MechId = typing.Union[str, MechIdTuple]
+MechId = str | MechIdTuple
 """
 Type alias for mechanism identifiers.
 

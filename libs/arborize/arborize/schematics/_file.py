@@ -22,7 +22,7 @@ def file_schematic(
 ) -> Schematic:
     if hasattr(file_like, "read"):
         if not file_like.name and not fname:
-            raise IOError(
+            raise OSError(
                 "The file-driver MorphIO requires a file name to parse files. "
                 "Use a file-like object that provides a `name` attribute, "
                 "or pass the `fname` keyword argument, "

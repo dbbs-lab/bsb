@@ -30,14 +30,14 @@ class TestBluePyOptimization(unittest.TestCase):
             definitions=constraints,
         )
         cell_model = bluepyopt_build(schema)
-        self.assertEquals(["soma"], cell_model.seclist_names)
+        self.assertEqual(["soma"], cell_model.seclist_names)
 
-        self.assertEquals(1, len(cell_model.mechanisms))
-        self.assertEquals("hh", cell_model.mechanisms[0].name)
-        self.assertEquals("hh", cell_model.mechanisms[0].prefix)
-        self.assertEquals(1, len(cell_model.mechanisms[0].locations))
-        self.assertEquals("soma", cell_model.mechanisms[0].locations[0].seclist_name)
-        self.assertEquals(5, len(cell_model.params))
+        self.assertEqual(1, len(cell_model.mechanisms))
+        self.assertEqual("hh", cell_model.mechanisms[0].name)
+        self.assertEqual("hh", cell_model.mechanisms[0].prefix)
+        self.assertEqual(1, len(cell_model.mechanisms[0].locations))
+        self.assertEqual("soma", cell_model.mechanisms[0].locations[0].seclist_name)
+        self.assertEqual(5, len(cell_model.params))
 
         soma_loc = ephys.locations.NrnSeclistCompLocation(
             name="soma", seclist_name="soma", sec_index=0, comp_x=0.5
@@ -54,7 +54,7 @@ class TestBluePyOptimization(unittest.TestCase):
                 total_duration=200,
             )
             rec = ephys.recordings.CompRecording(
-                name="%s.soma.v" % protocol_name, location=soma_loc, variable="v"
+                name=f"{protocol_name}.soma.v", location=soma_loc, variable="v"
             )
             protocol = ephys.protocols.SweepProtocol(protocol_name, [stim], [rec])
             sweep_protocols.append(protocol)
@@ -70,11 +70,11 @@ class TestBluePyOptimization(unittest.TestCase):
             stim_start = protocol.stimuli[0].step_delay
             stim_end = stim_start + protocol.stimuli[0].step_duration
             for efel_feature_name, mean in efel_feature_means[protocol.name].items():
-                feature_name = "%s.%s" % (protocol.name, efel_feature_name)
+                feature_name = f"{protocol.name}.{efel_feature_name}"
                 feature = ephys.efeatures.eFELFeature(
                     feature_name,
                     efel_feature_name=efel_feature_name,
-                    recording_names={"": "%s.soma.v" % protocol.name},
+                    recording_names={"": f"{protocol.name}.soma.v"},
                     stim_start=stim_start,
                     stim_end=stim_end,
                     exp_mean=mean,

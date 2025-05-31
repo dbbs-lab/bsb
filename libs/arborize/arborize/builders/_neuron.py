@@ -1,7 +1,8 @@
 import dataclasses
 import random
 import typing
-from typing import TYPE_CHECKING, Mapping, Sequence
+from collections.abc import Mapping, Sequence
+from typing import TYPE_CHECKING
 
 import errr
 
@@ -19,8 +20,8 @@ if TYPE_CHECKING:
 
 class NeuronModel:
     def __init__(self, sections, locations, cable_types):
-        self._sections: Sequence["Section"] = sections
-        self._locations: dict["Location", "LocationAccessor"] = locations
+        self._sections: Sequence[Section] = sections
+        self._locations: dict[Location, LocationAccessor] = locations
         self._cable_types = cable_types
 
     @property
@@ -36,7 +37,7 @@ class NeuronModel:
             return self._locations[tuple(loc)]
         except KeyError:
             raise UnknownLocationError(
-                f"No such location '%location%'.", self, loc
+                "No such location '%location%'.", self, loc
             ) from None
 
     def get_segment(self, loc: "Location", sx=0.5) -> "Segment":
@@ -65,7 +66,7 @@ class NeuronModel:
         synapses = la.section.synapse_types
         if not synapses:
             raise UnknownSynapseError(
-                f"Can't insert synapses. No synapse types present on branch with labels "
+                "Can't insert synapses. No synapse types present on branch with labels "
                 + errr.quotejoin(la.section.labels),
                 self,
                 label,
@@ -117,7 +118,8 @@ class NeuronModel:
             if hasattr(la.section, "_transmitter"):
                 if gid != la.section._transmitter.gid:
                     raise TransmitterError(
-                        f"A transmitter already exists with gid {la.section._transmitter.gid}"
+                        "A transmitter already exists"
+                        f" with gid {la.section._transmitter.gid}"
                     )
                 return la.section._transmitter
             else:
@@ -127,7 +129,8 @@ class NeuronModel:
             if hasattr(la.section, "_source"):
                 if gid != la.section._source_gid:
                     raise TransmitterError(
-                        f"A source variable already exists with gid {la.section._source_gid}"
+                        "A source variable already exists"
+                        f" with gid {la.section._source_gid}"
                     )
                 tm = la.section._source
             else:
@@ -209,7 +212,7 @@ def apply_cable_properties(section, cable_props: "CableProperties"):
             setattr(section, field.name, prop)
 
 
-def apply_ions(section, ions: typing.Dict[str, "Ion"]):
+def apply_ions(section, ions: dict[str, "Ion"]):
     prop_map = {"rev_pot": "e{ion}", "int_con": "{ion}i", "ext_con": "{ion}o"}
     for ion_name, ion_props in ions.items():
         for prop, value in ion_props:

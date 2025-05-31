@@ -1,3 +1,4 @@
+import typing
 import unittest
 from itertools import zip_longest
 
@@ -8,6 +9,9 @@ from arborize.builders._arbor import get_decor, get_label_dict, hash_labelset
 
 from ._shared import SchematicsFixture
 
+if typing.TYPE_CHECKING:
+    from arborize.schematic import Point
+
 
 class TestModelBuilding(SchematicsFixture, unittest.TestCase):
     def setUp(self):
@@ -17,7 +21,7 @@ class TestModelBuilding(SchematicsFixture, unittest.TestCase):
 
     def test_arbor_build_morphology(self):
         branch_endpoints = {}
-        for bid, branch in enumerate(self.schematic.cables):
+        for _, branch in enumerate(self.schematic.cables):
             ptid = branch_endpoints[branch.parent] if branch.parent else arbor.mnpos
             branch_endpoints[branch] = ptid
 

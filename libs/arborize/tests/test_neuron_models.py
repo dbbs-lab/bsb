@@ -1,7 +1,6 @@
 import os
 import unittest
 
-import numpy as np
 from patch import p
 
 from arborize import define_model, neuron_build

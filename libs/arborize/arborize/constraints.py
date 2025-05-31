@@ -50,7 +50,7 @@ class Constraint:
     def from_value(cls, value: "ConstraintValue") -> "Constraint":
         if isinstance(value, Constraint):
             return value
-        elif isinstance(value, (list, tuple)):
+        elif isinstance(value, list | tuple):
             constraint = cls()
             constraint.lower = value[0]
             constraint.upper = value[1]
@@ -65,7 +65,7 @@ class Constraint:
         return self
 
 
-ConstraintValue = typing.Union[Constraint, float, tuple[float, float], list[float]]
+ConstraintValue = Constraint | float | tuple[float, float] | list[float]
 """
 Type alias for values used to specify constraints.
 
@@ -84,11 +84,11 @@ This flexible type allows defining constraints either as explicit
 class CablePropertyConstraints(CableProperties):
     Ra: Constraint
     """
-    Axial resistivity in ohm/cm
+    Axial resistivity in ohm/cm.
     """
     cm: Constraint
     """
-    Membrane conductance
+    Membrane conductance.
     """
 
     def __post_init__(self):
@@ -96,11 +96,9 @@ class CablePropertyConstraints(CableProperties):
             _convert_field(self, field)
 
 
-CablePropertyConstraintsDict = typing.TypedDict(
-    "CablePropertyConstraintsDict",
-    {"Ra": ConstraintValue, "cm": ConstraintValue},
-    total=False,
-)
+class CablePropertyConstraintsDict(typing.TypedDict, total=False):
+    Ra: ConstraintValue
+    cm: ConstraintValue
 
 
 @dataclasses.dataclass
@@ -114,15 +112,10 @@ class IonConstraints(Ion):
             _convert_field(self, field)
 
 
-IonConstraintsDict = typing.TypedDict(
-    "IonConstraintsDict",
-    {
-        "rev_pot": ConstraintValue,
-        "int_con": ConstraintValue,
-        "ext_con": ConstraintValue,
-    },
-    total=False,
-)
+class IonConstraintsDict(typing.TypedDict, total=False):
+    rev_pot: ConstraintValue
+    int_con: ConstraintValue
+    ext_con: ConstraintValue
 
 
 class MechanismConstraints(Mechanism):
@@ -136,14 +129,11 @@ class SynapseConstraints(Synapse, MechanismConstraints):
     pass
 
 
-SynapseConstraintsDict = typing.Union[
-    dict[str, ConstraintValue],
-    typing.TypedDict(
-        "SynapseConstraintsDict",
-        {"mechanism": MechId, "parameters": dict[str, ConstraintValue]},
-        total=False,
-    ),
-]
+SynapseConstraintsDict = dict[str, ConstraintValue] | typing.TypedDict(
+    "SynapseConstraintsDict",
+    {"mechanism": MechId, "parameters": dict[str, ConstraintValue]},
+    total=False,
+)
 """
 Type definition for synapse constraints.
 
@@ -151,8 +141,12 @@ This can be either:
 
 - A dictionary mapping parameter names to :data:`ConstraintValues <ConstraintValue>`, or
 - A TypedDict with optional keys:
-  - ``mechanism``: Identifier for the synapse mechanism (type :class:`~arborize._util.MechId`).
-  - ``parameters``: Dictionary of parameter names to :data:`ConstraintValues <ConstraintValue>`.
+
+  - ``mechanism``: Identifier for the synapse mechanism (type
+     :class:`~arborize._util.MechId`).
+   
+  - ``parameters``: Dictionary of parameter names to 
+     :data:`ConstraintValues <ConstraintValue>`.
 
 This flexible type supports simple parameter dicts or more structured dicts
 including the synapse mechanism identifier.
@@ -177,16 +171,13 @@ class CableTypeConstraints(CableType):
         return default
 
 
-CableTypeConstraintsDict = typing.TypedDict(
-    "CableTypeConstraintsDict",
-    {
-        "cable": CablePropertyConstraintsDict,
-        "mechanisms": dict[MechId, dict[str, ConstraintValue]],
-        "ions": dict[str, IonConstraintsDict],
-        "synapses": dict[str, SynapseConstraintsDict],
-    },
-    total=False,
-)
+class CableTypeConstraintsDict(typing.TypedDict, total=False):
+    cable: CablePropertyConstraintsDict
+    mechanisms: dict[MechId, dict[str, ConstraintValue]]
+    ions: dict[str, IonConstraintsDict]
+    synapses: dict[str, SynapseConstraintsDict]
+
+
 """
 Typed dictionary representing constraints for a cable type.
 
@@ -214,9 +205,9 @@ class ConstraintsDefinition(
     A specialized Definition that supports parameter constraints for cable types, ions,
     mechanisms, and synapses.
 
-    This class wraps all components with `Constraint` instances, allowing ranges or tolerances
-    to be applied to physiological parameters. Use `define_constraints` to create an instance
-    from a dictionary and apply a global tolerance.
+    This class wraps all components with `Constraint` instances, allowing ranges or
+    tolerances to be applied to physiological parameters. Use `define_constraints` to
+    create an instance from a dictionary and apply a global tolerance.
 
     Example::
 
@@ -240,7 +231,8 @@ class ConstraintsDefinition(
 
     :ivar cable_type_class: The class used for representing constrained cable types.
     :vartype cable_type_class: type[CableTypeConstraints]
-    :ivar cable_properties_class: The class used for constrained cable properties (e.g., Ra, cm).
+    :ivar cable_properties_class: The class used for constrained cable properties
+     (e.g., Ra, cm).
     :vartype cable_properties_class: type[CablePropertyConstraints]
     :ivar ion_class: The class used for constrained ion properties.
     :vartype ion_class: type[IonConstraints]
@@ -249,10 +241,12 @@ class ConstraintsDefinition(
     :ivar synapse_class: The class used for constrained synapse parameters.
     :vartype synapse_class: type[SynapseConstraints]
 
-    :param tolerance: Optional tolerance to apply to all parameter constraints (e.g., 0.1 = ±10%).
+    :param tolerance: Optional tolerance to apply to all parameter constraints
+     (e.g., 0.1 = ±10%).
     :type tolerance: float or None
 
-    :return: A fully structured `ConstraintsDefinition` with all values wrapped in `Constraint` objects.
+    :return: A fully structured `ConstraintsDefinition` with all values wrapped in
+     `Constraint` objects.
     :rtype: ConstraintsDefinition
     """
 
@@ -302,21 +296,18 @@ def _convert_field(obj, field):
     setattr(obj, field.name, constraint)
 
 
-ConstraintsDefinitionDict = typing.TypedDict(
-    "ConstraintsDefinitionDict",
-    {
-        "cable_types": dict[str, CableTypeConstraintsDict],
-        "synapse_types": dict[MechId, SynapseConstraintsDict],
-    },
-    total=False,
-)
+class ConstraintsDefinitionDict(typing.TypedDict, total=False):
+    cable_types: dict[str, CableTypeConstraintsDict]
+    synapse_types: dict[MechId, SynapseConstraintsDict]
+
+
 """
 Typed dictionary for the overall constraints definition structure.
 
 Fields:
 
 - ``cable_types``: A dictionary mapping cable type names to their constraint dictionaries.
-- ``synapse_types``: A dictionary mapping mechanism IDs to synapse constraint dictionaries.
+- ``synapse_types``: A dictionary mapping mechanism ID to synapse constraint dictionaries.
 
 Both fields are optional and represent the hierarchical constraint configuration
 used to build a `ConstraintsDefinition` instance.
@@ -327,8 +318,8 @@ def define_constraints(
     constraints: ConstraintsDefinitionDict, tolerance=None, use_defaults=False
 ) -> ConstraintsDefinition:
     """
-    Create a `ConstraintsDefinition` instance from a dictionary of constraints,
-    applying an optional global tolerance and default values.
+    Create a `ConstraintsDefinition` instance from a dictionary of constraints, applying
+    an optional global tolerance and default values.
 
     :param constraints: Dictionary specifying constraint values structured as
                         `ConstraintsDefinitionDict`.

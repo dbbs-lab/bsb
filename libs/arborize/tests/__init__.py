@@ -1,1 +1,1 @@
-import mpi4py.MPI
+import mpi4py.MPI  # noqa: F401

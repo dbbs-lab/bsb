@@ -1,3 +1,4 @@
+import contextlib
 import typing
 
 from .data import schematics
@@ -18,12 +19,10 @@ class SchematicsFixture:
 
     def tearDown(self):
         super().tearDown()
-        for k, v in vars(schematics).items():
+        for k, _ in vars(schematics).items():
             if not k.startswith("_"):
-                try:
+                with contextlib.suppress(Exception):
                     delattr(self, k)
-                except Exception:
-                    pass
 
     def __getattr__(self, attr):
         schemas = vars(schematics)

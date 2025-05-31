@@ -1,6 +1,7 @@
 import typing
 from collections import deque
-from typing import Iterable, Optional, Union
+from collections.abc import Iterable
+from typing import Optional
 
 import errr
 
@@ -9,8 +10,6 @@ from .definitions import CableType, ModelDefinition
 from .exceptions import ConstructionError, FrozenError, ModelDefinitionError
 
 if typing.TYPE_CHECKING:
-    from builders._arbor import CableCellTemplate
-
     from .parameter import Parameter
 
 Location = tuple[int, int]
@@ -48,15 +47,15 @@ class Schematic:
         self._name = name
         self._frozen = False
         self._definition: ModelDefinition = ModelDefinition()
-        self.cables: list["CableBranch"] = []
-        self.roots: list["UnitBranch"] = []
+        self.cables: list[CableBranch] = []
+        self.roots: list[UnitBranch] = []
         self._named = 0
 
     def __iter__(self) -> typing.Iterator["UnitBranch"]:
         """
         Iterate over the unit branches depth-first order.
         """
-        stack: deque["UnitBranch"] = deque(self.roots)
+        stack: deque[UnitBranch] = deque(self.roots)
         while True:
             try:
                 branch = stack.pop()
@@ -72,7 +71,9 @@ class Schematic:
     @property
     def name(self):
         """
-        Base name for all the instances of this model. Suffixed unique names for each
+        Base name for all the instances of this model.
+
+        Suffixed unique names for each
         instance can be obtained by calling ``create_name``.
         """
         return self._name
@@ -104,9 +105,7 @@ class Schematic:
         Generate the next unique name for an instance of this model.
         """
         if not self._frozen:
-            raise FrozenError(
-                "Schematic must be finished before naming instances of it."
-            )
+            raise FrozenError("Schematic must be finished before naming instances of it.")
         self._named += 1
         return f"{self._name}_{self._named}"
 
@@ -169,12 +168,14 @@ class Schematic:
             self.roots.append(point.branch)
 
     def create_empty(self):
-        """Create an empty branch"""
+        """
+        Create an empty branch.
+        """
         if self._frozen:
             throw_frozen()
         self.cables.append(CableBranch())
 
-    def set_param(self, location: Union[Location, Interval, str], param: "Parameter"):
+    def set_param(self, location: Location | Interval | str, param: "Parameter"):
         if isinstance(location, str):
             # Set parameter for the global label definition
             self.definition[location].set(param)
@@ -185,7 +186,11 @@ class Schematic:
             )
 
     def freeze(self):
-        """Freeze the schematic. Most mutating operations will no longer be permitted."""
+        """
+        Freeze the schematic.
+
+        Most mutating operations will no longer be permitted.
+        """
         if not self._frozen:
             self._flatten_branches(self.roots)
             self._name = self._name if self._name is not None else _random_name()
@@ -245,7 +250,6 @@ class Schematic:
 
     def _make_label_sorter(self):
         insert_index = [*self._definition._cable_types.keys()].index
-        len_ = len(self._definition._cable_types)
 
         def label_order(lbl):
             try:
@@ -259,7 +263,7 @@ class Schematic:
     def _make_label_namer(self):
         sort_labels = self._make_label_sorter()
         return lambda labels: "_".join(
-            l.replace("_", "__") for l in sort_labels(labels)
+            label.replace("_", "__") for label in sort_labels(labels)
         )
 
 

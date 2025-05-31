@@ -8,11 +8,14 @@ class Synapse:
         cell,
         section,
         point_process_name,
-        attributes={},
+        attributes=None,
         variant=None,
         type=None,
         source=None,
     ):
+        if attributes is None:
+            attributes = {}
+
         self._cell = cell
         self._type = type
         self._section = section

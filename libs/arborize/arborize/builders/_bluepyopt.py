@@ -30,9 +30,11 @@ def bluepyopt_build(schematic: "Schematic"):
 
         def instantiate(self, sim=None, icell=None):
             self.arborized_cell = neuron_build(self._schematic)
-            for label in self._schematic.get_compound_cable_types().keys():
+            for label in self._schematic.get_compound_cable_types():
                 section_list = getattr(icell, label)
-                labels = [l.replace("__", "_") for l in re.split("(?<!_)_(?!_)", label)]
+                labels = [
+                    label.replace("__", "_") for label in re.split("(?<!_)_(?!_)", label)
+                ]
                 for sec in self.arborized_cell.get_sections_with_all_labels(labels):
                     section_list.append(sec.__neuron__())
 
@@ -44,13 +46,14 @@ def bluepyopt_build(schematic: "Schematic"):
     constraints = schematic.definition
     if not isinstance(constraints, ConstraintsDefinition):
         raise TypeError(
-            f"Optimization schematic must contain constraints, got {type(constraints)} instead."
+            "Optimization schematic must contain constraints"
+            f", got {type(constraints)} instead."
         )
     cable_types = schematic.get_compound_cable_types()
 
     bpyopt_seclists = {
         label: ephys.locations.NrnSeclistLocation(label, seclist_name=label)
-        for label in cable_types.keys()
+        for label in cable_types
     }
 
     mech_locations = defaultdict(list)

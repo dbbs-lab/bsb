@@ -2,8 +2,6 @@ import unittest
 
 import numpy as np
 
-from arborize import define_model
-from arborize.schematics import file_schematic
 from tests._shared import SchematicsFixture
 
 

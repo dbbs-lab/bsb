@@ -29,7 +29,7 @@ class CableCellTemplate:
 
 
 def hash_labelset(labels: list[str]):
-    return "&".join(l.replace("&", "&&") for l in sorted(labels))
+    return "&".join(label.replace("&", "&&") for label in sorted(labels))
 
 
 def get_label_dict(schematic: "Schematic"):
@@ -42,8 +42,8 @@ def get_label_dict(schematic: "Schematic"):
             h = hash_labelset(p.branch.labels)
             if h not in labelsets:
                 lset_id = len(labelsets)
-                for l in p.branch.labels:
-                    label_dict[l].append(lset_id)
+                for label in p.branch.labels:
+                    label_dict[label].append(lset_id)
                 labelsets[h] = lset_id
     return labelsets, arbor.label_dict(
         {
@@ -148,7 +148,7 @@ def arbor_build(schematic: "Schematic"):
     if not hasattr(schematic, "arbor"):
         tree = arbor.segment_tree()
         # Stores the ids of the segments to append to.
-        branch_endpoints: dict["CableBranch", int] = {}
+        branch_endpoints: dict[CableBranch, int] = {}
         labelsets, label_dict = get_label_dict(schematic)
         for bid, branch in enumerate(schematic.cables):
             if len(branch.points) < 2:
@@ -160,7 +160,7 @@ def arbor_build(schematic: "Schematic"):
             next(pts_b)
             # Start branch from the endpoint, if the branch has a parent.
             ptid = branch_endpoints[branch.parent] if branch.parent else arbor.mnpos
-            for i, (p1, p2) in enumerate(zip(pts_a, pts_b)):
+            for _, (p1, p2) in enumerate(zip(pts_a, pts_b, strict=False)):
                 # Tag it with a unique tag per label combination
                 tag = hash_labelset(p2.branch.labels)
                 ptid = tree.append(ptid, _mkpt(p1), _mkpt(p2), tag=labelsets.get(tag))

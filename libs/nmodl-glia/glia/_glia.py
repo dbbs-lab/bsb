@@ -31,9 +31,7 @@ from .resolution import Resolver
 
 _installed = None
 
-MechId = typing.Union[
-    str, typing.Tuple[str], typing.Tuple[str, str], typing.Tuple[str, str, str]
-]
+MechId = str | tuple[str] | tuple[str, str] | tuple[str, str, str]
 
 
 def _requires_install(func):

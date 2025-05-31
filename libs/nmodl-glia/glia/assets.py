@@ -15,7 +15,7 @@ if typing.TYPE_CHECKING:
     import arbor
 
 
-SupportedDialect = typing.Union[typing.Literal["arbor"], typing.Literal["neuron"]]
+SupportedDialect = typing.Literal["arbor"] | typing.Literal["neuron"]
 
 
 class _ModList(list):

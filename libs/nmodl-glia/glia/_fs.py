@@ -14,9 +14,7 @@ from glia._hash import hash_path
 
 _install_dirs = appdirs.AppDirs(appname="Glia", appauthor="DBBS")
 
-LogLevel = typing.Union[
-    typing.Literal["log"], typing.Literal["warn"], typing.Literal["error"]
-]
+LogLevel = typing.Literal["log"] | typing.Literal["warn"] | typing.Literal["error"]
 
 
 def log(message: str, *, level: LogLevel = None, category=None, exc: Exception = None):

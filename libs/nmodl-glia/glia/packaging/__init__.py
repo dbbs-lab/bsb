@@ -1,17 +1,16 @@
 import os
-import typing
 from pathlib import Path
 
 import toml
 from black import find_project_root
 
+from ._ast import NmodlWriter, PackageTransformer, get_package_transformer
 from ..assets import Mod, SupportedDialect
 from ..exceptions import PackageError, PackageFileError, PackageProjectError
-from ._ast import NmodlWriter, PackageTransformer, get_package_transformer
 
 
 class PackageManager:
-    def __init__(self, path: typing.Union[str, os.PathLike]):
+    def __init__(self, path: str | os.PathLike):
         self._path = Path(path).resolve()
         self._pyproject = self._path / "pyproject.toml"
         if not self._pyproject.exists():
@@ -76,19 +75,19 @@ class PackageManager:
                 f"from entry point '{entry_point}' in '{path}'."
             ) from e
 
-    def get_mod_dir(self, mod_dir: typing.Union[str, Path] = None):
+    def get_mod_dir(self, mod_dir: str | os.PathLike = None):
         if mod_dir is None:
             mod_dir = self.get_setting("package", "mod-dir")
         mod_dir = Path(mod_dir)
         return self.get_package_path() / mod_dir
 
-    def get_rel_path(self, mod_dir: typing.Union[str, Path] = None):
+    def get_rel_path(self, mod_dir: str | os.PathLike = None):
         return self.get_mod_dir(mod_dir).relative_to(self.get_package_path())
 
     def get_package_path(self):
         return self.path / self.get_module_path().relative_to(self.path).parts[0]
 
-    def get_mod_files(self, mod_dir: typing.Union[str, Path] = None):
+    def get_mod_files(self, mod_dir: str | os.PathLike = None):
         return [*(self.get_mod_dir(mod_dir)).rglob("*.mod")]
 
     def get_mod_declarations(self):

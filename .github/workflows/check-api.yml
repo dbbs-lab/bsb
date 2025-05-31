@@ -12,6 +12,11 @@ jobs:
         fetch-depth: 0
     - name: Install uv
       uses: astral-sh/setup-uv@v5
+    - name: Install apt dependencies
+      run: |
+        sudo apt update
+        # Install `libopenmpi` for MPI
+        sudo apt install openmpi-bin libopenmpi-dev
     - uses: nrwl/nx-set-shas@v4
     - id: affected
       run: |

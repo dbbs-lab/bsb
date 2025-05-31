@@ -7,6 +7,8 @@ on:
       - '!main'  # ... that is not main
 
 jobs:
+  check-api:
+    uses: ./.github/workflows/check-api.yml
   build:
     uses: ./.github/workflows/build.yml
   docs:

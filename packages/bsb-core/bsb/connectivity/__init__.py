@@ -21,26 +21,3 @@ from .geometric import (
     inside_mbox,
 )
 from .import_ import CsvImportConnectivity
-
-__all__ = [
-    "ConnectionStrategy",
-    "VoxelIntersection",
-    "AllToAll",
-    "Convergence",
-    "FixedIndegree",
-    "FixedOutdegree",
-    "Cone",
-    "Cuboid",
-    "Cylinder",
-    "Ellipsoid",
-    "GeometricShape",
-    "MorphologyToShapeIntersection",
-    "Parallelepiped",
-    "ShapeHemitype",
-    "ShapesComposition",
-    "ShapeToMorphologyIntersection",
-    "ShapeToShapeIntersection",
-    "Sphere",
-    "inside_mbox",
-    "CsvImportConnectivity",
-]

@@ -103,6 +103,14 @@
         "debug": false
       }
     },
+    "check-api": {
+      "executor": "@nxlv/python:run-commands",
+      "options": {
+        "commands": ["uv run tools/generate_public_api.py --check"],
+        "cwd": "{projectRoot}"
+      },
+      "cache": false
+    },
     "nx-release-publish": {
       "executor": "@nxlv/python:publish",
       "options": {},

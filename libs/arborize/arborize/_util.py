@@ -21,6 +21,14 @@ def get_location_name(pts: Iterable["Point"]) -> str:
 
 
 def get_arclengths(pts: Iterable["Point"]) -> npt.NDArray[np.float_]:
+    """
+    Compute normalized cumulative arclengths from a sequence of points.
+
+    :param pts: Iterable of Point objects with a `coords` attribute representing coordinates.
+    :type pts: Iterable[Point]
+    :return: Normalized cumulative arclengths as a NumPy array.
+    :rtype: numpy.ndarray
+    """
     coords = np.array([pt.coords for pt in pts])
     rel_dist = np.diff(coords, axis=0, prepend=[coords[0, :]])
     arcsums = np.cumsum(np.sum(rel_dist**2, axis=1) ** 0.5)
@@ -30,7 +38,27 @@ def get_arclengths(pts: Iterable["Point"]) -> npt.NDArray[np.float_]:
 
 
 MechIdTuple = typing.Union[tuple[str], tuple[str, str], tuple[str, str, str]]
+"""
+Type alias for mechanism identifiers represented as tuples.
+
+Can be a tuple with 1 to 3 strings, e.g.:
+- ("hh",)
+- ("mod", "hh")
+- ("region", "mod", "hh")
+
+This allows hierarchical or detailed identification of mechanisms.
+"""
+
 MechId = typing.Union[str, MechIdTuple]
+"""
+Type alias for mechanism identifiers.
+
+Can be either:
+- A simple string identifier, e.g., "hh"
+- A :class:`MechIdTuple` with 1 to 3 strings for hierarchical naming.
+
+This type supports flexible representation of mechanism IDs.
+"""
 
 
 @dataclasses.dataclass

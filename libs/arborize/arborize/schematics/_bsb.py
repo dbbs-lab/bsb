@@ -4,16 +4,27 @@ from typing import TYPE_CHECKING, Optional
 from ..schematic import Schematic
 
 if TYPE_CHECKING:
-    from bsb import Branch, Morphology
+    import bsb.morphologies
 
     from ..definitions import Definition
 
 
 def bsb_schematic(
-    morphology: "Morphology", definitions: Optional["Definition"] = None
+    morphology: "bsb.morphologies.Morphology",
+    definitions: Optional["Definition"] = None,
 ) -> Schematic:
+    """
+    Generate a schematic from a bsb.Morphology object.
+
+    :param morphology: A bsb.Morphology instance.
+    :type morphology: bsb.morphologies.Morphology
+    :param definitions: Optional Definition instance.
+    :type definitions: arborize.definitions.Definition
+    :return: A schematic representation.
+    :rtype: arborize.Schematic
+    """
     schematic = Schematic(name=morphology.meta.get("name"))
-    branches: list["Branch"] = [*morphology.branches]
+    branches: list["bsb.morphologies.Branch"] = [*morphology.branches]
     endpoints = []
     for bid, branch in enumerate(branches):
         branch._tempid = bid
@@ -37,7 +48,9 @@ def bsb_schematic(
                 itertools.count(), branch.points, branch.radii, branch.labels.walk()
             ):
                 endpoint = endpoint if pid == 0 else None
-                schematic.create_location((bid, pid), coords, radius, [*labels], endpoint)
+                schematic.create_location(
+                    (bid, pid), coords, radius, [*labels], endpoint
+                )
             endpoints.append((bid, pid))
     if definitions is not None:
         schematic.definition = definitions

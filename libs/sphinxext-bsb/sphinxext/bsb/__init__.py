@@ -356,6 +356,13 @@ class AutoconfigDirective(SphinxDirective):
         ]
 
 
+def resolve_type_aliases(app, env, node, contnode):
+    if node["refdomain"] == "py" and node["reftype"] == "class":
+        return app.env.get_domain("py").resolve_xref(
+            env, node["refdoc"], app.builder, "data", node["reftarget"], node, contnode
+        )
+
+
 def setup(app):
     if "sphinx_design" not in app.extensions:
         from sphinx_design import setup as sphinx_design_setup
@@ -371,6 +378,8 @@ def setup(app):
     app.add_directive("bsb_component_intro", ComponentIntro)
     app.add_directive("autoconfig", AutoconfigDirective)
 
+    app.connect("missing-reference", resolve_type_aliases)
+
     return {
         "version": importlib.metadata.version("sphinxext-bsb"),
         "parallel_read_safe": True,
@@ -378,4 +387,10 @@ def setup(app):
     }
 
 
-__all__ = ["AutoconfigDirective", "AutoconfigNode", "ComponentIntro", "Project", "setup"]
+__all__ = [
+    "AutoconfigDirective",
+    "AutoconfigNode",
+    "ComponentIntro",
+    "Project",
+    "setup",
+]

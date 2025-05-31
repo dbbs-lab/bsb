@@ -13,6 +13,14 @@ Subpackages
 Submodules
 ----------
 
+arborize.constraints module
+---------------------------
+
+.. automodule:: arborize.constraints
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 arborize.definitions module
 ---------------------------
 
@@ -49,6 +57,14 @@ arborize.synapse module
 -----------------------
 
 .. automodule:: arborize.synapse
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+arborize._util module
+-----------------------
+
+.. automodule:: arborize._util
    :members:
    :undoc-members:
    :show-inheritance:

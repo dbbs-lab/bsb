@@ -51,7 +51,7 @@ class Project:
     @property
     def _doc_path(self):
         if self._monorepo:
-            return self._root_folder / "../bsb/docs"
+            return self._root_folder / "../../packages/bsb/docs"
         else:
             return self._root_folder / "docs"
 
@@ -80,7 +80,9 @@ class Project:
         }
 
     def interbsb(self, dep_package):
-        local_folder = self._root_folder / f"../{dep_package}/docs/_build/iso-html"
+        local_folder = (
+            self._root_folder / f"../../packages/{dep_package}/docs/_build/iso-html"
+        )
         remote = f"https://{dep_package}.readthedocs.io/en/latest"
 
         if self._local_only:

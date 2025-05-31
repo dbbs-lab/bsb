@@ -38,11 +38,20 @@ extensions = [
     *_project.extensions,
 ]
 
-autodoc_mock_imports = [
-    "glia",
-    "patch",
-    "mpi4py",
-    "neuron"
+autodoc_mock_imports = ["glia", "patch", "mpi4py", "neuron"]
+
+autodoc_type_aliases = {
+    "NDArray": "numpy.ndarray",
+    "np.float64": "float",
+    "np.float_": "float",
+    "numpy.float64": "float",
+    "SynapseConstraintsDict": "arborize.constraints.SynapseConstraintsDict",
+}
+
+# Somehow these won't resolve
+nitpick_ignore = [
+    ("py:class", "numpy.float64"),
+    ("py:class", "numpy.float_"),
 ]
 
 
@@ -67,7 +76,7 @@ todo_include_todos = True
 
 html_theme = "furo"
 
-html_static_path = [*_project.html_static_path]
+html_static_path = ["_static", *_project.html_static_path]
 html_favicon = _project.html_favicon
 
 html_theme_options = {

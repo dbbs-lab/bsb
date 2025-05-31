@@ -12,6 +12,7 @@ _t(
             DryrunError=_e(),
         ),
         ConfigurationError=_e(
+            ConfigurationSyncError=_e(),
             ConfigurationFormatError=_e(),
             DynamicClassError=_e(
                 DynamicObjectNotFoundError=_e(),
@@ -70,7 +71,9 @@ _t(
             MissingMorphologyError=_e(),
             IncompleteMorphologyError=_e(),
             MorphologyDataError=_e(),
-            CircularMorphologyError=_e("morphology", "component").set(list_details=True),
+            CircularMorphologyError=_e("morphology", "component").set(
+                list_details=True
+            ),
             CompartmentError=_e(),
             EmptySelectionError=_e("selectors"),
             EmptyBranchError=_e(),
@@ -166,6 +169,7 @@ __all__ = [
     "CompilationError",
     "ConfigTemplateNotFoundError",
     "ConfigurationError",
+    "ConfigurationSyncError",
     "ConfigurationFormatError",
     "ConfigurationWarning",
     "ConnectivityError",

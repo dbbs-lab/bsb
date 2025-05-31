@@ -19,3 +19,10 @@
 # uv pip install -r ./devtools/editable-install.txt
 
 -e ./packages/bsb-core
+-e ./packages/bsb-arbor
+-e ./packages/bsb-hdf5
+-e ./packages/bsb-json
+-e ./packages/bsb-nest
+-e ./packages/bsb-neuron
+-e ./packages/bsb-test
+-e ./packages/bsb-yaml

@@ -21,6 +21,8 @@ class NestRule:
 
 @config.dynamic(attr_name="device", auto_classmap=True, default="external")
 class NestDevice(DeviceModel):
+    device: str
+    """Name of the NEST device model (e.g., "spike_generator", "poisson_generator")."""
     weight = config.attr(type=float, required=True)
     """weight of the connection between the device and its target"""
     delay = config.attr(type=float, required=True)

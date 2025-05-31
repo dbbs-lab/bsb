@@ -55,6 +55,26 @@ class NestAdapter(SimulatorAdapter):
             self.reset_kernel()
 
     def prepare(self, simulation):
+        """
+        Prepare the simulation environment in NEST.
+
+        This method initializes internal data structures and performs all
+        setup steps required before running the simulation:
+
+        - Loads and installs required NEST modules.
+        - Applies simulation-level settings (e.g., resolution, verbosity, seed).
+        - Creates neuron populations based on cell models.
+        - Establishes connectivity between neurons using connection models.
+        - Instantiates devices (e.g., recorders, stimuli) used in the simulation.
+
+        If any error occurs during preparation, the corresponding internal state
+        is cleaned up to avoid partial setups.
+
+        :param simulation: The simulation configuration to prepare.
+        :type simulation: NestSimulation
+        :returns: The prepared simulation data associated with the given simulation.
+        :rtype: bsb.simulation.adapter.SimulationData
+        """
         self.simdata[simulation] = SimulationData(
             simulation, result=NestResult(simulation)
         )

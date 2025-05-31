@@ -70,6 +70,9 @@ class NestConnection(compose_nodes(NestConnectionSettings, ConnectionModel)):
     parameters.
     """
 
+    model_strategy: str
+    """Specifies the strategy used by the connection model for synapse creation and management."""
+
     synapse = config.attr(type=NestSynapseSettings, required=True)
     """Nest synapse model with its parameters."""
 

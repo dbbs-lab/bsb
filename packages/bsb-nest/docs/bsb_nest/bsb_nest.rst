@@ -35,6 +35,12 @@ bsb\_nest.connection module
    :members:
    :undoc-members:
    :show-inheritance:
+   :exclude-members: NestConnection
+
+.. autoclass:: bsb_nest.connection.NestConnection
+   :members:
+   :undoc-members:
+   :no-show-inheritance:
 
 bsb\_nest.device module
 -----------------------

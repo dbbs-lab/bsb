@@ -12,9 +12,24 @@ class NeuronCell(CellModel):
     Class interfacing a NEURON cell model.
     """
 
+    model_strategy: str
+    """The strategy for neuron cell creation (e.g., 'arborize')."""
+
     def create_instances(self, count, ids, pos, morpho, rot, additional):
         """
-        type morpho: bsb.morphologies.MorphologySet
+        Create multiple neuron cell instances.
+
+        :param int count: Number of neuron instances to create.
+        :param ids: Iterable of identifiers for each neuron instance.
+        :param pos: Iterable of positions for each neuron instance.
+        :param morpho: Iterable of morphology objects.
+        :type morpho: bsb.morphologies.MorphologySet
+        :param rot: Iterable of rotation data for each neuron instance.
+        :type rot: bsb.morphologies.RotationSet
+        :param additional: Dict of additional parameters with iterable values.
+
+        :return: List of created neuron instances.
+        :rtype: list
         """
 
         def dictzip():
@@ -71,7 +86,12 @@ class ArborizeModelTypeHandler(types.object_):
 
 @config.node
 class ArborizedModel(NeuronCell, classmap_entry="arborize"):
+    """
+    Neuron cell model using Arborize for morphology-based neuron construction.
+    """
+
     model = config.attr(type=ArborizeModelTypeHandler(), required=True)
+    """Configuration attribute specifying the Arborize model type handler."""
     _schematics = {}
 
     def create(self, id, pos, morpho, rot, additional):

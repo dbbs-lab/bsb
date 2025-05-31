@@ -16,9 +16,6 @@ from bsb import (
 )
 from neo import AnalogSignal
 
-if typing.TYPE_CHECKING:
-    pass
-
 
 class NeuronSimulationData(SimulationData):
     def __init__(self, simulation, result=None):
@@ -73,6 +70,23 @@ class NeuronAdapter(SimulatorAdapter):
         return engine
 
     def prepare(self, simulation):
+        """
+        Prepare the simulation environment and data structures for running a neuron simulation.
+
+        This method initializes simulation-specific data, sets simulation parameters
+        such as time resolution, temperature, and duration in the NEURON engine,
+        performs load balancing across compute nodes, and creates neurons, connections,
+        and devices according to the simulation configuration.
+
+        :param simulation: The simulation instance to prepare.
+        :type simulation: bsb.simulation.simulation.Simulation
+        :return: The prepared simulation data container.
+        :rtype: NeuronSimulationData
+
+        :raises: Propagates any exceptions raised during preparation, and cleans up
+            partial data on failure.
+        """
+
         self.simdata[simulation] = NeuronSimulationData(
             simulation, result=NeuronResult(simulation)
         )

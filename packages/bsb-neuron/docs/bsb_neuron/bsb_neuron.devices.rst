@@ -12,13 +12,6 @@ bsb\_neuron.devices.current\_clamp module
    :undoc-members:
    :show-inheritance:
 
-bsb\_neuron.devices.ion_recorder module
----------------------------------------
-
-.. automodule:: bsb_neuron.devices.ion_recorder
-   :members:
-   :undoc-members:
-   :show-inheritance:
 
 bsb\_neuron.devices.synapse\_recorder module
 --------------------------------------------

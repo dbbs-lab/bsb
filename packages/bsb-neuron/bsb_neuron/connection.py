@@ -13,6 +13,9 @@ class NeuronConnection(ConnectionModel):
     Class interfacing a NEURON connection.
     """
 
+    model_strategy: str
+    """The strategy for neuron connection creation (e.g., 'transceiver')."""
+
     def create_connections(self, simulation, simdata, connections):
         """
         Connect all the cell models with the defined connection models

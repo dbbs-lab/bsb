@@ -102,7 +102,9 @@ class PackageTransformer(ast.NodeTransformer):
         for node in self._module.body:
             if isinstance(node, ast.Assign):
                 pkgs = [
-                    n for n in node.targets if isinstance(n, ast.Name) and n.id == pkg_id
+                    n
+                    for n in node.targets
+                    if isinstance(n, ast.Name) and n.id == pkg_id
                 ]
                 if pkgs:
                     if pkg is not None:
@@ -249,7 +251,7 @@ class NmodlWriter:
         except ImportError as e:
             raise RuntimeError(
                 "`nmodl` package unavailable. Please install NEURON. If you are on Windows, "
-                "please see https://github.com/BlueBrain/nmodl/issues/1112"
+                "please see https://github.com/neuronsimulator/nrn/issues/3432"
             ) from e
 
     def parse_source(self, source: Path, dialect: SupportedDialect = None):

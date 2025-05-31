@@ -16,7 +16,7 @@ dependencies= [
     "cookiecutter~=2.0",
     "black>=24.0",
     "toml~=0.10",
-    "neuron~=8.2.6; sys_platform != 'win32'",
+    "neuron-nightly==9.0a1.dev1422; sys_platform != 'win32'",
     "importlib_metadata~=6.5"
 ]
 

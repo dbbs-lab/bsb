@@ -12,6 +12,7 @@ from ._util import obj_str_insert
 from .config._config import Configuration
 from .connectivity import ConnectionStrategy
 from .exceptions import (
+    ConfigurationSyncError,
     DatasetNotFoundError,
     InputError,
     MissingActiveConfigError,
@@ -209,6 +210,27 @@ class Scaffold:
         cfg._bootstrap(self)
         self.storage.store_active_config(cfg)
 
+    def sync_config(self):
+        import bsb.config
+
+        cfg = None
+        try:
+            cfg = self.storage.load_active_config()
+        except MissingActiveConfigError:
+            import bsb.options
+
+            path = bsb.options.config
+        else:
+            path = cfg._meta.get("path", None)
+        if path and os.path.exists(path):
+            with open(path) as f:
+                cfg = bsb.config.parse_configuration_file(f, path=path)
+
+        if cfg is None:
+            raise ConfigurationSyncError("Could not find a configuration to sync")
+
+        self.configuration = cfg
+
     @property
     def storage(self) -> Storage:
         return self._storage
@@ -353,6 +375,7 @@ class Scaffold:
         Run reconstruction steps in the scaffold sequence to obtain a full network.
         """
         existed = self.storage.preexisted
+
         p_strats = [] if skip_placement else self.get_placement(skip=skip, only=only)
         c_strats = (
             [] if skip_connectivity else self.get_connectivity(skip=skip, only=only)

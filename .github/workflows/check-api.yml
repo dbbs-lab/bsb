@@ -18,9 +18,5 @@ jobs:
         # Install `libopenmpi` for MPI
         sudo apt install openmpi-bin libopenmpi-dev
     - uses: nrwl/nx-set-shas@v4
-    - id: affected
-      run: |
-        echo "run_check=$(./nx show projects --affected | grep -q bsb-core && echo true || echo false)" >> $GITHUB_OUTPUT
-    - name: Check public API
-      if: steps.affected.outputs.run_check == 'true'
-      run: ./nx run bsb-core:check-api
+    - name: Check public APIs
+      run: ./nx affected -t check-api

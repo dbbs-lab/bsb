@@ -21,15 +21,15 @@ def insert(section, asset, variant=None, pkg=None, /, attributes=None, x=None):
     Insert a mechanism or point process into a Section.
 
     :param section: The section to insert the asset into.
-    :type section: Section
+    :type section: patch.objects.Section
     :param asset: The name of the asset. Will be resolved into a fully qualified NEURON name based on preferences, unless a fully qualified name is given.
-    :type asset: string
+    :type asset: str
     :param attributes: Attributes of the asset to set on the section/mechanism.
     :type attributes: dict
     :param pkg: Package preference. Overrides global & script preferences.
-    :type pkg: string
+    :type pkg: str
     :param variant: Variant preference. Overrides global & script preferences.
-    :type variant: string
+    :type variant: str
     :param x: Position along the `section` to place the point process at. Does not apply to mechanisms.
     :type x: float
     :raises: LibraryError if the asset isn't found or was incorrectly marked as a point process.
@@ -49,11 +49,11 @@ def select(asset, pkg=None, variant=None):
     Set script scope preferences for an asset.
 
     :param asset: Unresolved asset name.
-    :type asset: string
+    :type asset: str
     :param pkg: Name of the package to prefer.
-    :type pkg: string
+    :type pkg: str
     :param variant: Name of the variant to prefer.
-    :type variant: string
+    :type variant: str
     """
     return _manager.select(asset, pkg=pkg, variant=variant)
 

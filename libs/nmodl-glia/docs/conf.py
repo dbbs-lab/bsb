@@ -1,8 +1,3 @@
-import os
-import sys
-
-sys.path.insert(0, os.path.abspath(os.path.join(__file__, "..", "glia")))
-
 # Configuration file for the Sphinx documentation builder.
 #
 # This file only contains a selection of the most common options. For a full
@@ -22,7 +17,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(__file__, "..", "glia")))
 
 # -- Project information -----------------------------------------------------
 
-project = "Glia Packet Manager"
+project = "Glia Package Manager"
 copyright = "2020, Robin De Schepper"
 author = "Robin De Schepper"
 master_doc = "index"
@@ -43,7 +38,14 @@ extensions = [
     "sphinx.ext.imgmath",
     "sphinx.ext.ifconfig",
     "sphinx.ext.viewcode",
+    "sphinx.ext.intersphinx",
 ]
+
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3", None),
+    "arbor": ("https://docs.arbor-sim.org/en/latest/", None),
+    "patch": ("https://patch.readthedocs.io/en/latest/", None),
+}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]

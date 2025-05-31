@@ -71,10 +71,10 @@ class Package:
     def root(self):
         return self._root
 
-    def load_catalogue(self) -> "arbor.catalogue":
+    def load_catalogue(self):
         return self.catalogue.load()
 
-    def build_catalogue(self, *args, **kwargs) -> "arbor.catalogue":
+    def build_catalogue(self, *args, **kwargs):
         return self.catalogue.build(*args, **kwargs)
 
     def get_mods(self, dialect=None) -> list["Mod"]:
@@ -196,7 +196,7 @@ class Catalogue:
     def name(self):
         return self._pkg.name
 
-    def load(self) -> "arbor.catalogue":
+    def load(self):
         import arbor
 
         if not self.is_fresh():

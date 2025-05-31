@@ -7,7 +7,6 @@ from bsb import SimulationBackendPlugin
 from .adapter import NeuronAdapter
 from .devices import (
     CurrentClamp,
-    IonRecorder,
     SpikeGenerator,
     SynapseRecorder,
     VoltageClamp,
@@ -20,7 +19,6 @@ __plugin__ = SimulationBackendPlugin(Simulation=NeuronSimulation, Adapter=Neuron
 __all__ = [
     "NeuronAdapter",
     "CurrentClamp",
-    "IonRecorder",
     "SpikeGenerator",
     "SynapseRecorder",
     "VoltageClamp",

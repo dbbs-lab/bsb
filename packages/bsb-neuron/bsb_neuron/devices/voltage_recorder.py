@@ -5,7 +5,10 @@ from ..device import NeuronDevice
 
 @config.node
 class VoltageRecorder(NeuronDevice, classmap_entry="voltage_recorder"):
-    locations = config.attr(type=LocationTargetting, default={"strategy": "soma"})
+    locations: LocationTargetting = config.attr(
+        type=LocationTargetting, default={"strategy": "soma"}
+    )
+    """Device to record membrane voltage from specified neuron locations."""
 
     def implement(self, adapter, simulation, simdata):
         for _model, pop in self.targetting.get_targets(

@@ -41,7 +41,11 @@ class NeuronVersion(packaging.version.Version):
     def _get_full_version_from_neuron() -> str:
         import neuron
 
-        return neuron.__version__
+        version = neuron.__version__
+        if str(version) == "neuron.__version__":
+            # Mocked attribute, replace with v0
+            return "0.0.0-mocked"
+        return version
 
     @classmethod
     def _get_semantic_version_from_neuron(cls) -> str:

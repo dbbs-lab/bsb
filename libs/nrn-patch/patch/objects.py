@@ -725,6 +725,14 @@ class Segment(PythonHocObject, Connectable, WrapsPointers):
     def __record__(self):
         return self.__neuron__()._ref_v
 
+    def __iter__(self):
+        # Fix segmentation fault when iterating over segment without mechs.
+        # See: https://github.com/neuronsimulator/nrn/issues/3458
+        if not self.section.psection()["density_mechs"]:
+            return iter(())
+        else:
+            return super().__iter__()
+
 
 class PointProcess(PythonHocObject, Connectable, WrapsPointers):
     """

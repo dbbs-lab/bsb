@@ -30,9 +30,10 @@ jobs:
         uses: nrwl/nx-set-shas@v4
 
       - run: |
-          # There is flake on `npx cross-env`, pre-install it to prevent that.
-          npm install cross-env rimraf --prefix .npx-local
-          export PATH="$(pwd)/.npx-local/node_modules/.bin:$PATH"
+          # There is flake on `npx cross-env`, pre-install it a couple times to prevent that.
+          npx -y cross-env echo "" > /dev/null
+          npx -y cross-env echo "" > /dev/null
+          npx -y cross-env echo "" > /dev/null
           ./nx affected -t docs
         env:
           UV_PYTHON: 3.11

@@ -43,6 +43,7 @@ extensions = [
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
+    "errr": ("https://errr.readthedocs.io/en/latest/", None),
     "arbor": ("https://docs.arbor-sim.org/en/latest/", None),
     "patch": ("https://patch.readthedocs.io/en/latest/", None),
 }

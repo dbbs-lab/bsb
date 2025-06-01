@@ -7,7 +7,8 @@ import arbor
 from arborize import Schematic, arbor_build
 from arborize.builders._arbor import get_decor, get_label_dict, hash_labelset
 
-from ._shared import SchematicsFixture
+# This import only works when tests are executed from root dir.
+from tests._shared import SchematicsFixture
 
 if typing.TYPE_CHECKING:
     from arborize.schematic import Point

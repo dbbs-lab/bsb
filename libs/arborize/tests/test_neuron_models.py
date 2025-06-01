@@ -6,7 +6,8 @@ from patch import p
 from arborize import define_model, neuron_build
 from arborize.exceptions import UnknownLocationError, UnknownSynapseError
 
-from ._shared import SchematicsFixture
+# This import only works when tests are executed from root dir.
+from tests._shared import SchematicsFixture
 
 
 @unittest.skipIf(

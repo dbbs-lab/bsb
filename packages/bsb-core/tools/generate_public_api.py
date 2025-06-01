@@ -39,7 +39,8 @@ def get_public_api_map():
         for api in module_api:
             if api in public_api_map:
                 raise RuntimeError(
-                    f"Duplicate api key: bsb.{module}.{api} and bsb.{public_api_map[api]}.{api}"
+                    f"Duplicate api key: bsb.{module}.{api}"
+                    f" and bsb.{public_api_map[api]}.{api}"
                 )
             public_api_map[api] = module
 
@@ -82,12 +83,12 @@ if __name__ == "__main__":
         exit(1)
     if "--check" in sys.argv:
         diff = "\n".join(
-            l
-            for l in difflib.ndiff(
+            line
+            for line in difflib.ndiff(
                 text[idx + len(find) :].split("\n"),
                 annotation_lines,
             )
-            if l[0] != " "
+            if line[0] != " "
         )
         print(diff, file=sys.stderr, end="")
         exit(bool(diff))

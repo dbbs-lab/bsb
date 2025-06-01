@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import itertools
 import os
 import sys
@@ -149,10 +150,8 @@ class Scaffold:
         if config is None:
             # Try loading the storage's active config
             if storage is not None:
-                try:
+                with contextlib.suppress(MissingActiveConfigError):
                     config = storage.load_active_config()
-                except MissingActiveConfigError:
-                    pass
 
             # No luck? Try loading the project configuration
             if config is None:

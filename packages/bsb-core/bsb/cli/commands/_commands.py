@@ -2,6 +2,7 @@
 Contains builtin commands.
 """
 
+import contextlib
 import itertools
 import os
 import pathlib
@@ -12,7 +13,7 @@ import errr
 from ..._options import ConfigOption
 from ...config import parse_configuration_file
 from ...core import Scaffold, from_storage
-from ...exceptions import NodeNotFoundError, ConfigurationSyncError
+from ...exceptions import ConfigurationSyncError, NodeNotFoundError
 from ...option import BsbOption
 from ...reporting import report
 from ...storage import open_storage
@@ -143,10 +144,8 @@ class BsbCompile(BaseCommand, name="compile"):
         cfg = parse_configuration_file(context.config)
         network = Scaffold(cfg)
         if network.storage.preexisted:
-            try:
+            with contextlib.suppress(ConfigurationSyncError):
                 network.sync_config()
-            except ConfigurationSyncError:
-                pass
         network.resize(context.x, context.y, context.z)
         network.compile(
             skip_placement=context.skip_placement,

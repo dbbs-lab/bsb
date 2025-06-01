@@ -1,3 +1,4 @@
+import contextlib
 import os
 import shutil
 import subprocess
@@ -62,11 +63,22 @@ def _should_skip_load():
     return os.environ.get("GLIA_NOLOAD", "").upper() in ("1", "TRUE", "ON")
 
 
+@lru_cache(maxsize=1)
+def discover_packages() -> list[Package]:
+        packages = []
+        eps = entry_points()
+        for pkg_ptr in eps.select(group="glia.package"):
+            try:
+                packages.append(pkg_ptr.load())
+            except Exception as e:
+                log(f"Could not load package '{pkg_ptr.name}'", exc=e)
+        return packages
+
+
 class Glia:
     def __init__(self):
         self._compiled = False
         self._loaded = False
-        self.entry_points = []
         self._resolver = None
 
     @property
@@ -76,20 +88,8 @@ class Glia:
         return self._resolver
 
     @property
-    @lru_cache(maxsize=1)
     def packages(self):
-        return self.discover_packages()
-
-    def discover_packages(self) -> typing.List[Package]:
-        packages = []
-        eps = entry_points()
-        for pkg_ptr in eps.select(group="glia.package"):
-            self.entry_points.append(pkg_ptr)
-            try:
-                packages.append(pkg_ptr.load())
-            except Exception as e:
-                log(f"Could not load package '{pkg_ptr.name}'", exc=e)
-        return packages
+        return discover_packages()
 
     def get_package(self, name: str):
         for pkg in self.packages:
@@ -132,7 +132,8 @@ class Glia:
         """
         Compile and test all mod files found in all Glia packages.
 
-        :param check_cache: If true, the cache is checked and compilation is only performed if it is stale.
+        :param check_cache: If true, the cache is checked and compilation is only
+            performed if it is stale.
         :type check_cache: boolean
         """
         self._compiled = True
@@ -238,7 +239,7 @@ class Glia:
                 self.insert(s, mechanism)
         except ValueError as e:
             if str(e).find("argument not a density mechanism name") != -1:
-                raise LibraryError(mechanism + " mechanism could not be inserted.")
+                raise LibraryError(mechanism + " mechanism could not be inserted.") from e
             raise
         return True
 
@@ -258,7 +259,9 @@ class Glia:
 
         :param section: The section to insert the asset into.
         :type section: Section
-        :param asset: The name of the asset. Will be resolved into a fully qualified NEURON name based on preferences, unless a fully qualified name is given.
+        :param asset: The name of the asset. Will be resolved into a fully qualified
+           NEURON name based on preferences, unless a fully qualified name is given.
+
         :type asset: string
         :param attributes: Attributes of the asset to set on the section/mechanism.
         :type attributes: dict
@@ -266,9 +269,12 @@ class Glia:
         :type pkg: string
         :param variant: Variant preference. Overrides global & script preferences.
         :type variant: string
-        :param x: Position along the `section` to place the point process at. Does not apply to mechanisms.
+        :param x: Position along the `section` to place the point process at.
+           Does not apply to mechanisms.
+
         :type x: float
-        :raises: LibraryError if the asset isn't found or was incorrectly marked as a point process.
+        :raises: LibraryError if the asset isn't found or was incorrectly marked
+           as a point process.
         """
         if attributes is None:
             attributes = {}
@@ -278,9 +284,9 @@ class Glia:
             try:
                 # Create a point process
                 point_process = getattr(self.h, mod.mod_name)(section(x))
-            except AttributeError as e:
+            except AttributeError:
                 raise LibraryError(
-                    "'{}' point process not found ".format(mod.mod_name)
+                    f"'{mod.mod_name}' point process not found "
                 ) from None
             except TypeError as e:
                 if str(e).find("'dict_keys' object is not subscriptable") == -1:
@@ -305,12 +311,13 @@ class Glia:
     @_requires_install
     def get(self, section, asset: MechId, variant=None, pkg=None):
         """
-        Get a density mechanism descriptor for a certain asset on a section
+        Get a density mechanism descriptor for a certain asset on a section.
         """
         mod = self._resolve_mod(asset, variant, pkg)
         if mod.is_point_process:
             raise RuntimeError(
-                "Can't access point processes from sections, keep the reference returned by `glia.insert`."
+                "Can't access point processes from sections, keep the reference returned"
+                " by `glia.insert`."
             )
         return MechAccessor(section, mod)
 
@@ -339,8 +346,8 @@ class Glia:
     @_requires_library
     def resolve(self, *args, **kwargs):
         """
-        Resolve the given specifications applying all preferences and return the
-        full name as it is known in the library to NEURON.
+        Resolve the given specifications applying all preferences and return the full name
+        as it is known in the library to NEURON.
 
         :param asset_name: Short name of the asset
         :type asset_name: str
@@ -417,7 +424,6 @@ class Glia:
         except ImportError:
             pass
         else:
-            import patch
             from patch import is_density_mechanism, is_point_process
 
             nrn_pkg = Package("NEURON", Path(neuron.__path__[0]), builtin=True)
@@ -451,14 +457,13 @@ def _transform(obj):
 
 
 def _remove_tree(path):
-    for root, dirs, files in os.walk(path):
+    for _, dirs, files in os.walk(path):
         for dir in dirs:
-            try:
+            with contextlib.suppress(PermissionError):
                 rmdir(os.path.join(path, dir))
-            except PermissionError as _:
-                pass
+
         for file in files:
             try:
                 os.remove(os.path.join(path, file))
             except PermissionError as _:
-                warnings.warn(f"Couldn't remove {file}")
+                warnings.warn(f"Couldn't remove {file}", stacklevel=2)

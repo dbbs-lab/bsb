@@ -1,16 +1,36 @@
 """
-NMODL Asset Manager for Arbor and NEURON
+NMODL Asset Manager for Arbor and NEURON.
 
-  ~ Glues your neurons together!
+~ Glues your neurons together!
 
-Manage a local NMODL library that's automatically compiled, loaded, and recompiled
-whenever you change your NMODL code or simulator environment.
+Manage a local NMODL library that's automatically compiled, loaded, and
+recompiled whenever you change your NMODL code or simulator environment.
 """
 
 from ._fs import get_cache_path as _get_cache_path
 from ._glia import Glia, MechId
 from .assets import Catalogue, Mod, Package
-from .exceptions import *
+from .exceptions import (
+    AssetLookupError,
+    BuildCatalogueError,
+    CatalogueError,
+    CompileError,
+    GliaError,
+    LibraryError,
+    ModSourceError,
+    NeuronError,
+    NmodlError,
+    NoMatchesError,
+    PackageApiError,
+    PackageError,
+    PackageFileError,
+    PackageModError,
+    PackageProjectError,
+    PackageVersionError,
+    ResolveError,
+    TooManyMatchesError,
+    UnknownAssetError,
+)
 from .neuron import MechAccessor
 
 _manager = Glia()
@@ -22,7 +42,9 @@ def insert(section, asset, variant=None, pkg=None, /, attributes=None, x=None):
 
     :param section: The section to insert the asset into.
     :type section: patch.objects.Section
-    :param asset: The name of the asset. Will be resolved into a fully qualified NEURON name based on preferences, unless a fully qualified name is given.
+    :param asset: The name of the asset. Will be resolved into a fully qualified
+       NEURON name based on preferences, unless a fully qualified name is given.
+
     :type asset: str
     :param attributes: Attributes of the asset to set on the section/mechanism.
     :type attributes: dict
@@ -30,9 +52,12 @@ def insert(section, asset, variant=None, pkg=None, /, attributes=None, x=None):
     :type pkg: str
     :param variant: Variant preference. Overrides global & script preferences.
     :type variant: str
-    :param x: Position along the `section` to place the point process at. Does not apply to mechanisms.
+    :param x: Position along the `section` to place the point process at. Does
+       not apply to mechanisms.
+
     :type x: float
-    :raises: LibraryError if the asset isn't found or was incorrectly marked as a point process.
+    :raises: LibraryError if the asset isn't found or was incorrectly marked as
+       a point process.
     """
     return _manager.insert(section, asset, variant, pkg, attributes, x)
 
@@ -114,3 +139,31 @@ def get_cache_path():
     you won't find here, but ``glia cache --clear`` can reset.
     """
     return _get_cache_path()
+
+
+__all__ = [
+    "AssetLookupError",
+    "BuildCatalogueError",
+    "Catalogue",
+    "CatalogueError",
+    "CompileError",
+    "GliaError",
+    "LibraryError",
+    "MechAccessor",
+    "MechId",
+    "Mod",
+    "ModSourceError",
+    "NeuronError",
+    "NmodlError",
+    "NoMatchesError",
+    "Package",
+    "PackageApiError",
+    "PackageError",
+    "PackageFileError",
+    "PackageModError",
+    "PackageProjectError",
+    "PackageVersionError",
+    "ResolveError",
+    "TooManyMatchesError",
+    "UnknownAssetError",
+]

@@ -7,7 +7,13 @@ from . import _manager, _mpi
 from ._fs import clear_cache, get_cache_path, get_local_pkg_path
 from ._local import create_local_package
 from .assets import ModName
-from .exceptions import *
+from .exceptions import (
+    AssetLookupError,
+    LibraryError,
+    ResolveError,
+    TooManyMatchesError,
+    UnknownAssetError,
+)
 from .packaging import PackageManager
 
 
@@ -57,7 +63,7 @@ def select(asset, package, variant):
 def show(asset):
     index = _manager.resolver.index
     preferences = _manager.resolver._preferences()
-    if not asset in index:
+    if asset not in index:
         raise click.exceptions.BadArgumentUsage(f'Unknown ASSET "{asset}"')
     if asset in preferences:
         preference = preferences[asset]

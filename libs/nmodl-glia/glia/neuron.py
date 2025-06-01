@@ -39,7 +39,9 @@ class MechAccessor:
         try:
             return self._pp._connections
         except AttributeError:
-            raise TypeError("Can't connect Patch/NEURON entities to a density mechanism.")
+            raise TypeError(
+                "Can't connect Patch/NEURON entities to a density mechanism."
+            ) from None
 
     @_connections.setter
     def _connections(self, value):
@@ -93,7 +95,7 @@ class MechAccessor:
             raise ReferenceError(
                 "Trying to set attribute on section"
                 f" '{self._section_name}' that has since been garbage collected"
-            )
+            ) from None
 
     def get_parameter(self, param, x=None):
         if self._pp is not None:
@@ -108,7 +110,7 @@ class MechAccessor:
             raise ReferenceError(
                 "Trying to set attribute on section"
                 f" '{self._section_name}' that has since been garbage collected"
-            )
+            ) from None
         except AttributeError:
             raise AttributeError(
                 f"Parameter '{param}' does not exist on {self._mod.asset_name}"

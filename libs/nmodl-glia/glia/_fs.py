@@ -35,7 +35,7 @@ def log(message: str, *, level: LogLevel = None, category=None, exc: Exception =
             )
             f.write("Exception arguments:\n")
             f.writelines(f"  {a}\n" for a in exc.args)
-            warnings.warn(message + f". See the full log at '{log_path}'.")
+            warnings.warn(message + f". See the full log at '{log_path}'.", stacklevel=2)
         else:
             f.write("\n")
 
@@ -73,9 +73,9 @@ def get_local_pkg_path():
 def _read_shared_storage(*path):
     _path = get_data_path(*path)
     try:
-        with open(_path, "r") as f:
+        with open(_path) as f:
             return json.load(f)
-    except (IOError, json.JSONDecodeError):
+    except (OSError, json.JSONDecodeError):
         return {}
 
 

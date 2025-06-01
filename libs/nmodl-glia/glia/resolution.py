@@ -1,6 +1,6 @@
 """
-Resolves package, mechanism and variant constraints into asset names that can be
-requested from the Glia library.
+Resolves package, mechanism and variant constraints into asset names that can be requested
+from the Glia library.
 """
 
 from contextlib import contextmanager
@@ -54,7 +54,7 @@ class Resolver:
                 if mod.dialect is not None and mod.dialect != "neuron":
                     continue
                 name = mod.asset_name
-                if not name in self.index:
+                if name not in self.index:
                     self.index[name] = IndexEntry(name)
                 self.index[name].append(mod)
                 self._reverse_lookup[mod.mod_name] = mod
@@ -67,11 +67,9 @@ class Resolver:
             except IndexError:
                 pass
             asset_name = asset_name[0]
-        if not asset_name in self.index:
+        if asset_name not in self.index:
             raise UnknownAssetError(
-                "Selection could not be resolved: Asset '{}' not found.".format(
-                    asset_name
-                )
+                f"Selection could not be resolved: Asset '{asset_name}' not found."
             )
 
         # Try resolving with preference
@@ -95,12 +93,13 @@ class Resolver:
             return resolved[0].mod_name
 
     def resolve_preference(self, asset_name, pkg=None, variant=None):
-        # Combine global, script, context & local preferences to obtain package and variant.
+        # Combine global, script, context & local preferences to obtain
+        # package and variant.
         try:
             pkg, variant = self._get_final_pv(asset_name, pkg, variant)
         except _NoPreferenceError:
             # No preferences found.
-            return None
+            return None 
 
         # Resolve the preferred package and variant
         resolved = self._get_resolved(asset_name, pkg, variant)
@@ -117,7 +116,7 @@ class Resolver:
 
     def lookup(self, mod_name):
         if mod_name not in self._reverse_lookup:
-            raise AssetLookupError("No mod with name '{}' found".format(mod_name))
+            raise AssetLookupError(f"No mod with name '{mod_name}' found")
         else:
             return self._reverse_lookup[mod_name]
 
@@ -125,13 +124,13 @@ class Resolver:
         """
         Get final package and variant preference.
 
-        This function fetches all preferences and checks whether there's specific
-        package or variant preferences. If not it checks the general package or
-        variant preferences not specific to the asset.
+        This function fetches all preferences and checks whether there's specific package
+        or variant preferences. If not it checks the general package or variant
+        preferences not specific to the asset.
         """
         # Fetch global, script & context preferences
         preferences = self._preferences()
-        if not asset_name in preferences:
+        if asset_name not in preferences:
             # No specific asset preferences found, but maybe general package or variant
             # preferences apply?
             if self._has_general_preferences(preferences):
@@ -183,7 +182,7 @@ class Resolver:
         if pkg:
             selection = pkg + "." + asset_name
         if variant:
-            selection += " ({})".format(variant)
+            selection += f" ({variant})"
         raise TooManyMatchesError(
             f"Selection could not be resolved, too many matches for {selection}:\n  * "
             + "\n  * ".join(r.mod_name for r in resolved)

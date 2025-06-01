@@ -5,6 +5,7 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
+from _shared import skipIfInstalled, skipParallel, skipUnlessTestMods
 from click import ClickException
 from click.testing import CliRunner
 
@@ -12,8 +13,6 @@ import glia._cli
 import glia._fs
 import glia._mpi
 from glia import Mod, Package, get_cache_path
-
-from _shared import skipParallel, skipUnlessTestMods, skipIfInstalled
 
 
 def run_cli_command(command, xfail=False, **kwargs):
@@ -23,7 +22,7 @@ def run_cli_command(command, xfail=False, **kwargs):
         if (
             not xfail
             and result.exception
-            and not isinstance(result.exception, (SystemExit, ClickException))
+            and not isinstance(result.exception, SystemExit | ClickException)
         ):
             raise result.exception
         return result
@@ -39,7 +38,7 @@ def import_tmp_package(path):
 
 class TestCLI(unittest.TestCase):
     """
-    Test CLI commands
+    Test CLI commands.
     """
 
     def test_glia(self):
@@ -88,7 +87,7 @@ class TestCLI(unittest.TestCase):
 
     @skipUnlessTestMods
     def test_test(self):
-        result = run_cli_command(["test", "Na"])
+        run_cli_command(["test", "Na"])
 
     @skipUnlessTestMods
     def test_test_unknown(self):
@@ -109,7 +108,7 @@ class TestCLI(unittest.TestCase):
             shutil.copytree(get_cache_path(), tmp, dirs_exist_ok=True)
             try:
                 glia._fs.write_cache({"test_key": "test_value"})
-                result = run_cli_command(["cache", "--clear"])
+                run_cli_command(["cache", "--clear"])
                 self.assertFalse(Path(get_cache_path()).exists(), "cache dir not removed")
                 self.assertNotIn("test_key", glia._fs.read_cache(), "cache not cleared")
             finally:
@@ -181,9 +180,9 @@ class TestPackagingCLI(unittest.TestCase):
     def test_add_synapse(self):
         mod_path = Path(__file__).parent / "data" / "mods" / "AMPA__0.mod"
         mod_source = mod_path.read_text()
-        assert "POINT_PROCESS AMPA\n" in mod_path.read_text(), (
-            "Source of AMPA was mutated"
-        )
+        assert (
+            "POINT_PROCESS AMPA\n" in mod_path.read_text()
+        ), "Source of AMPA was mutated"
         runner = CliRunner()
         with runner.isolated_filesystem():
             runner.invoke(glia._cli.glia, ["pkg", "new"], input="\n\n\n\n\n\n\n")

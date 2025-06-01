@@ -1,5 +1,6 @@
 import abc
 import ast
+import contextlib
 import inspect
 import itertools
 import re
@@ -102,9 +103,7 @@ class PackageTransformer(ast.NodeTransformer):
         for node in self._module.body:
             if isinstance(node, ast.Assign):
                 pkgs = [
-                    n
-                    for n in node.targets
-                    if isinstance(n, ast.Name) and n.id == pkg_id
+                    n for n in node.targets if isinstance(n, ast.Name) and n.id == pkg_id
                 ]
                 if pkgs:
                     if pkg is not None:
@@ -136,16 +135,14 @@ class PackageTransformer(ast.NodeTransformer):
         kw_nodes = {kw.arg: kw.value for kw in self.pkg_node.keywords}
         name_node = kw_nodes.get("name")
         if name_node is None:
-            try:
+            with contextlib.suppress(Exception):
                 name_node = self.pkg_node.args[0]
-            except:
-                pass
         if name_node is None:
             raise PackageFileError(
                 f"Can't find name argument in package node {ast.unparse(self.pkg_node)}"
             )
         if not isinstance(name_node, ast.Constant):
-            raise PackageFileError(f"Package name argument must be a constant.")
+            raise PackageFileError("Package name argument must be a constant.")
         return name_node.value
 
     def get_modlist_declaration(self) -> ast.List:
@@ -180,7 +177,7 @@ class PackageTransformer(ast.NodeTransformer):
             mod_node = copy(mod_call)
             mod_node.func = ast.Name("Mod")
             mod_str = ast.unparse(mod_node)
-            pkg_name = self.get_package_name()
+            self.get_package_name()
             pkg = self.get_package_shim()
             try:
                 mod = eval(mod_str, {"Mod": Mod})
@@ -202,7 +199,9 @@ class PackageTransformer(ast.NodeTransformer):
             try:
                 value = getattr(mod, param.name)
             except AttributeError:
-                raise PackageApiError(f"Can't read attribute `Mod.{param.name}`.")
+                raise PackageApiError(
+                    f"Can't read attribute `Mod.{param.name}`."
+                ) from None
             # Convert non-constants to string, otherwise `ast.Constant` calls `__repr__`
             # and can create invalid runtime code
             if type(value) not in (str, bool, int, float, type(None)):
@@ -237,7 +236,7 @@ class NmodlWriter:
     def __init__(self, mod: Mod):
         self._mod = mod
         self._source = None
-        self._driver: "NmodlDriver" = None
+        self._driver: NmodlDriver = None
 
     @property
     def nmodl(self):
@@ -250,8 +249,8 @@ class NmodlWriter:
             return neuron.nmodl
         except ImportError as e:
             raise RuntimeError(
-                "`nmodl` package unavailable. Please install NEURON. If you are on Windows, "
-                "please see https://github.com/neuronsimulator/nrn/issues/3432"
+                "`nmodl` package unavailable. Please install NEURON. If you are on "
+                "Windows, please see https://github.com/neuronsimulator/nrn/issues/3432"
             ) from e
 
     def parse_source(self, source: Path, dialect: SupportedDialect = None):

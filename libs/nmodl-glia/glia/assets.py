@@ -9,10 +9,10 @@ from tempfile import TemporaryDirectory, mkdtemp
 from . import _mpi
 from ._fs import get_cache_path, read_cache, update_cache
 from ._hash import get_package_hash, get_package_mods_hash
-from .exceptions import *
+from .exceptions import BuildCatalogueError, PackageFileError
 
 if typing.TYPE_CHECKING:
-    import arbor
+    pass
 
 
 SupportedDialect = typing.Literal["arbor"] | typing.Literal["neuron"]
@@ -45,7 +45,7 @@ class Package:
     def __init__(self, name: str, root: Path, *, mods: list["Mod"] = None, builtin=False):
         self._name = name
         self._root = Path(root)
-        self.mods: list["Mod"] = _ModList(self, [] if mods is None else mods)
+        self.mods: list[Mod] = _ModList(self, [] if mods is None else mods)
         # Exceptional flag for the NEURON builtins.
         # They need a definition to be `insert`ed,
         # but have no mod files to be compiled.
@@ -100,7 +100,7 @@ class Mod:
         dialect: SupportedDialect = None,
         builtin=False,
     ):
-        self._pkg: typing.Optional[Package] = None
+        self._pkg: Package | None = None
         self.relpath = relpath
         self.asset_name = asset_name
         self.variant = variant
@@ -257,40 +257,39 @@ class Catalogue:
 
             tmp_dir = TmpDir
 
-        with self.assemble_arbor_mod_dir() as mod_path:
-            with tmp_dir() as tmp:
-                pwd = os.getcwd()
-                os.chdir(tmp)
-                try:
-                    cmd = f"arbor-build-catalogue {self.name} {mod_path}"
-                    subprocess.run(
-                        cmd
-                        + (" --quiet" if not verbose else "")
-                        + (" --verbose" if verbose else "")
-                        + (" --debug" if debug else "")
-                        + (f" --gpu={gpu}" if gpu else ""),
-                        shell=True,
-                        check=True,
-                        capture_output=not verbose,
-                    )
-                except subprocess.CalledProcessError as e:
-                    msg_p = [f"ABC errored out with exitcode {e.returncode}"]
-                    if verbose:
-                        msg_p += ["Check log above for error."]
-                    else:
-                        msg_p += [
-                            f"Command: {cmd}\n---- ABC output ----",
-                            e.stdout.decode(),
-                            "---- ABC error  ----",
-                            e.stderr.decode(),
-                        ]
-                    msg = "\n\n".join(msg_p)
-                    raise BuildCatalogueError(msg) from None
+        with self.assemble_arbor_mod_dir() as mod_path,  tmp_dir() as tmp:
+            pwd = os.getcwd()
+            os.chdir(tmp)
+            try:
+                cmd = f"arbor-build-catalogue {self.name} {mod_path}"
+                subprocess.run(
+                    cmd
+                    + (" --quiet" if not verbose else "")
+                    + (" --verbose" if verbose else "")
+                    + (" --debug" if debug else "")
+                    + (f" --gpu={gpu}" if gpu else ""),
+                    shell=True,
+                    check=True,
+                    capture_output=not verbose,
+                )
+            except subprocess.CalledProcessError as e:
+                msg_p = [f"ABC errored out with exitcode {e.returncode}"]
+                if verbose:
+                    msg_p += ["Check log above for error."]
                 else:
-                    os.makedirs(self._cache, exist_ok=True)
-                    shutil.copy2(f"{self.name}-catalogue.so", self._cache)
-                finally:
-                    os.chdir(pwd)
+                    msg_p += [
+                        f"Command: {cmd}\n---- ABC output ----",
+                        e.stdout.decode(),
+                        "---- ABC error  ----",
+                        e.stderr.decode(),
+                    ]
+                msg = "\n\n".join(msg_p)
+                raise BuildCatalogueError(msg) from None
+            else:
+                os.makedirs(self._cache, exist_ok=True)
+                shutil.copy2(f"{self.name}-catalogue.so", self._cache)
+            finally:
+                os.chdir(pwd)
         if debug:
             print(f"Debug copy of catalogue in '{tmp}'")
         # Cache directory hash of current mod files so we only rebuild on source code

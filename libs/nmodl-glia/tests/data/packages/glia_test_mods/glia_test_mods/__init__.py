@@ -1,5 +1,5 @@
 """
-Glia Test Mods
+Glia Test Mods.
 
 Test collection of NMODL assets.
 

@@ -1,12 +1,13 @@
+import contextlib
 import os
 from pathlib import Path
 
 import toml
 from black import find_project_root
 
-from ._ast import NmodlWriter, PackageTransformer, get_package_transformer
 from ..assets import Mod, SupportedDialect
 from ..exceptions import PackageError, PackageFileError, PackageProjectError
+from ._ast import NmodlWriter, PackageTransformer, get_package_transformer
 
 
 class PackageManager:
@@ -159,9 +160,7 @@ def _try_find_project_module(path: Path, module_name) -> Path:
 def _unpack_ep(ep):
     parts: list[str] = ep.split(":")
     attr = None
-    try:
+    with contextlib.suppress(IndexError):
         attr = parts[1]
-    except IndexError:
-        pass
     module_name = parts[0]
     return module_name, attr

@@ -29,7 +29,7 @@ def create_local_package():
 
 def install_package(path: Path):
     try:
-        result = subprocess.run(
+        subprocess.run(
             [sys.executable, "-m", "pip", "install", str(path)],
             check=True,
             capture_output=True,

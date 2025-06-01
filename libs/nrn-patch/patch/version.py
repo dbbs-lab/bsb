@@ -28,7 +28,9 @@ class NeuronVersion(packaging.version.Version):
     On instantiation, it reads the installed NEURON version and parses the semantic
     part for comparison.
 
-    :param version: Optional semantic version string. If not provided, reads from installed neuron.
+    :param version: Optional semantic version string. If not provided, reads from
+       installed neuron.
+
     :type version: str, optional
     """
 
@@ -93,7 +95,8 @@ class NeuronVersion(packaging.version.Version):
 
 def get_neuron_version() -> NeuronVersion:
     """
-    Retrieve the semantic version of the installed NEURON module as a `NeuronVersion` object.
+    Retrieve the semantic version of the installed NEURON module as
+    a `NeuronVersion` object.
 
     :return: A `NeuronVersion` object representing the current NEURON version.
     :rtype: NeuronVersion

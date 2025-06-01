@@ -99,7 +99,7 @@ class Resolver:
             pkg, variant = self._get_final_pv(asset_name, pkg, variant)
         except _NoPreferenceError:
             # No preferences found.
-            return None 
+            return None
 
         # Resolve the preferred package and variant
         resolved = self._get_resolved(asset_name, pkg, variant)

@@ -27,7 +27,7 @@ from ._fs import (
 )
 from ._local import create_local_package
 from .assets import Mod, Package
-from .exceptions import GliaError, CompileError, LibraryError, NeuronError, PackageError
+from .exceptions import CompileError, GliaError, LibraryError, NeuronError, PackageError
 from .neuron import MechAccessor
 from .resolution import Resolver
 
@@ -66,14 +66,14 @@ def _should_skip_load():
 
 @lru_cache(maxsize=1)
 def discover_packages() -> list[Package]:
-        packages = []
-        eps = entry_points()
-        for pkg_ptr in eps.select(group="glia.package"):
-            try:
-                packages.append(pkg_ptr.load())
-            except Exception as e:
-                log(f"Could not load package '{pkg_ptr.name}'", exc=e)
-        return packages
+    packages = []
+    eps = entry_points()
+    for pkg_ptr in eps.select(group="glia.package"):
+        try:
+            packages.append(pkg_ptr.load())
+        except Exception as e:
+            log(f"Could not load package '{pkg_ptr.name}'", exc=e)
+    return packages
 
 
 class Glia:
@@ -286,9 +286,7 @@ class Glia:
                 # Create a point process
                 point_process = getattr(self.h, mod.mod_name)(section(x))
             except AttributeError:
-                raise LibraryError(
-                    f"'{mod.mod_name}' point process not found "
-                ) from None
+                raise LibraryError(f"'{mod.mod_name}' point process not found ") from None
             except TypeError as e:
                 if str(e).find("'dict_keys' object is not subscriptable") == -1:
                     raise

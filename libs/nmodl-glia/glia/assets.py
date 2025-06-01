@@ -257,7 +257,7 @@ class Catalogue:
 
             tmp_dir = TmpDir
 
-        with self.assemble_arbor_mod_dir() as mod_path,  tmp_dir() as tmp:
+        with self.assemble_arbor_mod_dir() as mod_path, tmp_dir() as tmp:
             pwd = os.getcwd()
             os.chdir(tmp)
             try:

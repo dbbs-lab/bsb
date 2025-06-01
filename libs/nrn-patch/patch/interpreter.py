@@ -3,7 +3,6 @@ from functools import cache, wraps
 
 # We don't need to reraise ImportErrors, they should be clear enough by themselves. If not
 # and you're reading this: Fix the NEURON install, it's currently not importable ;)
-import neuron as _nrn
 from neuron import h as _h
 
 from .core import (

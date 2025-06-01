@@ -1,6 +1,5 @@
 import contextlib
 import itertools
-import typing
 
 import numpy as np
 from bsb import (
@@ -71,7 +70,8 @@ class NeuronAdapter(SimulatorAdapter):
 
     def prepare(self, simulation):
         """
-        Prepare the simulation environment and data structures for running a neuron simulation.
+        Prepare the simulation environment and data structures for running a NEURON
+        simulation.
 
         This method initializes simulation-specific data, sets simulation parameters
         such as time resolution, temperature, and duration in the NEURON engine,

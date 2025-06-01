@@ -3,7 +3,8 @@ Topology module.
 """
 
 from ._layout import box_layout
-from .region import RegionGroup
+from .partition import AllenStructure, Layer, NrrdVoxels, Partition
+from .region import Region, RegionGroup, Stack
 
 
 def create_topology(regions, ldc, mdc):

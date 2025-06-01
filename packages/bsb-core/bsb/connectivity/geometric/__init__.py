@@ -1,3 +1,5 @@
+# ruff: noqa: F401
+# This barrel file contains intentional import shortcuts
 from .geometric_shapes import (
     Cone,
     Cuboid,

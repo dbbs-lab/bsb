@@ -1,3 +1,5 @@
+# ruff: noqa: F401
+# This barrel file contains intentional import shortcuts
 # isort: off
 # Load module before others to prevent partially initialized modules
 from .strategy import PlacementStrategy

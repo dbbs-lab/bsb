@@ -149,7 +149,11 @@ class TestPackagingCLI(unittest.TestCase):
                 ["pkg", "add", str(mod_path)],
             )
 
-            self.assertEqual(0, result.exit_code)
+            self.assertEqual(
+                0,
+                result.exit_code,
+                msg=f"stdout:\n{result.output}\nstderr:\n{getattr(result, 'stderr', '')}",
+            )
             self.assertEqual(
                 [".gitkeep", "Na__0.mod"], sorted(os.listdir("glia_package/mods"))
             )
@@ -180,9 +184,9 @@ class TestPackagingCLI(unittest.TestCase):
     def test_add_synapse(self):
         mod_path = Path(__file__).parent / "data" / "mods" / "AMPA__0.mod"
         mod_source = mod_path.read_text()
-        assert "POINT_PROCESS AMPA\n" in mod_path.read_text(), (
-            "Source of AMPA was mutated"
-        )
+        assert (
+            "POINT_PROCESS AMPA\n" in mod_path.read_text()
+        ), "Source of AMPA was mutated"
         runner = CliRunner()
         with runner.isolated_filesystem():
             runner.invoke(glia._cli.glia, ["pkg", "new"], input="\n\n\n\n\n\n\n")
@@ -196,7 +200,11 @@ class TestPackagingCLI(unittest.TestCase):
                 ],
             )
 
-            self.assertEqual(0, result.exit_code)
+            self.assertEqual(
+                0,
+                result.exit_code,
+                msg=f"stdout:\n{result.output}\nstderr:\n{getattr(result, 'stderr', '')}",
+            )
             package = import_tmp_package("glia_package")
             mod = package.mods[0]
             mod: Mod

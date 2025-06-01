@@ -10,6 +10,7 @@ from pathlib import Path
 from shutil import copy2 as copy_file
 from shutil import rmtree as rmdir
 
+import packaging.version
 from importlib_metadata import entry_points
 
 from . import _mpi
@@ -26,7 +27,7 @@ from ._fs import (
 )
 from ._local import create_local_package
 from .assets import Mod, Package
-from .exceptions import CompileError, LibraryError, NeuronError, PackageError
+from .exceptions import GliaError, CompileError, LibraryError, NeuronError, PackageError
 from .neuron import MechAccessor
 from .resolution import Resolver
 
@@ -377,10 +378,19 @@ class Glia:
         """
         Return the locations of the library paths (dll/so) to be loaded into NEURON.
         """
+        import neuron
+
+        version = packaging.version.Version(neuron.__version__.split("-")[0])
+
         if sys.platform == "win32":
             path = ["nrnmech.dll"]
+        elif sys.platform == "linux" or sys.platform == "darwin":
+            if version >= packaging.version.Version("9.0a0"):
+                path = ["x86_64", "libnrnmech.so"]
+            else:
+                path = ["x86_64", ".libs", "libnrnmech.so"]
         else:
-            path = ["x86_64", ".libs", "libnrnmech.so"]
+            raise GliaError(f"Unsupported platform: {sys.platform}")
 
         return [get_neuron_mod_path(*path)]
 

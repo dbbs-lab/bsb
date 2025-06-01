@@ -24,7 +24,7 @@ from .exceptions import (
 from .objects import (
     IClamp,
     NetCon,
-    PointProcess,  # noqa: F401  # Function can be used by interpreter
+    PointProcess,  # noqa: F401  # Function used during metaprogramming
     PythonHocObject,
     SEClamp,
     Section,
@@ -34,19 +34,18 @@ from .objects import (
     _get_obj_registration_queue,
     _safe_call,
 )
+from .version import get_neuron_version
 
-_nrnver = _nrn.version
+_nrnver = get_neuron_version()
+
 try:
-    _nrnv_parts = [int(p) if p.isnumeric() else p for p in _nrnver.split(".")]
-    if (
-        _nrnv_parts[0] < 7 or _nrnv_parts[0] == 7 and _nrnv_parts[1] < 8
-    ):  # pragma: nocover
+    if _nrnver < "7.8":  # pragma: nocover
         raise ImportError("Patch 3.0+ only supports NEURON v7.8.0 or higher.")
 except Exception:  # pragma: nocover
     warnings.warn(
         "Could not establish whether Patch supports installed NEURON version "
         f"`{_nrnver}`",
-        stacklevel=2,
+        stacklevel=1,
     )
 
 
@@ -438,9 +437,7 @@ class ParallelContext(PythonHocObject):
             time_vector = self._interpreter.Vector()
         if gid_vector is None:
             gid_vector = self._interpreter.Vector()
-        transform(self).spike_record(
-            gids, transform(time_vector), transform(gid_vector)
-        )
+        transform(self).spike_record(gids, transform(time_vector), transform(gid_vector))
         if gids == -1:
             self._warn_new_gids = True
         return time_vector, gid_vector

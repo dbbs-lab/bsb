@@ -5,6 +5,7 @@ import _shared
 import patch.objects
 from patch import is_density_mechanism, is_point_process, p
 from patch.exceptions import HocRecordError
+from patch.version import get_neuron_version
 
 
 class TestPatchRegistration(_shared.NeuronTestCase):
@@ -112,18 +113,19 @@ class TestPatch(_shared.NeuronTestCase):
             "Transform on a NEURON object did not return the object.",
         )
         seg = p.Section()(0.5)
+        nv = get_neuron_version()
         self.assertIn(
-            "pointer to hoc scalar",
+            "pointer to hoc scalar" if nv < "9.0a0" else "data_handle<",
             str(transform_record(seg)),
             "Recording transform on a Segment did not return a pointer to a scalar.",
         )
         self.assertIn(
-            "pointer to hoc scalar",
+            "pointer to hoc scalar" if nv < "9.0a0" else "data_handle<",
             str(transform_netcon(seg)),
             "NetCon transform on a Segment did not return a pointer to a scalar.",
         )
         self.assertIn(
-            "pointer to hoc scalar",
+            "pointer to hoc scalar" if nv < "9.0a0" else "data_handle<",
             str(transform_netcon(p.Section())),
             "NetCon transform on a Section did not return a pointer to a scalar.",
         )

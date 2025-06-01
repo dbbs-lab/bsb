@@ -88,9 +88,7 @@ class PythonHocObject:
 
     def __repr__(self):
         ostr = object.__repr__(self)
-        return (
-            ostr[: ostr.rindex("at")] + "pointing to '" + str(self.__neuron__()) + "'>"
-        )
+        return ostr[: ostr.rindex("at")] + "pointing to '" + str(self.__neuron__()) + "'>"
 
     def __dir__(self) -> typing.Iterable[str]:
         return sorted(set(dir(transform(self))) | set(super().__dir__()))

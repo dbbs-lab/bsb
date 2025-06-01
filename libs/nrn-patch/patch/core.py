@@ -2,6 +2,7 @@ import typing
 from typing import Union
 
 from .exceptions import NotConnectableError
+from .version import get_neuron_version
 
 if typing.TYPE_CHECKING:
     import neuron.hoc
@@ -87,11 +88,15 @@ def is_segment(obj):
 
 
 def is_nrn_scalar(obj):
+    nv = get_neuron_version()
     cls = type(transform(obj))
     if cls.__module__ != "hoc" or cls.__name__ != "HocObject":
         return False
     try:
-        return "pointer to hoc scalar" in str(obj)
+        if nv < "9.0a0":
+            return "pointer to hoc scalar" in str(obj)
+        else:
+            return str(obj).startswith("data_handle<")
     except Exception:
         return False
 

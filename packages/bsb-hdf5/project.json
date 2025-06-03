@@ -54,7 +54,6 @@
       "cache": true
     },
     "test": {
-      "dependsOn": ["bsb-hdf5:sync"],
       "executor": "@nxlv/python:run-commands",
       "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
       "options": {

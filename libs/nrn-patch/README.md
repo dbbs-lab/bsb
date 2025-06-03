@@ -1,6 +1,6 @@
 ![build](https://github.com/Helveg/patch/actions/workflows/main.yml/badge.svg)
 [![codecov](https://codecov.io/gh/Helveg/patch/branch/master/graph/badge.svg)](https://codecov.io/gh/Helveg/patch)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![Documentation Status](https://readthedocs.org/projects/patch/badge/?version=latest)](https://patch.readthedocs.io/en/latest/?badge=latest)
 
 

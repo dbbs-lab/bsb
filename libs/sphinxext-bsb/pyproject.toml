@@ -46,6 +46,10 @@ version = "6.0.0-a2"
 description = "BSB Sphinx documentation extension"
 requires-python = ">=3.10"
 readme = "README.md"
+license = { file = "LICENSE" }
+classifiers = [
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"
+]
 dependencies = [ "bsb-core", "sphinx>=8.1", "sphinx-design~=0.6" ]
 
 [dependency-groups]

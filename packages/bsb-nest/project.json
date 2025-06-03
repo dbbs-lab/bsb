@@ -78,7 +78,6 @@
       "cache": true
     },
     "test": {
-      "dependsOn": ["bsb-nest:sync"],
       "executor": "@nxlv/python:run-commands",
       "outputs": [
         "{workspaceRoot}/coverage/{projectRoot}"

@@ -65,7 +65,12 @@ dependencies = [
   "sphinxext-bsb>=0.2.7",
   "docformatter>=1.7.6"
 ]
-  dev = [ "bsb-core[test,docs]", "ruff>=0.8.2", "snakeviz~=2.1" ]
+  dev = [
+    "bsb-core[test,docs]",
+    "pre-commit~=3.5",
+    "ruff>=0.8.2",
+    "snakeviz~=2.1"
+  ]
 
 [project.entry-points."bsb.storage.engines"]
 fs = "bsb.storage.fs"

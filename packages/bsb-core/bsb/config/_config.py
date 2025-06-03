@@ -40,7 +40,7 @@ class NetworkNode:
     chunk_size: list[float] = config.attr(
         type=types.or_(
             types.list(float),
-            types.scalar_expand(float, expand=lambda s: np.ones(3) * s),
+            types.scalar_expand(float, expand=lambda s: [s] * 3),
         ),
         default=lambda: [100.0, 100.0, 100.0],
         call_default=True,

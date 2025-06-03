@@ -6,6 +6,7 @@ unified repository. Below is a revised `README.md` tailored for the monorepo set
 # The Brain Scaffold Builder
 
 ![Build Status](https://github.com/dbbs-lab/bsb/actions/workflows/main.yml/badge.svg)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
 Developed by the Department of Brain and Behavioral Sciences at the University of Pavia, the Brain Scaffold Builder (
 BSB) is a component framework for neural modeling. It emphasizes modular component declarations to assemble brain
@@ -89,6 +90,11 @@ For simulation, refer to the documentation for configuring simulations with NEST
 Comprehensive documentation is available at:
 
 * [BSB Documentation](https://bsb.readthedocs.io/en/latest)
+
+## Contributing
+
+All contributions are very much welcome.
+Take a look at the [contribution guide](CONTRIBUTING.md)
 
 ## Acknowledgements
 

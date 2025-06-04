@@ -53,9 +53,7 @@ jobs:
         run: |
           curl -Os https://cli.codecov.io/latest/linux/codecov
           sudo chmod +x codecov
-          for package in $(./nx show projects --affected)
+          for package in $(./nx show projects --projects "packages/*" --affected)
           do
-            if [[ $package = "bsb"* ]]; then
-              ./codecov do-upload -e PYTHON=${{ matrix.python-version }} --disable-search -t ${{ secrets.CODECOV_TOKEN }} -f coverage/packages/${package}/coverage.xml -F ${package} 
-            fi
+            ./codecov do-upload -e PYTHON=${{ matrix.python-version }} --disable-search -t ${{ secrets.CODECOV_TOKEN }} -f coverage/packages/${package}/coverage.xml -F ${package}
           done

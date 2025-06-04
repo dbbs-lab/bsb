@@ -122,7 +122,7 @@ Full reference
 --------------
 
 Here is a full list of methods that Patch patched or added to the interface of
-:class:`NEURON Sections <neuron.h.Section>`:
+:class:`NEURON Sections <neuron:Section>`:
 
 .. autoclass:: patch.objects.Section
   :members:

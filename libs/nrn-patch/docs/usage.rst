@@ -8,7 +8,7 @@ Usage
 
 Be aware that the interface is currently incomplete, this means that most parts are still
 "just" NEURON. I've only patched holes I frequently encounter myself when using NEURON's
-:class:`~neuron.h.Section`, :class:`NetStim <neuron:NetStim>` and :class:`NetCon
+:class:`neuron:Section`, :class:`NetStim <neuron:NetStim>` and :class:`NetCon
 <neuron:NetCon>` functions. Feel free to open an issue or fork this project and open a
 pull request for missing or broken parts of the interface.
 

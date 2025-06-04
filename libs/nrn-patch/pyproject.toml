@@ -18,7 +18,7 @@ dependencies = [
     "packaging~=24.0",
     "errr~=1.2",
     "numpy~=1.21",
-    "neuron>=8.2.7; sys_platform != 'win32'",
+    "neuron-nightly==9.0a1.dev1422; sys_platform != 'win32'",
 ]
 
 [project.entry-points."glia.package"]

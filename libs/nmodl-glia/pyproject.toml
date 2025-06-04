@@ -17,7 +17,7 @@ dependencies= [
     "black>=24.0",
     "toml~=0.10",
     "packaging~=24.0",
-    "neuron>=8.2.7; sys_platform != 'win32'",
+    "neuron-nightly==9.0a1.dev1422; sys_platform != 'win32'",
     "importlib_metadata~=6.5"
 ]
 

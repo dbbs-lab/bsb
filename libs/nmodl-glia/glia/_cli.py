@@ -240,7 +240,7 @@ def _guess_name(ctx, param, value):
     help="Restrict the usage of this NMODL file to the Arbor dialect.",
 )
 @click.option(
-    "-n",
+    "-N",
     "--neuron",
     "dialect",
     flag_value="neuron",

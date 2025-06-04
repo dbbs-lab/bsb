@@ -62,7 +62,7 @@ class TestBluePyOptimization(unittest.TestCase):
             "twostep", protocols=sweep_protocols
         )
 
-        efel_feature_means = {"step1": {"Spikecount": 1}, "step2": {"Spikecount": 5}}
+        efel_feature_means = {"step1": {"spike_count": 1}, "step2": {"spike_count": 5}}
 
         objectives = []
 
@@ -102,4 +102,4 @@ class TestBluePyOptimization(unittest.TestCase):
         outcome = cell_evaluator.evaluate_with_dicts(best_ind_dict)
         self.assertAlmostEqual(0.12, best_ind_dict["gnabar_hh_soma"], 2)
         self.assertAlmostEqual(0.011, best_ind_dict["gkbar_hh_soma"], 3)
-        self.assertGreater(outcome["step2.Spikecount"], outcome["step1.Spikecount"])
+        self.assertGreater(outcome["step2.spike_count"], outcome["step1.spike_count"])

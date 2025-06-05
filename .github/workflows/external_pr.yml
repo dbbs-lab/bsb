@@ -1,0 +1,37 @@
+name: Validate external Pull Request
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+env:
+  LOCAL_PR: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+
+jobs:
+  variables: # env variables are not accessible through job.if (https://stackoverflow.com/q/73558652)
+    runs-on: ubuntu-latest
+    outputs:
+      LOCAL_PR: ${{ steps.init.outputs.LOCAL_PR }}
+    steps:
+      - name: Make environment variables global
+        id: init
+        run: |
+          echo "LOCAL_PR=${{ env.LOCAL_PR }}" >> $GITHUB_OUTPUT
+
+  check-api:
+    needs: variables
+    # if PR is external, trigger the tests on push or new PR
+    if: ${{ needs.variables.outputs.LOCAL_PR == 'false'}}
+    uses: ./.github/workflows/check-api.yml
+  build:
+    needs: variables
+    if: ${{ needs.variables.outputs.LOCAL_PR == 'false' }}
+    uses: ./.github/workflows/build.yml
+  docs:
+    needs: variables
+    if: ${{ needs.variables.outputs.LOCAL_PR == 'false' }}
+    uses: ./.github/workflows/docs.yml
+  ruff:
+    needs: variables
+    if: ${{ needs.variables.outputs.LOCAL_PR == 'false' }}
+    uses: ./.github/workflows/ruff.yml

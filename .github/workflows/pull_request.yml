@@ -13,20 +13,28 @@ jobs:
         with:
           task_types: '["feat","fix","docs","test","ci","refactor","perf","revert"]'
 
-  preview-docs:
+  get-modified:
     runs-on: ubuntu-latest
     if: github.event.action != 'edited'
+    outputs:
+      matrix: ${{ steps.get-affected.outputs.packages }}
     steps:
       - uses: actions/checkout@v4
-      - name: Check modifications on docs
-        uses: dorny/paths-filter@v3
-        id: filter
-        with:
-          filters: |
-            docs:  # name of the filter
-              - 'packages/**/docs/**'
+      - name: Get affected projects
+        id: get-affected
+        run: |
+          packages=$(./nx show projects --projects "packages/*" --affected)
+          packages=[\"$(echo $packages | sed -r 's/[ ]+/", "/g')\"]
+          echo "packages=$packages" >> $GITHUB_OUTPUT
+  preview-docs:
+    needs: [ get-modified ]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package: ${{ fromJSON(needs.get-modified.outputs.matrix) }}
+    steps:
       - name: Preview BSB Readthedocs
-        if: steps.filter.outputs.docs == 'true'
         uses: readthedocs/actions/preview@v1
         with:
-          project-slug: "bsb"
+          project-slug: {{ matrix.package }}

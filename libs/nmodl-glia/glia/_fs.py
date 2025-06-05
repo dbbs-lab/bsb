@@ -10,7 +10,7 @@ from traceback import format_exception
 
 import appdirs
 
-from glia._hash import hash_path, hash_installs
+from glia._hash import hash_installs, hash_path
 
 _install_dirs = appdirs.AppDirs(appname="Glia", appauthor="DBBS")
 

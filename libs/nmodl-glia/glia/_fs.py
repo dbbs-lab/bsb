@@ -10,7 +10,7 @@ from traceback import format_exception
 
 import appdirs
 
-from glia._hash import hash_path
+from glia._hash import hash_path, hash_installs
 
 _install_dirs = appdirs.AppDirs(appname="Glia", appauthor="DBBS")
 
@@ -47,7 +47,12 @@ def get_glia_path():
 
 
 def get_cache_hash(prefix=""):
-    return prefix + hash_path(get_glia_path())[:8] + hash_path(sys.prefix)[:8]
+    return (
+        prefix
+        + hash_path(get_glia_path())[:8]
+        + hash_path(sys.prefix)[:8]
+        + hash_installs()
+    )
 
 
 def get_cache_path(*subfolders, prefix=""):

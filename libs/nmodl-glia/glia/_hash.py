@@ -1,3 +1,4 @@
+import contextlib
 import hashlib
 import typing
 from pathlib import Path
@@ -54,3 +55,19 @@ def get_package_hash(package: "Package"):
     h = hashlib.md5()
     h.update(bytes(package.root))
     return h.hexdigest()
+
+
+def hash_installs():
+    hash = ""
+
+    with contextlib.suppress(Exception):
+        from patch.version import get_neuron_version
+
+        hash += hash_path(str(get_neuron_version()))
+
+    with contextlib.suppress(Exception):
+        import arbor
+
+        hash += hash_path(str(arbor.config()))
+
+    return hash

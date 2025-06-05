@@ -36,7 +36,16 @@ def import_tmp_package(path):
     return m.package
 
 
-class TestCLI(unittest.TestCase):
+class AssertCLIResult:
+    def assertSuccess(self, result):
+        self.assertEqual(
+            0,
+            result.exit_code,
+            msg=f"stdout:\n{result.output}\nstderr:\n{getattr(result, 'stderr', '')}",
+        )
+
+
+class TestCLI(unittest.TestCase, AssertCLIResult):
     """
     Test CLI commands.
     """
@@ -50,24 +59,24 @@ class TestCLI(unittest.TestCase):
     @skipUnlessTestMods
     def test_compile(self):
         result = run_cli_command(["compile"])
-        self.assertEqual(0, result.exit_code)
+        self.assertSuccess(result)
         self.assertRegex(result.output, r"(\d+) out of (\1) passed")
 
     @skipParallel
     @skipIfInstalled()
     def test_compile_nopkg(self):
         result = run_cli_command(["compile"])
-        self.assertEqual(0, result.exit_code)
+        self.assertSuccess(result)
         self.assertRegex(result.output, r"0 out of 0 passed")
 
     def test_list(self):
         result = run_cli_command(["list"])
-        self.assertEqual(0, result.exit_code)
+        self.assertSuccess(result)
 
     @skipUnlessTestMods
     def test_show(self):
         result = run_cli_command(["show", "AMPA"])
-        self.assertEqual(0, result.exit_code)
+        self.assertSuccess(result)
 
     def test_show_unknown(self):
         result = run_cli_command(["show", "doesntexist"], xfail=True)
@@ -78,7 +87,7 @@ class TestCLI(unittest.TestCase):
     def test_show_pkg(self):
         # todo: test this test
         result = run_cli_command(["show-pkg", "glia_test_mods"])
-        self.assertEqual(0, result.exit_code)
+        self.assertSuccess(result)
 
     def test_show_unknown_pkg(self):
         result = run_cli_command(["show-pkg", "doesntexist"], xfail=True)
@@ -116,7 +125,7 @@ class TestCLI(unittest.TestCase):
                 shutil.copytree(tmp, get_cache_path(), dirs_exist_ok=True)
 
 
-class TestPackagingCLI(unittest.TestCase):
+class TestPackagingCLI(unittest.TestCase, AssertCLIResult):
     def test_new_package(self):
         runner = CliRunner()
         with runner.isolated_filesystem():
@@ -134,7 +143,7 @@ class TestPackagingCLI(unittest.TestCase):
             os.chdir("glia_package")
             package = import_tmp_package("glia_package")
             self.assertEqual(Package, type(package))
-            self.assertEqual(0, result.exit_code)
+            self.assertSuccess(result)
 
     def test_add_mod(self):
         mod_path = Path(__file__).parent / "data" / "mods" / "Na__0.mod"
@@ -149,11 +158,7 @@ class TestPackagingCLI(unittest.TestCase):
                 ["pkg", "add", str(mod_path)],
             )
 
-            self.assertEqual(
-                0,
-                result.exit_code,
-                msg=f"stdout:\n{result.output}\nstderr:\n{getattr(result, 'stderr', '')}",
-            )
+            self.assertSuccess(result)
             self.assertEqual(
                 [".gitkeep", "Na__0.mod"], sorted(os.listdir("glia_package/mods"))
             )
@@ -200,11 +205,7 @@ class TestPackagingCLI(unittest.TestCase):
                 ],
             )
 
-            self.assertEqual(
-                0,
-                result.exit_code,
-                msg=f"stdout:\n{result.output}\nstderr:\n{getattr(result, 'stderr', '')}",
-            )
+            self.assertSuccess(result)
             package = import_tmp_package("glia_package")
             mod = package.mods[0]
             mod: Mod

@@ -217,7 +217,11 @@ class ConstraintsDefinition(
                     "dend": {
                         "cable": {"Ra": (100, 200), "cm": 1.0},
                         "ions": {
-                            "na": {"rev_pot": -65.0, "int_con": (10.0, 15.0), "ext_con": 150.0}
+                            "na": {
+                                "rev_pot": -65.0,
+                                "int_con": (10.0, 15.0),
+                                "ext_con": 150.0
+                            },
                         },
                         "mechanisms": {"hh": {"gnabar": (0.1, 0.3), "gl": 0.0003}},
                     }

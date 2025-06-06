@@ -213,9 +213,10 @@ class ConnectionStrategy(abc.ABC, HasDependencies):
 
         :param bsb.storage.interfaces.PlacementSet pre_set: presynaptic placement set
         :param bsb.storage.interfaces.PlacementSet post_set: postsynaptic placement set
-            :param list[list[int, int, int]] src_locs: list of the presynaptic `connection
-            location`. :param list[list[int, int, int]] dest_locs: list of the
-            postsynaptic `connection location`.
+        :param list[list[int, int, int]] src_locs: list of the presynaptic
+            `connection location`.
+        :param list[list[int, int, int]] dest_locs: list of the postsynaptic
+            `connection location`.
         """
         names = self.get_output_names(pre_set.cell_type, post_set.cell_type)
         between_msg = f"between {pre_set.cell_type.name} and {post_set.cell_type.name}"

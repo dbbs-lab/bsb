@@ -64,8 +64,7 @@ class ConnectivitySet(Resource, IConnectivitySet):
         """
         Create the structure for this connectivity set in the HDF5 file.
 
-        Connectivity sets
-        are stored under ``/connectivity/<tag>``.
+        Connectivity sets are stored under ``/connectivity/<tag>``.
         """
         if tag is None:
             tag = f"{pre_type.name}_to_{post_type.name}"

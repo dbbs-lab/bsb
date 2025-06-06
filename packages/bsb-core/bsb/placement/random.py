@@ -242,11 +242,12 @@ class VolumeFiller:
         corresponds to the ratio of the sum of the particles' volume over the volume
         itself.
 
-        :param list[bsb.placement.particle.Particle] | None particles: List of Particle to
-        place.     If None, it will use the ParticleSystem particle_types list. :param
-        float | None volume: Size of the volume in which the particles will be placed. If
-        None, it will use the total volume of the voxels of the ParticleSystem.
-        :return: Packing factor
+        :param list[bsb.placement.particle.Particle] | None particles: List of Particle
+            to place. If None, it will use the ParticleSystem particle_types list.
+        :param float | None volume: Size of the volume in which the particles will be
+            placed. If None, it will use the total volume of the voxels of the
+            ParticleSystem.
+        :return: Packing factor.
         :rtype: float
         """
         if particles is None:

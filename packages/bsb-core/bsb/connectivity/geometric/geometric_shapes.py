@@ -408,8 +408,8 @@ class ShapesComposition:
         """
         Add a geometric shape to the collection.
 
-        :param GeometricShape shape: A GeometricShape to add to the collection. :param
-            list[str] labels: A list of labels for the geometric shape to add.
+        :param GeometricShape shape: A GeometricShape to add to the collection.
+        :param list[str] labels: A list of labels for the geometric shape to add.
         """
         # Update mbb
         if len(self._shapes) == 0:
@@ -1225,7 +1225,6 @@ class Parallelepiped(GeometricShape, classmap_entry="parallelepiped"):
     )
     """
     The first vector identifying the parallelepiped (using the right-hand orientation:
-
     the thumb).
     """
     side_vector_2 = config.attr(
@@ -1233,7 +1232,6 @@ class Parallelepiped(GeometricShape, classmap_entry="parallelepiped"):
     )
     """
     The second vector identifying the parallelepiped (using the right-hand orientation:
-
     the index).
     """
     side_vector_3 = config.attr(
@@ -1241,7 +1239,6 @@ class Parallelepiped(GeometricShape, classmap_entry="parallelepiped"):
     )
     """
     The third vector identifying the parallelepiped (using the right-hand orientation:
-
     the middle finger).
     """
 

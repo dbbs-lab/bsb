@@ -511,9 +511,10 @@ class PlacementSet(Interface):
     @abc.abstractmethod
     def load_rotations(self):
         """
-        Load the rotation data of the placement set :returns: A rotation set :rtype:
+        Load the rotation data of the placement set.
 
-        ~bsb.morphologies.RotationSet.
+        :returns: A rotation set.
+        :rtype: ~bsb.morphologies.RotationSet
         """
         pass
 
@@ -933,8 +934,7 @@ class ConnectivitySet(Interface):
         """
         Must make sure the connectivity set exists.
 
-        The default
-        implementation uses the class's ``exists`` and ``create`` methods.
+        The default implementation uses the class's ``exists`` and ``create`` methods.
         """
         if not self.exists(engine, tag):
             self.create(engine, tag)

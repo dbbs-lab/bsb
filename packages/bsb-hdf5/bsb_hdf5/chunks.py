@@ -141,8 +141,8 @@ class ChunkedProperty:
     Chunked properties are stored inside the ``chunks`` group of the :class:`.ChunkLoader`
     they belong to.
 
-    Inside the ``chunks`` group another group is created per chunk, inside
-    of which a dataset exists per property.
+    Inside the ``chunks`` group another group is created per chunk, inside which a
+    dataset exists per property.
     """
 
     def __init__(
@@ -274,9 +274,9 @@ class ChunkedCollection(ChunkedProperty):
     Chunked collections are stored inside the ``chunks`` group of the
     :class:`.ChunkLoader` they belong to.
 
-    Inside the ``chunks`` group another group is
-    created per chunk, inside which a group exists per collection. Arbitrarily named
-    datasets can be stored inside of this collection.
+    Inside the ``chunks`` group another group is created per chunk, inside which a group
+    exists per collection. Arbitrarily named datasets can be stored inside of this
+    collection.
     """
 
     def __init__(self, loader, collection, shape, dtype, insert=None, extract=None):

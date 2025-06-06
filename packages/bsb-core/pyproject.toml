@@ -47,22 +47,19 @@ dependencies = [
   parallel = [ "mpi4py~=3.0", "mpipool>=2.2.1,<3", "mpilock~=1.1" ]
   test = [
   "bsb-core[parallel]",
-  "bsb-arbor~=6.0; sys_platform != 'win32'",
-  "bsb-hdf5~=6.0",
-  "bsb-json~=6.0",
+  "bsb-arbor; sys_platform != 'win32'",
+  "bsb-hdf5",
+  "bsb-json",
   "bsb-test",
   "coverage>=7.3"
 ]
   docs = [
-  "sphinx~=8.1",
   "furo~=2024.4",
   "sphinxemoji~=0.3",
-  "sphinx-design~=0.6",
   "sphinx-copybutton~=0.5",
-  "bsb-json~=6.0",
-  "bsb-yaml~=6.0",
-  "setuptools>=79.0.1",
-  "sphinxext-bsb>=0.2.7"
+  "bsb-json",
+  "bsb-yaml",
+  "sphinxext-bsb"
 ]
   dev = [
     "bsb-core[test,docs]",

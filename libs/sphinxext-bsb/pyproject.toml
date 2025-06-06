@@ -45,7 +45,7 @@ editable = true
 name = "sphinxext-bsb"
 version = "6.0.0-a2"
 description = "BSB Sphinx documentation extension"
-requires-python = ">=3.10"
+requires-python = ">=3.10,<4"
 readme = "README.md"
 license = { file = "LICENSE" }
 classifiers = [

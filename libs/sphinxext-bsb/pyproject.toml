@@ -28,7 +28,8 @@ indent-width = 4
   indent-style = "space"
   skip-magic-trailing-comma = false
   line-ending = "auto"
-  docstring-code-line-length = "dynamic"
+  docstring-code-format = true
+  docstring-code-line-length = 90
 
   [tool.ruff.lint]
   select = [ "E", "F", "UP", "B", "SIM", "I" ]
@@ -56,10 +57,6 @@ dependencies = [ "bsb-core", "sphinx>=8.1", "sphinx-design~=0.6" ]
 dev = [
   "autopep8>=2.3.1",
   "ruff>=0.8.2",
-  "pytest>=8.3.4",
-  "pytest-sugar>=1.0.0",
-  "pytest-cov>=6.0.0",
-  "pytest-html>=4.1.1"
 ]
 
 [build-system]

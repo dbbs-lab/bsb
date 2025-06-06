@@ -62,8 +62,7 @@ dependencies = [
   "bsb-json~=6.0",
   "bsb-yaml~=6.0",
   "setuptools>=79.0.1",
-  "sphinxext-bsb>=0.2.7",
-  "docformatter>=1.7.6"
+  "sphinxext-bsb>=0.2.7"
 ]
   dev = [
     "bsb-core[test,docs]",
@@ -149,11 +148,3 @@ indent-width = 4
 
     [tool.ruff.lint.per-file-ignores]
     "bsb/__init__.py" = [ "E501" ]
-
-[tool.docformatter]
-recursive = true
-in-place = true
-wrap-summaries = 90
-wrap-descriptions = 90
-pre-summary-newline = true
-make-summary-multi-line = true

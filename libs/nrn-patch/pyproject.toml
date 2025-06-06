@@ -34,7 +34,6 @@ docs = [
     "sphinx~=8.0",
     "helveg--sphinx-code-tabs~=0.2",
     "sphinx-rtd-theme~=3.0",
-    "docformatter>=1.7.6"
 ]
 dev = [
     "nrn-patch[test,docs]",
@@ -70,18 +69,11 @@ indent-width = 4
   indent-style = "space"
   skip-magic-trailing-comma = false
   line-ending = "auto"
-  docstring-code-line-length = "dynamic"
+  docstring-code-format = true
+  docstring-code-line-length = 90
 
   [tool.ruff.lint]
   select = [ "E", "F", "UP", "B", "SIM", "I" ]
   ignore = [ "F822" ]
   fixable = [ "ALL" ]
   unfixable = [ ]
-
-[tool.docformatter]
-recursive = true
-in-place = true
-wrap-summaries = 90
-wrap-descriptions = 90
-pre-summary-newline = true
-make-summary-multi-line = true

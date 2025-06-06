@@ -29,7 +29,6 @@ dependencies = [ "bsb-core~=6.0" ]
   docs = [
   "furo~=2024.0",
   "sphinxext-bsb>=0.2.7",
-  "docformatter>=1.7.6"
 ]
   dev = [ "bsb-json[test,docs]", "pre-commit~=3.5", "ruff>=0.8.2" ]
 
@@ -75,18 +74,11 @@ indent-width = 4
   indent-style = "space"
   skip-magic-trailing-comma = false
   line-ending = "auto"
-  docstring-code-line-length = "dynamic"
+  docstring-code-format = true
+  docstring-code-line-length = 90
 
   [tool.ruff.lint]
   select = [ "E", "F", "UP", "B", "SIM", "I" ]
   ignore = [ ]
   fixable = [ "ALL" ]
   unfixable = [ ]
-
-[tool.docformatter]
-recursive = true
-in-place = true
-wrap-summaries = 90
-wrap-descriptions = 90
-pre-summary-newline = true
-make-summary-multi-line = true

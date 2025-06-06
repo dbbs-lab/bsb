@@ -7,8 +7,8 @@ and automatically supports comparisons with plain version strings.
 Example:
     >>> from patch.version import NeuronVersion
     >>> nv = NeuronVersion()
-    >>> print(nv.full_version)       # e.g., '9.0a-1422-g8b0b34549'
-    >>> print(nv.semantic_version)   # e.g., '9.0a'
+    >>> print(nv.full_version)  # e.g., '9.0a-1422-g8b0b34549'
+    >>> print(nv.semantic_version)  # e.g., '9.0a'
     >>> if nv >= "9.0":
     ...     print("NEURON version is at least 9.0")
 

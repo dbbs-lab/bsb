@@ -32,7 +32,6 @@ arbor = ["arbor~=0.10", "nmodl-glia[arbor]~=6.0"]
 docs = [
     "sphinx~=8.1",
     "furo~=2024.0",
-    "docformatter>=1.7.6",
     "sphinxemoji~=0.3",
     "sphinx-copybutton~=0.5"
 ]
@@ -78,18 +77,11 @@ indent-width = 4
   indent-style = "space"
   skip-magic-trailing-comma = false
   line-ending = "auto"
-  docstring-code-line-length = "dynamic"
+  docstring-code-format = true
+  docstring-code-line-length = 90
 
   [tool.ruff.lint]
   select = [ "E", "F", "UP", "B", "SIM", "I" ]
   ignore = [ ]
   fixable = [ "ALL" ]
   unfixable = [ ]
-
-[tool.docformatter]
-recursive = true
-in-place = true
-wrap-summaries = 90
-wrap-descriptions = 90
-pre-summary-newline = true
-make-summary-multi-line = true

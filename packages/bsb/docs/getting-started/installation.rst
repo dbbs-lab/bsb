@@ -30,6 +30,8 @@ You can verify that the installation works with:
 
 You have now the minimal installation required to complete the :doc:`getting started <top-level-guide>` section.
 
+.. _parallel-guide:
+
 Parallel support
 ================
 
@@ -113,8 +115,9 @@ NEST or multi-compartmental neuron simulations with NEURON or Arbor use:
 Developer installation
 ======================
 
-.. include:: ../dev/installation.rst
+.. include:: ../dev/monorepo.rst
     :start-after: start-dev-install
+    :end-before: end-dev-install
 
 If you want to have more information about our development guidelines, please read our
 :doc:`developer guides</dev/dev-toc>`

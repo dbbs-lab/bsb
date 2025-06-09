@@ -2,21 +2,34 @@
 Documentation
 #############
 
-The libraries necessary for building the documentation can be installed through:
+The libraries necessary for building the documentation of each subpackage can be installed
+through the ``docs`` option. For instance, with `bsb-core`:
 
 .. code-block:: bash
 
-  pip install -e .[docs]
+  pip install bsb-core[docs]
 
-You should have it if you install it with the ``dev`` flag.
-You can build the documentations by navigate to the ``docs`` directory and run:
+You should have these libraries already if you have installed the bsb with nx,
+with the `editable-install.txt` script, or with the ``dev`` flag.
+You can build the documentations for each package with the following command (here shown for bsb-core):
 
-.. code-block:: bash
+.. tab-set::
+  .. tab-item:: With nx
+    :sync: bash
 
-  cd docs
-  make html
+    .. code-block:: bash
 
-The output will be in the ``/docs/_build`` folder.
+      ./nx run bsb-core:docs
+
+  .. tab-item:: Within a python env
+    :sync: bash
+
+    .. code-block:: bash
+
+      cd packages/bsb-core/docs
+      make html
+
+The output will be inside the subpackages folder, under the ``/docs/_build`` folder.
 
 .. note::
     Note that the command ``make html`` by default does not show you warnings in the documentations.

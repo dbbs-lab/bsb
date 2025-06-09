@@ -57,6 +57,7 @@
         "bsb-json:iso-docs",
         "bsb-nest:iso-docs",
         "bsb-neuron:iso-docs",
+        "bsb-test:iso-docs",
         "bsb-yaml:iso-docs"
       ],
       "executor": "@nxlv/python:run-commands",

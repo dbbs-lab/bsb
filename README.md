@@ -30,6 +30,8 @@ The BSB suite is now organized as a monorepo, integrating the following componen
 
 ## Installation
 
+### Pip installation
+
 The BSB supports Python 3.10 and above. To install the BSB suite along with the core framework and default plugins:
 
 ```bash
@@ -51,16 +53,34 @@ pip install bsb[neuron]
 pip install bsb[arbor]
 ```
 
-For development purposes, clone the repository and use the devtools script to install all packages in editable mode:
+### Clone installation
+
+You can also clone the repository and use the devtools script to install all packages in editable mode 
+in your own environment:
 
 ```bash
 git clone https://github.com/dbbs-lab/bsb
 cd bsb
 pip install -r devtools/editable-install.txt
-pre-commit install
 ```
 
-This setup includes all necessary libraries for running the BSB, performing unittests, and building the documentation.
+### Developer installation
+
+For development purposes, you should install the [UV](https://nx.dev/) and [NX](https://docs.astral.sh/uv/) tools.
+To this end, there is a helper script for each platform in ``devtools/bootstrap-*``. For instance, for linux:
+```bash
+./devtools/bootstrap-linux.sh
+```
+
+Then, initialize the NX monorepo with the following command
+
+```bash
+./nx init
+```
+From there, you NX and UV will automatically create an environment for each subpackage, 
+including all necessary libraries for running the unittests, linting the code and building the documentation.
+
+For more information, please refer to the [developers' documentation](https://bsb.readthedocs.io/en/latest/dev/dev-toc.html).
 
 ## Usage
 

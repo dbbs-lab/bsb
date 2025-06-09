@@ -74,6 +74,9 @@ intersphinx_mapping = {
     **_project.intersphinx,
 }
 
+for key, value in intersphinx_mapping.items():
+    print(key, value)
+
 autoclass_content = "both"
 autodoc_typehints = "both"
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]

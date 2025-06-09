@@ -5,12 +5,11 @@ Developer guides
    :maxdepth: 2
    :caption: Developer guides
 
+   monorepo
    guidelines
-   installation
    documentation
    services
    projects
    plugins
    hooks
    reference
-   monorepo

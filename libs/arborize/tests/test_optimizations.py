@@ -4,6 +4,7 @@ import unittest
 from arborize import bluepyopt_build, define_constraints, file_schematic
 
 
+@unittest.skip("https://github.com/dbbs-lab/bsb/issues/141")
 class TestBluePyOptimization(unittest.TestCase):
     def test_hh_pas(self):
         import bluepyopt

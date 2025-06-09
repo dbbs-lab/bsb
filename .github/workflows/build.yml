@@ -37,17 +37,16 @@ jobs:
         uses: astral-sh/setup-uv@v5
 
       - name: Cache NEST
-        id: cache-nest
         uses: actions/cache@v4
         with:
           path: ${{ env.NEST_FOLDER }}
           key: ${{ runner.os }}-${{ matrix.python-version }}-nest
 
       - name: Derive appropriate SHAs for base and head for `nx affected` commands
-        id: setSHAs
         uses: nrwl/nx-set-shas@v4
 
-      - run: ./nx affected -t test
+      - name: Run unittests
+        run: ./nx affected -t test
 
       - name: Send coverage
         run: |
@@ -58,5 +57,5 @@ jobs:
             ./codecov do-upload -e PYTHON=${{ matrix.python-version }} \
                 --disable-search -t ${{ secrets.CODECOV_TOKEN }} \
                 -f coverage/packages/${package}/coverage.xml -F ${package} \
-                --git-service github -r dbbs-lab/bsb -C $GITHUB_SHA
+                --git-service github -r dbbs-lab/bsb -C $GITHUB_SHA --verbose
           done

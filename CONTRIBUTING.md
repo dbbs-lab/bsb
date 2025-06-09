@@ -47,7 +47,7 @@ People *love* thorough bug reports. I'm not even kidding.
 
 ```
   uv pip install -e packages/bsb[dev]
-  pre-commit install
+  uv run pre-commit install
 ```
 
 ## License

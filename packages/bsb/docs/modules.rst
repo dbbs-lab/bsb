@@ -18,6 +18,3 @@
 
 :doc:`bsb-neuron <bsb_neuron:bsb_neuron/modules>`
 -------------------------------------------------
-
-:doc:`bsb-test <bsb_test:bsb_test/modules>`
--------------------------------------------

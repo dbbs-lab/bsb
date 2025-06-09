@@ -1,6 +1,9 @@
 Developer modules
 =================
 
+:doc:`bsb-test <bsb_test:bsb_test/modules>`
+-------------------------------------------
+
 bsb.services
 ------------
 

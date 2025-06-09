@@ -33,7 +33,7 @@ parallel = [
     "mpi4py~=3.0",
 ]
 neuron = [
-    "nrn-patch~=6.0"
+    "nrn-patch"
 ]
 arbor = [
     "arbor~=0.10"

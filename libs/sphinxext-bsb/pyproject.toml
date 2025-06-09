@@ -57,6 +57,7 @@ dependencies = [ "bsb-core", "sphinx>=8.1", "sphinx-design~=0.6" ]
 dev = [
   "autopep8>=2.3.1",
   "ruff>=0.8.2",
+  "pre-commit~=3.5",
 ]
 
 [build-system]

@@ -14,10 +14,11 @@ classifiers = [
 ]
 requires-python = ">=3.10,<4"
 dependencies = [
-    "nmodl-glia[neuron]",
+    "nmodl-glia[neuron]~=6.0",
     "packaging~=24.0",
     "errr~=1.2",
     "numpy~=1.21",
+    "neuron-nightly==9.0a1.dev1422; sys_platform != 'win32'",
 ]
 
 [project.entry-points."glia.package"]

@@ -27,8 +27,8 @@ dependencies = [
 [project.optional-dependencies]
 parallel = ["mpi4py~=3.0"]
 bluepyopt = ["bluepyopt~=1.14", "dill>=0.3.8"]
-neuron = ["nrn-patch", "nmodl-glia[neuron]"]
-arbor = ["arbor~=0.10", "nmodl-glia[arbor]"]
+neuron = ["nrn-patch~=6.0", "nmodl-glia[neuron]~=6.0"]
+arbor = ["arbor~=0.10", "nmodl-glia[arbor]~=6.0"]
 docs = [
     "sphinx~=8.1",
     "furo~=2024.0",

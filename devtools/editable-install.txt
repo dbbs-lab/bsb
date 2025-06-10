@@ -16,7 +16,10 @@
 #
 # Finally:
 #
-# uv pip install -r ./devtools/editable-install.txt
+# uv pip install ./devtools
+#
+# or without uv:
+# pip install -r ./devtools/editable-install.txt
 
 -e ./libs/nmodl-glia
 -e ./libs/nrn-patch

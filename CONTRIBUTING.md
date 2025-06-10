@@ -41,12 +41,23 @@ People *love* thorough bug reports. I'm not even kidding.
 ## Use a Consistent Coding Style
 
 * 4 spaces for indentation rather than tabs
-* Follow [black](https://github.com/psf/black) formatting. The `dev` extras contain the
-  dependencies you need so that you can use `pre-commit install` to have automatic pre-commit
-  hooks that format your code for you:
+* Follow [black](https://github.com/psf/black) formatting. 
 
-```
-  uv pip install -e packages/bsb[dev]
+## Development environment
+
+You can create an environment containing all packages and libs with uv using 
+the scripts in the `devtools` folder. 
+
+Install uv by running the devtools bootstrap helper suitable for your platform. 
+e.g. for Linux: `./devtools/bootstrap-linux.sh`. 
+
+Then, just create a python environment with uv.
+You should also run `pre-commit install` to have automatic pre-commit
+hooks that format your code for you:
+
+```bash
+  uv venv
+  uv pip install -e ./devtools
   uv run pre-commit install
 ```
 

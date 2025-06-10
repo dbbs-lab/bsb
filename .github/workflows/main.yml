@@ -61,4 +61,4 @@ jobs:
         run: |
           git config --global user.email "dbbs-lab@cerebhub.eu"
           git config --global user.name "DBBS Laboratory"
-          ./nx release 6.0.0-a16 --yes --verbose
+          ./nx release 6.0.0-a17 --yes --verbose

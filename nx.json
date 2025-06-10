@@ -19,12 +19,13 @@
       "projectChangelogs": true,
       "workspaceChangelog": {
         "createRelease": "github",
-        "file": true
+        "file": "CHANGELOG.md"
       }
     },
     "git": {
       "commit": true,
-      "tag": true
+      "tag": true,
+      "commitMessage": "chore(release): {version} [skip ci]"
     },
     "version": {
       "conventionalCommits": true,

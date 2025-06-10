@@ -3,7 +3,7 @@ name: Bump version, create release and deploy
 on:
   push:
     branches:
-      - main
+      - monorepo
 
 jobs:
   check-api:
@@ -50,4 +50,4 @@ jobs:
           nvm install --lts
 
       - name: Nx Release flow
-        run: ./nx release --yes
+        run: ./nx release 6.0.0-a10 --yes --verbose

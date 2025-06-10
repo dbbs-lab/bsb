@@ -12,9 +12,9 @@ classifiers = [
   "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"
 ]
 dependencies = [
-  "bsb-core",
-  "nrn-patch; sys_platform != 'win32'",
-  "arborize[neuron]; sys_platform != 'win32'"
+  "bsb-core~=6.0",
+  "nrn-patch~=6.0; sys_platform != 'win32'",
+  "arborize[neuron]~=6.0; sys_platform != 'win32'"
 ]
 
   [[project.authors]]
@@ -32,13 +32,13 @@ dependencies = [
   parallel = [ "bsb-core[parallel]" ]
   test = [
   "bsb-core[parallel]",
-  "bsb-test",
-  "bsb-hdf5",
+  "bsb-test~=6.0",
+  "bsb-hdf5~=6.0",
   "coverage~=7.0"
 ]
   docs = [
   "furo~=2024.0",
-  "sphinxext-bsb"
+  "sphinxext-bsb~=6.0"
 ]
   dev = [
   "bsb-neuron[test,docs]",

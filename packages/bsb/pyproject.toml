@@ -12,10 +12,10 @@ classifiers = [
   "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"
 ]
 dependencies = [
-  "bsb-core",
-  "bsb-hdf5",
-  "bsb-json",
-  "bsb-yaml"
+  "bsb-core~=6.0",
+  "bsb-hdf5~=6.0",
+  "bsb-json~=6.0",
+  "bsb-yaml~=6.0",
 ]
 
   [[project.authors]]
@@ -35,17 +35,15 @@ dependencies = [
 
   [project.optional-dependencies]
   parallel = [ "bsb-core[parallel]" ]
-  neuron = [ "bsb-neuron" ]
-  nest = [ "bsb-nest" ]
-  arbor = [ "bsb-arbor; sys_platform != 'win32'" ]
+  neuron = [ "bsb-neuron~=6.0" ]
+  nest = [ "bsb-nest~=6.0" ]
+  arbor = [ "bsb-arbor~=6.0" ]
   dev = [
   "bsb-core[dev]",
   "bsb-hdf5[dev]",
   "bsb-json[dev]",
   "bsb-yaml[dev]",
   "bsb-arbor[dev]; sys_platform != 'win32'",
-  "bsb-nest[dev]",
-  "bsb-neuron[dev]",
   "bsb-test[dev]",
   "gitdb>=4.0.12",
   "gitpython>=3.1.44",

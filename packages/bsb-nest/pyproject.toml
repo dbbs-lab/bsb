@@ -11,7 +11,7 @@ dynamic = [ "description" ]
 classifiers = [
   "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"
 ]
-dependencies = [ "bsb-core" ]
+dependencies = [ "bsb-core~=6.0" ]
 
   [[project.authors]]
   name = "Robin De Schepper"
@@ -28,14 +28,14 @@ dependencies = [ "bsb-core" ]
   parallel = [ "bsb-core[parallel]" ]
   test = [
   "bsb-core[parallel]",
-  "bsb-test",
-  "bsb-hdf5",
-  "bsb-arbor",
+  "bsb-test~=6.0",
+  "bsb-hdf5~=6.0",
+  "bsb-arbor~=6.0",
   "coverage~=7.0"
 ]
   docs = [
   "furo~=2024.0",
-  "sphinxext-bsb"
+  "sphinxext-bsb~=6.0"
 ]
   dev = [
   "bsb-nest[test, docs]",

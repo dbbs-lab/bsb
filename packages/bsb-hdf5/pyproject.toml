@@ -31,7 +31,7 @@ dependencies = [ "bsb-core" ]
   "toml~=0.10",
   "furo~=2024.0",
   "sphinx-copybutton~=0.5",
-  "sphinxext-bsb"
+  "sphinxext-bsb~=6.0"
 ]
   dev = [ "bsb-hdf5[test,docs]", "pre-commit~=3.5", "ruff>=0.8.2" ]
 

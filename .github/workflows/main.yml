@@ -20,6 +20,8 @@ jobs:
   release:
 #    needs: [build, docs, ruff, check-api]
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
 
     steps:
       - name: Create Github token

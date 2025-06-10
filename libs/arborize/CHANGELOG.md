@@ -1,3 +1,7 @@
+## 6.0.0-a16 (2025-06-10)
+
+This was a version bump only for arborize to align it with other projects, there were no code changes.
+
 ## 6.0.0-a15 (2025-06-10)
 
 This was a version bump only for arborize to align it with other projects, there were no code changes.

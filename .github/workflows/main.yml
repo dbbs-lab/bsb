@@ -49,10 +49,11 @@ jobs:
           \. "$HOME/.nvm/nvm.sh"
           nvm install --lts
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
       - name: Nx Release flow
         run: |
           git config --global user.email "dbbs-lab@cerebhub.eu"
           git config --global user.name "DBBS Laboratory"
-          ./nx release 6.0.0-a13 --verbose --skip-publish
-          cd packages/bsb-test
-          UV_PUBLISH_TOKEN=${{ secrets.UV_PUBLISH_TOKEN }} uv publish
+          UV_PUBLISH_TOKEN=${{ secrets.UV_PUBLISH_TOKEN }} ./nx release 6.0.0-a14 --yes --verbose

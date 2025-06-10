@@ -10,6 +10,8 @@ jobs:
     uses: ./.github/workflows/check-api.yml
   build:
     uses: ./.github/workflows/build.yml
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
   docs:
     uses: ./.github/workflows/docs.yml
   ruff:

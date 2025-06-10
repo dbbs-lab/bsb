@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "nrn-patch"
-version = "6.0.0-a9"
+version = "6.0.0-a11"
 readme = "README.md"
 dynamic = [ "description" ]
 classifiers = [

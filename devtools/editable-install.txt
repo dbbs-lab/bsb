@@ -1,0 +1,35 @@
+# ~~ BSB monorepo editable installer ~~
+#  This requirements file is intended for developers
+#  who wish to add all the packages in a clone of this repository
+#  to a virtual environment of their choosing.
+#
+# ~~ Usage ~~
+#
+# It's recommended that you use the `uv` package manager.
+# Install it by running the devtools bootstrap helper
+# suitable for your platform. e.g. for Linux:
+#
+# . ./devtools/bootstrap-linux.sh
+#
+# Next, either activate an existing virtual environment,
+# or use `uv venv` to create one.
+#
+# Finally:
+#
+# uv pip install ./devtools
+#
+# or without uv:
+# pip install -r ./devtools/editable-install.txt
+
+-e ./libs/nmodl-glia
+-e ./libs/nrn-patch
+-e ./libs/arborize
+-e ./libs/sphinxext-bsb
+-e ./packages/bsb-core[parallel]
+-e ./packages/bsb-hdf5
+-e ./packages/bsb-json
+-e ./packages/bsb-yaml
+-e ./packages/bsb-arbor
+-e ./packages/bsb-nest
+-e ./packages/bsb-neuron
+-e ./packages/bsb-test

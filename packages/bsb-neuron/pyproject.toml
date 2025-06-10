@@ -1,0 +1,106 @@
+[build-system]
+requires = [ "flit_core >=3.2,<4" ]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "bsb-neuron"
+version = "6.0.0-a18"
+readme = "README.md"
+requires-python = ">=3.10,<4"
+dynamic = [ "description" ]
+classifiers = [
+  "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"
+]
+dependencies = [
+  "bsb-core~=6.0",
+  "nrn-patch~=6.0; sys_platform != 'win32'",
+  "arborize[neuron]~=6.0; sys_platform != 'win32'"
+]
+
+  [[project.authors]]
+  name = "Robin De Schepper"
+  email = "robin@alexandria.sc"
+
+  [[project.authors]]
+  name = "Dimitri Rodarie"
+  email = "dimitri.rodarie@unipv.it"
+
+  [project.license]
+  file = "LICENSE"
+
+  [project.optional-dependencies]
+  parallel = [ "bsb-core[parallel]" ]
+
+  [dependency-groups]
+  test = [
+  "bsb-core[parallel]",
+  "bsb-test~=6.0",
+  "bsb-hdf5~=6.0",
+  "coverage~=7.0"
+]
+  docs = [ "furo~=2024.0", "sphinxext-bsb~=6.0" ]
+  dev = [
+  "pre-commit~=3.5",
+  "snakeviz~=2.1",
+  "ruff>=0.8.2"
+]
+
+[tool.uv]
+default-groups = ["dev", "docs", "test"]
+
+[project.entry-points."bsb.simulation_backends"]
+neuron = "bsb_neuron"
+
+[tool.flit.module]
+name = "bsb_neuron"
+
+[tool.uv.sources.bsb-core]
+path = "../bsb-core"
+editable = true
+
+[tool.uv.sources.bsb-hdf5]
+path = "../bsb-hdf5"
+editable = true
+
+[tool.uv.sources.bsb-test]
+path = "../bsb-test"
+editable = true
+
+[tool.uv.sources.sphinxext-bsb]
+path = "../../libs/sphinxext-bsb"
+editable = true
+
+[tool.uv.sources.nrn-patch]
+path = "../../libs/nrn-patch"
+editable = true
+
+[tool.uv.sources.arborize]
+path = "../../libs/arborize"
+editable = true
+
+[tool.coverage.run]
+branch = true
+source = [ "bsb_neuron" ]
+
+[tool.coverage.report]
+exclude_lines = [ "if TYPE_CHECKING:" ]
+show_missing = true
+
+[tool.ruff]
+exclude = [ ".ruff_cache", ".svn", ".tox", ".venv", "dist" ]
+line-length = 90
+indent-width = 4
+
+  [tool.ruff.format]
+  quote-style = "double"
+  indent-style = "space"
+  skip-magic-trailing-comma = false
+  line-ending = "auto"
+  docstring-code-format = true
+  docstring-code-line-length = 90
+
+  [tool.ruff.lint]
+  select = [ "E", "F", "UP", "B", "SIM", "I" ]
+  ignore = [ ]
+  fixable = [ "ALL" ]
+  unfixable = [ ]

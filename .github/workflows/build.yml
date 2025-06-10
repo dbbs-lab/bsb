@@ -1,0 +1,69 @@
+name: Build and test BSB
+
+on:
+  workflow_call:
+    secrets:
+      CODECOV_TOKEN:
+        required: true
+
+env:
+  NEST_VERSION: 3.7
+  NEST_FOLDER: ${{ github.workspace }}/.nx/installation/nest
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      UV_PYTHON: ${{ matrix.python-version }}
+    strategy:
+      matrix:
+        python-version: [ "3.10", "3.11" ]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install apt dependencies
+        run: |
+          sudo apt update
+          # Install `libopenmpi` for MPI
+          sudo apt install openmpi-bin libopenmpi-dev
+          # Install `libhdf5` for `morphio`
+          sudo apt install libhdf5-dev
+          # Install `libgsl-dev` for conductance-based NEST models 
+          sudo apt install libgsl-dev
+
+      - name: Install nodejs
+        run: |
+          curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+          \. "$HOME/.nvm/nvm.sh"
+          nvm install --lts
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+
+      - name: Cache NEST
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.NEST_FOLDER }}
+          key: ${{ runner.os }}-${{ matrix.python-version }}-nest
+
+      - name: Derive appropriate SHAs for base and head for `nx affected` commands
+        uses: nrwl/nx-set-shas@v4
+
+      - name: Run unittests
+        env:
+          NX_DAEMON: false
+        run: ./nx affected -t test
+
+      - name: Send coverage
+        run: |
+          curl -Os https://cli.codecov.io/latest/linux/codecov
+          sudo chmod +x codecov
+          for package in $(./nx show projects --projects "packages/bsb-*" --affected)
+          do
+            ./codecov do-upload -e PYTHON=${{ matrix.python-version }} \
+                --disable-search -t ${{ secrets.CODECOV_TOKEN }} \
+                -f coverage/packages/${package}/coverage.xml -F ${package} \
+                --git-service github -r dbbs-lab/bsb -C $GITHUB_SHA
+          done

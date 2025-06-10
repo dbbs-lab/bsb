@@ -1,0 +1,23 @@
+name: Check public API
+
+on: [workflow_call]
+
+jobs:
+  check-api:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v5
+    - name: Install apt dependencies
+      run: |
+        sudo apt update
+        # Install `libopenmpi` for MPI
+        sudo apt install openmpi-bin libopenmpi-dev
+    - uses: nrwl/nx-set-shas@v4
+    - name: Check public APIs
+      run: ./nx affected -t check-api

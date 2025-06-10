@@ -1,0 +1,79 @@
+[build-system]
+requires = [ "flit_core >=3.2,<4" ]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "nrn-patch"
+version = "6.0.0-a18"
+readme = "README.md"
+dynamic = [ "description" ]
+classifiers = [
+  "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"
+]
+requires-python = ">=3.10,<4"
+dependencies = [
+  "nmodl-glia[neuron]~=6.0",
+  "packaging~=24.0",
+  "errr~=1.2",
+  "numpy~=1.21",
+  "neuron-nightly==9.0a1.dev1422; sys_platform != 'win32'"
+]
+
+  [[project.authors]]
+  name = "Robin De Schepper"
+  email = "robingilbert.deschepper@unipv.it"
+
+  [project.license]
+  file = "LICENSE"
+
+[project.entry-points."glia.package"]
+extensions = "patch.extensions:package"
+
+[project.optional-dependencies]
+parallel = [ "mpi4py~=3.0" ]
+
+[dependency-groups]
+test = [ "nrn-patch[parallel]", "coverage~=7.0" ]
+docs = [
+  "sphinx~=8.1",
+  "helveg--sphinx-code-tabs~=0.2",
+  "sphinx-rtd-theme~=3.0"
+]
+dev = [ "pre-commit~=3.5", "ruff>=0.8.2" ]
+
+[tool.uv]
+default-groups = ["dev", "docs", "test"]
+
+[tool.uv.sources.nmodl-glia]
+path = "../nmodl-glia"
+editable = true
+
+[tool.flit.module]
+name = "patch"
+
+[tool.coverage.run]
+branch = true
+source = [ "nrn_patch" ]
+
+[tool.coverage.report]
+exclude_lines = [ "if TYPE_CHECKING:" ]
+show_missing = true
+
+[tool.ruff]
+exclude = [ ".ruff_cache", ".svn", ".tox", ".venv", "dist" ]
+line-length = 90
+indent-width = 4
+
+  [tool.ruff.format]
+  quote-style = "double"
+  indent-style = "space"
+  skip-magic-trailing-comma = false
+  line-ending = "auto"
+  docstring-code-format = true
+  docstring-code-line-length = 90
+
+  [tool.ruff.lint]
+  select = [ "E", "F", "UP", "B", "SIM", "I" ]
+  ignore = [ "F822" ]
+  fixable = [ "ALL" ]
+  unfixable = [ ]

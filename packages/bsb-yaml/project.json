@@ -1,0 +1,120 @@
+{
+  "name": "bsb-yaml",
+  "$schema": "../../.nx/installation/node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "packages/bsb-yaml/bsb_yaml",
+  "targets": {
+    "lock": {
+      "executor": "@nxlv/python:lock",
+      "options": {
+        "update": false
+      }
+    },
+    "sync": {
+      "executor": "@nxlv/python:sync",
+      "options": {}
+    },
+    "add": {
+      "executor": "@nxlv/python:add",
+      "options": {}
+    },
+    "update": {
+      "executor": "@nxlv/python:update",
+      "options": {}
+    },
+    "remove": {
+      "executor": "@nxlv/python:remove",
+      "options": {}
+    },
+    "build": {
+      "executor": "@nxlv/python:build",
+      "outputs": ["{projectRoot}/dist"],
+      "options": {
+        "outputPath": "{projectRoot}/dist",
+        "publish": true,
+        "lockedVersions": false,
+        "bundleLocalDependencies": false
+      },
+      "cache": true
+    },
+    "lint": {
+      "executor": "@nxlv/python:ruff-check",
+      "outputs": [],
+      "options": {
+        "lintFilePatterns": ["bsb_yaml", "tests"]
+      },
+      "cache": true
+    },
+    "format": {
+      "executor": "@nxlv/python:ruff-format",
+      "outputs": [],
+      "options": {
+        "filePatterns": ["bsb_yaml", "tests"]
+      },
+      "cache": true
+    },
+    "test": {
+      "executor": "@nxlv/python:run-commands",
+      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "options": {
+        "commands": [
+          "npx rimraf .coverage*",
+          "uv run coverage run -p -m unittest discover -v -s ./tests",
+          "mpiexec -n 2 uv run coverage run -p -m unittest discover -v -s ./tests",
+          "uv run coverage combine",
+          "uv run coverage xml -i -o ../../coverage/packages/bsb-yaml/coverage.xml",
+          "uv run coverage html -i -d ../../coverage/packages/bsb-yaml/html"
+        ],
+        "parallel": false,
+        "cwd": "{projectRoot}"
+      },
+      "cache": true
+    },
+    "iso-docs": {
+      "executor": "@nxlv/python:run-commands",
+      "outputs": ["{projectRoot}/docs/_build/iso-html"],
+      "options": {
+        "commands": [
+          "npx rimraf _build/iso-html/",
+          "uv run sphinx-build -b html . _build/iso-html"
+        ],
+        "parallel": false,
+        "cwd": "{projectRoot}/docs/"
+      },
+      "cache": true
+    },
+    "docs": {
+      "dependsOn": ["bsb-core:iso-docs"],
+      "executor": "@nxlv/python:run-commands",
+      "outputs": ["{projectRoot}/docs/_build/html"],
+      "options": {
+        "commands": [
+          "npx rimraf _build/html/",
+          "npx cross-env BSB_LOCAL_INTERSPHINX_ONLY=true uv run sphinx-build -nW -b html . _build/html"
+        ],
+        "cwd": "{projectRoot}/docs/"
+      },
+      "cache": true
+    },
+    "install": {
+      "executor": "@nxlv/python:install",
+      "options": {
+        "silent": false,
+        "args": "",
+        "verbose": false,
+        "debug": false
+      }
+    },
+    "nx-release-publish": {
+      "executor": "@nxlv/python:publish",
+      "options": {},
+      "outputs": []
+    }
+  },
+  "tags": [],
+  "release": {
+    "version": {
+      "generator": "@nxlv/python:release-version"
+    }
+  }
+}

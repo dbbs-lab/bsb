@@ -1,0 +1,17 @@
+[build-system]
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
+
+[project]
+name = "{{cookiecutter.project_slug}}"
+authors = [{name = "{{cookiecutter.full_name}}", email = "{{cookiecutter.email}}"}]
+readme = "README.rst"
+license = {file = "LICENSE"}
+dynamic = ["version", "description"]
+dependencies = ["{{cookiecutter._glia.specifier}}"]
+
+[project.entry-points."glia.package"]
+"{{cookiecutter.project_slug}}" = "{{cookiecutter.project_slug}}:package"
+
+[tool.glia.package]
+mod-dir = "mods"

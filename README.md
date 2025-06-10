@@ -1,131 +1,137 @@
-[![Build Status](https://github.com/dbbs-lab/bsb/actions/workflows/main.yml/badge.svg)](https://github.com/dbbs-lab/bsb/actions/workflows/main.yml)
-# Brain Scaffold Builder suite
-Developed by the Department of Brain and Behavioral Sciences at the University of Pavia, 
-the Brain Scaffold Builder (BSB) is a component framework for neural modelling, which focuses on component 
-declarations to piece together a brain model. 
-The component declarations can be made in any supported configuration language, 
-or using the library functions in Python. 
-It offers parallel reconstruction and simulation of any network topology, placement and/or connectivity 
-strategy.
+The Brain Scaffold Builder (BSB) suite has transitioned to a monorepo structure, consolidating various components into a
+unified repository. Below is a revised `README.md` tailored for the monorepo setup:
 
-BSB is decomposed into several repositories:
-- [bsb-core](#bsb-core) — Install the bsb framework. Core component of the `bsb` suite.
-- [bsb-hdf5](#bsb-hdf5) — Leverage the hdf5 file format to save the models.
-- [bsb-json](#bsb-json) — Read and write configuration files in json format. 
-- [bsb-yaml](#bsb-yaml) — Read and write configuration files in yaml format
-- [bsb-nest](#bsb-nest) — Simulate brain models as point-neuron networks with the NEST simulator.
-- [bsb-neuron](#bsb-neuron) — Simulate brain models as detailed neuron networks with the NEURON simulator.
-- [bsb-arbor](#bsb-arbor) — Simulate brain models as detailed neuron networks with the ARBOR simulator.
+---
+
+# The Brain Scaffold Builder
+
+![Build Status](https://github.com/dbbs-lab/bsb/actions/workflows/main.yml/badge.svg)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+
+Developed by the Department of Brain and Behavioral Sciences at the University of Pavia, the Brain Scaffold Builder (
+BSB) is a component framework for neural modeling. It emphasizes modular component declarations to assemble brain
+models, supporting various configuration languages and Python library functions. BSB facilitates parallel reconstruction
+and simulation of diverse network topologies, placements, and connectivity strategies.
+
+## Monorepo Structure
+
+The BSB suite is now organized as a monorepo, integrating the following components:
+
+* **bsb-core**: The foundational framework of BSB.
+* **bsb-hdf5**: Storage engine for saving models in HDF5 format.
+* **bsb-json**: Parser for reading and writing JSON configuration files.
+* **bsb-yaml**: Parser for reading and writing YAML configuration files.
+* **bsb-nest**: Simulation interface for point-neuron networks using the NEST simulator.
+* **bsb-neuron**: Simulation interface for detailed neuron networks using the NEURON simulator.
+* **bsb-arbor**: Simulation interface for detailed neuron networks using the ARBOR simulator.
+* **arborize**: Tool for Arbor-like descriptions of cell models for NEURON.
+* **bsb-test**: Tools and configurations for testing BSB components.
+* **sphinxext-bsb**: Sphinx extension for BSB documentation.
 
 ## Installation
-This repository contains the metadata for the `bsb` package.
-It is highly recommended that you create a python environment before installing the `bsb` package.
-BSB currently supports python 3.9, 3.10 and 3.11.
-With the `bsb` package will be installed the
-[bsb-core](#bsb-core) framework and the following default set of plugins:
-- [bsb-hdf5](#bsb-hdf5)
-- [bsb-json](#bsb-json)
-- [bsb-yaml](#bsb-yaml)
 
-You can install these python libraries with the following command:
-```shell
+### Pip installation
+
+The BSB supports Python 3.10 and above. To install the BSB suite along with the core framework and default plugins:
+
+```bash
 pip install bsb
 ```
-Check also the following sections to install the other bsb plugin.
 
-## BSB repositories
-### bsb-core
+For advanced users desiring a custom combination of plugins, install `bsb-core` and the desired plugins separately:
 
-Useful links:
-[GitHub repo](https://github.com/dbbs-lab/bsb-core),
-
-This project contains the main `bsb` framework and is needed by all the other repositories.
-It also contains tools to support parallel execution with MPI. To install this support, run the following command:
-```shell
-pip install bsb[parallel]
+```bash
+pip install bsb-core
+pip install bsb-hdf5 bsb-json bsb-yaml
 ```
 
-### bsb-hdf5
+To include simulation support for NEST, NEURON, or ARBOR:
 
-Useful links:
-[GitHub repo](https://github.com/dbbs-lab/bsb-hdf5).
-
-This project allows the user to save their model into the hdf5 file format. 
-This plugin is installed by default with the `bsb` package.
-
-### bsb-json
-
-Useful links:
-[GitHub repo](https://github.com/dbbs-lab/bsb-json).
-
-This project allows the user to write their model configuration in the json file format. 
-This plugin is installed by default with the `bsb` package.
-
-### bsb-yaml
-
-Useful links:
-[GitHub repo](https://github.com/dbbs-lab/bsb-yaml).
-
-This project allows the user to write their model configuration in the yaml file format. 
-This plugin is installed by default with the `bsb` package.
-
-### bsb-nest
-
-Useful links:
-[GitHub repo](https://github.com/dbbs-lab/bsb-nest).
-
-This project allows the user to simulate their brain model as point-neuron networks with the 
-[NEST simulator](https://www.nest-simulator.org/).
-This plugin is not installed by default with the `bsb` package. To install it, you can run the following command:
-
-```shell
+```bash
 pip install bsb[nest]
-```
-> [!WARNING]
-> The NEST simulator is not installed with the bsb-nest package and should be installed separately.
-
-### bsb-neuron
-
-Useful links:
-[GitHub repo](https://github.com/dbbs-lab/bsb-neuron).
-
-This project allows the user to simulate their brain model as detailed neural circuits with the 
-[NEURON simulator](https://www.neuron.yale.edu/neuron/).
-This plugin is not installed by default with the `bsb` package. To install it, you can run the following command:
-```shell
 pip install bsb[neuron]
-```
-
-### bsb-arbor
-
-Useful links:
-[GitHub repo](https://github.com/dbbs-lab/bsb-arbor).
-
-This project allows the user to simulate their brain model as detailed neural circuits with the 
-[ARBOR simulator](https://arbor-sim.org/).
-This plugin is not installed by default with the `bsb` package. To install it, you can run the following command:
-```shell
 pip install bsb[arbor]
 ```
 
-## Running bsb reconstructions and simulations
-Check BSB [Documentation](https://bsb.readthedocs.io/en/latest).
+### Clone installation
+
+You can also clone the repository and use the devtools script to install all packages in editable mode 
+in your own environment:
+
+```bash
+git clone https://github.com/dbbs-lab/bsb
+cd bsb
+pip install -r devtools/editable-install.txt
+```
+
+### Developer installation
+
+For development purposes, you should install the [UV](https://nx.dev/) and [NX](https://docs.astral.sh/uv/) tools.
+To this end, there is a helper script for each platform in ``devtools/bootstrap-*``. For instance, for linux:
+```bash
+./devtools/bootstrap-linux.sh
+```
+
+Then, initialize the NX monorepo with the following command
+
+```bash
+./nx init
+```
+From there, you NX and UV will automatically create an environment for each subpackage, 
+including all necessary libraries for running the unittests, linting the code and building the documentation.
+
+For more information, please refer to the [developers' documentation](https://bsb.readthedocs.io/en/latest/dev/dev-toc.html).
+
+## Usage
+
+To create a new BSB project:
+
+```bash
+bsb new my_model --quickstart
+cd my_model
+```
+
+This command generates a `my_model` directory with starter files:
+
+* `network_configuration.yaml`: Defines the network configuration.
+* `pyproject.toml`: Contains project metadata and configuration.
+* `placement.py` and `connectome.py`: Custom components for network placement and connectivity.
+
+To compile the network:
+
+```bash
+bsb compile
+```
+
+For simulation, refer to the documentation for configuring simulations with NEST, NEURON, or ARBOR.
+
+## Documentation
+
+Comprehensive documentation is available at:
+
+* [BSB Documentation](https://bsb.readthedocs.io/en/latest)
+
+## Contributing
+
+All contributions are very much welcome.
+Take a look at the [contribution guide](CONTRIBUTING.md)
 
 ## Acknowledgements
 
-This research has received funding from the European Union’s Horizon 2020 Framework
-Program for Research and Innovation under the Specific Grant Agreement No. 945539
-(Human Brain Project SGA3) and Specific Grant Agreement No. 785907 (Human Brain
-Project SGA2) and from Centro Fermi project “Local Neuronal Microcircuits” to ED. 
-The project is also receiving funding from the Virtual Brain Twin Project under the 
-European Union's Research and Innovation Program Horizon Europe under grant agreement 
-No 101137289. 
+This research has received funding from the European Union’s Horizon 2020 Framework Program for Research and Innovation
+under the Specific Grant Agreements No. 945539 (Human Brain Project SGA3) and No. 785907 (Human Brain Project SGA2), as
+well as from the Centro Fermi project “Local Neuronal Microcircuits” to ED. The project also receives funding from the
+Virtual Brain Twin Project under the European Union's Horizon Europe program under grant agreement No. 101137289.
 
-We acknowledge the use of EBRAINS platform and Fenix Infrastructure resources, which are
-partially funded from the European Union’s Horizon 2020 research and innovation
-programme under the Specific Grant Agreement No. 101147319 (EBRAINS 2.0 Project) and 
-through the ICEI project under the grant agreement No. 800858 respectively.
+We acknowledge the use of the EBRAINS platform and Fenix Infrastructure resources, which are partially funded by the
+European Union’s Horizon 2020 research and innovation program under the Specific Grant Agreement No. 101147319 (EBRAINS
+2.0 Project) and through the ICEI project under grant agreement No. 800858, respectively.
 
-### Supported by
+## Supported by
 
 [![JetBrains logo](https://resources.jetbrains.com/storage/products/company/brand/logos/jetbrains.svg)](https://jb.gg/OpenSourceSupport)
+
+---
+
+This README.md provides an overview of the BSB suite in its current monorepo format, detailing installation procedures,
+usage guidelines, and acknowledgements.

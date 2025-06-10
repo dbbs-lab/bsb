@@ -1,0 +1,98 @@
+[build-system]
+build-backend = "setuptools.build_meta"
+requires = [ "setuptools" ]
+
+[project]
+name = "bsb"
+version = "6.0.0-a18"
+readme = "README.md"
+requires-python = ">=3.10,<4"
+description = "Black-box component framework for multiscale neural modeling"
+classifiers = [
+  "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"
+]
+dependencies = [
+  "bsb-core~=6.0",
+  "bsb-hdf5~=6.0",
+  "bsb-json~=6.0",
+  "bsb-yaml~=6.0"
+]
+
+  [[project.authors]]
+  name = "Robin De Schepper"
+  email = "robin@alexandria.sc"
+
+  [[project.authors]]
+  name = "Dimitri Rodarie"
+  email = "dimitri.rodarie@unipv.it"
+
+  [[project.maintainers]]
+  name = "Dimitri Rodarie"
+  email = "dimitri.rodarie@unipv.it"
+
+  [project.license]
+  file = "LICENSE"
+
+  [project.optional-dependencies]
+  parallel = [ "bsb-core[parallel]" ]
+  neuron = [ "bsb-neuron~=6.0" ]
+  nest = [ "bsb-nest~=6.0" ]
+  arbor = [ "bsb-arbor~=6.0" ]
+
+  [project.urls]
+  Home = "https://github.com/dbbs-lab/bsb"
+  Documentation = "https://bsb.readthedocs.io/"
+  "Bug Tracker" = "https://github.com/dbbs-lab/bsb/issues/"
+  "Source Code" = "https://github.com/dbbs-lab/bsb/"
+
+[dependency-groups]
+dev = [
+  "bsb[parallel,arbor,nest,neuron]",
+  "gitdb>=4.0.12",
+  "gitpython>=3.1.44",
+  "smmap>=5.0.2"
+]
+docs = [
+  "furo~=2024.0",
+  "sphinxemoji~=0.3",
+  "sphinx-copybutton~=0.5",
+  "sphinxext-bsb~=6.0"
+]
+
+[tool.uv]
+default-groups = ["dev", "docs"]
+
+[tool.setuptools]
+packages = [ ]
+
+[tool.uv.sources.bsb-nest]
+path = "../bsb-nest"
+editable = true
+
+[tool.uv.sources.bsb-neuron]
+path = "../bsb-neuron"
+editable = true
+
+[tool.uv.sources.bsb-core]
+path = "../bsb-core"
+editable = true
+
+[tool.uv.sources.bsb-hdf5]
+path = "../bsb-hdf5"
+editable = true
+
+[tool.uv.sources.bsb-json]
+path = "../bsb-json"
+editable = true
+
+[tool.uv.sources.bsb-yaml]
+path = "../bsb-yaml"
+editable = true
+
+[tool.uv.sources.bsb-arbor]
+path = "../bsb-arbor"
+editable = true
+
+[tool.uv.sources.sphinxext-bsb]
+path = "../../libs/sphinxext-bsb"
+editable = true

@@ -1,0 +1,95 @@
+{
+  "name": "bsb",
+  "$schema": "../../.nx/installation/node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "./",
+  "targets": {
+    "lock": {
+      "executor": "@nxlv/python:lock",
+      "options": {
+        "update": false
+      }
+    },
+    "sync": {
+      "executor": "@nxlv/python:sync",
+      "options": {}
+    },
+    "add": {
+      "executor": "@nxlv/python:add",
+      "options": {}
+    },
+    "update": {
+      "executor": "@nxlv/python:update",
+      "options": {}
+    },
+    "remove": {
+      "executor": "@nxlv/python:remove",
+      "options": {}
+    },
+    "build": {
+      "executor": "@nxlv/python:build",
+      "outputs": ["{projectRoot}/dist"],
+      "options": {
+        "outputPath": "{projectRoot}/dist",
+        "publish": true,
+        "lockedVersions": false,
+        "bundleLocalDependencies": false
+      },
+      "cache": true
+    },
+    "iso-docs": {
+      "executor": "@nxlv/python:run-commands",
+      "outputs": ["{projectRoot}/docs/_build/iso-html"],
+      "options": {
+        "commands": [
+          "npx rimraf _build/iso-html/",
+          "uv run sphinx-build -v -b html . _build/iso-html"
+        ],
+        "cwd": "{projectRoot}/docs/"
+      },
+      "cache": true
+    },
+    "docs": {
+      "dependsOn": [
+        "bsb-arbor:iso-docs",
+        "bsb-core:iso-docs",
+        "bsb-hdf5:iso-docs",
+        "bsb-json:iso-docs",
+        "bsb-nest:iso-docs",
+        "bsb-neuron:iso-docs",
+        "bsb-test:iso-docs",
+        "bsb-yaml:iso-docs"
+      ],
+      "executor": "@nxlv/python:run-commands",
+      "outputs": ["{projectRoot}/docs/_build/html"],
+      "options": {
+        "commands": [
+          "npx rimraf _build/html/",
+          "npx cross-env BSB_LOCAL_INTERSPHINX_ONLY=true uv run sphinx-build -nW -b html . _build/html"
+        ],
+        "cwd": "{projectRoot}/docs/"
+      },
+      "cache": true
+    },
+    "install": {
+      "executor": "@nxlv/python:install",
+      "options": {
+        "silent": false,
+        "args": "",
+        "verbose": false,
+        "debug": false
+      }
+    },
+    "nx-release-publish": {
+      "executor": "@nxlv/python:publish",
+      "options": {},
+      "outputs": []
+    }
+  },
+  "tags": [],
+  "release": {
+    "version": {
+      "generator": "@nxlv/python:release-version"
+    }
+  }
+}

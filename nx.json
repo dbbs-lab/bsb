@@ -1,0 +1,49 @@
+{
+  "installation": {
+    "version": "21.1.3",
+    "plugins": {
+      "@nxlv/python": "21.0.2"
+    }
+  },
+  "plugins": [
+    {
+      "plugin": "@nxlv/python",
+      "options": {
+        "packageManager": "uv"
+      }
+    }
+  ],
+  "release": {
+    "projects": ["*"],
+    "changelog": {
+      "projectChangelogs": true,
+      "workspaceChangelog": {
+        "createRelease": "github",
+        "file": "CHANGELOG.md"
+      }
+    },
+    "git": {
+      "commit": true,
+      "tag": true,
+      "commitMessage": "chore(release): {version} [skip ci]"
+    },
+    "version": {
+      "conventionalCommits": true,
+      "versionActions": "@nxlv/python/src/release/version-actions"
+    }
+  },
+  "generators": {
+    "@nxlv/python:uv-project": {
+      "projectType": "library",
+      "pyprojectPythonDependency": ">=3.9,<3.12",
+      "pyenvPythonVersion": "3.10.12",
+      "publishable": true,
+      "buildBundleLocalDependencies": false,
+      "buildLockedVersions": false,
+      "linter": "ruff",
+      "unitTestRunner": "pytest",
+      "codeCoverage": true
+    }
+  },
+  "$schema": "./.nx/installation/node_modules/nx/schemas/project-schema.json"
+}

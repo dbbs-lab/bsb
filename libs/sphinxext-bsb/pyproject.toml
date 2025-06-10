@@ -1,0 +1,63 @@
+[tool.coverage.run]
+branch = true
+source = [ "sphinxext_bsb" ]
+
+[tool.coverage.report]
+exclude_lines = [ "if TYPE_CHECKING:" ]
+show_missing = true
+
+[tool.pytest.ini_options]
+addopts = """
+ --cov
+ --cov-report html:'../coverage/sphinxext-bsb/html'
+ --cov-report xml:'../coverage/sphinxext-bsb/coverage.xml'
+ --html='../reports/sphinxext-bsb/unittests/html/index.html'
+ --junitxml='../reports/sphinxext-bsb/unittests/junit.xml'
+"""
+
+[tool.flit.module]
+name = "sphinxext.bsb"
+
+[tool.ruff]
+exclude = [ ".ruff_cache", ".svn", ".tox", ".venv", "dist" ]
+line-length = 90
+indent-width = 4
+
+  [tool.ruff.format]
+  quote-style = "double"
+  indent-style = "space"
+  skip-magic-trailing-comma = false
+  line-ending = "auto"
+  docstring-code-format = true
+  docstring-code-line-length = 90
+
+  [tool.ruff.lint]
+  select = [ "E", "F", "UP", "B", "SIM", "I" ]
+  ignore = [ ]
+  fixable = [ "ALL" ]
+  unfixable = [ ]
+
+[tool.uv.sources.bsb-core]
+path = "../../packages/bsb-core"
+editable = true
+
+[project]
+name = "sphinxext-bsb"
+version = "6.0.0-a18"
+description = "BSB Sphinx documentation extension"
+requires-python = ">=3.10,<4"
+readme = "README.md"
+classifiers = [
+  "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"
+]
+dependencies = [ "bsb-core~=6.0", "sphinx>=8.1", "sphinx-design~=0.6" ]
+
+  [project.license]
+  file = "LICENSE"
+
+[dependency-groups]
+dev = [ "autopep8>=2.3.1", "ruff>=0.8.2", "pre-commit~=3.5" ]
+
+[build-system]
+requires = [ "flit_core >=3.2,<4" ]
+build-backend = "flit_core.buildapi"

@@ -53,7 +53,10 @@ jobs:
         uses: astral-sh/setup-uv@v5
 
       - name: Nx Release flow
+        env:
+          UV_PUBLISH_TOKEN: ${{ secrets.UV_PUBLISH_TOKEN }}
+          NX_DAEMON: false
         run: |
           git config --global user.email "dbbs-lab@cerebhub.eu"
           git config --global user.name "DBBS Laboratory"
-          UV_PUBLISH_TOKEN=${{ secrets.UV_PUBLISH_TOKEN }} ./nx release 6.0.0-a14 --yes --verbose
+          ./nx release 6.0.0-a15 --yes --verbose

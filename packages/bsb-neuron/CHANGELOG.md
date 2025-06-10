@@ -1,3 +1,7 @@
+## 6.0.0-a6 (2025-06-10)
+
+This was a version bump only for bsb-neuron to align it with other projects, there were no code changes.
+
 ## [v4.2.2] - 2025-01-07
 ### :bug: Bug Fixes
 - [`3d76d36`](https://github.com/dbbs-lab/bsb-neuron/commit/3d76d36476a73b0c714a15f1334e17df5ff844dc) - BSB version dependencies *(PR [#25](https://github.com/dbbs-lab/bsb-neuron/pull/25) by [@drodarie](https://github.com/drodarie))*

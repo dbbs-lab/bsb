@@ -1,3 +1,7 @@
+## 6.0.0-a6 (2025-06-10)
+
+This was a version bump only for bsb-core to align it with other projects, there were no code changes.
+
 ## [v5.1.1] - 2025-03-28
 ### :bug: Bug Fixes
 - [`e7635d1`](https://github.com/dbbs-lab/bsb-core/commit/e7635d19b0094b026163907b69f1b0f2a7a35425) - ref parsing when key is deep *(PR [#917](https://github.com/dbbs-lab/bsb-core/pull/917) by [@drodarie](https://github.com/drodarie))*

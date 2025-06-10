@@ -1,3 +1,7 @@
+## 6.0.0-a6 (2025-06-10)
+
+This was a version bump only for bsb-arbor to align it with other projects, there were no code changes.
+
 ## [v4.1.1] - 2025-01-07
 ### :bug: Bug Fixes
 - [`f7de054`](https://github.com/dbbs-lab/bsb-arbor/commit/f7de054c985ea1f41f81117e9951f35c558c700a) - BSB version dependencies *(PR [#5](https://github.com/dbbs-lab/bsb-arbor/pull/5) by [@drodarie](https://github.com/drodarie))*

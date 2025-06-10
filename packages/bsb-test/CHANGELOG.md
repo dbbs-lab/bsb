@@ -1,3 +1,7 @@
+## 6.0.0-a6 (2025-06-10)
+
+This was a version bump only for bsb-test to align it with other projects, there were no code changes.
+
 ## [v4.2.3] - 2025-03-03
 ### :bug: Bug Fixes
 - [`5e6650d`](https://github.com/dbbs-lab/bsb-test/commit/5e6650dd9d6190b7ab5a411d66f5cad2a75e751b) - using isort 6.0.0 and black 25.1.0 *(PR [#11](https://github.com/dbbs-lab/bsb-test/pull/11) by [@drodarie](https://github.com/drodarie))*

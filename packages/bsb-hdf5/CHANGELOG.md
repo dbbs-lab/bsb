@@ -1,3 +1,7 @@
+## 6.0.0-a6 (2025-06-10)
+
+This was a version bump only for bsb-hdf5 to align it with other projects, there were no code changes.
+
 
 ## [v5.0.4] - 2025-03-03
 ### :bug: Bug Fixes

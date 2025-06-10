@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     branches:
-      - monorepo-deep
+      - monorepo
 
 jobs:
 #  check-api:

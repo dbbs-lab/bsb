@@ -54,9 +54,6 @@ jobs:
           sudo chmod +x codecov
           for package in $(./nx show projects --projects "packages/bsb-*" --affected)
           do
-            ./codecov do-upload -e PYTHON=${{ matrix.python-version }} \
-                --disable-search -t ${{ secrets.CODECOV_TOKEN }} \
-                -f coverage/packages/${package}/coverage.xml -F ${package} \
-                --git-service github -r dbbs-lab/bsb -C $GITHUB_SHA
-      
+            echo "Upload ${package}-${{ matrix.python-version }} on codecov for $GITHUB_SHA"
+            ./codecov do-upload -e PYTHON=${{ matrix.python-version }} --disable-search -t ${{ secrets.CODECOV_TOKEN }} -f coverage/packages/${package}/coverage.xml -F ${package} --git-service github -r dbbs-lab/bsb -C $GITHUB_SHA
           done

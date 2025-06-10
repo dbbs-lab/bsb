@@ -57,5 +57,6 @@ jobs:
             ./codecov do-upload -e PYTHON=${{ matrix.python-version }} \
                 --disable-search -t ${{ secrets.CODECOV_TOKEN }} \
                 -f coverage/packages/${package}/coverage.xml -F ${package} \
-                --git-service github -r dbbs-lab/bsb -C $GITHUB_SHA --verbose
+                --git-service github -r dbbs-lab/bsb -C $GITHUB_SHA
+      
           done

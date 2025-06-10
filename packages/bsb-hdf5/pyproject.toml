@@ -24,7 +24,7 @@ dependencies = [ "bsb-core" ]
   [project.license]
   file = "LICENSE"
 
-  [project.optional-dependencies]
+[dependency-groups]
   test = [ "bsb-core[parallel]", "bsb-test", "coverage>=7.3" ]
   docs = [
   "sphinxemoji~=0.2",
@@ -33,13 +33,13 @@ dependencies = [ "bsb-core" ]
   "sphinx-copybutton~=0.5",
   "sphinxext-bsb~=6.0"
 ]
-  dev = [ "bsb-hdf5[test,docs]", "pre-commit~=3.5", "ruff>=0.8.2" ]
+  dev = [ "pre-commit~=3.5", "ruff>=0.8.2" ]
+
+[tool.uv]
+default-groups = ["dev", "docs", "test"]
 
 [project.entry-points."bsb.storage.engines"]
 hdf5 = "bsb_hdf5"
-
-[dependency-groups]
-dev = [ "bsb-hdf5[dev]" ]
 
 [tool.flit.module]
 name = "bsb_hdf5"

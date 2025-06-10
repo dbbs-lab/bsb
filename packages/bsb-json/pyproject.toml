@@ -24,19 +24,19 @@ dependencies = [ "bsb-core~=6.0" ]
   [project.license]
   file = "LICENSE"
 
-  [project.optional-dependencies]
+[dependency-groups]
   test = [ "bsb-core[parallel]", "bsb-test~=4.0", "coverage>=7.3" ]
   docs = [ "furo~=2024.0", "sphinxext-bsb~=6.0" ]
-  dev = [ "bsb-json[test,docs]", "pre-commit~=3.5", "ruff>=0.8.2" ]
+  dev = [ "pre-commit~=3.5", "ruff>=0.8.2" ]
+
+[tool.uv]
+default-groups = ["dev", "docs", "test"]
 
 [project.entry-points."bsb.config.parsers"]
 json = "bsb_json.parser"
 
 [project.entry-points."bsb.config.templates"]
 json_templates = "bsb_json.templates"
-
-[dependency-groups]
-dev = [ "bsb-json[dev]" ]
 
 [tool.flit.module]
 name = "bsb_json"

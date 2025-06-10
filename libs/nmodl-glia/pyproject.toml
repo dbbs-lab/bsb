@@ -34,16 +34,18 @@ dependencies = [
   parallel = [ "mpi4py~=3.0" ]
   neuron = [ "nrn-patch~=6.0" ]
   arbor = [ "arbor~=0.10" ]
-  docs = [
+
+[dependency-groups]
+docs = [
   "sphinx~=8.1",
   "furo~=2024.0",
   "sphinxemoji~=0.2",
   "sphinx_design~=0.5",
   "sphinx-copybutton~=0.5"
 ]
-  test = [ "nmodl-glia[parallel]", "coverage~=7.0" ]
-  dev = [
-  "nmodl-glia[neuron,arbor,test,docs]",
+test = [ "nmodl-glia[parallel]", "coverage~=7.0" ]
+dev = [
+  "nmodl-glia[neuron,arbor]",
   "pre-commit~=3.5",
   "ruff>=0.8.2"
 ]
@@ -51,8 +53,8 @@ dependencies = [
   [project.scripts]
   glia = "glia._cli:glia"
 
-[dependency-groups]
-dev = [ "nmodl-glia[dev]" ]
+[tool.uv]
+default-groups = ["dev", "docs", "test"]
 
 [tool.uv.sources.nrn-patch]
 path = "../nrn-patch"

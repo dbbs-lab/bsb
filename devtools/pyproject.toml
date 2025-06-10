@@ -1,5 +1,5 @@
 [project]
-name = ""
+name = "bsb-monorepo"
 version = "0"
 description = """
     This is a monorepo-only meta-package for package managers,
@@ -23,14 +23,16 @@ dependencies = [
 ]
 
 [tool.uv.sources]
-bsb-core = { path = "../packages/bsb-core", editable = true }
-sphinxext-bsb = { path = "../libs/sphinxext-bsb", editable = true }
-bsb-hdf5 = { path = "../packages/bsb-hdf5", editable = true }
+bsb = { path = "../packages/bsb", editable = true }
 bsb-arbor = { path = "../packages/bsb-arbor", editable = true }
+bsb-core = { path = "../packages/bsb-core", editable = true }
+bsb-hdf5 = { path = "../packages/bsb-hdf5", editable = true }
+bsb-nest = { path = "../packages/bsb-nest", editable = true }
+bsb-neuron = { path = "../packages/bsb-neuron", editable = true }
 bsb-json = { path = "../packages/bsb-json", editable = true }
 bsb-test = { path = "../packages/bsb-test", editable = true }
 bsb-yaml = { path = "../packages/bsb-yaml", editable = true }
-bsb = { path = "../packages/bsb", editable = true }
+sphinxext-bsb = { path = "../libs/sphinxext-bsb", editable = true }
 nrn-patch = { path = "../libs/nrn-patch", editable = true }
 nmodl-glia = { path = "../libs/nmodl-glia", editable = true }
 arborize = { path = "../libs/arborize", editable = true }

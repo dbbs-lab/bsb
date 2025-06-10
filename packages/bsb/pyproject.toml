@@ -38,17 +38,6 @@ dependencies = [
   neuron = [ "bsb-neuron~=6.0" ]
   nest = [ "bsb-nest~=6.0" ]
   arbor = [ "bsb-arbor~=6.0" ]
-  dev = [
-  "bsb-core[dev]",
-  "bsb-hdf5[dev]",
-  "bsb-json[dev]",
-  "bsb-yaml[dev]",
-  "bsb-arbor[dev]; sys_platform != 'win32'",
-  "bsb-test[dev]",
-  "gitdb>=4.0.12",
-  "gitpython>=3.1.44",
-  "smmap>=5.0.2"
-]
 
   [project.urls]
   Home = "https://github.com/dbbs-lab/bsb"
@@ -57,7 +46,21 @@ dependencies = [
   "Source Code" = "https://github.com/dbbs-lab/bsb/"
 
 [dependency-groups]
-dev = [ "bsb[dev]" ]
+dev = [
+  "bsb[parallel,arbor,nest,neuron]",
+  "gitdb>=4.0.12",
+  "gitpython>=3.1.44",
+  "smmap>=5.0.2"
+]
+docs = [
+  "furo~=2024.0",
+  "sphinxemoji~=0.3",
+  "sphinx-copybutton~=0.5",
+  "sphinxext-bsb~=6.0"
+]
+
+[tool.uv]
+default-groups = ["dev", "docs"]
 
 [tool.setuptools]
 packages = [ ]
@@ -90,6 +93,6 @@ editable = true
 path = "../bsb-arbor"
 editable = true
 
-[tool.uv.sources.bsb-test]
-path = "../bsb-test"
+[tool.uv.sources.sphinxext-bsb]
+path = "../../libs/sphinxext-bsb"
 editable = true

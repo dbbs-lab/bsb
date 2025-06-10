@@ -18,15 +18,15 @@
 #
 # uv pip install -r ./devtools/editable-install.txt
 
--e ./libs/nmodl-glia[dev]
--e ./libs/nrn-patch[dev]
--e ./libs/arborize[dev]
--e ./libs/sphinxext-bsb[dev]
--e ./packages/bsb-core[dev]
--e ./packages/bsb-hdf5[dev]
--e ./packages/bsb-json[dev]
--e ./packages/bsb-yaml[dev]
--e ./packages/bsb-arbor[dev]
--e ./packages/bsb-nest[dev]
--e ./packages/bsb-neuron[dev]
--e ./packages/bsb-test[dev]
+-e ./libs/nmodl-glia
+-e ./libs/nrn-patch
+-e ./libs/arborize
+-e ./libs/sphinxext-bsb
+-e ./packages/bsb-core[parallel]
+-e ./packages/bsb-hdf5
+-e ./packages/bsb-json
+-e ./packages/bsb-yaml
+-e ./packages/bsb-arbor
+-e ./packages/bsb-nest
+-e ./packages/bsb-neuron
+-e ./packages/bsb-test

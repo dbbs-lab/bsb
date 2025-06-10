@@ -24,18 +24,17 @@ dependencies = [ "bsb-core~=6.0" ]
   [project.license]
   file = "LICENSE"
 
-  [project.optional-dependencies]
+[dependency-groups]
   test = [ "bsb-core[parallel]", "bsb-hdf5~=6.0", "coverage>=7.3" ]
   docs = [ "furo~=2024.0", "sphinxext-bsb~=6.0" ]
   dev = [
-  "bsb-test[test,docs]",
   "pre-commit~=3.5",
   "ruff>=0.8.2",
   "snakeviz~=2.1"
 ]
 
-[dependency-groups]
-dev = [ "bsb-test[dev]" ]
+[tool.uv]
+default-groups = ["dev", "docs", "test"]
 
 [tool.flit.module]
 name = "bsb_test"

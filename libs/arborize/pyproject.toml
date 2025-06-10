@@ -15,8 +15,7 @@ dependencies = [
   "numpy~=1.21",
   "errr~=1.2",
   "morphio>=3.3.6,<4",
-  "sphinxext-bsb",
-  "bsb-core"
+  "bsb-core~=6.0"
 ]
 
   [[project.authors]]
@@ -31,21 +30,26 @@ dependencies = [
   bluepyopt = [ "bluepyopt~=1.14", "dill>=0.3.8" ]
   neuron = [ "nrn-patch~=6.0", "nmodl-glia[neuron]~=6.0" ]
   arbor = [ "arbor~=0.10", "nmodl-glia[arbor]~=6.0" ]
-  docs = [
+
+[dependency-groups]
+docs = [
   "sphinx~=8.1",
+  "sphinxext-bsb~=6.0",
   "furo~=2024.0",
   "sphinxemoji~=0.3",
   "sphinx-copybutton~=0.5"
 ]
-  test = [ "coverage~=7.0" ]
-  dev = [
-  "arborize[parallel,bluepyopt,neuron,arbor,docs,test]",
+test = [
+  "coverage~=7.0"
+]
+dev = [
+  "arborize[parallel,bluepyopt,neuron,arbor]",
   "pre-commit~=3.5",
   "ruff>=0.8.2"
 ]
 
-[dependency-groups]
-dev = [ "arborize[dev]" ]
+[tool.uv]
+default-groups = ["dev", "docs", "test"]
 
 [tool.uv.sources.sphinxext-bsb]
 path = "../sphinxext-bsb"

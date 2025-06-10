@@ -30,7 +30,7 @@ dependencies = [
   [project.license]
   file = "LICENSE"
 
-  [project.optional-dependencies]
+[dependency-groups]
   test = [
   "bsb-core[parallel]",
   "bsb-hdf5~=6.0",
@@ -45,11 +45,11 @@ dependencies = [
   "snakeviz~=2.1"
 ]
 
+[tool.uv]
+default-groups = ["dev", "docs", "test"]
+
 [project.entry-points."bsb.simulation_backends"]
 arbor = "bsb_arbor"
-
-[dependency-groups]
-dev = [ "bsb-arbor[dev]" ]
 
 [tool.flit.module]
 name = "bsb_arbor"

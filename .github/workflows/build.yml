@@ -52,6 +52,8 @@ jobs:
         uses: nrwl/nx-set-shas@v4
 
       - name: Run unittests
+        env:
+          NX_DAEMON: false
         run: ./nx affected -t test
 
       - name: Send coverage

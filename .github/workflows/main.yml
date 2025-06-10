@@ -53,4 +53,5 @@ jobs:
         run: |
           git config --global user.email "dbbs-lab@cerebhub.eu"
           git config --global user.name "DBBS Laboratory"
-          UV_PUBLISH_TOKEN=${{ secrets.UV_PUBLISH_TOKEN }} ./nx release 6.0.0-a12 --yes --verbose
+          ./nx run bsb-test:nx-release-publish
+#          UV_PUBLISH_TOKEN=${{ secrets.UV_PUBLISH_TOKEN }} ./nx release 6.0.0-a12 --yes --verbose

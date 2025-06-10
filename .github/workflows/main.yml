@@ -6,19 +6,7 @@ on:
       - monorepo
 
 jobs:
-#  check-api:
-#    uses: ./.github/workflows/check-api.yml
-#  build:
-#    uses: ./.github/workflows/build.yml
-#    secrets:
-#      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-#  docs:
-#    uses: ./.github/workflows/docs.yml
-#  ruff:
-#    uses: ./.github/workflows/ruff.yml
-
   release:
-#    needs: [build, docs, ruff, check-api]
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -61,4 +49,4 @@ jobs:
         run: |
           git config --global user.email "dbbs-lab@cerebhub.eu"
           git config --global user.name "DBBS Laboratory"
-          ./nx release 6.0.0-a17 --yes --verbose
+          ./nx release 6.0.0-a18 --yes --verbose

@@ -3,7 +3,7 @@ name: Release
 on:
   push:
     branches:
-      - monorepo
+      - main
 
 jobs:
   release:
@@ -21,11 +21,6 @@ jobs:
 
       - name: Set token to env
         run: echo "GITHUB_TOKEN=${{ steps.app-token.outputs.token }}" >> $GITHUB_ENV
-
-      - name: Use the token
-        run: echo "Token is set"
-        env:
-          GITHUB_TOKEN: ${{ env.GITHUB_TOKEN }}
 
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -49,4 +44,4 @@ jobs:
         run: |
           git config --global user.email "dbbs-lab@cerebhub.eu"
           git config --global user.name "DBBS Laboratory"
-          ./nx release 6.0.0-a18 --yes --verbose
+          ./nx release --yes --verbose

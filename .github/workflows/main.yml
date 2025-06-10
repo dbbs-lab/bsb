@@ -53,4 +53,4 @@ jobs:
         run: |
           git config --global user.email "dbbs-lab@cerebhub.eu"
           git config --global user.name "DBBS Laboratory"
-          ./nx release 6.0.0-a11 --yes --verbose
+          UV_PUBLISH_TOKEN=${{ secrets.UV_PUBLISH_TOKEN }} ./nx release 6.0.0-a12 --yes --verbose --skip

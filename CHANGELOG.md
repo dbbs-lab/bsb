@@ -1,3 +1,42 @@
+## 6.0.0-a4 (2025-06-10)
+
+### 🚀 Features
+
+- ⚠️  add boolean flag when initializing Scaffold to force update the configuration ([#6](https://github.com/dbbs-lab/bsb/issues/6))
+- add send coverage script to GHA ([c620e6a](https://github.com/dbbs-lab/bsb/commit/c620e6a))
+- add pull request GHA ([7d100a2](https://github.com/dbbs-lab/bsb/commit/7d100a2))
+- add GHA for external PRs ([f371423](https://github.com/dbbs-lab/bsb/commit/f371423))
+- add hook for bsb-core api ([ca337d6](https://github.com/dbbs-lab/bsb/commit/ca337d6))
+
+### 🩹 Fixes
+
+- bsb-neuron lint and tests ([9118dca](https://github.com/dbbs-lab/bsb/commit/9118dca))
+- packages version in __init__.py with respect to .toml ([52f6672](https://github.com/dbbs-lab/bsb/commit/52f6672))
+- nrn-patch tests and glia coverage ([630b1ec](https://github.com/dbbs-lab/bsb/commit/630b1ec))
+- lint pass on nrn-patch and bsb-neuron ([7385a32](https://github.com/dbbs-lab/bsb/commit/7385a32))
+- lint on bsb-core and format every package ([0725784](https://github.com/dbbs-lab/bsb/commit/0725784))
+- move bsb-core codecov config and readmes to the main folder. ([f8ef62b](https://github.com/dbbs-lab/bsb/commit/f8ef62b))
+- neuron 8.2.7 still does not include nmodl, falling back to neuron-nightly ([7e13be0](https://github.com/dbbs-lab/bsb/commit/7e13be0))
+- nest tests and nrn-patch docs ([d58976e](https://github.com/dbbs-lab/bsb/commit/d58976e))
+- GHA for RTD docs preview ([d95c14d](https://github.com/dbbs-lab/bsb/commit/d95c14d))
+- add missing required missing flags for codecov command ([cd3cb29](https://github.com/dbbs-lab/bsb/commit/cd3cb29))
+- typo and lint ([c2d4713](https://github.com/dbbs-lab/bsb/commit/c2d4713))
+- drop docformatter since results does not match expectations. ([2abeb32](https://github.com/dbbs-lab/bsb/commit/2abeb32))
+- drop packages and lib versions since they are installed from sources ([55932b6](https://github.com/dbbs-lab/bsb/commit/55932b6))
+- lint for arborize ([cb2a66c](https://github.com/dbbs-lab/bsb/commit/cb2a66c))
+- drop lib versions since they are installed from sources ([08f2d6d](https://github.com/dbbs-lab/bsb/commit/08f2d6d))
+- remove verbose flag, added codecov token to bsb ([cf18f36](https://github.com/dbbs-lab/bsb/commit/cf18f36))
+- attempt debug codecov upload with echo ([25e60f7](https://github.com/dbbs-lab/bsb/commit/25e60f7))
+- pass secret token to build workflow ([6647b0f](https://github.com/dbbs-lab/bsb/commit/6647b0f))
+
+### ⚠️  Breaking Changes
+
+- ⚠️  add boolean flag when initializing Scaffold to force update the configuration ([#6](https://github.com/dbbs-lab/bsb/issues/6))
+
+### ❤️ Thank You
+
+- drodarie
+
 ## 6.0.0-a2 (2025-05-17)
 
 ### 🚀 Features

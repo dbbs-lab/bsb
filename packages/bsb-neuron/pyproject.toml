@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "bsb-neuron"
-version = "6.0.0-a2"
+version = "6.0.0-a4"
 readme = "README.md"
 requires-python = ">=3.10,<4"
 dynamic = [ "description" ]
@@ -36,10 +36,7 @@ dependencies = [
   "bsb-hdf5~=6.0",
   "coverage~=7.0"
 ]
-  docs = [
-  "furo~=2024.0",
-  "sphinxext-bsb~=6.0"
-]
+  docs = [ "furo~=2024.0", "sphinxext-bsb~=6.0" ]
   dev = [
   "bsb-neuron[test,docs]",
   "pre-commit~=3.5",
@@ -47,11 +44,11 @@ dependencies = [
   "ruff>=0.8.2"
 ]
 
-[dependency-groups]
-dev = ["bsb-neuron[dev]"]
-
 [project.entry-points."bsb.simulation_backends"]
 neuron = "bsb_neuron"
+
+[dependency-groups]
+dev = [ "bsb-neuron[dev]" ]
 
 [tool.flit.module]
 name = "bsb_neuron"
@@ -106,4 +103,3 @@ indent-width = 4
   ignore = [ ]
   fixable = [ "ALL" ]
   unfixable = [ ]
-

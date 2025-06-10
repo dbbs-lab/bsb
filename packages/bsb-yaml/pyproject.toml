@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "bsb-yaml"
-version = "6.0.0-a2"
+version = "6.0.0-a4"
 readme = "README.md"
 requires-python = ">=3.10,<4"
 dynamic = [ "description" ]
@@ -26,10 +26,7 @@ dependencies = [ "bsb-core~=6.0", "PyYAML~=6.0", "pydantic" ]
 
   [project.optional-dependencies]
   test = [ "bsb-core[parallel]", "coverage>=7.3" ]
-  docs = [
-  "furo~=2024.0",
-  "sphinxext-bsb>=0.2.7"
-]
+  docs = [ "furo~=2024.0", "sphinxext-bsb>=0.2.7" ]
   dev = [ "bsb-yaml[test,docs]", "pre-commit~=3.5", "ruff>=0.8.2" ]
 
 [project.entry-points."bsb.config.parsers"]

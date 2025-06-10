@@ -1,45 +1,43 @@
 [build-system]
-requires = ["flit_core >=3.2,<4"]
+requires = [ "flit_core >=3.2,<4" ]
 build-backend = "flit_core.buildapi"
 
 [project]
 name = "nrn-patch"
-version = "6.0.0-a2"
-authors = [{ name = "Robin De Schepper", email = "robingilbert.deschepper@unipv.it" }]
+version = "6.0.0-a4"
 readme = "README.md"
-license = { file = "LICENSE" }
-dynamic = ["description"]
+dynamic = [ "description" ]
 classifiers = [
-    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"
+  "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"
 ]
 requires-python = ">=3.10,<4"
 dependencies = [
-    "nmodl-glia[neuron]~=6.0",
-    "packaging~=24.0",
-    "errr~=1.2",
-    "numpy~=1.21",
-    "neuron-nightly==9.0a1.dev1422; sys_platform != 'win32'",
+  "nmodl-glia[neuron]~=6.0",
+  "packaging~=24.0",
+  "errr~=1.2",
+  "numpy~=1.21",
+  "neuron-nightly==9.0a1.dev1422; sys_platform != 'win32'"
 ]
+
+  [[project.authors]]
+  name = "Robin De Schepper"
+  email = "robingilbert.deschepper@unipv.it"
+
+  [project.license]
+  file = "LICENSE"
 
 [project.entry-points."glia.package"]
 extensions = "patch.extensions:package"
 
-[project.optional-dependencies]
-parallel = ["mpi4py~=3.0"]
-test = [
-    "nrn-patch[parallel]",
-    "coverage~=7.0"
+  [project.optional-dependencies]
+  parallel = [ "mpi4py~=3.0" ]
+  test = [ "nrn-patch[parallel]", "coverage~=7.0" ]
+  docs = [
+  "sphinx~=8.0",
+  "helveg--sphinx-code-tabs~=0.2",
+  "sphinx-rtd-theme~=3.0"
 ]
-docs = [
-    "sphinx~=8.0",
-    "helveg--sphinx-code-tabs~=0.2",
-    "sphinx-rtd-theme~=3.0",
-]
-dev = [
-    "nrn-patch[test,docs]",
-    "pre-commit~=3.5",
-    "ruff>=0.8.2",
-]
+  dev = [ "nrn-patch[test,docs]", "pre-commit~=3.5", "ruff>=0.8.2" ]
 
 [tool.uv.sources.nmodl-glia]
 path = "../nmodl-glia"
@@ -48,15 +46,12 @@ editable = true
 [tool.flit.module]
 name = "patch"
 
-[dependency-groups]
-dev = ["nrn-patch[dev]"]
-
 [tool.coverage.run]
 branch = true
 source = [ "nrn_patch" ]
 
 [tool.coverage.report]
-exclude_lines = ['if TYPE_CHECKING:']
+exclude_lines = [ "if TYPE_CHECKING:" ]
 show_missing = true
 
 [tool.ruff]
@@ -77,3 +72,6 @@ indent-width = 4
   ignore = [ "F822" ]
   fixable = [ "ALL" ]
   unfixable = [ ]
+
+[dependency-groups]
+dev = [ "nrn-patch[dev]" ]

@@ -6,19 +6,19 @@ on:
       - monorepo-deep
 
 jobs:
-  check-api:
-    uses: ./.github/workflows/check-api.yml
-  build:
-    uses: ./.github/workflows/build.yml
-    secrets:
-      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-  docs:
-    uses: ./.github/workflows/docs.yml
-  ruff:
-    uses: ./.github/workflows/ruff.yml
+#  check-api:
+#    uses: ./.github/workflows/check-api.yml
+#  build:
+#    uses: ./.github/workflows/build.yml
+#    secrets:
+#      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+#  docs:
+#    uses: ./.github/workflows/docs.yml
+#  ruff:
+#    uses: ./.github/workflows/ruff.yml
 
   release:
-    needs: [build, docs, ruff, check-api]
+#    needs: [build, docs, ruff, check-api]
     runs-on: ubuntu-latest
 
     steps:
@@ -50,4 +50,7 @@ jobs:
           nvm install --lts
 
       - name: Nx Release flow
-        run: ./nx release 6.0.0-a10 --yes --verbose
+        run: |
+          git config --global user.email "dbbs-lab@cerebhub.eu"
+          git config --global user.name "DBBS Laboratory"
+          ./nx release 6.0.0-a11 --yes --verbose

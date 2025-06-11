@@ -43,7 +43,7 @@ editable = true
 
 [project]
 name = "sphinxext-bsb"
-version = "5.0.0"
+version = "6.0.0"
 description = "BSB Sphinx documentation extension"
 requires-python = ">=3.10,<4"
 readme = "README.md"

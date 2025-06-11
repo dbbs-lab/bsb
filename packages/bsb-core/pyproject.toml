@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "bsb-core"
-version = "6.0.0-a18"
+version = "5.0.0"
 readme = "README.md"
 requires-python = ">=3.10,<4"
 dynamic = [ "description" ]
@@ -46,32 +46,6 @@ dependencies = [
   [project.optional-dependencies]
   parallel = [ "mpi4py~=3.0", "mpipool>=2.2.1,<3", "mpilock~=1.1" ]
 
-[dependency-groups]
-  test = [
-  "bsb-core[parallel]",
-  "bsb-arbor~=6.0; sys_platform != 'win32'",
-  "bsb-hdf5~=6.0",
-  "bsb-json~=6.0",
-  "bsb-test~=6.0",
-  "coverage>=7.3"
-]
-  docs = [
-  "furo~=2024.4",
-  "sphinxemoji~=0.3",
-  "sphinx-copybutton~=0.5",
-  "bsb-json~=6.0",
-  "bsb-yaml~=6.0",
-  "sphinxext-bsb~=6.0"
-]
-  dev = [
-  "pre-commit~=3.5",
-  "ruff>=0.8.2",
-  "snakeviz~=2.1"
-]
-
-[tool.uv]
-default-groups = ["dev", "docs", "test"]
-
 [project.entry-points."bsb.storage.engines"]
 fs = "bsb.storage.fs"
 
@@ -90,8 +64,27 @@ debug_pool = "bsb._options:debug_pool"
   [project.scripts]
   bsb = "bsb.cli:handle_cli"
 
-[tool.flit.module]
-name = "bsb"
+[dependency-groups]
+test = [
+  "bsb-core[parallel]",
+  "bsb-arbor~=6.0; sys_platform != 'win32'",
+  "bsb-hdf5~=6.0",
+  "bsb-json~=6.0",
+  "bsb-test~=6.0",
+  "coverage>=7.3"
+]
+docs = [
+  "furo~=2024.4",
+  "sphinxemoji~=0.3",
+  "sphinx-copybutton~=0.5",
+  "bsb-json~=6.0",
+  "bsb-yaml~=6.0",
+  "sphinxext-bsb~=6.0"
+]
+dev = [ "pre-commit~=3.5", "ruff>=0.8.2", "snakeviz~=2.1" ]
+
+[tool.uv]
+default-groups = [ "dev", "docs", "test" ]
 
 [tool.uv.sources.bsb-test]
 path = "../bsb-test"
@@ -116,6 +109,9 @@ editable = true
 [tool.uv.sources.sphinxext-bsb]
 path = "../../libs/sphinxext-bsb"
 editable = true
+
+[tool.flit.module]
+name = "bsb"
 
 [tool.coverage.run]
 branch = true

@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "bsb-arbor"
-version = "6.0.0-a18"
+version = "5.0.0"
 readme = "README.md"
 requires-python = ">=3.10,<4"
 dynamic = [ "description" ]
@@ -30,15 +30,18 @@ dependencies = [
   [project.license]
   file = "LICENSE"
 
+[project.entry-points."bsb.simulation_backends"]
+arbor = "bsb_arbor"
+
 [dependency-groups]
-  test = [
+test = [
   "bsb-core[parallel]",
   "bsb-hdf5~=6.0",
   "bsb-test~=6.0",
   "coverage>=7.3"
 ]
-  docs = [ "furo~=2024.0", "sphinxext-bsb~=6.0" ]
-  dev = [
+docs = [ "furo~=2024.0", "sphinxext-bsb~=6.0" ]
+dev = [
   "bsb-arbor[test,docs]",
   "pre-commit~=3.5",
   "ruff>=0.8.2",
@@ -46,13 +49,7 @@ dependencies = [
 ]
 
 [tool.uv]
-default-groups = ["dev", "docs", "test"]
-
-[project.entry-points."bsb.simulation_backends"]
-arbor = "bsb_arbor"
-
-[tool.flit.module]
-name = "bsb_arbor"
+default-groups = [ "dev", "docs", "test" ]
 
 [tool.uv.sources.bsb-core]
 path = "../bsb-core"
@@ -73,6 +70,9 @@ editable = true
 [tool.uv.sources.arborize]
 path = "../../libs/arborize"
 editable = true
+
+[tool.flit.module]
+name = "bsb_arbor"
 
 [tool.coverage.run]
 branch = true

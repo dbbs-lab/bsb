@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "nrn-patch"
-version = "6.0.0-a18"
+version = "5.0.0"
 readme = "README.md"
 dynamic = [ "description" ]
 classifiers = [
@@ -29,8 +29,8 @@ dependencies = [
 [project.entry-points."glia.package"]
 extensions = "patch.extensions:package"
 
-[project.optional-dependencies]
-parallel = [ "mpi4py~=3.0" ]
+  [project.optional-dependencies]
+  parallel = [ "mpi4py~=3.0" ]
 
 [dependency-groups]
 test = [ "nrn-patch[parallel]", "coverage~=7.0" ]
@@ -42,7 +42,7 @@ docs = [
 dev = [ "pre-commit~=3.5", "ruff>=0.8.2" ]
 
 [tool.uv]
-default-groups = ["dev", "docs", "test"]
+default-groups = [ "dev", "docs", "test" ]
 
 [tool.uv.sources.nmodl-glia]
 path = "../nmodl-glia"

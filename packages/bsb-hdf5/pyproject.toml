@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "bsb-hdf5"
-version = "6.0.0-a18"
+version = "5.0.0"
 readme = "README.md"
 requires-python = ">=3.10,<4"
 dynamic = [ "description" ]
@@ -24,25 +24,22 @@ dependencies = [ "bsb-core" ]
   [project.license]
   file = "LICENSE"
 
+[project.entry-points."bsb.storage.engines"]
+hdf5 = "bsb_hdf5"
+
 [dependency-groups]
-  test = [ "bsb-core[parallel]", "bsb-test", "coverage>=7.3" ]
-  docs = [
+test = [ "bsb-core[parallel]", "bsb-test", "coverage>=7.3" ]
+docs = [
   "sphinxemoji~=0.2",
   "toml~=0.10",
   "furo~=2024.0",
   "sphinx-copybutton~=0.5",
   "sphinxext-bsb~=6.0"
 ]
-  dev = [ "pre-commit~=3.5", "ruff>=0.8.2" ]
+dev = [ "pre-commit~=3.5", "ruff>=0.8.2" ]
 
 [tool.uv]
-default-groups = ["dev", "docs", "test"]
-
-[project.entry-points."bsb.storage.engines"]
-hdf5 = "bsb_hdf5"
-
-[tool.flit.module]
-name = "bsb_hdf5"
+default-groups = [ "dev", "docs", "test" ]
 
 [tool.uv.sources.bsb-core]
 path = "../bsb-core"
@@ -59,6 +56,9 @@ editable = true
 [tool.uv.sources.sphinxext-bsb]
 path = "../../libs/sphinxext-bsb"
 editable = true
+
+[tool.flit.module]
+name = "bsb_hdf5"
 
 [tool.coverage.run]
 branch = true

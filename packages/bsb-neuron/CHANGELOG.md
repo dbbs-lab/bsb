@@ -1,3 +1,17 @@
+# 5.0.0 (2025-06-11)
+
+### 🚀 Features
+
+- ⚠️  Integrated BSB landscape into a monorepository ([#143](https://github.com/dbbs-lab/bsb/pull/143), [#6](https://github.com/dbbs-lab/bsb/issues/6), [#3458](https://github.com/dbbs-lab/bsb/issues/3458))
+
+### ⚠️  Breaking Changes
+
+- ⚠️  Integrated BSB landscape into a monorepository ([#143](https://github.com/dbbs-lab/bsb/pull/143), [#6](https://github.com/dbbs-lab/bsb/issues/6), [#3458](https://github.com/dbbs-lab/bsb/issues/3458))
+
+### ❤️ Thank You
+
+- Robin De Schepper
+
 ## [v4.2.2] - 2025-01-07
 ### :bug: Bug Fixes
 - [`3d76d36`](https://github.com/dbbs-lab/bsb-neuron/commit/3d76d36476a73b0c714a15f1334e17df5ff844dc) - BSB version dependencies *(PR [#25](https://github.com/dbbs-lab/bsb-neuron/pull/25) by [@drodarie](https://github.com/drodarie))*

@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "nmodl-glia"
-version = "6.0.0-a18"
+version = "5.0.0"
 readme = "README.md"
 requires-python = ">=3.10,<4"
 dynamic = [ "description" ]
@@ -35,6 +35,9 @@ dependencies = [
   neuron = [ "nrn-patch~=6.0" ]
   arbor = [ "arbor~=0.10" ]
 
+  [project.scripts]
+  glia = "glia._cli:glia"
+
 [dependency-groups]
 docs = [
   "sphinx~=8.1",
@@ -44,17 +47,10 @@ docs = [
   "sphinx-copybutton~=0.5"
 ]
 test = [ "nmodl-glia[parallel]", "coverage~=7.0" ]
-dev = [
-  "nmodl-glia[neuron,arbor]",
-  "pre-commit~=3.5",
-  "ruff>=0.8.2"
-]
-
-  [project.scripts]
-  glia = "glia._cli:glia"
+dev = [ "nmodl-glia[neuron,arbor]", "pre-commit~=3.5", "ruff>=0.8.2" ]
 
 [tool.uv]
-default-groups = ["dev", "docs", "test"]
+default-groups = [ "dev", "docs", "test" ]
 
 [tool.uv.sources.nrn-patch]
 path = "../nrn-patch"

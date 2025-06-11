@@ -1,3 +1,17 @@
+# 5.0.0 (2025-06-11)
+
+### 🚀 Features
+
+- ⚠️  Integrated BSB landscape into a monorepository ([#143](https://github.com/dbbs-lab/bsb/pull/143), [#6](https://github.com/dbbs-lab/bsb/issues/6), [#3458](https://github.com/dbbs-lab/bsb/issues/3458))
+
+### ⚠️  Breaking Changes
+
+- ⚠️  Integrated BSB landscape into a monorepository ([#143](https://github.com/dbbs-lab/bsb/pull/143), [#6](https://github.com/dbbs-lab/bsb/issues/6), [#3458](https://github.com/dbbs-lab/bsb/issues/3458))
+
+### ❤️ Thank You
+
+- Robin De Schepper
+
 ## [v4.2.3] - 2025-03-03
 ### :bug: Bug Fixes
 - [`9b93aac`](https://github.com/dbbs-lab/bsb-json/commit/9b93aaccf55587030e0edbc13fbb3098140186d3) - using isort 6.0.0 and black 25.1.0 *(PR [#8](https://github.com/dbbs-lab/bsb-json/pull/8) by [@drodarie](https://github.com/drodarie))*

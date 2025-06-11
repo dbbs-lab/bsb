@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "bsb-nest"
-version = "6.0.0-a18"
+version = "5.0.0"
 readme = "README.md"
 requires-python = ">=3.10,<4"
 dynamic = [ "description" ]
@@ -27,29 +27,22 @@ dependencies = [ "bsb-core~=6.0" ]
   [project.optional-dependencies]
   parallel = [ "bsb-core[parallel]" ]
 
-  [dependency-groups]
-  test = [
+[project.entry-points."bsb.simulation_backends"]
+nest = "bsb_nest"
+
+[dependency-groups]
+test = [
   "bsb-core[parallel]",
   "bsb-test~=6.0",
   "bsb-hdf5~=6.0",
   "bsb-arbor~=6.0",
   "coverage~=7.0"
 ]
-  docs = [ "furo~=2024.0", "sphinxext-bsb~=6.0" ]
-  dev = [
-  "pre-commit~=3.5",
-  "snakeviz~=2.1",
-  "ruff>=0.8.2"
-]
+docs = [ "furo~=2024.0", "sphinxext-bsb~=6.0" ]
+dev = [ "pre-commit~=3.5", "snakeviz~=2.1", "ruff>=0.8.2" ]
 
 [tool.uv]
-default-groups = ["dev", "docs", "test"]
-
-[project.entry-points."bsb.simulation_backends"]
-nest = "bsb_nest"
-
-[tool.flit.module]
-name = "bsb_nest"
+default-groups = [ "dev", "docs", "test" ]
 
 [tool.uv.sources.bsb-core]
 path = "../bsb-core"
@@ -70,6 +63,9 @@ editable = true
 [tool.uv.sources.sphinxext-bsb]
 path = "../../libs/sphinxext-bsb"
 editable = true
+
+[tool.flit.module]
+name = "bsb_nest"
 
 [tool.coverage.run]
 branch = true

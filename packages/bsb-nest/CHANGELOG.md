@@ -1,3 +1,17 @@
+# 5.0.0 (2025-06-11)
+
+### 🚀 Features
+
+- ⚠️  Integrated BSB landscape into a monorepository ([#143](https://github.com/dbbs-lab/bsb/pull/143), [#6](https://github.com/dbbs-lab/bsb/issues/6), [#3458](https://github.com/dbbs-lab/bsb/issues/3458))
+
+### ⚠️  Breaking Changes
+
+- ⚠️  Integrated BSB landscape into a monorepository ([#143](https://github.com/dbbs-lab/bsb/pull/143), [#6](https://github.com/dbbs-lab/bsb/issues/6), [#3458](https://github.com/dbbs-lab/bsb/issues/3458))
+
+### ❤️ Thank You
+
+- Robin De Schepper
+
 ## [v4.3.2] - 2025-01-07
 ### :bug: Bug Fixes
 - [`3500ecc`](https://github.com/dbbs-lab/bsb-nest/commit/3500eccc0c67fa686e1a7e0b973d4a5653fce2d6) - BSB version dependencies *(PR [#17](https://github.com/dbbs-lab/bsb-nest/pull/17) by [@drodarie](https://github.com/drodarie))*

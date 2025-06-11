@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "bsb-json"
-version = "6.0.0-a18"
+version = "5.0.0"
 readme = "README.md"
 requires-python = ">=3.10,<4"
 dynamic = [ "description" ]
@@ -24,22 +24,19 @@ dependencies = [ "bsb-core~=6.0" ]
   [project.license]
   file = "LICENSE"
 
-[dependency-groups]
-  test = [ "bsb-core[parallel]", "bsb-test~=4.0", "coverage>=7.3" ]
-  docs = [ "furo~=2024.0", "sphinxext-bsb~=6.0" ]
-  dev = [ "pre-commit~=3.5", "ruff>=0.8.2" ]
-
-[tool.uv]
-default-groups = ["dev", "docs", "test"]
-
 [project.entry-points."bsb.config.parsers"]
 json = "bsb_json.parser"
 
 [project.entry-points."bsb.config.templates"]
 json_templates = "bsb_json.templates"
 
-[tool.flit.module]
-name = "bsb_json"
+[dependency-groups]
+test = [ "bsb-core[parallel]", "bsb-test~=4.0", "coverage>=7.3" ]
+docs = [ "furo~=2024.0", "sphinxext-bsb~=6.0" ]
+dev = [ "pre-commit~=3.5", "ruff>=0.8.2" ]
+
+[tool.uv]
+default-groups = [ "dev", "docs", "test" ]
 
 [tool.uv.sources.bsb-core]
 path = "../bsb-core"
@@ -52,6 +49,9 @@ editable = true
 [tool.uv.sources.sphinxext-bsb]
 path = "../../libs/sphinxext-bsb"
 editable = true
+
+[tool.flit.module]
+name = "bsb_json"
 
 [tool.coverage.run]
 branch = true

@@ -39,7 +39,6 @@ jobs:
 
       - name: Nx Release flow
         env:
-#          UV_PUBLISH_TOKEN: ${{ secrets.UV_PUBLISH_TOKEN }}
           NX_DAEMON: false
         run: |
           git config --global user.email "dbbs-lab@cerebhub.eu"

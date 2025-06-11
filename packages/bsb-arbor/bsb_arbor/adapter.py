@@ -63,7 +63,20 @@ class SingleReceiverCollection(list):
 
 
 class Population:
+    """
+    Represents a population of cells for the Arbor simulator.
+
+    This class manages a collection of cells from a specific cell model, handling their
+    GID ranges and providing methods to access and manipulate subsets of the population.
+    """
     def __init__(self, simdata, cell_model, offset):
+        """
+        Initialize a population of cells.
+
+        :param simdata: The simulation data container
+        :param cell_model: The cell model for this population
+        :param offset: The GID offset for this population
+        """
         self._model = cell_model
         self._simdata = simdata
         ps = cell_model.get_placement_set(simdata.chunks)
@@ -72,22 +85,61 @@ class Population:
 
     @property
     def model(self):
+        """
+        Get the cell model associated with this population.
+
+        :return: The cell model object
+        """
         return self._model
 
     @property
     def offset(self):
+        """
+        Get the GID offset for this population.
+
+        :return: The GID offset value
+        """
         return self._offset
 
     def __len__(self):
+        """
+        Get the total number of cells in this population.
+
+        :return: The number of cells
+        """
         return sum(stop - start for start, stop in self._ranges)
 
     def __contains__(self, i):
+        """
+        Check if a GID is part of this population.
+
+        :param i: The GID to check
+        :return: True if the GID is in this population, False otherwise
+        """
         return any(start <= i < stop for start, stop in self._ranges)
 
     def copy(self):
+        """
+        Create a copy of this population.
+
+        :return: A new Population instance with the same properties
+        """
         return Population(self._simdata, self._model, self._offset)
 
     def __getitem__(self, item):
+        """
+        Get a subset of the population based on the provided index or mask.
+
+        Supports various indexing methods:
+        - Boolean masking: Select cells based on a boolean mask
+        - Integer indexing: Select specific cells by their indices
+        - Slicing: Select a range of cells
+
+        :param item: The index, slice, or mask to use for selection
+        :return: A new Population instance containing the selected cells
+        :raises ValueError: If the dimensions of the mask don't match the population
+        :raises IndexError: If an index is out of bounds
+        """
         # Boolean masking, kind of
         if getattr(item, "dtype", None) == bool or _all_bools(item):  # noqa: E721
             if len(item) != len(self):
@@ -106,6 +158,14 @@ class Population:
             return self._subpop_one(item)
 
     def _get_ranges(self, chunks, ps, offset):
+        """
+        Calculate the GID ranges for this population based on chunk statistics.
+
+        :param chunks: The simulation chunks to include
+        :param ps: The placement set for the cell model
+        :param offset: The starting GID offset
+        :return: A list of (start, stop) tuples representing GID ranges
+        """
         stats = ps.get_chunk_stats()
         ranges = []
         for chunk, len_ in sorted(
@@ -117,6 +177,15 @@ class Population:
         return ranges
 
     def _subpop_np(self, arr):
+        """
+        Create a subpopulation from a numpy array of indices.
+
+        This method handles array-based indexing, including boolean masks,
+        integer arrays, and slices.
+
+        :param arr: A numpy array of indices to include in the subpopulation
+        :return: A new Population instance containing only the selected cells
+        """
         pop = self.copy()
         if not len(pop):
             return pop
@@ -138,6 +207,13 @@ class Population:
         return pop
 
     def _subpop_one(self, item):
+        """
+        Create a subpopulation containing a single cell.
+
+        :param item: The index of the cell to include
+        :return: A new Population instance containing only the selected cell
+        :raises IndexError: If the index is out of bounds
+        """
         if item >= len(self):
             raise IndexError(f"Index {item} out of bounds for size {len(self)}")
         pop = self.copy()
@@ -150,6 +226,11 @@ class Population:
                 ptr += stop - start
 
     def __iter__(self):
+        """
+        Iterate over all GIDs in this population.
+
+        :yield: Each GID in the population's ranges
+        """
         yield from itertools.chain.from_iterable(range(r[0], r[1]) for r in self._ranges)
 
 

@@ -41,6 +41,7 @@ dependencies = [
 [dependency-groups]
 docs = [
   "sphinx~=8.1",
+  "sphinxext-bsb~=6.0",
   "furo~=2024.0",
   "sphinxemoji~=0.2",
   "sphinx_design~=0.5",
@@ -54,6 +55,10 @@ default-groups = [ "dev", "docs", "test" ]
 
 [tool.uv.sources.nrn-patch]
 path = "../nrn-patch"
+editable = true
+
+[tool.uv.sources.sphinxext-bsb]
+path = "../sphinxext-bsb"
 editable = true
 
 [tool.flit.module]

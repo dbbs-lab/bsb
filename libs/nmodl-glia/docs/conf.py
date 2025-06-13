@@ -1,29 +1,25 @@
+from pathlib import Path
+
+import sphinxext.bsb
+
 # Configuration file for the Sphinx documentation builder.
 #
 # This file only contains a selection of the most common options. For a full
 # list see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
-# -- Path setup --------------------------------------------------------------
-
-# If extensions (or modules to document with autodoc) are in another directory,
-# add these directories to sys.path here. If the directory is relative to the
-# documentation root, use os.path.abspath to make it absolute, like shown here.
-#
-# import os
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
-
+# Use sphinxext.bsb to help configure this monorepo package
+_project = sphinxext.bsb.Project(
+    "Glia Package Manager", Path(__file__).parent.parent, monorepo=True
+)
 
 # -- Project information -----------------------------------------------------
 
-project = "Glia Package Manager"
-copyright = "2020, Robin De Schepper"
-author = "Robin De Schepper"
-master_doc = "index"
-
-# The full version, including alpha/beta/rc tags
-release = "1.0.0"
+project = _project.name
+copyright = _project.copyright
+author = _project.authors
+release = _project.version
+version = _project.version
 
 
 # -- General configuration ---------------------------------------------------
@@ -39,22 +35,24 @@ extensions = [
     "sphinx.ext.ifconfig",
     "sphinx.ext.viewcode",
     "sphinx.ext.intersphinx",
+    *_project.extensions,
 ]
+
+autodoc_mock_imports = ["patch", "mpi4py"]
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
     "errr": ("https://errr.readthedocs.io/en/latest/", None),
     "arbor": ("https://docs.arbor-sim.org/en/latest/", None),
-    "patch": ("https://patch.readthedocs.io/en/latest/", None),
+    **_project.intersphinx,
 }
 
 # Add any paths that contain templates here, relative to this directory.
+autoclass_content = "both"
+autodoc_typehints = "both"
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 templates_path = ["_templates"]
-
-# List of patterns, relative to source directory, that match files and
-# directories to ignore when looking for source files.
-# This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = []
+todo_include_todos = True
 
 
 # -- Options for HTML output -------------------------------------------------
@@ -64,4 +62,13 @@ exclude_patterns = []
 #
 html_theme = "furo"
 
-autodoc_mock_imports = ["patch", "mpi4py"]
+html_static_path = [*_project.html_static_path]
+html_favicon = _project.html_favicon
+
+html_theme_options = {
+    **_project.html_theme_options,
+}
+
+html_context = {
+    **_project.html_context,
+}

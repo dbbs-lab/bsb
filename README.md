@@ -1,8 +1,3 @@
-The Brain Scaffold Builder (BSB) suite has transitioned to a monorepo structure, consolidating various components into a
-unified repository. Below is a revised `README.md` tailored for the monorepo setup:
-
----
-
 # The Brain Scaffold Builder
 
 ![Build Status](https://github.com/dbbs-lab/bsb/actions/workflows/main.yml/badge.svg)
@@ -130,8 +125,3 @@ European Union’s Horizon 2020 research and innovation program under the Specif
 ## Supported by
 
 [![JetBrains logo](https://resources.jetbrains.com/storage/products/company/brand/logos/jetbrains.svg)](https://jb.gg/OpenSourceSupport)
-
----
-
-This README.md provides an overview of the BSB suite in its current monorepo format, detailing installation procedures,
-usage guidelines, and acknowledgements.

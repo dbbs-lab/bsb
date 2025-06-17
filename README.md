@@ -23,6 +23,12 @@ The BSB suite is now organized as a monorepo, integrating the following componen
 * **bsb-test**: Tools and configurations for testing BSB components.
 * **sphinxext-bsb**: Sphinx extension for BSB documentation.
 
+## Documentation
+
+Comprehensive documentation is available at:
+
+* [BSB Documentation](https://bsb.readthedocs.io/en/latest)
+
 ## Installation
 
 ### Pip installation
@@ -99,12 +105,6 @@ bsb compile
 ```
 
 For simulation, refer to the documentation for configuring simulations with NEST, NEURON, or ARBOR.
-
-## Documentation
-
-Comprehensive documentation is available at:
-
-* [BSB Documentation](https://bsb.readthedocs.io/en/latest)
 
 ## Contributing
 

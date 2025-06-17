@@ -62,10 +62,12 @@ autodoc_mock_imports = ["neuron"]
 #
 html_theme = "furo"
 
-# Add any paths that contain custom static files (such as style sheets) here,
-# relative to this directory. They are copied after the builtin static files,
-# so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = []
+html_static_path = [*_project.html_static_path]
+html_favicon = _project.html_favicon
+
+html_context = {
+    **_project.html_context,
+}
 
 # Mocks
 autodoc_mock_imports = ["mpi4py", "neuron"]

@@ -39,3 +39,4 @@ jobs:
           ./nx affected -t docs
         env:
           UV_PYTHON: 3.11
+          NX_DAEMON: false

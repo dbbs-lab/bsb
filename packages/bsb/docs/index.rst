@@ -58,7 +58,7 @@ human-readable, multi-scale models!
 
        Help out the project by contributing code.
 
-    .. grid-item-card:: :octicon:`gear;1em;sd-text-warning` Components
+    .. grid-item-card:: :octicon:`gear;1em;sd-text-warning` Domains
        :link: main-components
        :link-type: ref
 
@@ -86,22 +86,33 @@ Content
 
 .. toctree::
   :maxdepth: 2
-  :caption: CLI
+  :caption: Command-Line Interface
 
-  cli/cli-toc
+  /cli/intro
+  /cli/commands
+  /cli/options
 
 
 .. toctree::
    :maxdepth: 2
    :caption: Framework concepts
 
-   core/core-toc
+   /core/scaffold
+   /config/configuration-toc
+   /core/storage
+   /core/job-distribution
 
 .. toctree::
    :maxdepth: 2
-   :caption: Components
+   :caption: Domains
 
-   components/components-toc
+   /topology/topology-toc
+   /cells/cells-toc
+   /morphologies/morphology-toc
+   /placement/placement-toc
+   /connectivity/connectivity-toc
+   /simulation/simulation-toc
+   /components/components
 
 .. toctree::
    :maxdepth: 2
@@ -114,8 +125,6 @@ Content
    bsb-arbor <https://bsb-arbor.readthedocs.io/en/latest/bsb_arbor/modules.html>
    bsb-nest <https://bsb-nest.readthedocs.io/en/latest/bsb_nest/modules.html>
    bsb-neuron <https://bsb-neuron.readthedocs.io/en/latest/bsb_neuron/modules.html>
-   genindex
-   py-modindex
 
 .. toctree::
    :maxdepth: 1

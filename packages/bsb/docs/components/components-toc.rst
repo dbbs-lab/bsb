@@ -1,11 +1,13 @@
+:orphan:
+
 .. _main-components:
 
-List of Components
-==================
+Domains
+=======
 
 .. toctree::
-   :maxdepth: 1
-   :caption: BSB Components
+   :maxdepth: 2
+   :caption: BSB Domains
 
    /topology/topology-toc
    /cells/cells-toc

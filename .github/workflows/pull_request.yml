@@ -37,4 +37,4 @@ jobs:
       - name: Preview BSB Readthedocs
         uses: readthedocs/actions/preview@v1
         with:
-          project-slug: {{ matrix.package }}
+          project-slug: ${{ matrix.package }}

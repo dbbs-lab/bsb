@@ -6,20 +6,20 @@
 Welcome to Patch's documentation!
 =================================
 
-.. image:: https://badge.fury.io/gh/Helveg%2Fpatch.svg
-    :target: https://badge.fury.io/gh/Helveg%2Fpatch
-
-.. image:: https://github.com/Helveg/patch/actions/workflows/main.yml/badge.svg
-
-.. image:: https://codecov.io/gh/Helveg/patch/branch/master/graph/badge.svg
-    :target: https://codecov.io/gh/Helveg/patch
-
-.. image:: https://img.shields.io/badge/code%20style-black-000000.svg
-    :target: https://github.com/psf/black
+.. image:: https://github.com/dbbs-lab/bsb/actions/workflows/main.yml/badge.svg
+   :target: https://github.com/dbbs-lab/bsb
+   :alt: Source Code
 
 .. image:: https://readthedocs.org/projects/patch/badge/?version=latest
     :target: https://patch.readthedocs.io/en/latest/?badge=latest
     :alt: Documentation Status
+
+.. image:: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json
+   :target: https://github.com/astral-sh/ruff
+   :alt: Ruff Formatting
+
+.. image:: https://codecov.io/gh/Helveg/patch/branch/master/graph/badge.svg
+    :target: https://codecov.io/gh/Helveg/patch
 
 .. toctree::
    :maxdepth: 2

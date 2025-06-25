@@ -74,7 +74,7 @@ and the `Neuronal Dynamics <https://neuronaldynamics.epfl.ch/index.html>`_ books
 
         Familiarize yourself with BSB's CLI.
 
-    .. grid-item-card:: :octicon:`gear;1em;sd-text-warning` Learn about components
+    .. grid-item-card:: :octicon:`gear;1em;sd-text-warning` Domains
        :link: main-components
        :link-type: ref
 

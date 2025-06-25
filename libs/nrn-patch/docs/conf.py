@@ -1,30 +1,27 @@
+from pathlib import Path
+
+import sphinxext.bsb
+
 # Configuration file for the Sphinx documentation builder.
 #
 # This file only contains a selection of the most common options. For a full
 # list see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
-# -- Path setup --------------------------------------------------------------
-
-# If extensions (or modules to document with autodoc) are in another directory,
-# add these directories to sys.path here. If the directory is relative to the
-# documentation root, use os.path.abspath to make it absolute, like shown here.
-#
-import os
-import sys
-
-sys.path.insert(0, os.path.abspath(os.path.join("..", "..")))
+# Use sphinxext.bsb to help configure this monorepo package
+_project = sphinxext.bsb.Project(
+    "Arborize model builder", Path(__file__).parent.parent, monorepo=True
+)
 
 
 # -- Project information -----------------------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = "Patch"
-copyright = "2020, Robin De Schepper"
-author = "Robin De Schepper"
-
-# The full version, including alpha/beta/rc tags
-release = "1.2.0"
-
+copyright = _project.copyright
+author = _project.authors
+release = _project.version
+version = _project.version
 
 # -- General configuration ---------------------------------------------------
 
@@ -40,6 +37,7 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinx_code_tabs",
     "sphinx.ext.intersphinx",
+    *_project.extensions,
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -50,7 +48,10 @@ templates_path = ["_templates"]
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = []
 
-intersphinx_mapping = {"neuron": ("https://nrn.readthedocs.io/en/latest/", None)}
+intersphinx_mapping = {
+    "neuron": ("https://nrn.readthedocs.io/en/latest/", None),
+    **_project.intersphinx,
+}
 
 autodoc_mock_imports = ["neuron"]
 
@@ -59,12 +60,14 @@ autodoc_mock_imports = ["neuron"]
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = "sphinx_rtd_theme"
+html_theme = "furo"
 
-# Add any paths that contain custom static files (such as style sheets) here,
-# relative to this directory. They are copied after the builtin static files,
-# so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = []
+html_static_path = [*_project.html_static_path]
+html_favicon = _project.html_favicon
+
+html_context = {
+    **_project.html_context,
+}
 
 # Mocks
 autodoc_mock_imports = ["mpi4py", "neuron"]

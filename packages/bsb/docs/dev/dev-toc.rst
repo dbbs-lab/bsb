@@ -2,7 +2,7 @@ Developer guides
 ================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Developer guides
 
    monorepo

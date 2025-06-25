@@ -36,6 +36,8 @@ jobs:
           npx -y cross-env echo "" > /dev/null
           npx -y cross-env echo "" > /dev/null
           npx -y cross-env echo "" > /dev/null
+          npm install rimraf
           ./nx affected -t docs
         env:
-          UV_PYTHON: 3.11
+          UV_PYTHON: 3.12
+          NX_DAEMON: false

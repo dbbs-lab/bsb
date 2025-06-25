@@ -6,6 +6,12 @@
 The Brain Scaffold Builder
 ==========================
 
+This website hosts the documentation references related to the ``bsb-core`` package.
+
+This project contains the main ``BSB`` framework and is needed by all its sub packages.
+
+Code references
+---------------
 
 .. toctree::
    :maxdepth: 2
@@ -15,3 +21,5 @@ The Brain Scaffold Builder
    genindex
    py-modindex
 
+`Main BSB documentation <https://bsb.readthedocs.io/en/latest/index.html>`_
+---------------------------------------------------------------------------

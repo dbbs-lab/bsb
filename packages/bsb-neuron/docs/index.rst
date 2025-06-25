@@ -6,6 +6,13 @@
 BSB NEURON documentation
 ========================
 
+This website hosts the documentation references related to the ``bsb-neuron`` package.
+
+``bsb-neuron`` is a plugin of the ``BSB``.
+It implements the interfaces and tools to simulate BSB circuits with the `Neuron simulator <https://www.neuron.yale.edu/neuron/>`_.
+
+Code references
+---------------
 
 .. toctree::
    :maxdepth: 2
@@ -14,3 +21,6 @@ BSB NEURON documentation
    bsb_neuron/modules
    genindex
    py-modindex
+
+`Main BSB documentation <https://bsb.readthedocs.io/en/latest/index.html>`_
+---------------------------------------------------------------------------

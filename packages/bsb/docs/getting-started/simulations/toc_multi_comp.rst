@@ -2,7 +2,7 @@ Guides on Multi-compartment neurons modeling
 ============================================
 
 .. toctree::
-  :maxdepth: 2
+  :maxdepth: 1
   :caption: Multi-compartment neuron simulations
 
   include_morphos

@@ -2,7 +2,7 @@ Guides on Point-neuron simulations
 ==================================
 
 .. toctree::
-  :maxdepth: 2
+  :maxdepth: 1
   :caption: Point-neuron simulations
 
   guide_nest

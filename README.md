@@ -1,8 +1,3 @@
-The Brain Scaffold Builder (BSB) suite has transitioned to a monorepo structure, consolidating various components into a
-unified repository. Below is a revised `README.md` tailored for the monorepo setup:
-
----
-
 # The Brain Scaffold Builder
 
 ![Build Status](https://github.com/dbbs-lab/bsb/actions/workflows/main.yml/badge.svg)
@@ -27,6 +22,12 @@ The BSB suite is now organized as a monorepo, integrating the following componen
 * **arborize**: Tool for Arbor-like descriptions of cell models for NEURON.
 * **bsb-test**: Tools and configurations for testing BSB components.
 * **sphinxext-bsb**: Sphinx extension for BSB documentation.
+
+## Documentation
+
+Comprehensive documentation is available at:
+
+* [BSB Documentation](https://bsb.readthedocs.io/en/latest)
 
 ## Installation
 
@@ -66,9 +67,11 @@ pip install -r devtools/editable-install.txt
 
 ### Developer installation
 
-For development purposes, you should install the [UV](https://nx.dev/) and [NX](https://docs.astral.sh/uv/) tools.
+For development purposes, you should install the [UV](https://docs.astral.sh/uv/) and [NX](https://nx.dev/) tools.
 To this end, there is a helper script for each platform in ``devtools/bootstrap-*``. For instance, for linux:
 ```bash
+git clone https://github.com/dbbs-lab/bsb
+cd bsb
 ./devtools/bootstrap-linux.sh
 ```
 
@@ -105,12 +108,6 @@ bsb compile
 
 For simulation, refer to the documentation for configuring simulations with NEST, NEURON, or ARBOR.
 
-## Documentation
-
-Comprehensive documentation is available at:
-
-* [BSB Documentation](https://bsb.readthedocs.io/en/latest)
-
 ## Contributing
 
 All contributions are very much welcome.
@@ -130,8 +127,3 @@ European Union’s Horizon 2020 research and innovation program under the Specif
 ## Supported by
 
 [![JetBrains logo](https://resources.jetbrains.com/storage/products/company/brand/logos/jetbrains.svg)](https://jb.gg/OpenSourceSupport)
-
----
-
-This README.md provides an overview of the BSB suite in its current monorepo format, detailing installation procedures,
-usage guidelines, and acknowledgements.

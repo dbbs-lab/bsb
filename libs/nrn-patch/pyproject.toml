@@ -21,7 +21,7 @@ dependencies = [
 
   [[project.authors]]
   name = "Robin De Schepper"
-  email = "robingilbert.deschepper@unipv.it"
+  email = "robin@alexandria.sc"
 
   [project.license]
   file = "LICENSE"
@@ -36,8 +36,9 @@ extensions = "patch.extensions:package"
 test = [ "nrn-patch[parallel]", "coverage~=7.0" ]
 docs = [
   "sphinx~=8.1",
+  "sphinxext-bsb~=6.0",
   "helveg--sphinx-code-tabs~=0.2",
-  "sphinx-rtd-theme~=3.0"
+  "furo~=2024.0"
 ]
 dev = [ "pre-commit~=3.5", "ruff>=0.8.2" ]
 
@@ -46,6 +47,10 @@ default-groups = [ "dev", "docs", "test" ]
 
 [tool.uv.sources.nmodl-glia]
 path = "../nmodl-glia"
+editable = true
+
+[tool.uv.sources.sphinxext-bsb]
+path = "../sphinxext-bsb"
 editable = true
 
 [tool.flit.module]

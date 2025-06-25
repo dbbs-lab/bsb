@@ -34,6 +34,7 @@ jobs:
       - name: Get affected projects
         id: get-affected
         run: |
+          ./nx init
           packages=$(./nx show projects --projects "packages/*" --affected)
           packages=[\"$(echo $packages | sed -r 's/[ ]+/", "/g')\"]
           echo "packages=$packages" >> $GITHUB_OUTPUT

@@ -14,7 +14,9 @@
     }
   ],
   "release": {
-    "projects": ["*"],
+    "projects": [
+      "*"
+    ],
     "changelog": {
       "projectChangelogs": true,
       "workspaceChangelog": {
@@ -22,9 +24,9 @@
         "file": "CHANGELOG.md"
       },
       "git": {
-      "commit": true,
-      "tag": true,
-      "commitMessage": "chore(release): {version} [skip ci]"
+        "commit": true,
+        "tag": true,
+        "commitMessage": "chore(release): {version} [skip ci]"
       }
     },
     "version": {

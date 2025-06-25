@@ -54,7 +54,9 @@ jobs:
       - name: Run unittests
         env:
           NX_DAEMON: false
-        run: ./nx affected -t test
+        run: |
+          npm install rimraf
+          ./nx affected -t test
 
       - name: Send coverage
         run: |

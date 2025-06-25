@@ -67,9 +67,11 @@ pip install -r devtools/editable-install.txt
 
 ### Developer installation
 
-For development purposes, you should install the [UV](https://nx.dev/) and [NX](https://docs.astral.sh/uv/) tools.
+For development purposes, you should install the [UV](https://docs.astral.sh/uv/) and [NX](https://nx.dev/) tools.
 To this end, there is a helper script for each platform in ``devtools/bootstrap-*``. For instance, for linux:
 ```bash
+git clone https://github.com/dbbs-lab/bsb
+cd bsb
 ./devtools/bootstrap-linux.sh
 ```
 

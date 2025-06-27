@@ -4,7 +4,7 @@ import sys
 import nest
 import numpy as np
 import psutil
-from bsb import ConnectionModel, compose_nodes, config, types
+from bsb import ConfigurationError, ConnectionModel, compose_nodes, config, types
 from tqdm import tqdm
 
 from .distributions import nest_parameter
@@ -35,10 +35,13 @@ class NestConnectionSettings:
     Class interfacing a NEST connection rule.
     """
 
-    rule = config.attr(type=str)
-    """Importable reference to the Nest connection rule used to connect the cells."""
-    constants = config.catch_all(type=types.any_())
-    """Dictionary of parameters to assign to the connection rule."""
+    rules = config.list(type=str)
+    """List of references to Nest connection rules used to connect the cells."""
+    constants = config.list(
+        type=types.dict(type=types.any_()),
+        required=types.same_size("rules", "constants", required=False),
+    )
+    """List of dictionary of parameters to assign to the connection rule."""
 
 
 class LazySynapseCollection:
@@ -66,7 +69,7 @@ class LazySynapseCollection:
 @config.dynamic(attr_name="model_strategy", required=False)
 class NestConnection(compose_nodes(NestConnectionSettings, ConnectionModel)):
     """
-    Class interfacing a NEST connection, including its connection rule and synaptic
+    Class interfacing a NEST connection, including its connection rules and synaptic
     parameters.
     """
 
@@ -76,46 +79,53 @@ class NestConnection(compose_nodes(NestConnectionSettings, ConnectionModel)):
     management.
     """
 
-    synapse = config.attr(type=NestSynapseSettings, required=True)
-    """Nest synapse model with its parameters."""
+    synapses = config.list(type=NestSynapseSettings, required=True)
+    """List of synapse models to use for a connection."""
+
+    def boot(self):
+        if 0 < len(self.rules) != len(self.synapses):
+            raise ConfigurationError(
+                "If NEST connection rules are provided, there should be one per synapse."
+            )
 
     def create_connections(self, simdata, pre_nodes, post_nodes, cs, comm):
         import nest
 
-        syn_spec = self.get_syn_spec()
-        if syn_spec["synapse_model"] not in nest.Models(mtype="synapses"):
-            raise NestConnectError(
-                f"Unknown synapse model '{syn_spec['synapse_model']}'."
-            )
-        if self.rule is not None:
-            nest.Connect(pre_nodes, post_nodes, self.get_conn_spec(), syn_spec)
-        else:
-            comm.barrier()
-            for pre_locs, post_locs in self.predict_mem_iterator(
-                pre_nodes, post_nodes, cs, comm
-            ):
+        conn_specs = self.get_conn_specs()
+        for i, syn_spec in enumerate(self.get_syn_specs()):
+            if syn_spec["synapse_model"] not in nest.Models(mtype="synapses"):
+                raise NestConnectError(
+                    f"Unknown synapse model '{syn_spec['synapse_model']}'."
+                )
+            if len(conn_specs) > 0:
+                nest.Connect(pre_nodes, post_nodes, conn_specs[i], syn_spec)
+            else:
                 comm.barrier()
-                if len(pre_locs) == 0 or len(post_locs) == 0:
-                    continue
-                cell_pairs, multiplicity = np.unique(
-                    np.column_stack((pre_locs[:, 0], post_locs[:, 0])),
-                    return_counts=True,
-                    axis=0,
-                )
-                prel = pre_nodes.tolist()
-                postl = post_nodes.tolist()
-                ssw = {**syn_spec}
-                bw = syn_spec["weight"]
-                ssw["weight"] = [bw * m for m in multiplicity]
-                ssw["delay"] = [syn_spec["delay"]] * len(ssw["weight"])
-                nest.Connect(
-                    [prel[x] for x in cell_pairs[:, 0]],
-                    [postl[x] for x in cell_pairs[:, 1]],
-                    "one_to_one",
-                    ssw,
-                    return_synapsecollection=False,
-                )
-            comm.barrier()
+                for pre_locs, post_locs in self.predict_mem_iterator(
+                    pre_nodes, post_nodes, cs, comm
+                ):
+                    comm.barrier()
+                    if len(pre_locs) == 0 or len(post_locs) == 0:
+                        continue
+                    cell_pairs, multiplicity = np.unique(
+                        np.column_stack((pre_locs[:, 0], post_locs[:, 0])),
+                        return_counts=True,
+                        axis=0,
+                    )
+                    prel = pre_nodes.tolist()
+                    postl = post_nodes.tolist()
+                    ssw = {**syn_spec}
+                    bw = syn_spec["weight"]
+                    ssw["weight"] = [bw * m for m in multiplicity]
+                    ssw["delay"] = [syn_spec["delay"]] * len(ssw["weight"])
+                    nest.Connect(
+                        [prel[x] for x in cell_pairs[:, 0]],
+                        [postl[x] for x in cell_pairs[:, 1]],
+                        "one_to_one",
+                        ssw,
+                        return_synapsecollection=False,
+                    )
+                comm.barrier()
         return LazySynapseCollection(pre_nodes, post_nodes)
 
     def predict_mem_iterator(self, pre_nodes, post_nodes, cs, comm):
@@ -171,23 +181,29 @@ class NestConnection(compose_nodes(NestConnectionSettings, ConnectionModel)):
         else:
             return self.connection_model
 
-    def get_conn_spec(self):
-        return {
-            "rule": self.rule,
-            **self.constants,
-        }
+    def get_conn_specs(self):
+        return [
+            {
+                "rule": rule,
+                **constants,
+            }
+            for rule, constants in zip(self.rules, self.constants, strict=False)
+        ]
 
-    def get_syn_spec(self):
-        return {
-            **{
-                label: value
-                for attr, label in (
-                    ("model", "synapse_model"),
-                    ["weight"] * 2,
-                    ["delay"] * 2,
-                    ["receptor_type"] * 2,
-                )
-                if (value := getattr(self.synapse, attr)) is not None
-            },
-            **self.synapse.constants,
-        }
+    def get_syn_specs(self):
+        return [
+            {
+                **{
+                    label: value
+                    for attr, label in (
+                        ("model", "synapse_model"),
+                        ["weight"] * 2,
+                        ["delay"] * 2,
+                        ["receptor_type"] * 2,
+                    )
+                    if (value := getattr(synapse, attr)) is not None
+                },
+                **synapse.constants,
+            }
+            for synapse in self.synapses
+        ]

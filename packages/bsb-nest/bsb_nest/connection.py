@@ -21,7 +21,7 @@ class NestSynapseSettings:
     """Importable reference to the NEST model describing the synapse type."""
     weight = config.attr(type=float, required=True)
     """Weight of the connection between the presynaptic and the postsynaptic cells."""
-    delay = config.attr(type=float, required=True)
+    delay = config.attr(type=float, required=False, default=None)
     """Delay of the transmission between the presynaptic and the postsynaptic cells."""
     receptor_type = config.attr(type=int)
     """Index of the postsynaptic receptor to target."""
@@ -97,6 +97,14 @@ class NestConnection(compose_nodes(NestConnectionSettings, ConnectionModel)):
                 raise NestConnectError(
                     f"Unknown synapse model '{syn_spec['synapse_model']}'."
                 )
+            if (
+                nest.GetDefaults(syn_spec["synapse_model"])["has_delay"]
+                and "delay" not in syn_spec
+            ):
+                raise NestConnectError(
+                    f"Synapse model '{syn_spec['synapse_model']}' "
+                    "requires a delay parameter."
+                )
             if len(conn_specs) > 0:
                 nest.Connect(pre_nodes, post_nodes, conn_specs[i], syn_spec)
             else:
@@ -117,7 +125,8 @@ class NestConnection(compose_nodes(NestConnectionSettings, ConnectionModel)):
                     ssw = {**syn_spec}
                     bw = syn_spec["weight"]
                     ssw["weight"] = [bw * m for m in multiplicity]
-                    ssw["delay"] = [syn_spec["delay"]] * len(ssw["weight"])
+                    if "delay" in syn_spec:
+                        ssw["delay"] = [syn_spec["delay"]] * len(ssw["weight"])
                     nest.Connect(
                         [prel[x] for x in cell_pairs[:, 0]],
                         [postl[x] for x in cell_pairs[:, 1]],

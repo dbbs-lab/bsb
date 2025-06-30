@@ -886,3 +886,60 @@ class TestNest(
             {"indegree": 1}
         )
         Scaffold(cfg, self.storage)
+
+    def test_gap_junctions_syn(self):
+        duration = 100
+        resolution = 0.1
+        cfg = _conf_two_cells()
+        cfg.simulations = {
+            "test": {
+                "simulator": "nest",
+                "duration": duration,
+                "resolution": resolution,
+                "seed": 1234,
+                "cell_models": {
+                    "A": {"model": "hh_psc_alpha_gap"},
+                    "C": {"model": "hh_psc_alpha_gap"},
+                },
+                "connection_models": {
+                    "C_to_A": {
+                        "synapses": [
+                            {"model": "gap_junction", "weight": -20.25},
+                        ],
+                    }
+                },
+                "devices": {},
+            }
+        }
+        scaffold = Scaffold(cfg, self.storage)
+        scaffold.compile()
+        scaffold.run_simulation("test")
+
+    def test_error_gap_junctions_syn(self):
+        duration = 100
+        resolution = 0.1
+        cfg = _conf_two_cells()
+        cfg.simulations = {
+            "test": {
+                "simulator": "nest",
+                "duration": duration,
+                "resolution": resolution,
+                "seed": 1234,
+                "cell_models": {
+                    "A": {"model": "hh_psc_alpha_gap"},
+                    "C": {"model": "hh_psc_alpha_gap"},
+                },
+                "connection_models": {
+                    "C_to_A": {
+                        "synapses": [
+                            {"weight": -20.25},
+                        ],
+                    }
+                },
+                "devices": {},
+            }
+        }
+        scaffold = Scaffold(cfg, self.storage)
+        scaffold.compile()
+        with self.assertRaises(NestConnectError):
+            scaffold.run_simulation("test")

@@ -1,8 +1,3 @@
-The Brain Scaffold Builder (BSB) suite has transitioned to a monorepo structure, consolidating various components into a
-unified repository. Below is a revised `README.md` tailored for the monorepo setup:
-
----
-
 # The Brain Scaffold Builder
 
 ![Build Status](https://github.com/dbbs-lab/bsb/actions/workflows/main.yml/badge.svg)
@@ -24,7 +19,9 @@ The BSB suite is now organized as a monorepo, integrating the following componen
 * **bsb-nest**: Simulation interface for point-neuron networks using the NEST simulator.
 * **bsb-neuron**: Simulation interface for detailed neuron networks using the NEURON simulator.
 * **bsb-arbor**: Simulation interface for detailed neuron networks using the ARBOR simulator.
-* **arborize**: Tool for Arbor-like descriptions of cell models for NEURON.
+* **nmodl-glia**: An NMODL asset manager.
+* **nrn-patch**: Utility layer to reduce friction when working with NEURON in Python.
+* **arborize**: Tool for Arbor-like descriptions of cell models for NEURON and Arbor.
 * **bsb-test**: Tools and configurations for testing BSB components.
 * **sphinxext-bsb**: Sphinx extension for BSB documentation.
 
@@ -68,6 +65,7 @@ pip install -r devtools/editable-install.txt
 
 For development purposes, you should install the [UV](https://nx.dev/) and [NX](https://docs.astral.sh/uv/) tools.
 To this end, there is a helper script for each platform in ``devtools/bootstrap-*``. For instance, for linux:
+
 ```bash
 ./devtools/bootstrap-linux.sh
 ```
@@ -77,7 +75,8 @@ Then, initialize the NX monorepo with the following command
 ```bash
 ./nx init
 ```
-From there, you NX and UV will automatically create an environment for each subpackage, 
+
+From there, NX and UV will automatically create an environment for each subpackage, 
 including all necessary libraries for running the unittests, linting the code and building the documentation.
 
 For more information, please refer to the [developers' documentation](https://bsb.readthedocs.io/en/latest/dev/dev-toc.html).
@@ -130,8 +129,3 @@ European Union’s Horizon 2020 research and innovation program under the Specif
 ## Supported by
 
 [![JetBrains logo](https://resources.jetbrains.com/storage/products/company/brand/logos/jetbrains.svg)](https://jb.gg/OpenSourceSupport)
-
----
-
-This README.md provides an overview of the BSB suite in its current monorepo format, detailing installation procedures,
-usage guidelines, and acknowledgements.

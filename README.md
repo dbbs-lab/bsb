@@ -19,7 +19,9 @@ The BSB suite is now organized as a monorepo, integrating the following componen
 * **bsb-nest**: Simulation interface for point-neuron networks using the NEST simulator.
 * **bsb-neuron**: Simulation interface for detailed neuron networks using the NEURON simulator.
 * **bsb-arbor**: Simulation interface for detailed neuron networks using the ARBOR simulator.
-* **arborize**: Tool for Arbor-like descriptions of cell models for NEURON.
+* **nmodl-glia**: An NMODL asset manager.
+* **nrn-patch**: Utility layer to reduce friction when working with NEURON in Python.
+* **arborize**: Tool for Arbor-like descriptions of cell models for NEURON and Arbor.
 * **bsb-test**: Tools and configurations for testing BSB components.
 * **sphinxext-bsb**: Sphinx extension for BSB documentation.
 
@@ -69,6 +71,7 @@ pip install -r devtools/editable-install.txt
 
 For development purposes, you should install the [UV](https://docs.astral.sh/uv/) and [NX](https://nx.dev/) tools.
 To this end, there is a helper script for each platform in ``devtools/bootstrap-*``. For instance, for linux:
+
 ```bash
 git clone https://github.com/dbbs-lab/bsb
 cd bsb
@@ -80,6 +83,7 @@ Then, initialize the NX monorepo with the following command
 ```bash
 ./nx init
 ```
+
 From there, you NX and UV will automatically create an environment for each subpackage, 
 including all necessary libraries for running the unittests, linting the code and building the documentation.
 

@@ -58,7 +58,7 @@ human-readable, multi-scale models!
 
        Help out the project by contributing code.
 
-    .. grid-item-card:: :octicon:`gear;1em;sd-text-warning` Domains
+    .. grid-item-card:: :octicon:`gear;1em;sd-text-warning` Learn about Components
        :link: main-components
        :link-type: ref
 
@@ -85,15 +85,6 @@ Content
    examples/toc
 
 .. toctree::
-  :maxdepth: 2
-  :caption: Command-Line Interface
-
-  /cli/intro
-  /cli/commands
-  /cli/options
-
-
-.. toctree::
    :maxdepth: 2
    :caption: Framework concepts
 
@@ -113,6 +104,14 @@ Content
    /connectivity/connectivity-toc
    /simulation/simulation-toc
    /components/components
+
+.. toctree::
+  :maxdepth: 2
+  :caption: Command-Line Interface
+
+  /cli/intro
+  /cli/commands
+  /cli/options
 
 .. toctree::
    :maxdepth: 2

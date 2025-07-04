@@ -2,12 +2,12 @@
 
 .. _main-components:
 
-Domains
-=======
+Components
+==========
 
 .. toctree::
    :maxdepth: 2
-   :caption: BSB Domains
+   :caption: BSB Components
 
    /topology/topology-toc
    /cells/cells-toc

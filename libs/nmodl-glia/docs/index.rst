@@ -1,7 +1,7 @@
 .. Glia Packet Manager documentation main file
 
-Glia Packet Manager's documentation
-===================================
+NMODL-Glia Asset Manager's documentation
+========================================
 
 .. image:: https://github.com/dbbs-lab/bsb/actions/workflows/main.yml/badge.svg
    :target: https://github.com/dbbs-lab/bsb

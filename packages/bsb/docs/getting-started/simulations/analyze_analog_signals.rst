@@ -72,7 +72,7 @@ Here are some example of the figures that are produced:
 
         Familiarize yourself with BSB's CLI.
 
-    .. grid-item-card:: :octicon:`gear;1em;sd-text-warning` Domains
+    .. grid-item-card:: :octicon:`gear;1em;sd-text-warning` Learn about Components
        :link: main-components
        :link-type: ref
 

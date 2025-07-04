@@ -243,7 +243,7 @@ the placement strategy example in :doc:`this section </examples/place_distributi
 
        Familiarize yourself with BSB's CLI.
 
-    .. grid-item-card:: :octicon:`gear;1em;sd-text-warning` Domains
+    .. grid-item-card:: :octicon:`gear;1em;sd-text-warning` Learn more about Components
        :link: main-components
        :link-type: ref
 

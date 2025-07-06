@@ -56,10 +56,7 @@ jobs:
           git config --global user.email "neurocomp_dbbs@unipv.it"
           git config --global user.name "DBBS Laboratory"
           ./nx release version --verbose
-          version=`sed -n -E 's/version = "(.*)"/\1/p' packages/bsb/pyproject.toml`
-          sed -i -E 's/"dateModified": "(\-?[0-9]+){3}"/"dateModified": "'$(date +%F)'"/' codemeta.json
-          sed -i -E 's/"version": "(\.?[0-9]+){3}"/"version": "'$version'"/' codemeta.json
-          sed -i -E 's/\/tag(s)?\/v(\.?[0-9]+){3}/\/tag\1\/v'$version'/' codemeta.json
+          uv run --project packages/bsb/pyproject.toml python devtools/update_codemeta.py
           git add codemeta.json
           ./nx release changelog $version --verbose
           ./nx release publish --verbose

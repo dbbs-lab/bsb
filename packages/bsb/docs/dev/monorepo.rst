@@ -50,7 +50,6 @@ NodeJS. There is helper scripts for each platform in ``devtools/bootstrap-*``:
         git clone https://github.com/dbbs-lab/bsb
         cd bsb
         ./devtools/bootstrap-linux.sh
-        ./nx init
 
   .. tab-item:: MacOS
     :sync: bash
@@ -60,7 +59,6 @@ NodeJS. There is helper scripts for each platform in ``devtools/bootstrap-*``:
           git clone https://github.com/dbbs-lab/bsb
           cd bsb
           ./devtools/bootstrap-mac.sh
-          ./nx init
 
   .. tab-item:: Windows
     :sync: shell
@@ -70,7 +68,6 @@ NodeJS. There is helper scripts for each platform in ``devtools/bootstrap-*``:
           git clone https://github.com/dbbs-lab/bsb
           cd bsb
           .\devtools\bootstrap-windows.ps1
-          .\nx init
 
 .. note::
 

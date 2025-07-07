@@ -34,10 +34,10 @@ jobs:
       - name: Get affected projects
         id: get-affected
         run: |
-          # initialize the nx project to install required npm libs
+          # Run the nx command once to install required npm libs
           # so that the logs of the installation do not pollute the 
           # output of the next command
-          ./nx init --nxCloud
+          ./nx
           # Here we extract the list of nx bsb projects and store 
           # them as a list that can be parsed in the next job
           packages=$(./nx show projects --projects "packages/*" --affected)

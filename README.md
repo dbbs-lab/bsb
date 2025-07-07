@@ -78,11 +78,6 @@ cd bsb
 ./devtools/bootstrap-linux.sh
 ```
 
-Then, initialize the NX monorepo with the following command
-
-```bash
-./nx init
-```
 
 From there, you NX and UV will automatically create an environment for each subpackage, 
 including all necessary libraries for running the unittests, linting the code and building the documentation.

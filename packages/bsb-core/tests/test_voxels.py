@@ -3,13 +3,28 @@ import unittest
 from itertools import chain as _ic
 from itertools import count as _ico
 
-import bsb_test
 import numpy as np
+import voxcell
+from bsb_test import (
+    DictTestCase,
+    NetworkFixture,
+    NumpyTestCase,
+    RandomStorageFixture,
+    get_data_path,
+)
 
-from bsb import Branch, Chunk, EmptyVoxelSetError, Morphology, VoxelData, VoxelSet
+from bsb import (
+    Branch,
+    Chunk,
+    Configuration,
+    EmptyVoxelSetError,
+    Morphology,
+    VoxelData,
+    VoxelSet,
+)
 
 
-class TestVoxelSet(bsb_test.NumpyTestCase, unittest.TestCase):
+class TestVoxelSet(NumpyTestCase, unittest.TestCase):
     def setUp(self):
         vs = VoxelSet
         self.regulars = [
@@ -559,3 +574,113 @@ class TestVoxelData(unittest.TestCase):
 
     def test_getitem(self):
         VoxelData(np.array([1]), keys=["alpha"])[0]
+
+
+class TestNrrdDependencyNode(
+    RandomStorageFixture,
+    NetworkFixture,
+    NumpyTestCase,
+    DictTestCase,
+    unittest.TestCase,
+    engine_name="hdf5",
+):
+    def setUp(self):
+        self.default_vector = np.array([0.0, -1.0, 0.0])
+        self.cfg = Configuration.default(
+            regions=dict(reg=dict(children=["a"])),
+            partitions=dict(
+                a=dict(
+                    type="allen",
+                    mask_source=get_data_path("orientations", "toy_annotations.nrrd"),
+                    atlas_datasets={
+                        "orientations": get_data_path(
+                            "orientations", "toy_orientations.nrrd"
+                        )
+                    },
+                    struct_id=10690,
+                )
+            ),
+        )
+        super().setUp()
+        self.network.compile(clear=True)
+        self.annotations = self.network.partitions["a"].mask_source
+        self.resolution = 25.0
+        self.origin = np.array([0.0, 0.0, 0.0])
+        self.shape = np.array([10, 8, 8])
+        self.orientations = self.network.partitions["a"].atlas_datasets["orientations"]
+
+    def test_getters(self):
+        self.assertAll(self.annotations.space_origin == self.origin)
+        self.assertAll(self.annotations.default_vector == self.default_vector)
+        self.assertEqual(self.annotations.voxel_size, self.resolution)
+        expected = {
+            "type": "int32",
+            "dimension": 3,
+            "space dimension": 3,
+            "sizes": self.shape,
+            "space directions": np.eye(3) * self.resolution,
+            "endian": "little",
+            "encoding": "gzip",
+            "space origin": self.origin,
+        }
+
+        self.assertDictEqual(expected, dict(self.annotations.get_header()))
+        self.assertIsInstance(self.annotations.load_object(), voxcell.VoxelData)
+
+    def test_positions_to_voxels(self):
+        position = np.array(
+            [5 * self.resolution - 0.01, 5 * self.resolution, (5 + 0.5) * self.resolution]
+        )
+        position2 = np.array(
+            [5 * self.resolution, 5 * self.resolution, 5 * self.resolution]
+        )
+        position3 = np.array(
+            [
+                6 * self.resolution - 0.01,
+                6 * self.resolution - 0.01,
+                6 * self.resolution - 0.01,
+            ]
+        )
+        predicted = np.array([4, 5, 5])
+        self.assertAll(predicted == self.annotations.voxel_of(position))
+        annotations = self.annotations.load_object().raw
+        self.assertTrue(self.annotations.is_within(self.shape - 1, annotations))
+        self.assertFalse(self.annotations.is_within(self.shape, annotations))
+        self.assertFalse(self.annotations.is_within(np.array([0, 0, -1]), annotations))
+
+        self.assertTrue(self.annotations.crosses_voxel(position, position2))
+        self.assertFalse(self.annotations.crosses_voxel(position2, position3))
+
+    def test_voxel_orientation(self):
+        orientations = self.orientations.load_object().raw
+        self.assertAll(
+            np.isclose(
+                [-1, 0, 0],
+                self.annotations.voxel_data_of(
+                    np.array([2, 2, 1]) * self.resolution, orientations
+                ),
+                atol=2e-1,
+            )
+        )
+        with self.assertRaises(ValueError):
+            self.annotations.voxel_data_of(
+                np.array([9, 7, 8]) * self.resolution, orientations
+            )
+        self.assertAll(
+            self.annotations.voxel_data_of(
+                np.array([2, 2, 1]) * self.resolution, orientations
+            )
+            == self.annotations.voxel_orient(
+                orientations, np.array([2, 2, 1]) * self.resolution
+            )
+        )
+        with self.assertRaises(ValueError):
+            self.annotations.voxel_orient(orientations, np.array([0, 0, 0]))
+
+    def test_voxel_rotation(self):
+        orientations = self.orientations.load_object().raw
+        point = np.array([2, 2, 1]) * self.resolution
+        rotation = self.orientations.voxel_rotation_of(orientations, point).as_euler(
+            "xyz", degrees=True
+        )
+        self.assertAll(np.isclose([0, 0, 90], rotation, atol=10))

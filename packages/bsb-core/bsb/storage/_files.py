@@ -540,7 +540,7 @@ class NrrdDependencyNode(FilePipelineMixin, FileDependencyNode):
         :return: True if position are separated by at least one voxel.
         :rtype: bool
         """
-        return np.any(np.absolute(point - last_point) >= self.voxel_size)
+        return np.any(np.absolute(self.voxel_of(point) - self.voxel_of(last_point)) >= 1)
 
     def voxel_of(self, point):
         """
@@ -550,7 +550,7 @@ class NrrdDependencyNode(FilePipelineMixin, FileDependencyNode):
         :rtype: numpy.ndarray
         """
         return np.asarray(
-            np.floor((point - self.space_origin) / self.voxel_size),
+            np.floor((np.asarray(point) - self.space_origin) / self.voxel_size),
             dtype=int,
         )
 
@@ -564,10 +564,12 @@ class NrrdDependencyNode(FilePipelineMixin, FileDependencyNode):
         :rtype: bool
         """
         return (
-            np.all(vox >= 0)
-            * (vox[0] < dataset.shape[0])
-            * (vox[1] < dataset.shape[1])
-            * (vox[2] < dataset.shape[2])
+            len(dataset.shape) >= 3
+            and len(vox) >= 3
+            and np.all(vox >= 0)
+            and (vox[0] < dataset.shape[0])
+            and (vox[1] < dataset.shape[1])
+            and (vox[2] < dataset.shape[2])
         )
 
     def voxel_data_of(self, point, dataset):
@@ -577,9 +579,15 @@ class NrrdDependencyNode(FilePipelineMixin, FileDependencyNode):
         :param numpy.ndarray dataset: 3D numpy dataset
         :return: data stored at the point position.
         """
+        loc_dataset = np.asarray(dataset)
         vox = self.voxel_of(point)
-        if self.is_within(vox, dataset):
-            return dataset[vox[0], vox[1], vox[2]]
+        if self.is_within(vox, loc_dataset):
+            return loc_dataset[vox[0], vox[1], vox[2]]
+        else:
+            raise ValueError(
+                f"Position is outside of the dataset.\n"
+                f"Shape: {loc_dataset.shape}, Resolution: {self.voxel_size}."
+            )
 
     def voxel_orient(self, orientation_field, point):
         """

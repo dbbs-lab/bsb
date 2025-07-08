@@ -1,5 +1,8 @@
-Monorepo
-========
+Introduction
+============
+
+Monorepo structure
+------------------
 
 The BSB uses a monorepo pattern for organizing the framework code, packages, and
 first party plugins:

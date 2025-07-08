@@ -59,7 +59,7 @@ human-readable, multi-scale models!
        Help out the project by contributing code.
 
     .. grid-item-card:: :octicon:`gear;1em;sd-text-warning` Learn about Components
-       :link: main-components
+       :link: components
        :link-type: ref
 
        Explore more about the main components.
@@ -97,13 +97,13 @@ Content
    :maxdepth: 2
    :caption: Domains
 
+   /components/components
    /topology/topology-toc
    /cells/cells-toc
    /morphologies/morphology-toc
    /placement/placement-toc
    /connectivity/connectivity-toc
    /simulation/simulation-toc
-   /components/components
 
 .. toctree::
   :maxdepth: 2
@@ -135,4 +135,11 @@ Content
   :maxdepth: 2
   :caption: Developer Guides:
 
-  dev/dev-toc
+  dev/monorepo
+  dev/guidelines
+  dev/documentation
+  dev/services
+  dev/projects
+  dev/plugins
+  dev/hooks
+  dev/reference

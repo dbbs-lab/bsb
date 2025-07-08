@@ -120,7 +120,7 @@ Developer installation
     :end-before: end-dev-install
 
 If you want to have more information about our development guidelines, please read our
-:doc:`developer guides</dev/dev-toc>`
+:doc:`developer guides</dev/monorepo>`
 
 What is next
 ============

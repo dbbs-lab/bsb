@@ -1,14 +1,48 @@
 .. _components:
 
-==================
+==============
+BSB components
+==============
+
+The architecture of the BSB framework organizes your model's reconstruction and simulation
+workflows into reusable code blocks: the components. The BSB offers many out of the box
+of these components, covering most of the basic operations.
+
+Documentation and Examples
+--------------------------
+For each of the BSB components, we provide examples of usage and documentation on their
+parameters and outputs. You will find these at the following pages:
+
+* :doc:`Topology </topology/intro>`, which includes :guilabel:`Regions` and :guilabel:`Partitions`,
+* :doc:`Cell Types </cells/intro>`
+* :doc:`Morphologies </morphologies/intro>` ,
+* :doc:`Placement </placement/intro>`,
+* :doc:`Connectivity </connectivity/defining>`,
+* :doc:`Simulations </simulation/intro>`
+
+If some aspects of the documentation are not sufficiently clear or missing, do not hesitate
+to reach out for us.
+
+Unfortunately, the BSB does not cover every use case and thus often you will need to write
+your own components.
+
 Writing components
-==================
+------------------
 
-The architecture of the BSB framework organizes your model into reusable components. It offers
-out of the box components for basic operations, but often you'll need to write your own.
+Reaching out for help
+^^^^^^^^^^^^^^^^^^^^^
 
-If you want to read a step by step tutorial on how to make your own component, check this
-:doc:`page </getting-started/guide_components>`
+Before diving into coding, do not hesitate to first reach out for us on our
+`github page <https://github.com/dbbs-lab/bsb/issues>`_ to ask if there is
+already a solution implemented for your use case. We can also provide you advice on how
+to implement your component and might also be interested in integrating it directly into
+the BSB itself. We greatly value user contributions to the BSB framework!
+On this matter, if you wish to contribute to the BSB, check our
+:doc:`guides for developers </dev/monorepo>`.
+
+
+Code implementation
+^^^^^^^^^^^^^^^^^^^
 
 For each component, the BSB provides interfaces, each with a set of functions that you must
 implement. By implementing these functions, the framework can seamlessly integrate your
@@ -27,42 +61,8 @@ Here is how you do it (theoretically):
 #. Refer to the class from the configuration by its importable module name, or use a
    :ref:`classmap`.
 
-With a quick example, there's the ``MorphologySelector`` interface, which lets you specify
-how a subset of the available morphologies should be selected for a certain group of
-cells:
-
-1. The interface is ``bsb.morphologies.MorphologySelector`` and the docs specify it has
-   a ``validate(self, morphos)`` and ``pick(self, morpho)`` function.
-
-2. Instant-Python |:tm:|, just add water:
-
-.. code-block:: python
-
-  from bsb import config, MorphologySelector
-
-  @config.node
-  class MySizeSelector(MorphologySelector):
-    min_size = config.attr(type=float, default=20)
-    max_size = config.attr(type=float, default=50)
-
-    def validate(self, morphos):
-      if not all("size" in m.get_meta() for m in morphos):
-        raise Exception("Missing size metadata for the size selector")
-
-    def pick(self, morpho):
-      meta = morpho.get_meta()
-      return meta["size"] > self.min_size and meta["size"] < self.max_size
-
-3. Assuming that that code is in a ``select.py`` file relative to the working directory
-you can now access:
-
-.. code-block:: json
-
-  {
-    "select": "select.MySizeSelector",
-    "min_size": 30,
-    "max_size": 50
-  }
+Check our step by step :doc:`tutorial </getting-started/guide_components>` on how to make
+your own component.
 
 Share your code with the whole world and become an author of a :ref:`plugin <plugins>`!
 |:heart_eyes:|

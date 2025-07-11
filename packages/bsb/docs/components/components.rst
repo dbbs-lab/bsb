@@ -61,7 +61,7 @@ Here is how you do it (theoretically):
    interesting looking functions of its public API (which will be specified).
 
 #. Refer to the class from the configuration by its importable module name, or use a
-   :ref:`classmap`.
+   :ref:`Class map <classmap>`.
 
 Share your code with the whole world and become an author of a :ref:`plugin <plugins>`!
 |:heart_eyes:|

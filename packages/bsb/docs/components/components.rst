@@ -44,6 +44,8 @@ On this matter, if you wish to contribute to the BSB, check our
 Code implementation
 ^^^^^^^^^^^^^^^^^^^
 
+Check our step by step :doc:`tutorial </getting-started/guide_components>` on how to make
+your own component.
 For each component, the BSB provides interfaces, each with a set of functions that you must
 implement. By implementing these functions, the framework can seamlessly integrate your
 custom components into a BSB workflow. Neat!
@@ -60,9 +62,6 @@ Here is how you do it (theoretically):
 
 #. Refer to the class from the configuration by its importable module name, or use a
    :ref:`classmap`.
-
-Check our step by step :doc:`tutorial </getting-started/guide_components>` on how to make
-your own component.
 
 Share your code with the whole world and become an author of a :ref:`plugin <plugins>`!
 |:heart_eyes:|

@@ -103,6 +103,7 @@ class NeuronAdapter(SimulatorAdapter):
             self.create_connections(simulation)
             report("Creating devices", level=2)
             self.create_devices(simulation)
+            self.load_controllers_from_devices(simulation)
             return self.simdata[simulation]
         except:
             del self.simdata[simulation]
@@ -136,7 +137,9 @@ class NeuronAdapter(SimulatorAdapter):
             pc = self.engine.ParallelContext()
             pc.set_maxstep(10)
             self.engine.finitialize(self.initial)
+            '''
             duration = max(sim.duration for sim in simulations)
+
             progress = AdapterProgress(duration)
             for _oi, i in progress.steps(step=1):
                 pc.psolve(i)
@@ -144,6 +147,13 @@ class NeuronAdapter(SimulatorAdapter):
                 for listener in self._progress_listeners:
                     listener(simulations, tick)
             progress.complete()
+            '''
+            for t , cnt_ids in self._cnt_iterator:
+                pc.psolve(t)
+                self.execute(cnt_ids,simulations = simulations)
+
+
+
             report("Finished simulation.", level=2)
         finally:
             results = [self.simdata[sim].result for sim in simulations]

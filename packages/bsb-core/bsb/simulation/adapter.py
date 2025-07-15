@@ -15,14 +15,38 @@ if typing.TYPE_CHECKING:
     from .cell import CellModel
     from .simulation import Simulation
 
+class AdapterController(abc.ABC):
 
-class AdapterProgress:
-    def __init__(self, duration):
-        self._duration = duration
+    def __init__(self, start_t= None ):
+        self._status = start_t or 0
+
+    @abc.abstractmethod
+    def get_next_checkpoint(self):
+        ''' method to implement that is needed for look for the next checkpoint
+        :return: Next checkpoint time.
+        :rtype: float
+        '''
+        pass
+
+    @abc.abstractmethod
+    def progress(self):
+        ''' method that the controller will use to advance to the next checkpoint
+        :return: Next checkpoint time.
+        :rtype: float
+        '''
+        pass
+
+    def complete(self):
+        return
+
+class AdapterProgress(AdapterController):
+    def __init__(self, step,duration):
+        self._step= step
         self._start = self._last_tick = time()
         self._ticks = 0
+        self._duration = duration
 
-    def tick(self, step):
+    def tick(self, duration=None):
         """
         Report simulation progress.
         """
@@ -30,20 +54,22 @@ class AdapterProgress:
         tic = now - self._last_tick
         self._ticks += 1
         el = now - self._start
-        progress = types.SimpleNamespace(
-            progression=step, duration=self._duration, time=time(), tick=tic, elapsed=el
-        )
+        args = { 'progression':self._step, 'time':time(), 'duration': self._duration, 'tick':tic, 'elapsed':el}
+
+        progress = types.SimpleNamespace(**args)
         self._last_tick = now
         return progress
 
-    def steps(self, step=1):
-        steps = itertools.chain(np.arange(0, self._duration, step), (self._duration,))
-        a, b = itertools.tee(steps)
-        next(b, None)
-        yield from zip(a, b, strict=False)
+    def get_next_checkpoint(self,time):
+        return self._status + self._step
 
-    def complete(self):
-        return
+    def progress(self):
+        self._status += self._step
+        return self._status
+
+
+
+
 
 
 class SimulationData:
@@ -69,6 +95,8 @@ class SimulatorAdapter(abc.ABC):
         self._progress_listeners = []
         self.simdata: dict[Simulation, SimulationData] = dict()
         self.comm = MPIService(comm)
+        self._controllers = []
+        self._cnt_iterator =None
 
     def simulate(self, *simulations, post_prepare=None):
         """
@@ -118,9 +146,13 @@ class SimulatorAdapter(abc.ABC):
         """
         pass
 
+    def execute(self,controller_ids, *args):
+        for i in controller_ids:
+            self._controllers[i].progress(args)  # self._controllers[i]()
+
     def collect(self, results):
         """
-        Collect the output the simulations that completed.
+        Collect the output the simulations that reached a checkpoint.
 
         :return: Collected simulation results.
         :rtype: list[~bsb.simulation.results.SimulationResult]
@@ -131,6 +163,14 @@ class SimulatorAdapter(abc.ABC):
 
     def add_progress_listener(self, listener):
         self._progress_listeners.append(listener)
+
+    def load_controllers_from_devices(self,simulation):
+        for device in simulation.devices.values():
+            if hasattr(device, 'get_next_checkpoint'):
+                if hasattr(device, 'progress'):
+                    self._controllers.append(device)
+                else:
+                    raise TypeError(f"Device {device.name} is configured to be an controller but progress method is not defined")
 
 
 __all__ = ["AdapterProgress", "SimulationData", "SimulatorAdapter"]

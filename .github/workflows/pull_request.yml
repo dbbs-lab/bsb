@@ -20,9 +20,26 @@ jobs:
       matrix: ${{ steps.get-affected.outputs.packages }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install nodejs
+        run: |
+          curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+          \. "$HOME/.nvm/nvm.sh"
+          nvm install --lts
+
+      - name: Derive appropriate SHAs for base and head for `nx affected` commands
+        uses: nrwl/nx-set-shas@v4
+
       - name: Get affected projects
         id: get-affected
         run: |
+          # Run the nx command once to install required npm libs
+          # so that the logs of the installation do not pollute the 
+          # output of the next command
+          ./nx show projects
+          # Here we extract the list of nx bsb projects and store 
+          # them as a list that can be parsed in the next job
           packages=$(./nx show projects --projects "packages/*" --affected)
           packages=[\"$(echo $packages | sed -r 's/[ ]+/", "/g')\"]
           echo "packages=$packages" >> $GITHUB_OUTPUT
@@ -37,4 +54,4 @@ jobs:
       - name: Preview BSB Readthedocs
         uses: readthedocs/actions/preview@v1
         with:
-          project-slug: {{ matrix.package }}
+          project-slug: ${{ matrix.package }}

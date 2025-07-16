@@ -6,14 +6,26 @@ on:
       - main
 
 jobs:
+  check-api:
+    uses: ./.github/workflows/check-api.yml
+  build:
+    uses: ./.github/workflows/build.yml
+    secrets:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+  docs:
+    uses: ./.github/workflows/docs.yml
+  ruff:
+    uses: ./.github/workflows/ruff.yml
+
   release:
+    needs: [ruff, build, docs, check-api]
     runs-on: ubuntu-latest
     permissions:
       id-token: write
 
     steps:
       - name: Create Github token
-        uses: actions/create-github-app-token@v1
+        uses: actions/create-github-app-token@v2
         id: app-token
         with:
           app-id: ${{ vars.DBBS_APP_ID }}
@@ -35,12 +47,16 @@ jobs:
           nvm install --lts
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v6
 
       - name: Nx Release flow
         env:
           NX_DAEMON: false
         run: |
-          git config --global user.email "dbbs-lab@cerebhub.eu"
+          git config --global user.email "neurocomp_dbbs@unipv.it"
           git config --global user.name "DBBS Laboratory"
-          ./nx release --yes --verbose
+          ./nx release version --verbose
+          uv run --project packages/bsb/pyproject.toml python devtools/update_codemeta.py
+          git add codemeta.json
+          ./nx release changelog $version --verbose
+          ./nx release publish --verbose

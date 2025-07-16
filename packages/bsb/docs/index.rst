@@ -58,8 +58,8 @@ human-readable, multi-scale models!
 
        Help out the project by contributing code.
 
-    .. grid-item-card:: :octicon:`gear;1em;sd-text-warning` Components
-       :link: main-components
+    .. grid-item-card:: :octicon:`gear;1em;sd-text-warning` Learn about Components
+       :link: components
        :link-type: ref
 
        Explore more about the main components.
@@ -85,31 +85,45 @@ Content
    examples/toc
 
 .. toctree::
-  :maxdepth: 2
-  :caption: CLI
-
-  cli/cli-toc
-
-
-.. toctree::
    :maxdepth: 2
    :caption: Framework concepts
 
-   core/core-toc
+   /core/scaffold
+   /config/configuration-toc
+   /core/storage
+   /core/job-distribution
 
 .. toctree::
    :maxdepth: 2
-   :caption: Components
+   :caption: Domains
 
-   components/components-toc
+   /components/components
+   /topology/topology-toc
+   /cells/cells-toc
+   /morphologies/morphology-toc
+   /placement/placement-toc
+   /connectivity/connectivity-toc
+   /simulation/simulation-toc
+
+.. toctree::
+  :maxdepth: 2
+  :caption: Command-Line Interface
+
+  /cli/intro
+  /cli/commands
+  /cli/options
 
 .. toctree::
    :maxdepth: 2
    :caption: References
 
-   modules
-   genindex
-   py-modindex
+   bsb-core <https://bsb-core.readthedocs.io/en/latest/bsb/modules.html>
+   bsb-hdf5 <https://bsb-hdf5.readthedocs.io/en/latest/bsb_hdf5/modules.html>
+   bsb-json <https://bsb-json.readthedocs.io/en/latest/bsb_json/modules.html>
+   bsb-yaml <https://bsb-yaml.readthedocs.io/en/latest/bsb_yaml/modules.html>
+   bsb-arbor <https://bsb-arbor.readthedocs.io/en/latest/bsb_arbor/modules.html>
+   bsb-nest <https://bsb-nest.readthedocs.io/en/latest/bsb_nest/modules.html>
+   bsb-neuron <https://bsb-neuron.readthedocs.io/en/latest/bsb_neuron/modules.html>
 
 .. toctree::
    :maxdepth: 1
@@ -121,4 +135,11 @@ Content
   :maxdepth: 2
   :caption: Developer Guides:
 
-  dev/dev-toc
+  dev/monorepo
+  dev/guidelines
+  dev/documentation
+  dev/services
+  dev/projects
+  dev/plugins
+  dev/hooks
+  dev/reference

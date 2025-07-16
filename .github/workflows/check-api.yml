@@ -21,3 +21,5 @@ jobs:
     - uses: nrwl/nx-set-shas@v4
     - name: Check public APIs
       run: ./nx affected -t check-api
+      env:
+        NX_DAEMON: false

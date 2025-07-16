@@ -6,6 +6,14 @@
 BSB JSON Configuration File Parser
 ==================================
 
+This website hosts the code references related to the ``bsb-json`` package.
+
+``bsb-json`` is a plugin of the ``BSB``.
+It allows the user to write their models' configuration in the json format.
+
+Code references
+---------------
+
 .. toctree::
    :maxdepth: 2
    :caption: References:
@@ -13,3 +21,6 @@ BSB JSON Configuration File Parser
    bsb_json/modules
    genindex
    py-modindex
+
+`Main BSB documentation <https://bsb.readthedocs.io/en/latest/index.html>`_
+---------------------------------------------------------------------------

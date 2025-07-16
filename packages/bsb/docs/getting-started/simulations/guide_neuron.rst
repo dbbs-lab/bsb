@@ -258,8 +258,8 @@ Congratulations, you simulated your first BSB reconstructed network with NEURON!
 
        Learn how to write your own components to e.g. place or connect cells.
 
-    .. grid-item-card:: :octicon:`gear;1em;sd-text-warning` Learn about components
-       :link: main-components
+    .. grid-item-card:: :octicon:`gear;1em;sd-text-warning` Learn about Components
+       :link: components
        :link-type: ref
 
        Explore more about the main components.

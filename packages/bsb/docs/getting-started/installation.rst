@@ -3,7 +3,7 @@
 ============
 Installation
 ============
-| The BSB framework is tested and documented for Python versions 3.9, 3.10 and 3.11.
+| The BSB framework is tested and documented for Python versions 3.10, 3.11 and 3.12.
 | Support and compatibility are not guaranteed for the other versions of Python.
 
 .. tip::
@@ -120,7 +120,7 @@ Developer installation
     :end-before: end-dev-install
 
 If you want to have more information about our development guidelines, please read our
-:doc:`developer guides</dev/dev-toc>`
+:doc:`developer guides</dev/monorepo>`
 
 What is next
 ============

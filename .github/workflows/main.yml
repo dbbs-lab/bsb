@@ -62,7 +62,7 @@ jobs:
           git config --global user.email "neurocomp_dbbs@unipv.it"
           git config --global user.name "DBBS Laboratory"
           ./nx release version --verbose
-          uv run --project packages/bsb/pyproject.toml python devtools/update_codemeta.py
+          version=$(uv run --project packages/bsb/pyproject.toml python devtools/update_codemeta.py)
           git add codemeta.json
           ./nx release changelog $version --verbose
           ./nx release publish --verbose

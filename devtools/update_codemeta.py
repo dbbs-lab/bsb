@@ -28,3 +28,6 @@ with open(codemeta_file, "r+") as f:
     )
     f.seek(0)
     json.dump(metadata, f, indent=4)
+
+# print bsb version for release GHA
+print(version)

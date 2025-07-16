@@ -40,6 +40,12 @@ jobs:
           fetch-depth: 0
           token: ${{ steps.app-token.outputs.token }}
 
+      - name: Install apt dependencies
+        run: |
+          sudo apt update
+          # Install `libopenmpi` for MPI
+          sudo apt install openmpi-bin libopenmpi-dev
+
       - name: Install nodejs
         run: |
           curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash

@@ -92,9 +92,11 @@ class NeuronAdapter(SimulatorAdapter):
         )
         try:
             report("Preparing simulation", level=2)
-            self.engine.dt = simulation.resolution
+            if self.engine.dt > simulation.resolution:
+                self.engine.dt = simulation.resolution
             self.engine.celsius = simulation.temperature
-            self.engine.tstop = simulation.duration
+            if self.engine.tstop < simulation.duration
+                self.engine.tstop = simulation.duration
             report("Load balancing", level=2)
             self.load_balance(simulation)
             report("Creating neurons", level=2)
@@ -137,9 +139,9 @@ class NeuronAdapter(SimulatorAdapter):
             pc = self.engine.ParallelContext()
             pc.set_maxstep(10)
             self.engine.finitialize(self.initial)
+            self.duration = self.engine.tstop
+            self.resolution = self.engine.dt
             '''
-            duration = max(sim.duration for sim in simulations)
-
             progress = AdapterProgress(duration)
             for _oi, i in progress.steps(step=1):
                 pc.psolve(i)
@@ -148,7 +150,7 @@ class NeuronAdapter(SimulatorAdapter):
                     listener(simulations, tick)
             progress.complete()
             '''
-            for t , cnt_ids in self._cnt_iterator:
+            for t , cnt_ids in self.get_next_checkpoint():
                 pc.psolve(t)
                 self.execute(cnt_ids,simulations = simulations)
 

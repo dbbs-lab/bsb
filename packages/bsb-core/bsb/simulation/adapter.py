@@ -39,6 +39,7 @@ class AdapterController(abc.ABC):
     def complete(self):
         return
 
+
 class AdapterProgress(AdapterController):
     def __init__(self, step,duration):
         self._step= step
@@ -68,6 +69,15 @@ class AdapterProgress(AdapterController):
         return self._status
 
 
+class BasicSimulationListener:
+    def __init__(self,adapter,step):
+        self._simulations_name = adapter.simdata.keys()
+        self._comm = adapter.comm
+        self._t_status = 0
+        self._step= step or 1
+
+    def get_next_checkpoint(self):
+        return self._t_status + self._step
 
 
 
@@ -96,7 +106,8 @@ class SimulatorAdapter(abc.ABC):
         self.simdata: dict[Simulation, SimulationData] = dict()
         self.comm = MPIService(comm)
         self._controllers = []
-        self._cnt_iterator =None
+        self._duration = None
+        self._sim_checkpoint = 0
 
     def simulate(self, *simulations, post_prepare=None):
         """
@@ -146,6 +157,11 @@ class SimulatorAdapter(abc.ABC):
         """
         pass
 
+    def get_next_checkpoint(self):
+        while self._sim_checkpoint < self.duration:
+            self._sim_checkpoint = np.min([ cnt.get_next_checkpoint() for cnt in self._controllers])
+            cnt_ids = np.where(self._controllers == self._sim_checkpoint)
+            yield (self._sim_checkpoint, cnt_ids)
     def execute(self,controller_ids, *args):
         for i in controller_ids:
             self._controllers[i].progress(args)  # self._controllers[i]()
@@ -164,13 +180,20 @@ class SimulatorAdapter(abc.ABC):
     def add_progress_listener(self, listener):
         self._progress_listeners.append(listener)
 
-    def load_controllers_from_devices(self,simulation):
+    def load_controllers(self,simulation):
+        if  not self._progress_listeners:
+            self._progress_listeners.append(BasicSimulationListener)
+        for listener in self._progress_listeners:
+            if hasattr(listener, 'progress') and hasattr(listener, 'get_next_checkpoint'):
+                self._controllers.append(listener)
+            else:
+                raise TypeError(f"The Simulation listener {listener} does not implement get_next_checkpoint or progress method, cannot use it as controller")
         for device in simulation.devices.values():
             if hasattr(device, 'get_next_checkpoint'):
                 if hasattr(device, 'progress'):
                     self._controllers.append(device)
                 else:
-                    raise TypeError(f"Device {device.name} is configured to be an controller but progress method is not defined")
+                    raise TypeError(f"Device {device.name} is configured to be a controller but progress method is not defined")
 
 
 __all__ = ["AdapterProgress", "SimulationData", "SimulatorAdapter"]

@@ -80,7 +80,6 @@ html_static_path = ["_static", *_project.html_static_path]
 html_favicon = _project.html_favicon
 
 html_theme_options = {
-    **_project.html_theme_options,
 }
 
 html_context = {

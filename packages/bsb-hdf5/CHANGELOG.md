@@ -1,3 +1,17 @@
+## 6.0.1 (2025-07-16)
+
+### 🩹 Fixes
+
+- retrieve new version from update_codemeta.py for release GHA ([d8018e3](https://github.com/dbbs-lab/bsb/commit/d8018e3))
+- update_codemeta.py to adapt to new location ([2f4f552](https://github.com/dbbs-lab/bsb/commit/2f4f552))
+- release GHA, install mpi deps ([f206164](https://github.com/dbbs-lab/bsb/commit/f206164))
+- patch documentation and gha ([#147](https://github.com/dbbs-lab/bsb/pull/147), [#144](https://github.com/dbbs-lab/bsb/issues/144), [#142](https://github.com/dbbs-lab/bsb/issues/142))
+
+### ❤️ Thank You
+
+- Dimitri RODARIE
+- drodarie
+
 # 6.0.0 (2025-06-11)
 
 ### 🚀 Features

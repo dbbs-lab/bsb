@@ -1,7 +1,7 @@
-![build](https://github.com/Helveg/patch/actions/workflows/main.yml/badge.svg)
-[![codecov](https://codecov.io/gh/Helveg/patch/branch/master/graph/badge.svg)](https://codecov.io/gh/Helveg/patch)
-[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![Build Status](https://github.com/dbbs-lab/bsb/actions/workflows/main.yml/badge.svg)](https://github.com/dbbs-lab/bsb/actions/workflows/main.yml)
 [![Documentation Status](https://readthedocs.org/projects/patch/badge/?version=latest)](https://patch.readthedocs.io/en/latest/?badge=latest)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![codecov](https://codecov.io/gh/Helveg/patch/branch/master/graph/badge.svg)](https://codecov.io/gh/Helveg/patch)
 
 
 ![Drop in replacement](patch.gif)
@@ -17,7 +17,7 @@ pip install nrn-patch
 ## Minimal requirements
 
 * Python 3.8+
-* NEURON 8.0+
+* NEURON 9.0+
 
 # Philosophy
 

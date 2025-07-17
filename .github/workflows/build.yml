@@ -56,9 +56,6 @@ jobs:
           NX_DAEMON: false
         run: |
           npm install rimraf
-          echo "nx base: $NX_BASE"
-          echo "nx head: $NX_HEAD"
-          echo "$(./nx show projects --affected)"
           ./nx affected -t test
 
       - name: Send coverage

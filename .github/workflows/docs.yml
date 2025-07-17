@@ -39,8 +39,7 @@ jobs:
           if [ "${{ github.ref }}" == "refs/heads/main" ]; then
             NX_BASE="${NX_BASE}~1"
           fi
-          NX_HEAD=${{ github.sha }}
-          ./nx affected -t docs
+          ./nx affected -t docs --base=$NX_BASE
         env:
           UV_PYTHON: 3.12
           NX_DAEMON: false

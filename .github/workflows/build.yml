@@ -59,8 +59,7 @@ jobs:
           if [ "${{ github.ref }}" == "refs/heads/main" ]; then
             NX_BASE="${NX_BASE}~1"
           fi
-          NX_HEAD=${{ github.sha }}
-          ./nx affected -t test
+          ./nx affected -t test --base=$NX_BASE
 
       - name: Send coverage
         run: |

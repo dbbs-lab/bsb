@@ -39,14 +39,13 @@ jobs:
           if [ "${{ github.ref }}" == "refs/heads/main" ]; then
             NX_BASE="${NX_BASE}~1"
           fi
-          NX_HEAD=${{ github.sha }}
           # Run the nx command once to install required npm libs
           # so that the logs of the installation do not pollute the 
           # output of the next command
           ./nx show projects
           # Here we extract the list of nx bsb projects and store 
           # them as a list that can be parsed in the next job
-          packages=$(./nx show projects --projects "packages/*" --affected)
+          packages=$(./nx show projects --affected --base=$NX_BASE)
           packages=[\"$(echo $packages | sed -r 's/[ ]+/", "/g')\"]
           echo "packages=$packages" >> $GITHUB_OUTPUT
   preview-docs:

@@ -27,7 +27,6 @@ jobs:
         if [ "${{ github.ref }}" == "refs/heads/main" ]; then
           NX_BASE="${NX_BASE}~1"
         fi
-        NX_HEAD=${{ github.sha }}
-        ./nx affected -t check-api
+        ./nx affected -t check-api --base=$NX_BASE
       env:
         NX_DAEMON: false

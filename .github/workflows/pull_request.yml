@@ -28,22 +28,22 @@ jobs:
           \. "$HOME/.nvm/nvm.sh"
           nvm install --lts
 
+      - name: Derive appropriate SHAs for base and head for `nx affected` commands
+        uses: r0manchak/nx-set-shas/action.yml
+        with:
+          get-last-skip-ci-commit: true
+
+
       - name: Get affected projects
         id: get-affected
         run: |
-          # Manually set the NX BASE and HEAD variables.
-          # see https://github.com/dbbs-lab/bsb/issues/152
-          NX_BASE=origin/main
-          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
-            NX_BASE="${NX_BASE}~1"
-          fi
           # Run the nx command once to install required npm libs
           # so that the logs of the installation do not pollute the 
           # output of the next command
           ./nx show projects
           # Here we extract the list of nx bsb projects and store 
           # them as a list that can be parsed in the next job
-          packages=$(./nx show projects --affected --base=$NX_BASE)
+          packages=$(./nx show projects --projects "packages/*" --affected)
           packages=[\"$(echo $packages | sed -r 's/[ ]+/", "/g')\"]
           echo "packages=$packages" >> $GITHUB_OUTPUT
   preview-docs:

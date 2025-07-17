@@ -18,7 +18,10 @@ jobs:
         sudo apt update
         # Install `libopenmpi` for MPI
         sudo apt install openmpi-bin libopenmpi-dev
-    - uses: nrwl/nx-set-shas@v4
+    - uses: r0manchak/nx-set-shas
+      with:
+        get-last-skip-ci-commit: true
+
     - name: Check public APIs
       run: ./nx affected -t check-api
       env:

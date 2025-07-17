@@ -28,8 +28,9 @@ jobs:
         uses: astral-sh/setup-uv@v5
 
       - name: Derive appropriate SHAs for base and head for `nx affected` commands
-        id: setSHAs
-        uses: nrwl/nx-set-shas@v4
+        uses: r0manchak/nx-set-shas
+        with:
+          get-last-skip-ci-commit: true
 
       - run: |
           # There is flake on `npx cross-env`, pre-install it a couple times to prevent that.

@@ -28,8 +28,9 @@ jobs:
         uses: astral-sh/setup-uv@v5
 
       - name: Derive appropriate SHAs for base and head for `nx affected` commands
-        id: setSHAs
-        uses: nrwl/nx-set-shas@v4
+        uses: r0manchak/nx-set-shas
+        with:
+          get-last-skip-ci-commit: true
 
       - run: ./nx affected -t lint
         env:

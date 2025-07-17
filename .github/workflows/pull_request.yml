@@ -29,7 +29,10 @@ jobs:
           nvm install --lts
 
       - name: Derive appropriate SHAs for base and head for `nx affected` commands
-        uses: nrwl/nx-set-shas@v4
+        uses: r0manchak/nx-set-shas
+        with:
+          get-last-skip-ci-commit: true
+
 
       - name: Get affected projects
         id: get-affected

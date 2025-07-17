@@ -161,13 +161,13 @@ In this example, we assign the ``static_synapse`` model to the connections :guil
 
       "connection_models": {
         "A_to_B": {
-            "synapses": {
-              [
+            "synapses": [
+              {
                 "model": "static_synapse",
                 "weight": 100,
                 "delay": 1
-              ]
-            }
+              }
+            ]
         }
       },
 
@@ -175,8 +175,8 @@ In this example, we assign the ``static_synapse`` model to the connections :guil
 
         config.simulations["basal_activity"].connection_models=dict(
           A_to_B=dict(
-            synapses=dict(
-              list(
+            synapses=list(
+              dict(
                 model="static_synapse",
                 weight=100,
                 delay=1

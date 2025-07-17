@@ -48,16 +48,19 @@ jobs:
           path: ${{ env.NEST_FOLDER }}
           key: ${{ runner.os }}-${{ matrix.python-version }}-nest
 
-      - name: Derive appropriate SHAs for base and head for `nx affected` commands
-        uses: r0manchak/nx-set-shas
-        with:
-          get-last-skip-ci-commit: true
-
       - name: Run unittests
         env:
           NX_DAEMON: false
         run: |
           npm install rimraf
+          # Manually set the NX BASE and HEAD variables.
+          # see https://github.com/dbbs-lab/bsb/issues/152
+          NX_BASE=origin/main
+          echo "${{ github.ref }}"
+          if [${{ github.ref }} == "refs/heads/main" ]; then
+            NX_BASE="${NX_BASE}~1"
+          fi
+          NX_HEAD=${{ github.sha }}
           ./nx affected -t test
 
       - name: Send coverage

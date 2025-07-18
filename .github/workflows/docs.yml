@@ -27,18 +27,19 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v5
 
-      - name: Derive appropriate SHAs for base and head for `nx affected` commands
-        uses: r0manchak/nx-set-shas/action.yml
-        with:
-          get-last-skip-ci-commit: true
-
       - run: |
           # There is flake on `npx cross-env`, pre-install it a couple times to prevent that.
           npx -y cross-env echo "" > /dev/null
           npx -y cross-env echo "" > /dev/null
           npx -y cross-env echo "" > /dev/null
           npm install rimraf
-          ./nx affected -t docs
+          # Manually set the NX BASE and HEAD variables.
+          # see https://github.com/dbbs-lab/bsb/issues/152
+          NX_BASE=main
+          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            NX_BASE="${NX_BASE}~1"
+          fi
+          ./nx affected -t docs --base=$NX_BASE --head=HEAD
         env:
           UV_PYTHON: 3.12
           NX_DAEMON: false

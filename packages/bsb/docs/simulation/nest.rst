@@ -82,9 +82,10 @@ Connection Models
 =================
 
 In this block, you need to define a NEST connection module for each ConnectivitySet in your network.
-The `bsb-nest <https://github.com/dbbs-lab/bsb-nest>`_ interface provides a ``NestConnection`` module that handles the set by passing arrays of
+The `bsb-nest <https://bsb-nest.readthedocs.io/en/latest/>`_ interface provides a ``NestConnection`` module that handles the set by passing arrays of
 pre-synaptic and post-synaptic cells, using a ``one_to_one`` connection.
-You will need to specify the synapse configuration using the key :guilabel:`synapse`, providing all required properties as a dictionary.
+For each synapse that you want to create for this connection, you will need to specify its configurations within the key :guilabel:`synapses`,
+providing all required properties as a list of dictionary.
 
 The available keys in the synapse specification dictionary include:
 
@@ -100,42 +101,50 @@ The available keys in the synapse specification dictionary include:
 
          "connection_models": {
             "connect_A_to_B": {
-              "synapse" : {
-                "model": "static_synapse",
-                "weight": 0.5,
-                "delay": 1
-              }
+              "synapses" : [
+                {
+                  "model": "static_synapse",
+                  "weight": 0.5,
+                  "delay": 1
+                },
+              ],
             },
             "connect_B_to_A": {
-              "synapse": {
-                "model": "bernoulli_synapse",
-                "weight": 1,
-                "delay": 1,
-                "constants":{"p_transmit":0.5}
-              }
+              "synapses": [
+                {
+                  "model": "bernoulli_synapse",
+                  "weight": 1,
+                  "delay": 1,
+                  "constants":{"p_transmit":0.5}
+                },
+              ],
             }
           },
 
     .. code-block:: python
 
         config.simulations["my_simulation_name"].connection_models=dict(
-          connect_A_to_B=dict(synapse=dict(
-              model="static_synapse",
-              weight=0.5,
-              delay=1
+          connect_A_to_B=dict(synapses=list(
+              dict(
+                model="static_synapse",
+                weight=0.5,
+                delay=1
               )
-          )
-          connect_B_to_A=dict(synapse=dict(
-              model="bernoulli_synapse",
-              weight=1,
-              delay=1,
-              constants={"p_transmit":0.5}
+            )
+          ),
+          connect_B_to_A=dict(synapses=list(
+              dict(
+                model="bernoulli_synapse",
+                weight=1,
+                delay=1,
+                constants={"p_transmit":0.5}
               )
+            )
           )
         )
 
-In this example, for the ConnectivitySet named ``connect_A_to_B``, we assign a ``static_synapse``,
-while for the second set, a ``bernoulli_synapse`` is chosen.
+In this example, for the ConnectivitySet named ``connect_A_to_B``, we assign one ``static_synapse``,
+while for the second set, one ``bernoulli_synapse`` is chosen.
 All available built-in synapse models are listed in the `NEST guide <https://nest-simulator.readthedocs.io/en/v3.8/synapses/index.html>`_.
 
 Devices

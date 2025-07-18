@@ -72,24 +72,24 @@ tree = {
             },
             "connection_models": {
                 "excitatory_to_excitatory": {
-                    "rule": "fixed_indegree",
-                    "indegree": 200,
-                    "synapse": {"weight": 20.68015524367846, "delay": 1.5},
+                    "rules": ["fixed_indegree"],
+                    "constants": [{"indegree": 200}],
+                    "synapses": [{"weight": 20.68015524367846, "delay": 1.5}],
                 },
                 "excitatory_to_inhibitory": {
-                    "rule": "fixed_indegree",
-                    "indegree": 200,
-                    "synapse": {"weight": 20.68015524367846, "delay": 1.5},
+                    "rules": ["fixed_indegree"],
+                    "constants": [{"indegree": 200}],
+                    "synapses": [{"weight": 20.68015524367846, "delay": 1.5}],
                 },
                 "inhibitory_to_excitatory": {
-                    "rule": "fixed_indegree",
-                    "indegree": 50,
-                    "synapse": {"weight": -103.4007762183923, "delay": 1.5},
+                    "rules": ["fixed_indegree"],
+                    "constants": [{"indegree": 50}],
+                    "synapses": [{"weight": -103.4007762183923, "delay": 1.5}],
                 },
                 "inhibitory_to_inhibitory": {
-                    "rule": "fixed_indegree",
-                    "indegree": 50,
-                    "synapse": {"weight": -103.4007762183923, "delay": 1.5},
+                    "rules": ["fixed_indegree"],
+                    "constants": [{"indegree": 50}],
+                    "synapses": [{"weight": -103.4007762183923, "delay": 1.5}],
                 },
             },
             "devices": {

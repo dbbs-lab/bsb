@@ -27,10 +27,6 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v5
 
-      - name: Derive appropriate SHAs for base and head for `nx affected` commands
-        id: setSHAs
-        uses: nrwl/nx-set-shas@v4
-
       - run: |
           # There is flake on `npx cross-env`, pre-install it a couple times to prevent that.
           npx -y cross-env echo "" > /dev/null

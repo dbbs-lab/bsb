@@ -64,18 +64,8 @@ jobs:
           npm install rimraf
           ./nx affected -t test --base=${{ env.NX_BASE }} --head=HEAD
       - name: Send coverage
-        run: |
-          curl -Os https://cli.codecov.io/latest/linux/codecov
-          sudo chmod +x codecov
-          for package in $(./nx show projects --affected --base=${{ env.NX_BASE }} --head=HEAD -t=test)
-          do
-            if [[ $package == bsb* ]]; then
-              folder="coverage/packages/$package"
-            else
-              folder="coverage/libs/$package"
-            fi
-            ./codecov do-upload -e PYTHON=${{ matrix.python-version }} \
-              --disable-search -t ${{ secrets.CODECOV_TOKEN }} \
-              -f "$folder/coverage.xml" -F ${package} \
-              --git-service github -r dbbs-lab/bsb -C $GITHUB_SHA            
-          done
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          verbose: true
+          env_vars: PYTHON=${{ matrix.python-version }}

@@ -28,5 +28,3 @@ jobs:
           NX_BASE="${NX_BASE}~1"
         fi
         ./nx affected -t check-api --base=$NX_BASE --head=HEAD
-      env:
-        NX_DAEMON: false

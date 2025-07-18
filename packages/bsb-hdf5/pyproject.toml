@@ -4,14 +4,14 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "bsb-hdf5"
-version = "6.0.1"
+version = "6.0.2"
 readme = "README.md"
 requires-python = ">=3.10,<4"
 dynamic = [ "description" ]
 classifiers = [
   "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"
 ]
-dependencies = [ "bsb-core" ]
+dependencies = [ "bsb-core~=6.0" ]
 
   [[project.authors]]
   name = "Robin De Schepper"
@@ -28,7 +28,7 @@ dependencies = [ "bsb-core" ]
 hdf5 = "bsb_hdf5"
 
 [dependency-groups]
-test = [ "bsb-core[parallel]", "bsb-test", "coverage>=7.3" ]
+test = [ "bsb-core[parallel]", "bsb-test~=6.0", "coverage>=7.3" ]
 docs = [
   "sphinxemoji~=0.2",
   "toml~=0.10",

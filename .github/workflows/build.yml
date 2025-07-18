@@ -71,7 +71,7 @@ jobs:
           sudo chmod +x codecov
           for package in $(./nx show projects --affected --base=${{ env.NX_BASE }} --head=HEAD -t=test)
           do
-            if [ $package == bsb* ]; then
+            if [[ $package == bsb* ]]; then
               folder="coverage/packages/$package"
             else
               folder="coverage/libs/$package"

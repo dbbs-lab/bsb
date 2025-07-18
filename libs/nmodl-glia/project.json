@@ -45,6 +45,7 @@
           "npx rimraf _build/html/",
           "uv run sphinx-build -nW -b html . _build/html"
         ],
+        "parallel": false,
         "cwd": "{projectRoot}/docs"
       },
       "cache": true

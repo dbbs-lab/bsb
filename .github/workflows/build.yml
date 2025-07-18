@@ -48,24 +48,34 @@ jobs:
           path: ${{ env.NEST_FOLDER }}
           key: ${{ runner.os }}-${{ matrix.python-version }}-nest
 
-      - name: Derive appropriate SHAs for base and head for `nx affected` commands
-        uses: nrwl/nx-set-shas@v4
-
+      - name: Set NX Base
+        run: |
+          # Manually set the NX BASE and HEAD variables.
+          # see https://github.com/dbbs-lab/bsb/issues/152
+          NX_BASE=origin/main
+          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            NX_BASE="${NX_BASE}~1"
+          fi
+          echo "NX_BASE=$NX_BASE" >> $GITHUB_ENV
       - name: Run unittests
         env:
           NX_DAEMON: false
         run: |
           npm install rimraf
-          ./nx affected -t test
-
+          ./nx affected -t test --base=${{ env.NX_BASE }} --head=HEAD
       - name: Send coverage
         run: |
           curl -Os https://cli.codecov.io/latest/linux/codecov
           sudo chmod +x codecov
-          for package in $(./nx show projects --projects "packages/bsb-*" --affected)
+          for package in $(./nx show projects --affected --base=${{ env.NX_BASE }} --head=HEAD -t=test)
           do
+            if [[ $package == bsb* ]]; then
+              folder="coverage/packages/$package"
+            else
+              folder="coverage/libs/$package"
+            fi
             ./codecov do-upload -e PYTHON=${{ matrix.python-version }} \
-                --disable-search -t ${{ secrets.CODECOV_TOKEN }} \
-                -f coverage/packages/${package}/coverage.xml -F ${package} \
-                --git-service github -r dbbs-lab/bsb -C $GITHUB_SHA
+              --disable-search -t ${{ secrets.CODECOV_TOKEN }} \
+              -f "$folder/coverage.xml" -F ${package} \
+              --git-service github -r dbbs-lab/bsb -C $GITHUB_SHA            
           done

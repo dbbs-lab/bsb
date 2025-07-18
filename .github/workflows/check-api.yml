@@ -23,7 +23,7 @@ jobs:
       run: |
         # Manually set the NX BASE and HEAD variables.
         # see https://github.com/dbbs-lab/bsb/issues/152
-        NX_BASE=main
+        NX_BASE=origin/main
         if [ "${{ github.ref }}" == "refs/heads/main" ]; then
           NX_BASE="${NX_BASE}~1"
         fi

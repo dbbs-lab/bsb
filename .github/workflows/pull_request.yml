@@ -43,7 +43,7 @@ jobs:
           ./nx show projects
           # Here we extract the list of nx bsb projects and store 
           # them as a list that can be parsed in the next job
-          packages=$(./nx show projects --affected --base=$NX_BASE)
+          packages=$(./nx show projects --affected --base=$NX_BASE --head=HEAD)
           packages=[\"$(echo $packages | sed -r 's/[ ]+/", "/g')\"]
           echo "packages=$packages" >> $GITHUB_OUTPUT
   preview-docs:

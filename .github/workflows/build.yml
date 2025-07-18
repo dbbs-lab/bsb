@@ -69,10 +69,15 @@ jobs:
         run: |
           curl -Os https://cli.codecov.io/latest/linux/codecov
           sudo chmod +x codecov
-          for package in $(./nx show projects --projects "packages/bsb-*" --affected --base=${{ env.NX_BASE }})
+          for package in $(./nx show projects --affected --base=${{ env.NX_BASE }} --head=HEAD -t=test)
           do
+            if [ $package == bsb* ]; then
+              folder="coverage/packages/$package"
+            else
+              folder="coverage/libs/$package"
+            fi
             ./codecov do-upload -e PYTHON=${{ matrix.python-version }} \
-                --disable-search -t ${{ secrets.CODECOV_TOKEN }} \
-                -f coverage/packages/${package}/coverage.xml -F ${package} \
-                --git-service github -r dbbs-lab/bsb -C $GITHUB_SHA
+              --disable-search -t ${{ secrets.CODECOV_TOKEN }} \
+              -f "$folder/coverage.xml" -F ${package} \
+              --git-service github -r dbbs-lab/bsb -C $GITHUB_SHA            
           done

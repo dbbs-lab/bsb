@@ -22,7 +22,7 @@ if [ ! -d "$NEST_FOLDER" ]; then
 fi
 
 # Install bsb-nest NEST dependency GSL
-apt install libgsl-dev -y
+sudo apt install libgsl-dev -y
 
 # Checkout NEST version
 cd "$NEST_FOLDER"

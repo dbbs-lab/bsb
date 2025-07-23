@@ -321,7 +321,7 @@ class NeuronPopulation(list):
 
 def _all_bools(arr):
     try:
-        return all(isinstance(b, bool) for b in arr)
+        return all(isinstance(b, bool) or isinstance(b, np.bool_) for b in arr)
     except TypeError:
         # Not iterable
         return False
@@ -329,7 +329,7 @@ def _all_bools(arr):
 
 def _all_ints(arr):
     try:
-        return all(isinstance(b, int) for b in arr)
+        return all(isinstance(b, int) or isinstance(b, np.int64) for b in arr)
     except TypeError:
         # Not iterable
         return False

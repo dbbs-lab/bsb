@@ -1,3 +1,13 @@
+## 6.0.2 (2025-07-18)
+
+### 🩹 Fixes
+
+- nx commands ([#153](https://github.com/dbbs-lab/bsb/pull/153))
+
+### ❤️ Thank You
+
+- Dimitri RODARIE
+
 ## 6.0.1 (2025-07-16)
 
 ### 🩹 Fixes

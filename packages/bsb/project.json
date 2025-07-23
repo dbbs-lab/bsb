@@ -45,6 +45,7 @@
           "npx rimraf _build/iso-html/",
           "uv run sphinx-build -v -b html . _build/iso-html"
         ],
+        "parallel": false,
         "cwd": "{projectRoot}/docs/"
       },
       "cache": true
@@ -67,6 +68,7 @@
           "npx rimraf _build/html/",
           "npx cross-env BSB_LOCAL_INTERSPHINX_ONLY=true uv run sphinx-build -nW -b html . _build/html"
         ],
+        "parallel": false,
         "cwd": "{projectRoot}/docs/"
       },
       "cache": true

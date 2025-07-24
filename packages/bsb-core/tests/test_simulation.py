@@ -1,8 +1,8 @@
 import unittest
-
+import numpy as np
 from bsb_test import FixedPosConfigFixture, NumpyTestCase, RandomStorageFixture
 
-from bsb import Scaffold
+from bsb import Scaffold, get_simulation_adapter
 
 
 class TestSimulate(
@@ -36,3 +36,136 @@ class TestSimulate(
             devices=dict(),
         )
         self.network.run_simulation("test")
+
+
+class TestTargetting(
+    FixedPosConfigFixture,
+    RandomStorageFixture,
+    NumpyTestCase,
+    unittest.TestCase,
+    engine_name="hdf5",
+):
+    def setUp(self):
+        super().setUp()
+        self.cfg.network.chunk_size = 200
+        self.cfg.cell_types.add("h_cell", spatial=dict(radius=2, count=20))
+        x_ranges = np.repeat(np.arange(0, 100, 20), 4)
+        y_ranges = np.full((10, 2), [50, 150]).flatten()
+        z_ranges = np.full((5, 4), [50, 50, 150, 150]).flatten()
+
+        positions = []
+        for x, y, z in zip(x_ranges, y_ranges, z_ranges):
+            positions.append([x, y, z])
+
+        self.cfg.placement.add(
+            "place_h_cell",
+            strategy="bsb.placement.strategy.FixedPositions",
+            partitions=[],
+            cell_types=["h_cell"],
+            positions=positions,
+        )
+
+        self.cfg.connectivity.add(
+            "test_to_h_cell",
+            dict(
+                strategy="bsb.connectivity.FixedOutdegree",
+                presynaptic=dict(cell_types=["test_cell"]),
+                postsynaptic=dict(cell_types=["h_cell"]),
+                outdegree=1,
+            ),
+        )
+        self.cfg.simulations.add(
+            "test",
+            simulator="arbor",
+            duration=100,
+            resolution=0.5,
+            cell_models={
+                "test_cell": {
+                    "model_strategy": "lif",
+                    "constants": {
+                        "C_m": 250,
+                        "tau_m": 20,
+                        "t_ref": 2.0,
+                        "E_L": 0.0,
+                        "E_R": 0.0,
+                        "V_m": 0.0,
+                        "V_th": 20,
+                    },
+                },
+                "h_cell": {
+                    "model_strategy": "lif",
+                    "constants": {
+                        "C_m": 250,
+                        "tau_m": 20,
+                        "t_ref": 2.0,
+                        "E_L": 0.0,
+                        "E_R": 0.0,
+                        "V_m": 0.0,
+                        "V_th": 20,
+                    },
+                },
+            },
+            connection_models={
+                "test_to_h_cell": {"weight": 20.68015524367846, "delay": 1.5}
+            },
+            devices=dict(
+                pg={
+                    "device": "poisson_generator",
+                    "rate": 1600,
+                    "targetting": {"strategy": "all"},
+                    "weight": 2000,
+                    "delay": 1.5,
+                }
+            ),
+        )
+        self.network = Scaffold(self.cfg, self.storage)
+        self.network.compile()
+
+    def test_cell_model(self):
+
+        self.network.simulations.test.devices["new_recorder"] = dict(
+            device="spike_recorder",
+            targetting={
+                "strategy": "cell_model",
+                "cell_models": ["h_cell"],
+            },
+        )
+        self.network.simulations.test.devices["fraction_recorder"] = dict(
+            device="spike_recorder",
+            targetting={
+                "strategy": "cell_model",
+                "cell_models": ["h_cell"],
+                "fraction": 0.5,
+            },
+        )
+        result = self.network.run_simulation("test")
+        spiketrains = result.block.segments[0].spiketrains
+        # Check that all the 20 h_cell were recorded
+
+        self.assertEqual(spiketrains[0].annotations["pop_size"], 20)
+
+        # Check fractions
+        # self.assertEqual(spiketrains[1].annotations["pop_size"], 10)
+
+    def test_by_id(self):
+
+        self.network.simulations.test.devices["id_recorder"] = dict(
+            device="spike_recorder",
+            targetting={
+                "strategy": "by_id",
+                "ids": {"h_cell": [0, 5, 7, 10]},
+            },
+        )
+        print(self.network.simulations.test.devices)
+        sim = self.network.simulations.test
+        adapter = get_simulation_adapter(sim.simulator)
+        simdata = adapter.prepare(sim)
+        results = adapter.run(sim)
+        result = adapter.collect(results)[0]
+        spiketrains = result.block.segments[0].spiketrains
+        print(f"len: {len(spiketrains)}")
+        print(f"{spiketrains[0].array_annotations['senders']}")
+        pop = simdata.populations[sim.cell_models["h_cell"]]
+        devs = sim.devices
+        # print(f"Sim pop: {pop}  - {len(pop)}")
+        # print(f"Sim devs: {devs}  - {devs['id_recorder']._gids}")

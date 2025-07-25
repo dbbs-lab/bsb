@@ -69,6 +69,7 @@ class Population:
     This class manages a collection of cells from a specific cell model, handling their
     GID ranges and providing methods to access and manipulate subsets of the population.
     """
+
     def __init__(self, simdata, cell_model, offset):
         """
         Initialize a population of cells.

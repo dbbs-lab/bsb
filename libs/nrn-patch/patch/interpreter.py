@@ -172,7 +172,7 @@ class PythonHocInterpreter:
             target._connections[source] = connection
         elif hasattr(source, "__ref__"):
             # Since the connection isn't established, make sure that the source and NetCon
-            # reference eachother both ways
+            # reference each other both ways
             source.__ref__(connection)
 
         return connection

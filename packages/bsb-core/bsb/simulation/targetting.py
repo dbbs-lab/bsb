@@ -227,7 +227,7 @@ class CylindricalTargetting(
         return {
             model: simdata.populations[model][
                 np.sum(
-                    simdata.placement[model].load_positions()[:, axes] - self.origin**2,
+                    (simdata.placement[model].load_positions()[:, axes] - self.origin)**2,
                     axis=1,
                 )
                 < self.radius**2

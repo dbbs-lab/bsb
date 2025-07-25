@@ -30,8 +30,6 @@ jobs:
           sudo apt install openmpi-bin libopenmpi-dev
           # Install `libhdf5` for `morphio`
           sudo apt install libhdf5-dev
-          # Install `libgsl-dev` for conductance-based NEST models 
-          sudo apt install libgsl-dev
 
       - name: Install nodejs
         run: |

@@ -188,23 +188,24 @@ class Population:
         :return: A new Population instance containing only the selected cells
         """
         pop = self.copy()
-        # if not len(pop):
-        #     return pop
-        # ranges = []
-        # prev = None
-        # start, stop = self._ranges[0]
-        # for i in arr:
-        #     if prev is None:
-        #         start += i
-        #         stop = start + 1
-        #     elif i == prev + 1:
-        #         stop += 1
-        #     else:
-        #         ranges.append((start, stop))
-        #         start = i
-        #         stop = i + 1
-        #     prev = i
-        # pop._ranges = ranges
+        if not len(pop):
+            return pop
+        ranges = []
+        prev = None
+        start, stop = self._ranges[0]
+        for i in arr:
+            if prev is None:
+                start += i
+                stop = start + 1
+            elif i == prev + 1:
+                stop += 1
+            else:
+                ranges.append((start, stop))
+                start = i
+                stop = i + 1
+            prev = i
+        ranges.append((start, stop))
+        pop._ranges = ranges
 
         return pop
 
@@ -233,9 +234,7 @@ class Population:
 
         :yield: Each GID in the population's ranges
         """
-        yield from itertools.chain.from_iterable(
-            range(r[0], r[1]) for r in self._ranges
-        )
+        yield from itertools.chain.from_iterable(range(r[0], r[1]) for r in self._ranges)
 
 
 class GIDManager:

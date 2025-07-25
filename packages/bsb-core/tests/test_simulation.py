@@ -1,8 +1,9 @@
 import unittest
+
 import numpy as np
 from bsb_test import FixedPosConfigFixture, NumpyTestCase, RandomStorageFixture
 
-from bsb import Scaffold, get_simulation_adapter
+from bsb import MPI, Scaffold
 
 
 class TestSimulate(
@@ -38,6 +39,7 @@ class TestSimulate(
         self.network.run_simulation("test")
 
 
+@unittest.skipIf(MPI.get_size() > 1, "Skipped during parallel testing.")
 class TestTargetting(
     FixedPosConfigFixture,
     RandomStorageFixture,
@@ -47,14 +49,14 @@ class TestTargetting(
 ):
     def setUp(self):
         super().setUp()
-        self.cfg.network.chunk_size = 200
+        self.cfg.network.chunk_size = 50
         self.cfg.cell_types.add("h_cell", spatial=dict(radius=2, count=20))
         x_ranges = np.repeat(np.arange(0, 100, 20), 4)
         y_ranges = np.full((10, 2), [50, 150]).flatten()
         z_ranges = np.full((5, 4), [50, 50, 150, 150]).flatten()
 
         positions = []
-        for x, y, z in zip(x_ranges, y_ranges, z_ranges):
+        for x, y, z in zip(x_ranges, y_ranges, z_ranges, strict=False):
             positions.append([x, y, z])
 
         self.cfg.placement.add(
@@ -122,12 +124,11 @@ class TestTargetting(
         self.network.compile()
 
     def test_cell_model(self):
-
         self.network.simulations.test.devices["new_recorder"] = dict(
             device="spike_recorder",
             targetting={
                 "strategy": "cell_model",
-                "cell_models": ["h_cell"],
+                "cell_models": ["test_cell"],
             },
         )
         self.network.simulations.test.devices["fraction_recorder"] = dict(
@@ -138,34 +139,54 @@ class TestTargetting(
                 "fraction": 0.5,
             },
         )
+        self.network.simulations.test.devices["count_recorder"] = dict(
+            device="spike_recorder",
+            targetting={
+                "strategy": "cell_model",
+                "cell_models": ["h_cell"],
+                "count": 7,
+            },
+        )
         result = self.network.run_simulation("test")
         spiketrains = result.block.segments[0].spiketrains
-        # Check that all the 20 h_cell were recorded
-
-        self.assertEqual(spiketrains[0].annotations["pop_size"], 20)
-
-        # Check fractions
-        # self.assertEqual(spiketrains[1].annotations["pop_size"], 10)
+        expected = {
+            "count_recorder": {
+                "size": 7,
+                "min": 0,
+                "max": 20,
+            },
+            "fraction_recorder": {
+                "size": 10,
+                "min": 0,
+                "max": 20,
+            },
+            "new_recorder": {
+                "size": 100,
+                "min": 20,
+                "max": 120,
+            },
+        }
+        for spiketrain in spiketrains:
+            recorder = spiketrain.annotations["device"]
+            self.assertEqual(
+                spiketrain.annotations["pop_size"], expected[recorder]["size"]
+            )
+            self.assertAll(
+                np.array(spiketrain.annotations["gids"]) < expected[recorder]["max"]
+            )
+            self.assertAll(
+                np.array(spiketrain.annotations["gids"]) >= expected[recorder]["min"]
+            )
 
     def test_by_id(self):
-
-        self.network.simulations.test.devices["id_recorder"] = dict(
+        sim = self.network.simulations.test
+        sim.devices["id_recorder"] = dict(
             device="spike_recorder",
             targetting={
                 "strategy": "by_id",
-                "ids": {"h_cell": [0, 5, 7, 10]},
+                "ids": {"h_cell": [0, 10, 7, 5]},
             },
         )
-        print(self.network.simulations.test.devices)
-        sim = self.network.simulations.test
-        adapter = get_simulation_adapter(sim.simulator)
-        simdata = adapter.prepare(sim)
-        results = adapter.run(sim)
-        result = adapter.collect(results)[0]
+        result = self.network.run_simulation("test")
         spiketrains = result.block.segments[0].spiketrains
-        print(f"len: {len(spiketrains)}")
-        print(f"{spiketrains[0].array_annotations['senders']}")
-        pop = simdata.populations[sim.cell_models["h_cell"]]
-        devs = sim.devices
-        # print(f"Sim pop: {pop}  - {len(pop)}")
-        # print(f"Sim devs: {devs}  - {devs['id_recorder']._gids}")
+        self.assertEqual(sorted(spiketrains[0].annotations["gids"]), [0, 5, 7, 10])

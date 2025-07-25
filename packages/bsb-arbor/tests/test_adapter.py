@@ -1,7 +1,5 @@
-import importlib
 import unittest
 
-import numpy as np
 from bsb import get_simulation_adapter
 from bsb_test import (
     ConfigFixture,
@@ -52,9 +50,8 @@ class TestArborPopulation(
         adapter = get_simulation_adapter(sim.simulator)
         simdata = adapter.prepare(sim)
 
-        pop = simdata.populations[sim.cell_models["A"]]
+        _pop = simdata.populations[sim.cell_models["A"]]
         # ids = np.array([cell.id for cell in simdata.populations[sim.cell_models["A"]]])
-        print(f"Pop: {pop._get_ranges()}, {pop[[3]]._get_ranges()}")
         # all_tests = np.array([])
         # # test int list and np.int64 array
         # list_test = [0, 1, 3]

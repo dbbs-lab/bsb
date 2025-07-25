@@ -96,7 +96,7 @@ class FractionFilter:
             # Select `take` elements from data with a boolean mask (otherwise a sorted
             # integer mask would be required)
             idx = np.zeros(len(data), dtype=bool)
-            idx[np.random.default_rng().integers(0, len(data), take)] = True
+            idx[np.random.choice(len(data), take, replace=False)] = True
             return data[idx]
 
     @staticmethod
@@ -227,7 +227,8 @@ class CylindricalTargetting(
         return {
             model: simdata.populations[model][
                 np.sum(
-                    (simdata.placement[model].load_positions()[:, axes] - self.origin)**2,
+                    (simdata.placement[model].load_positions()[:, axes] - self.origin)
+                    ** 2,
                     axis=1,
                 )
                 < self.radius**2

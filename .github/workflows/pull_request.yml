@@ -28,9 +28,6 @@ jobs:
           \. "$HOME/.nvm/nvm.sh"
           nvm install --lts
 
-      - name: Derive appropriate SHAs for base and head for `nx affected` commands
-        uses: nrwl/nx-set-shas@v4
-
       - name: Get affected projects
         id: get-affected
         run: |

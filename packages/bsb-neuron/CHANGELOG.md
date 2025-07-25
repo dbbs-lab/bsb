@@ -1,3 +1,13 @@
+## 6.0.3 (2025-07-25)
+
+### 🩹 Fixes
+
+- Adapt NeuronPopulation getitem to check for NumPy types ([#161](https://github.com/dbbs-lab/bsb/pull/161))
+
+### ❤️ Thank You
+
+- Filippo @filimarc
+
 ## 6.0.2 (2025-07-18)
 
 ### 🩹 Fixes

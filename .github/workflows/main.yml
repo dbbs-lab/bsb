@@ -61,8 +61,13 @@ jobs:
         run: |
           git config --global user.email "neurocomp_dbbs@unipv.it"
           git config --global user.name "DBBS Laboratory"
+          # get latest bsb version
+          old_version=$(git describe --tags --abbrev=0)
           ./nx release version --verbose
           version=$(uv run --project packages/bsb/pyproject.toml python devtools/update_codemeta.py)
           git add codemeta.json
           ./nx release changelog $version --verbose
-          ./nx release publish --verbose
+          # if the bsb version changes, publish it on pypi
+          if [ $version != ${old_version:1} ]; then 
+            ./nx release publish --verbose; 
+          fi;

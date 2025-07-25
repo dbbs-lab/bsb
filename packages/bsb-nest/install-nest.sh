@@ -21,6 +21,9 @@ if [ ! -d "$NEST_FOLDER" ]; then
   git clone https://github.com/nest/nest-simulator $NEST_FOLDER
 fi
 
+# Install bsb-nest NEST dependency GSL for conductance-based NEST models
+sudo apt install libgsl-dev -y
+
 # Checkout NEST version
 cd "$NEST_FOLDER"
 git checkout tags/v"$NEST_VERSION"

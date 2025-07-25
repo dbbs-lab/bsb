@@ -42,7 +42,7 @@
       "outputs": ["{projectRoot}/docs/_build/iso-html"],
       "options": {
         "commands": [
-          "npx rimraf _build/iso-html/",
+          "npx -y rimraf _build/iso-html/",
           "uv run sphinx-build -v -b html . _build/iso-html"
         ],
         "parallel": false,
@@ -65,8 +65,8 @@
       "outputs": ["{projectRoot}/docs/_build/html"],
       "options": {
         "commands": [
-          "npx rimraf _build/html/",
-          "npx cross-env BSB_LOCAL_INTERSPHINX_ONLY=true uv run sphinx-build -nW -b html . _build/html"
+          "npx -y rimraf _build/html/",
+          "npx -y cross-env BSB_LOCAL_INTERSPHINX_ONLY=true uv run sphinx-build -nW -b html . _build/html"
         ],
         "parallel": false,
         "cwd": "{projectRoot}/docs/"

@@ -1,4 +1,5 @@
 import unittest
+import numpy as np
 
 from bsb import get_simulation_adapter
 from bsb_test import (
@@ -45,32 +46,32 @@ class TestArborPopulation(
         """
         Test if getitem method works as expected for all int and bool data types.
         """
-        self.network.compile()
+        self.network.compile(clear=True)
         sim = self.network.simulations.test
         adapter = get_simulation_adapter(sim.simulator)
         simdata = adapter.prepare(sim)
 
-        _pop = simdata.populations[sim.cell_models["A"]]
-        # ids = np.array([cell.id for cell in simdata.populations[sim.cell_models["A"]]])
-        # all_tests = np.array([])
-        # # test int list and np.int64 array
-        # list_test = [0, 1, 3]
-        # np.append(all_tests, [ele.id for ele in pop[list_test]] == ids[list_test])
-        # int64_test = np.array(list_test, dtype=np.int64)
-        # np.append(all_tests, [ele.id for ele in pop[int64_test]] == ids[int64_test])
-        # int8_test = np.array(list_test, dtype=np.int8)
-        # np.append(all_tests, [ele.id for ele in pop[int8_test]] == ids[int8_test])
-        # uint_test = np.array(list_test, dtype=np.uint)
-        # np.append(all_tests, [ele.id for ele in pop[uint_test]] == ids[uint_test])
-        # # test bool
-        # bool_test = [True for ele in pop]
-        # np.append(all_tests, [ele.id for ele in pop[bool_test]] == ids[bool_test])
-        # npbool_test = np.array(bool_test, dtype=np.bool_)
-        # np.append(all_tests, [ele.id for ele in pop[npbool_test]] == ids[npbool_test])
-        #
-        # self.assertAll(all_tests)
-        #
-        # # test float
-        # float_test = np.array(list_test, dtype=np.float32)
-        # with self.assertRaises(TypeError):
-        #     pop[float_test]
+        pop = simdata.populations[sim.cell_models["A"]]
+        ids = np.array([cell for cell in simdata.populations[sim.cell_models["A"]]])
+        all_tests = np.array([])
+        # test int list and np.int64 array
+        list_test = [0, 1, 3]
+        np.append(all_tests, [ele for ele in pop[list_test]] == ids[list_test])
+        int64_test = np.array(list_test, dtype=np.int64)
+        np.append(all_tests, [ele for ele in pop[int64_test]] == ids[int64_test])
+        int8_test = np.array(list_test, dtype=np.int8)
+        np.append(all_tests, [ele for ele in pop[int8_test]] == ids[int8_test])
+        uint_test = np.array(list_test, dtype=np.uint)
+        np.append(all_tests, [ele for ele in pop[uint_test]] == ids[uint_test])
+        # test bool
+        bool_test = [True for ele in pop]
+        np.append(all_tests, [ele for ele in pop[bool_test]] == ids[bool_test])
+        npbool_test = np.array(bool_test, dtype=np.bool_)
+        np.append(all_tests, [ele for ele in pop[npbool_test]] == ids[npbool_test])
+
+        self.assertAll(all_tests)
+
+        # test float
+        float_test = np.array(list_test, dtype=np.float32)
+        with self.assertRaises(ValueError):
+            pop[float_test]

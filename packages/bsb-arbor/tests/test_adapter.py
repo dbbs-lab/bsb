@@ -1,7 +1,7 @@
 import unittest
-import numpy as np
 
-from bsb import get_simulation_adapter
+import numpy as np
+from bsb import MPI, get_simulation_adapter
 from bsb_test import (
     ConfigFixture,
     MorphologiesFixture,
@@ -11,6 +11,7 @@ from bsb_test import (
 )
 
 
+@unittest.skipIf(MPI.get_size() > 1, "Skipped during parallel testing.")
 class TestArborPopulation(
     RandomStorageFixture,
     ConfigFixture,

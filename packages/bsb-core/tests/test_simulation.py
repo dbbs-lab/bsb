@@ -212,7 +212,7 @@ class TestTargetting(
             for model, pop in simdata.populations.items()
         ]
         expected_ids = []
-        for pos, id in zip(positions[0][0], positions[0][1]):
+        for pos, id in zip(positions[0][0], positions[0][1], strict=False):
             if pos[0] <= 40:
                 expected_ids.append(id)
         expected_ids = np.array(expected_ids)

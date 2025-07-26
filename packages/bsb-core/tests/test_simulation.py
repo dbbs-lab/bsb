@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 from bsb_test import FixedPosConfigFixture, NumpyTestCase, RandomStorageFixture
 
-from bsb import MPI, Scaffold
+from bsb import MPI, Scaffold, get_simulation_adapter
 
 
 class TestSimulate(
@@ -131,6 +131,7 @@ class TestTargetting(
                 "cell_models": ["test_cell"],
             },
         )
+        # Add two devices to test FractionFilter
         self.network.simulations.test.devices["fraction_recorder"] = dict(
             device="spike_recorder",
             targetting={
@@ -190,3 +191,34 @@ class TestTargetting(
         result = self.network.run_simulation("test")
         spiketrains = result.block.segments[0].spiketrains
         self.assertEqual(sorted(spiketrains[0].annotations["gids"]), [0, 5, 7, 10])
+
+    def test_sphere(self):
+        sim = self.network.simulations.test
+        sim.devices["id_recorder"] = dict(
+            device="spike_recorder",
+            targetting={
+                "strategy": "sphere",
+                "origin": [20, 100, 100],
+                "radius": 75,
+            },
+        )
+        adapter = get_simulation_adapter(sim.simulator)
+        simdata = adapter.prepare(sim)
+        results = adapter.run(sim)
+        result = adapter.collect(results)[0]
+        # check ids in sphere by positions, our sphere only include h_cells with x <= 40
+        positions = [
+            (simdata.placement[model].load_positions(), pop)
+            for model, pop in simdata.populations.items()
+        ]
+        expected_ids = []
+        for pos, id in zip(positions[0][0], positions[0][1]):
+            if pos[0] <= 40:
+                expected_ids.append(id)
+        expected_ids = np.array(expected_ids)
+
+        spiketrains = result.block.segments[0].spiketrains
+        sorted_ids = np.sort(spiketrains[0].annotations["gids"])
+        only_h_cells = sorted_ids[sorted_ids < 20]
+        self.assertAll(only_h_cells == expected_ids)
+        self.assertEqual(len(only_h_cells), 12)

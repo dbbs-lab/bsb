@@ -193,11 +193,21 @@ class TestTargetting(
         self.assertEqual(sorted(spiketrains[0].annotations["gids"]), [0, 5, 7, 10])
 
     def test_sphere(self):
+        """Testing SphericalTargetting and SphericalTargettingCellTypes together"""
         sim = self.network.simulations.test
-        sim.devices["id_recorder"] = dict(
+        sim.devices["sphere_recorder"] = dict(
             device="spike_recorder",
             targetting={
                 "strategy": "sphere",
+                "origin": [20, 100, 100],
+                "radius": 75,
+            },
+        )
+        sim.devices["sphere_ct_recorder"] = dict(
+            device="spike_recorder",
+            targetting={
+                "strategy": "sphere_cell_types",
+                "cell_types": ["h_cell"],
                 "origin": [20, 100, 100],
                 "radius": 75,
             },
@@ -218,7 +228,41 @@ class TestTargetting(
         expected_ids = np.array(expected_ids)
 
         spiketrains = result.block.segments[0].spiketrains
+        for spiketrain in spiketrains:
+            sorted_ids = np.sort(spiketrain.annotations["gids"])
+            only_h_cells = sorted_ids[sorted_ids < 20]
+            self.assertAll(only_h_cells == expected_ids)
+            self.assertEqual(len(only_h_cells), 12)
+
+    def test_cylinder(self):
+        sim = self.network.simulations.test
+        sim.devices["cyl_recorder"] = dict(
+            device="spike_recorder",
+            targetting={
+                "strategy": "cylinder",
+                "origin": [40, 50],
+                "axis": "y",
+                "radius": 30,
+            },
+        )
+        adapter = get_simulation_adapter(sim.simulator)
+        simdata = adapter.prepare(sim)
+        results = adapter.run(sim)
+        result = adapter.collect(results)[0]
+        # check ids in cylinder by positions, our cylinder only
+        # include h_cells with z = 50 and 10 < x < 70
+        positions = [
+            (simdata.placement[model].load_positions(), pop)
+            for model, pop in simdata.populations.items()
+        ]
+        expected_ids = []
+        for pos, id in zip(positions[0][0], positions[0][1], strict=False):
+            if (pos[0] <= 60 and pos[0] >= 20) and pos[2] == 50:
+                expected_ids.append(id)
+        expected_ids = np.array(expected_ids)
+
+        spiketrains = result.block.segments[0].spiketrains
         sorted_ids = np.sort(spiketrains[0].annotations["gids"])
         only_h_cells = sorted_ids[sorted_ids < 20]
         self.assertAll(only_h_cells == expected_ids)
-        self.assertEqual(len(only_h_cells), 12)
+        self.assertEqual(len(only_h_cells), 6)

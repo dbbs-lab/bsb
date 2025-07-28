@@ -322,7 +322,7 @@ class LabelTargetting(LocationTargetting, classmap_entry="label"):
         locs = [
             loc
             for loc in cell.locations.values()
-            if all(l_ in loc.section.labels for l_ in self.labels)
+            if any(l_ in loc.section.labels for l_ in self.labels)
         ]
         return locs
 

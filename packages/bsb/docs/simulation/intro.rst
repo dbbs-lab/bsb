@@ -111,7 +111,9 @@ Target by id
 
 ``strategy name``: :guilabel:`by_id` . Each cell model is assigned a numerical identifier
 that can be used to select the target cells.
-It is necessary to provide a list of integers representing the cell IDs with the attribute :guilabel:`ids` .
+It is necessary to provide a list of integers representing the cell IDs with the attribute :guilabel:`ids` :
+
+* ``ids``: A *dict* that associates a cell model to a list of *int*
 
 
 Geometric strategies
@@ -138,6 +140,17 @@ The user must provide two attributes:
 
 * ``origin``: A *list* of *float* that defines the center of the sphere.
 * ``radius``: A *float* representing the radius of the sphere.
+
+Fraction Filter
+---------------
+All previous targeting strategies include a filtering mechanism to select a subset of cells
+from the overall population.
+Filtering can be based on either a fixed number of cells or a specified fraction of the total.
+
+The following attributes can be added to the configuration to define the filtering criteria:
+
+* ``count``: *int*, Specifies the exact number of cells to target.
+* ``fraction``: *float*, Specifies the fraction of the total cell population to target.
 
 Simulation results
 ==================

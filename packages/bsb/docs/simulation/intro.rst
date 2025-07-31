@@ -115,6 +115,20 @@ It is necessary to provide a list of integers representing the cell IDs with the
 
 * ``ids``: A *dict* that associates a cell model to a list of *int*
 
+Target by cell labels
+^^^^^^^^^^^^^^^^^^^^^
+
+You can assign specific labels to subgroups of cells and use these labels to customize the targeting
+behavior of your devices.
+The strategy named :guilabel:`by_label` allows users to define which subgroups to target
+using the :guilabel:`labels` attribute:
+
+* ``labels``: A *list* of *str* specifying the labels corresponding to the subgroups to target.
+
+Optionally, the :guilabel:`cell_models` attribute can still be used to further restrict the selection to specific cell models.
+
+.. note::
+  To learn how to assign labels to cells, see the :doc:`example </examples/label_cells>` provided.
 
 Geometric strategies
 --------------------

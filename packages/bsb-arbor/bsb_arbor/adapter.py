@@ -204,7 +204,9 @@ class Population:
                 start = i
                 stop = i + 1
             prev = i
+        ranges.append((start, stop))
         pop._ranges = ranges
+
         return pop
 
     def _subpop_one(self, item):
@@ -524,7 +526,7 @@ class ArborAdapter(SimulatorAdapter):
 
 def _all_bools(arr):
     try:
-        return all(isinstance(b, bool) for b in arr)
+        return all(np.issubdtype(type(b), np.bool_) for b in arr)
     except TypeError:
         # Not iterable
         return False
@@ -532,7 +534,7 @@ def _all_bools(arr):
 
 def _all_ints(arr):
     try:
-        return all(isinstance(b, int) for b in arr)
+        return all(np.issubdtype(type(b), np.integer) for b in arr)
     except TypeError:
         # Not iterable
         return False

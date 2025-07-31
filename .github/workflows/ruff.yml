@@ -33,4 +33,5 @@ jobs:
 
       - run: ./nx affected -t lint
         env:
-          UV_PYTHON: 3.11
+          UV_PYTHON: 3.12
+          NX_DAEMON: false

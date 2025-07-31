@@ -113,7 +113,32 @@ Target by id
 that can be used to select the target cells.
 It is necessary to provide a list of integers representing the cell IDs with the attribute :guilabel:`ids` :
 
-* ``ids``: A *dict* that associates a cell model to a list of *int*
+* ``ids``: A *dict* that associates a cell model to a list of its neuron indexes to select.
+
+Example selecting cells with IDs 2, 4, or 6 from ``my_cell_model``:
+
+.. tab-set-code::
+
+    .. code-block:: json
+
+        "my_new_device": {
+          "device": "device_type",
+          "targetting": {
+            "strategy": "by_id",
+            "ids": {"my_cell_model": [ 2, 4,6]}
+          }
+        }
+    .. code-block:: python
+
+        config.simulations["my_simulation_name"].devices=dict(
+          my_new_device={
+            "device": "device_type",
+            "targetting": {
+              "strategy": "by_id",
+              "ids": {"my_cell_model": [ 2, 4,6]}
+            }
+          }
+        )
 
 Target by cell labels
 ^^^^^^^^^^^^^^^^^^^^^

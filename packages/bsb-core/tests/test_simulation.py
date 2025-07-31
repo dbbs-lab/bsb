@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 from bsb_test import FixedPosConfigFixture, NumpyTestCase, RandomStorageFixture
 
-from bsb import MPI, Scaffold, get_simulation_adapter
+from bsb import MPI, Scaffold
 
 
 class TestSimulate(
@@ -212,20 +212,11 @@ class TestTargetting(
                 "radius": 75,
             },
         )
-        adapter = get_simulation_adapter(sim.simulator)
-        simdata = adapter.prepare(sim)
-        results = adapter.run(sim)
-        result = adapter.collect(results)[0]
+        result = self.network.run_simulation("test")
         # check ids in sphere by positions, our sphere only include h_cells with x <= 40
-        positions = [
-            (simdata.placement[model].load_positions(), pop)
-            for model, pop in simdata.populations.items()
-        ]
-        expected_ids = []
-        for pos, id in zip(positions[0][0], positions[0][1], strict=False):
-            if pos[0] <= 40:
-                expected_ids.append(id)
-        expected_ids = np.array(expected_ids)
+        ps = self.network.get_placement_set("h_cell")
+        positions = ps.load_positions()
+        expected_ids = np.where(positions[:, 0] <= 40)
 
         spiketrains = result.block.segments[0].spiketrains
         for spiketrain in spiketrains:
@@ -245,24 +236,42 @@ class TestTargetting(
                 "radius": 30,
             },
         )
-        adapter = get_simulation_adapter(sim.simulator)
-        simdata = adapter.prepare(sim)
-        results = adapter.run(sim)
-        result = adapter.collect(results)[0]
+        result = self.network.run_simulation("test")
         # check ids in cylinder by positions, our cylinder only
         # include h_cells with z = 50 and 10 < x < 70
-        positions = [
-            (simdata.placement[model].load_positions(), pop)
-            for model, pop in simdata.populations.items()
-        ]
-        expected_ids = []
-        for pos, id in zip(positions[0][0], positions[0][1], strict=False):
-            if (pos[0] <= 60 and pos[0] >= 20) and pos[2] == 50:
-                expected_ids.append(id)
-        expected_ids = np.array(expected_ids)
+        ps = self.network.get_placement_set("h_cell")
+        positions = ps.load_positions()
+
+        filtered_by_cylinder = ((positions[:, 0] <= 60) & (positions[:, 0] >= 20)) & (
+            positions[:, 2] == 50
+        )
+        expected_ids = np.where(filtered_by_cylinder)
 
         spiketrains = result.block.segments[0].spiketrains
         sorted_ids = np.sort(spiketrains[0].annotations["gids"])
         only_h_cells = sorted_ids[sorted_ids < 20]
         self.assertAll(only_h_cells == expected_ids)
         self.assertEqual(len(only_h_cells), 6)
+
+    def test_bylabel(self):
+        ps = self.network.get_placement_set("h_cell")
+        positions = ps.load_positions()
+        # should return 4 ids
+        sub_pop_h_cell = np.where(positions[:, 0] == 80)[0]
+        ps.label(labels=["only_x_80"], cells=sub_pop_h_cell)
+
+        sim = self.network.simulations.test
+        sim.devices["new_recorder"] = dict(
+            device="spike_recorder",
+            targetting={
+                "strategy": "by_label",
+                "cell_models": ["h_cell"],
+                "labels": ["only_x_80"],
+            },
+        )
+        result = self.network.run_simulation("test")
+        spiketrains = result.block.segments[0].spiketrains
+
+        sorted_ids = np.sort(spiketrains[0].annotations["gids"])
+        self.assertAll(sorted_ids == sub_pop_h_cell)
+        self.assertEqual(len(sorted_ids), 4)

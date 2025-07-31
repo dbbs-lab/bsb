@@ -1,3 +1,17 @@
+## 6.0.3 (2025-07-25)
+
+This was a version bump only for bsb-yaml to align it with other projects, there were no code changes.
+
+## 6.0.2 (2025-07-18)
+
+### 🩹 Fixes
+
+- nx commands ([#153](https://github.com/dbbs-lab/bsb/pull/153))
+
+### ❤️ Thank You
+
+- Dimitri RODARIE
+
 ## 6.0.1 (2025-07-16)
 
 ### 🩹 Fixes

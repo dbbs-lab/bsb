@@ -1,3 +1,13 @@
+## 6.0.4 (2025-07-31)
+
+### 🩹 Fixes
+
+- applied a fix for targeting strategies ([#164](https://github.com/dbbs-lab/bsb/pull/164))
+
+### ❤️ Thank You
+
+- Filippo @filimarc
+
 ## 6.0.3 (2025-07-25)
 
 This was a version bump only for bsb to align it with other projects, there were no code changes.

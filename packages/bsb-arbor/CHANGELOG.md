@@ -1,3 +1,33 @@
+## 6.0.4 (2025-07-31)
+
+### 🩹 Fixes
+
+- applied a fix for targeting strategies ([#164](https://github.com/dbbs-lab/bsb/pull/164))
+
+### ❤️ Thank You
+
+- Filippo @filimarc
+
+## 6.0.3 (2025-07-25)
+
+### 🩹 Fixes
+
+- Adapt NeuronPopulation getitem to check for NumPy types ([#161](https://github.com/dbbs-lab/bsb/pull/161))
+
+### ❤️ Thank You
+
+- Filippo @filimarc
+
+## 6.0.2 (2025-07-18)
+
+### 🩹 Fixes
+
+- nx commands ([#153](https://github.com/dbbs-lab/bsb/pull/153))
+
+### ❤️ Thank You
+
+- Dimitri RODARIE
+
 ## 6.0.1 (2025-07-16)
 
 ### 🩹 Fixes

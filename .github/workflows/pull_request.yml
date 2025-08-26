@@ -11,7 +11,7 @@ jobs:
       - name: PR Conventional Commit Validation
         uses:  ytanikin/PRConventionalCommits@1.3.0
         with:
-          task_types: '["feat","fix","docs","test","ci","refactor","perf","revert"]'
+          task_types: '["feat","fix","chore","docs","test","ci","refactor","perf","revert"]'
 
   get-modified:
     runs-on: ubuntu-latest
@@ -28,19 +28,22 @@ jobs:
           \. "$HOME/.nvm/nvm.sh"
           nvm install --lts
 
-      - name: Derive appropriate SHAs for base and head for `nx affected` commands
-        uses: nrwl/nx-set-shas@v4
-
       - name: Get affected projects
         id: get-affected
         run: |
+          # Manually set the NX BASE and HEAD variables.
+          # see https://github.com/dbbs-lab/bsb/issues/152
+          NX_BASE=origin/main
+          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
+            NX_BASE="${NX_BASE}~1"
+          fi
           # Run the nx command once to install required npm libs
           # so that the logs of the installation do not pollute the 
           # output of the next command
           ./nx show projects
           # Here we extract the list of nx bsb projects and store 
           # them as a list that can be parsed in the next job
-          packages=$(./nx show projects --projects "packages/*" --affected)
+          packages=$(./nx show projects --affected --base=$NX_BASE --head=HEAD)
           packages=[\"$(echo $packages | sed -r 's/[ ]+/", "/g')\"]
           echo "packages=$packages" >> $GITHUB_OUTPUT
   preview-docs:

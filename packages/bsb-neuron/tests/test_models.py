@@ -1,4 +1,3 @@
-import importlib
 import unittest
 
 from arborize import define_model
@@ -12,10 +11,6 @@ from bsb_test import (
 from bsb_neuron.cell import ArborizedModel, ArborizeModelTypeHandler
 
 
-def neuron_installed():
-    return importlib.util.find_spec("neuron")
-
-
 class TestArborizedModel(
     RandomStorageFixture,
     ConfigFixture,
@@ -25,7 +20,6 @@ class TestArborizedModel(
     engine_name="fs",
 ):
     def setUp(self):
-        print(f"CHECK : {neuron_installed()}")
         super().setUp()
         hh_soma = {
             "cable_types": {

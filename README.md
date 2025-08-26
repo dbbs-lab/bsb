@@ -1,6 +1,7 @@
 # The Brain Scaffold Builder
 
 ![Build Status](https://github.com/dbbs-lab/bsb/actions/workflows/main.yml/badge.svg)
+[![codecov](https://codecov.io/gh/dbbs-lab/bsb/graph/badge.svg?token=9b20cUHwzX)](https://codecov.io/gh/dbbs-lab/bsb)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
 Developed by the Department of Brain and Behavioral Sciences at the University of Pavia, the Brain Scaffold Builder (

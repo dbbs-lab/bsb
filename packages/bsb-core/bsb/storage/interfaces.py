@@ -1158,8 +1158,8 @@ class ConnectivityIterator:
         loff = self._local_chunk_offsets()
         goff = self._global_chunk_offsets()
         llocs, glocs = data
-        llocs[:, 0] += loff[lchunk]
-        glocs[:, 0] += goff[gchunk]
+        llocs[:, 0] += loff.get(lchunk, 0)
+        glocs[:, 0] += goff.get(gchunk, 0)
         if direction == "out":
             return lchunk, llocs, gchunk, glocs
         else:

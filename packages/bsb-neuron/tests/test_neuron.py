@@ -1,4 +1,3 @@
-import importlib
 import itertools
 import unittest
 from copy import copy
@@ -18,11 +17,6 @@ from bsb_neuron.cell import ArborizedModel
 from bsb_neuron.connection import TransceiverModel
 
 
-def neuron_installed():
-    return importlib.util.find_spec("neuron")
-
-
-@unittest.skipIf(not neuron_installed(), "NEURON is not installed")
 class TestNeuronMinimal(
     RandomStorageFixture,
     ConfigFixture,
@@ -57,7 +51,6 @@ class TestNeuronMinimal(
         self.assertAlmostEqual(h.t, sim2.duration, msg="sim duration incorrect")
 
 
-@unittest.skipIf(not neuron_installed(), "NEURON is not installed")
 class TestNeuronMultichunk(
     RandomStorageFixture,
     ConfigFixture,
@@ -172,7 +165,6 @@ class TestNeuronMultichunk(
         )
 
 
-@unittest.skipIf(not neuron_installed(), "NEURON is not installed")
 class TestNeuronSmallChunk(
     RandomStorageFixture,
     ConfigFixture,
@@ -288,7 +280,6 @@ class TestNeuronSmallChunk(
         )
 
 
-@unittest.skipIf(not neuron_installed(), "NEURON is not installed")
 class TestNeuronMultiBranch(
     RandomStorageFixture,
     ConfigFixture,
@@ -407,7 +398,6 @@ class TestNeuronMultiBranch(
         )
 
 
-@unittest.skipIf(not neuron_installed(), "NEURON is not installed")
 class TestNeuronMultiBranchLoop(
     RandomStorageFixture,
     ConfigFixture,

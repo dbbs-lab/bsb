@@ -4,7 +4,6 @@ import itertools
 import numpy as np
 from bsb import (
     AdapterError,
-    AdapterProgress,
     Chunk,
     DatasetNotFoundError,
     SimulationData,
@@ -95,7 +94,7 @@ class NeuronAdapter(SimulatorAdapter):
             if self.engine.dt > simulation.resolution:
                 self.engine.dt = simulation.resolution
             self.engine.celsius = simulation.temperature
-            if self.engine.tstop < simulation.duration
+            if self.engine.tstop < simulation.duration:
                 self.engine.tstop = simulation.duration
             report("Load balancing", level=2)
             self.load_balance(simulation)
@@ -105,7 +104,7 @@ class NeuronAdapter(SimulatorAdapter):
             self.create_connections(simulation)
             report("Creating devices", level=2)
             self.create_devices(simulation)
-            self.load_controllers_from_devices(simulation)
+            self.load_controllers(simulation)
             return self.simdata[simulation]
         except:
             del self.simdata[simulation]
@@ -139,9 +138,8 @@ class NeuronAdapter(SimulatorAdapter):
             pc = self.engine.ParallelContext()
             pc.set_maxstep(10)
             self.engine.finitialize(self.initial)
-            self.duration = self.engine.tstop
-            self.resolution = self.engine.dt
-            '''
+            self._duration = self.engine.tstop
+            """
             progress = AdapterProgress(duration)
             for _oi, i in progress.steps(step=1):
                 pc.psolve(i)
@@ -149,19 +147,19 @@ class NeuronAdapter(SimulatorAdapter):
                 for listener in self._progress_listeners:
                     listener(simulations, tick)
             progress.complete()
-            '''
-            for t , cnt_ids in self.get_next_checkpoint():
+            """
+            results = [self.simdata[sim].result for sim in simulations]
+            for t, cnt_ids in self.get_next_checkpoint():
                 pc.psolve(t)
-                self.execute(cnt_ids,simulations = simulations)
+                self.execute(cnt_ids, simulations=simulations)
 
-
+                self.collect(results)
 
             report("Finished simulation.", level=2)
         finally:
             results = [self.simdata[sim].result for sim in simulations]
             for sim in simulations:
                 del self.simdata[sim]
-
         return results
 
     def create_neurons(self, simulation):

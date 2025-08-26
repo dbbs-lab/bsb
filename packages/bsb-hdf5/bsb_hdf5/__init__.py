@@ -11,7 +11,7 @@ from datetime import datetime
 
 import h5py
 import shortuuid
-from bsb import Engine, MPILock, config, report, warn, ScaffoldWarning
+from bsb import Engine, MPILock, ScaffoldWarning, config, report, warn
 from bsb import StorageNode as IStorageNode
 
 from .connectivity_set import ConnectivitySet
@@ -152,13 +152,18 @@ class HDF5Engine(Engine):
                         raise
                 i += 1
             else:
-                raise TimeoutError("HDF5 lock stuck for >10 seconds after releasing lock, aborting.")
+                raise TimeoutError(
+                    "HDF5 lock stuck for >10 seconds after releasing lock, aborting."
+                )
 
             if i:
-                warn(f"Slow HDF5 locking detected! Had to wait {i}ms.", category=HDF5SlowLockingWarning, stacklevel=4)
+                warn(
+                    f"Slow HDF5 locking detected! Had to wait {i}ms.",
+                    category=HDF5SlowLockingWarning,
+                    stacklevel=4,
+                )
 
             return handle
-
 
     def exists(self):
         return os.path.exists(self._root)

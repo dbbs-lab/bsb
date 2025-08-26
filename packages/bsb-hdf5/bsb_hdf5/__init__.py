@@ -6,11 +6,12 @@ import importlib.metadata
 import json
 import os
 import shutil
+import time
 from datetime import datetime
 
 import h5py
 import shortuuid
-from bsb import Engine, MPILock, config, report
+from bsb import Engine, MPILock, ScaffoldWarning, config, report, warn
 from bsb import StorageNode as IStorageNode
 
 from .connectivity_set import ConnectivitySet
@@ -19,11 +20,12 @@ from .morphology_repository import MorphologyRepository
 from .placement_set import PlacementSet
 
 __all__ = [
-    "PlacementSet",
     "ConnectivitySet",
     "FileStore",
-    "MorphologyRepository",
     "HDF5Engine",
+    "HDF5SlowLockingWarning",
+    "MorphologyRepository",
+    "PlacementSet",
     "StorageNode",
 ]
 
@@ -138,7 +140,30 @@ class HDF5Engine(Engine):
         if self._readonly and mode != "r":
             raise OSError("Can't perform write operations in readonly mode.")
         else:
-            return h5py.File(self._root, mode)
+            i = 0
+            while i < 10000:
+                try:
+                    handle = h5py.File(self._root, mode)
+                    break
+                except BlockingIOError as e:
+                    if e.errno == 11:
+                        time.sleep(0.001)
+                    else:
+                        raise
+                i += 1
+            else:
+                raise TimeoutError(
+                    "HDF5 lock stuck for >10 seconds after releasing lock, aborting."
+                )
+
+            if i:
+                warn(
+                    f"Slow HDF5 locking detected! Had to wait {i}ms.",
+                    category=HDF5SlowLockingWarning,
+                    stacklevel=4,
+                )
+
+            return handle
 
     def exists(self):
         return os.path.exists(self._root)
@@ -227,3 +252,7 @@ class StorageNode(IStorageNode):
     """
     Path to the HDF5 network storage file.
     """
+
+
+class HDF5SlowLockingWarning(ScaffoldWarning):
+    pass

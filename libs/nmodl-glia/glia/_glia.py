@@ -3,6 +3,7 @@ import os
 import shutil
 import subprocess
 import sys
+import time
 import typing
 import warnings
 from functools import lru_cache, wraps
@@ -417,8 +418,16 @@ class Glia:
         os.makedirs(get_data_path(), exist_ok=True)
         clear_cache()
         create_preferences()
+        could_lock = False
+        while not could_lock:
+            try:
+                with open(os.path.join(get_data_path(), "lock_install"), "x"):
+                    could_lock = True
+            except FileExistsError as _:
+                time.sleep(0.1)
         if not Path(get_local_pkg_path()).exists():
             create_local_package()
+        os.remove(os.path.join(get_data_path(), "lock_install"))
         # Environment cache path install
         shutil.rmtree(get_cache_path(), ignore_errors=True)
         os.makedirs(get_cache_path(), exist_ok=True)

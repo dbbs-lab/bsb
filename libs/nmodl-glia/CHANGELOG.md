@@ -1,3 +1,13 @@
+## 6.0.5 (2025-08-26)
+
+### 🩹 Fixes
+
+- bump nightly ([#165](https://github.com/dbbs-lab/bsb/pull/165))
+
+### ❤️ Thank You
+
+- Robin De Schepper
+
 ## 6.0.4 (2025-07-31)
 
 This was a version bump only for nmodl-glia to align it with other projects, there were no code changes.

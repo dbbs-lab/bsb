@@ -17,9 +17,6 @@ if typing.TYPE_CHECKING:
 
 
 class AdapterController(abc.ABC):
-    def __init__(self, start_t=None):
-        self._status = start_t or 0
-
     @abc.abstractmethod
     def get_next_checkpoint(self):
         """method to implement that is needed for look for the next checkpoint
@@ -77,7 +74,7 @@ class AdapterProgress(AdapterController):
 
 class BasicSimulationListener(AdapterController):
     def __init__(self, adapter, step=1):
-        super().__init__()
+        self._status = 0
         self._adapter = adapter
         self._start = self._last_tick = time()
         self._step = step
@@ -98,6 +95,7 @@ class BasicSimulationListener(AdapterController):
         report(msg, level=2)
         self._last_tick = now
         self._status += self._step
+        return self._status
 
 
 class SimulationData:
@@ -207,14 +205,17 @@ class SimulatorAdapter(abc.ABC):
             base_list = BasicSimulationListener(self, 1)
             self._progress_listeners.append(base_list)
         for listener in self._progress_listeners:
-            if hasattr(listener, "progress") and hasattr(listener, "get_next_checkpoint"):
-                self._controllers.append(listener)
-            else:
-                raise AttributeMissingError(
-                    f"The Simulation listener {listener} does not implement "
-                    f"get_next_checkpoint or progress method,"
-                    f"cannot use it as controller"
-                )
+            if listener not in self._controllers:
+                if hasattr(listener, "progress") and hasattr(
+                    listener, "get_next_checkpoint"
+                ):
+                    self._controllers.append(listener)
+                else:
+                    raise AttributeMissingError(
+                        f"The Simulation listener {listener} does not implement "
+                        f"get_next_checkpoint or progress method,"
+                        f"cannot use it as controller"
+                    )
         for device in simulation.devices.values():
             if hasattr(device, "get_next_checkpoint"):
                 if hasattr(device, "progress") and hasattr(device, "need_flush"):
@@ -227,4 +228,4 @@ class SimulatorAdapter(abc.ABC):
                     )
 
 
-__all__ = ["AdapterProgress", "SimulationData", "SimulatorAdapter"]
+__all__ = ["AdapterProgress", "AdapterController", "SimulationData", "SimulatorAdapter"]

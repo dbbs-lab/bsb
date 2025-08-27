@@ -132,6 +132,7 @@ if typing.TYPE_CHECKING:
   import bsb.trees
   import bsb.voxels
 
+AdapterController: type["bsb.simulation.adapter.AdapterController"]
 AdapterError: type["bsb.exceptions.AdapterError"]
 AdapterProgress: type["bsb.simulation.adapter.AdapterProgress"]
 AfterConnectivityHook: type["bsb.postprocessing.AfterConnectivityHook"]

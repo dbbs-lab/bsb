@@ -38,6 +38,9 @@ class NeuronResult(SimulationResult):
             segment.analogsignals.append(
                 AnalogSignal(list(v), sampling_period=p.dt * ms, **annotations)
             )
+            # Free the memory
+            if v.size():
+                v.remove(0, v.size() - 1)
 
         self.create_recorder(flush)
 
@@ -91,11 +94,9 @@ class NeuronAdapter(SimulatorAdapter):
         )
         try:
             report("Preparing simulation", level=2)
-            if self.engine.dt > simulation.resolution:
-                self.engine.dt = simulation.resolution
+            self.engine.dt = simulation.resolution
             self.engine.celsius = simulation.temperature
-            if self.engine.tstop < simulation.duration:
-                self.engine.tstop = simulation.duration
+            self.engine.tstop = simulation.duration
             report("Load balancing", level=2)
             self.load_balance(simulation)
             report("Creating neurons", level=2)
@@ -138,7 +139,7 @@ class NeuronAdapter(SimulatorAdapter):
             pc = self.engine.ParallelContext()
             pc.set_maxstep(10)
             self.engine.finitialize(self.initial)
-            self._duration = self.engine.tstop
+            self._duration = max(sim.duration for sim in simulations)
             """
             progress = AdapterProgress(duration)
             for _oi, i in progress.steps(step=1):

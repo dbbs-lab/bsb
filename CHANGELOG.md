@@ -1,3 +1,33 @@
+## 6.0.6 (2025-08-26)
+
+### 🩹 Fixes
+
+- warn when hdf5 lock slower than mpilock ([#166](https://github.com/dbbs-lab/bsb/pull/166))
+
+### ❤️ Thank You
+
+- Robin De Schepper
+
+## 6.0.5 (2025-08-26)
+
+### 🩹 Fixes
+
+- bump nightly ([#165](https://github.com/dbbs-lab/bsb/pull/165))
+
+### ❤️ Thank You
+
+- Robin De Schepper
+
+## 6.0.4 (2025-07-31)
+
+### 🩹 Fixes
+
+- applied a fix for targeting strategies ([#164](https://github.com/dbbs-lab/bsb/pull/164))
+
+### ❤️ Thank You
+
+- Filippo @filimarc
+
 ## 6.0.3 (2025-07-25)
 
 ### 🩹 Fixes

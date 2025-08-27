@@ -6,8 +6,9 @@ from time import time
 
 import numpy as np
 
+from bsb import AttributeMissingError, SimulationResult, report
+
 from ..services.mpi import MPIService
-from .results import SimulationResult
 
 if typing.TYPE_CHECKING:
     from ..storage import PlacementSet
@@ -74,15 +75,29 @@ class AdapterProgress(AdapterController):
         return self._status
 
 
-class BasicSimulationListener:
-    def __init__(self, adapter, step):
-        self._simulations_name = adapter.simdata.keys()
-        self._comm = adapter.comm
-        self._t_status = 0
-        self._step = step or 1
+class BasicSimulationListener(AdapterController):
+    def __init__(self, adapter, step=1):
+        super().__init__()
+        self._adapter = adapter
+        self._start = self._last_tick = time()
+        self._step = step
+        self.need_flush = False
+        self._sim_name = [sim._name for sim in self._adapter.simdata]
 
     def get_next_checkpoint(self):
-        return self._t_status + self._step
+        return self._status + self._step
+
+    def progress(self, kwargs=None):
+        now = time()
+        tic = now - self._last_tick
+        el_time = now - self._start
+        duration = self._adapter._duration
+        msg = f"Simulation {self._sim_name} | progress: {self._status} - "
+        msg += f"elapsed: {el_time:.2f}s - last step time: {tic:.2f}s - "
+        msg += f"execution: {self._status / duration}%"
+        report(msg, level=2)
+        self._last_tick = now
+        self._status += self._step
 
 
 class SimulationData:
@@ -161,15 +176,18 @@ class SimulatorAdapter(abc.ABC):
         pass
 
     def get_next_checkpoint(self):
-        while self._sim_checkpoint < self.duration:
+        while self._sim_checkpoint < self._duration:
             checkpoints = [cnt.get_next_checkpoint() for cnt in self._controllers]
             self._sim_checkpoint = np.min(checkpoints)
-            cnt_ids = np.where(checkpoints == self._sim_checkpoint)
+            cnt_ids = np.where(checkpoints == self._sim_checkpoint)[0]
             yield (self._sim_checkpoint, cnt_ids)
 
-    def execute(self, controller_ids, *args):
+    def execute(self, controller_ids, **kwargs):
+        flush_point = False
         for i in controller_ids:
-            self._controllers[i].progress(args)  # self._controllers[i]()
+            self._controllers[i].progress(kwargs=kwargs)  # self._controllers[i]()
+            flush_point = flush_point or self._controllers[i].need_flush
+        return flush_point
 
     def collect(self, results):
         """
@@ -186,24 +204,26 @@ class SimulatorAdapter(abc.ABC):
 
     def load_controllers(self, simulation):
         if not self._progress_listeners:
-            self._progress_listeners.append(BasicSimulationListener)
+            base_list = BasicSimulationListener(self, 1)
+            self._progress_listeners.append(base_list)
         for listener in self._progress_listeners:
             if hasattr(listener, "progress") and hasattr(listener, "get_next_checkpoint"):
                 self._controllers.append(listener)
             else:
-                raise TypeError(
+                raise AttributeMissingError(
                     f"The Simulation listener {listener} does not implement "
                     f"get_next_checkpoint or progress method,"
                     f"cannot use it as controller"
                 )
         for device in simulation.devices.values():
             if hasattr(device, "get_next_checkpoint"):
-                if hasattr(device, "progress"):
+                if hasattr(device, "progress") and hasattr(device, "need_flush"):
                     self._controllers.append(device)
                 else:
-                    raise TypeError(
+                    raise AttributeMissingError(
                         f"Device {device.name} is configured to be a controller "
-                        f"but progress method is not defined"
+                        f"but progress or need_flush attributes"
+                        f" are not defined"
                     )
 
 

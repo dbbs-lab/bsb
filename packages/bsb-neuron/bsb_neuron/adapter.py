@@ -151,13 +151,13 @@ class NeuronAdapter(SimulatorAdapter):
             results = [self.simdata[sim].result for sim in simulations]
             for t, cnt_ids in self.get_next_checkpoint():
                 pc.psolve(t)
-                self.execute(cnt_ids, simulations=simulations)
-
-                self.collect(results)
+                need_to_flush = self.execute(cnt_ids, simulations=simulations)
+                if need_to_flush:
+                    self.collect(results)
 
             report("Finished simulation.", level=2)
         finally:
-            results = [self.simdata[sim].result for sim in simulations]
+            self.collect(results)
             for sim in simulations:
                 del self.simdata[sim]
         return results

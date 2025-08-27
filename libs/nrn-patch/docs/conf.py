@@ -48,8 +48,9 @@ templates_path = ["_templates"]
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = []
 
+# TODO: Use latest instead of the fixed version. https://github.com/dbbs-lab/bsb/issues/168
 intersphinx_mapping = {
-    "neuron": ("https://nrn.readthedocs.io/en/latest/", None),
+    "neuron": ("https://nrn.readthedocs.io/en/8.2.7/", None),
     **_project.intersphinx,
 }
 

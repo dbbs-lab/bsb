@@ -1,3 +1,23 @@
+## 6.0.6 (2025-08-26)
+
+### 🩹 Fixes
+
+- warn when hdf5 lock slower than mpilock ([#166](https://github.com/dbbs-lab/bsb/pull/166))
+
+### ❤️ Thank You
+
+- Robin De Schepper
+
+## 6.0.5 (2025-08-26)
+
+### 🩹 Fixes
+
+- bump nightly ([#165](https://github.com/dbbs-lab/bsb/pull/165))
+
+### ❤️ Thank You
+
+- Robin De Schepper
+
 ## 6.0.4 (2025-07-31)
 
 ### 🩹 Fixes

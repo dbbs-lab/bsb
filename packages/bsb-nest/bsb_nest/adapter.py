@@ -3,9 +3,9 @@ import sys
 import typing
 
 import nest
+import numpy as np
 from bsb import (
     AdapterError,
-    AdapterProgress,
     SimulationData,
     SimulationResult,
     SimulatorAdapter,
@@ -38,6 +38,9 @@ class NestResult(SimulationResult):
                     **annotations,
                 )
             )
+            # Free the Memory
+            events["times"] = np.array([])
+            events["senders"] = np.array([])
 
         self.create_recorder(flush)
 
@@ -46,6 +49,7 @@ class NestAdapter(SimulatorAdapter):
     def __init__(self, comm=None):
         super().__init__(comm=comm)
         self.loaded_modules = set()
+        self._prev_chkpoint = 0
 
     def simulate(self, *simulations, post_prepare=None):
         try:
@@ -88,6 +92,7 @@ class NestAdapter(SimulatorAdapter):
             self.connect_neurons(simulation)
             report("Creating devices...", level=2)
             self.create_devices(simulation)
+            self.load_controllers(simulation)
             return self.simdata[simulation]
         except Exception:
             del self.simdata[simulation]
@@ -104,18 +109,23 @@ class NestAdapter(SimulatorAdapter):
         if unprepared:
             raise AdapterError(f"Unprepared for simulations: {', '.join(unprepared)}")
         report("Simulating...", level=2)
-        duration = max(sim.duration for sim in simulations)
-        progress = AdapterProgress(duration)
+        self._duration = max(sim.duration for sim in simulations)
+
         try:
-            with nest.RunManager():
-                for oi, i in progress.steps(step=1):
-                    nest.Run(i - oi)
-                    progress.tick(i)
-        finally:
             results = [self.simdata[sim].result for sim in simulations]
+            with nest.RunManager():
+                for t, cnt_ids in self.get_next_checkpoint():
+                    nest.Run(t - self._prev_chkpoint)
+                    need_to_flush = self.execute(cnt_ids, simulations=simulations)
+                    if need_to_flush:
+                        self.collect(results)
+                    self._prev_chkpoint = t
+
+        finally:
+            self.collect(results)
             for sim in simulations:
                 del self.simdata[sim]
-        progress.complete()
+
         report("Simulation done.", level=2)
         return results
 

@@ -91,7 +91,7 @@ class BasicSimulationListener(AdapterController):
         duration = self._adapter._duration
         msg = f"Simulation {self._sim_name} | progress: {self._status} - "
         msg += f"elapsed: {el_time:.2f}s - last step time: {tic:.2f}s - "
-        msg += f"execution: {self._status / duration}%"
+        msg += f"exectuted: {(self._status / duration) * 100:.2f}%"
         report(msg, level=2)
         self._last_tick = now
         self._status += self._step
@@ -202,7 +202,7 @@ class SimulatorAdapter(abc.ABC):
 
     def load_controllers(self, simulation):
         if not self._progress_listeners:
-            base_list = BasicSimulationListener(self, 1)
+            base_list = BasicSimulationListener(self, 10)
             self._progress_listeners.append(base_list)
         for listener in self._progress_listeners:
             if listener not in self._controllers:
@@ -228,4 +228,10 @@ class SimulatorAdapter(abc.ABC):
                     )
 
 
-__all__ = ["AdapterProgress", "AdapterController", "SimulationData", "SimulatorAdapter"]
+__all__ = [
+    "AdapterProgress",
+    "AdapterController",
+    "BasicSimulationListener",
+    "SimulationData",
+    "SimulatorAdapter",
+]

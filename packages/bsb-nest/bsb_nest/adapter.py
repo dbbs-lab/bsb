@@ -3,9 +3,9 @@ import sys
 import typing
 
 import nest
-import numpy as np
 from bsb import (
     AdapterError,
+    BasicSimulationListener,
     SimulationData,
     SimulationResult,
     SimulatorAdapter,
@@ -22,6 +22,7 @@ if typing.TYPE_CHECKING:
 
 
 class NestResult(SimulationResult):
+    # It seems that this class is not used
     def record(self, nc, **annotations):
         recorder = nest.Create("spike_recorder", params={"record_to": "memory"})
         nest.Connect(nc, recorder)
@@ -38,9 +39,7 @@ class NestResult(SimulationResult):
                     **annotations,
                 )
             )
-            # Free the Memory
-            events["times"] = np.array([])
-            events["senders"] = np.array([])
+            # Free the Memory -> not possible to free the memory while sim is running
 
         self.create_recorder(flush)
 
@@ -92,6 +91,7 @@ class NestAdapter(SimulatorAdapter):
             self.connect_neurons(simulation)
             report("Creating devices...", level=2)
             self.create_devices(simulation)
+            self.add_progress_listener(BasicSimulationListener(self, 100))
             self.load_controllers(simulation)
             return self.simdata[simulation]
         except Exception:
@@ -110,7 +110,6 @@ class NestAdapter(SimulatorAdapter):
             raise AdapterError(f"Unprepared for simulations: {', '.join(unprepared)}")
         report("Simulating...", level=2)
         self._duration = max(sim.duration for sim in simulations)
-
         try:
             results = [self.simdata[sim].result for sim in simulations]
             with nest.RunManager():

@@ -218,6 +218,7 @@ class TestTargetting(
         positions = ps.load_positions()
         expected_ids = np.where(positions[:, 0] <= 40)
 
+        print(f"result: {result} - len: {len(result.block.segments)}")
         spiketrains = result.block.segments[0].spiketrains
         for spiketrain in spiketrains:
             sorted_ids = np.sort(spiketrain.annotations["gids"])

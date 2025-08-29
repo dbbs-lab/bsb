@@ -168,7 +168,6 @@ class NeuronAdapter(SimulatorAdapter):
             report("Finished simulation.", level=2)
         finally:
             results = [self.simdata[sim].result for sim in simulations]
-            self.collect(results)
             for sim in simulations:
                 del self.simdata[sim]
         return results

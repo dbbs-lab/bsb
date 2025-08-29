@@ -121,7 +121,6 @@ class NestAdapter(SimulatorAdapter):
                     self._prev_chkpoint = t
 
         finally:
-            self.collect(results)
             for sim in simulations:
                 del self.simdata[sim]
 

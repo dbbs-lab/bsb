@@ -132,6 +132,7 @@ class SimulatorAdapter(abc.ABC):
         self._controllers = []
         self._duration = None
         self._sim_checkpoint = 0
+        self.pbar = False
 
     def simulate(self, *simulations, post_prepare=None):
         """
@@ -155,7 +156,7 @@ class SimulatorAdapter(abc.ABC):
             if post_prepare:
                 post_prepare(self, simulations, alldata)
             results = self.run(*simulations)
-            return results
+            return self.collect(results)
 
     @abc.abstractmethod
     def prepare(self, simulation):
@@ -204,6 +205,7 @@ class SimulatorAdapter(abc.ABC):
         """
         for result in results:
             result.flush()
+        return results
 
     def add_progress_listener(self, listener):
         self._progress_listeners.append(listener)

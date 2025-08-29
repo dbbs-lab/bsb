@@ -13,6 +13,7 @@ from bsb import (
     report,
 )
 from neo import AnalogSignal
+from tqdm import tqdm
 
 
 class NeuronSimulationData(SimulationData):
@@ -140,24 +141,33 @@ class NeuronAdapter(SimulatorAdapter):
             pc.set_maxstep(10)
             self.engine.finitialize(self.initial)
             self._duration = max(sim.duration for sim in simulations)
-            """
-            progress = AdapterProgress(duration)
-            for _oi, i in progress.steps(step=1):
-                pc.psolve(i)
-                tick = progress.tick(i)
-                for listener in self._progress_listeners:
-                    listener(simulations, tick)
-            progress.complete()
-            """
-            results = [self.simdata[sim].result for sim in simulations]
-            for t, cnt_ids in self.get_next_checkpoint():
-                pc.psolve(t)
-                need_to_flush = self.execute(cnt_ids, simulations=simulations)
-                if need_to_flush:
-                    self.collect(results)
+
+            # If a TTY term is used we load a progress bar
+            if self.pbar and self.comm.get_rank() == 0:
+                self.pbar = tqdm(total=self._duration)
+                names = [sim.name for sim in simulations]
+                with self.pbar as pbar:
+                    last_time = 0
+                    pbar.set_description(names[0])
+                    results = [self.simdata[sim].result for sim in simulations]
+                    for t, cnt_ids in self.get_next_checkpoint():
+                        pc.psolve(t)
+                        need_to_flush = self.execute(cnt_ids, simulations=simulations)
+                        pbar.update(t - last_time)
+                        last_time = t
+                        if need_to_flush:
+                            self.collect(results)
+            else:
+                results = [self.simdata[sim].result for sim in simulations]
+                for t, cnt_ids in self.get_next_checkpoint():
+                    pc.psolve(t)
+                    need_to_flush = self.execute(cnt_ids, simulations=simulations)
+                    if need_to_flush:
+                        self.collect(results)
 
             report("Finished simulation.", level=2)
         finally:
+            results = [self.simdata[sim].result for sim in simulations]
             self.collect(results)
             for sim in simulations:
                 del self.simdata[sim]

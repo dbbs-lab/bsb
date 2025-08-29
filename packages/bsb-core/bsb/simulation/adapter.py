@@ -1,4 +1,6 @@
 import abc
+import os
+import sys
 import types
 import typing
 from contextlib import ExitStack
@@ -73,13 +75,15 @@ class AdapterProgress(AdapterController):
 
 
 class BasicSimulationListener(AdapterController):
-    def __init__(self, adapter, step=1):
+    def __init__(self, adapter, step=1, silent=False):
         self._status = 0
         self._adapter = adapter
         self._start = self._last_tick = time()
         self._step = step
         self.need_flush = False
         self._sim_name = [sim._name for sim in self._adapter.simdata]
+        if silent:
+            self.progress = self.silently
 
     def get_next_checkpoint(self):
         return self._status + self._step
@@ -94,6 +98,10 @@ class BasicSimulationListener(AdapterController):
         msg += f"exectuted: {(self._status / duration) * 100:.2f}%"
         report(msg, level=2)
         self._last_tick = now
+        self._status += self._step
+        return self._status
+
+    def silently(self, kwargs=None):
         self._status += self._step
         return self._status
 
@@ -202,7 +210,12 @@ class SimulatorAdapter(abc.ABC):
 
     def load_controllers(self, simulation):
         if not self._progress_listeners:
-            base_list = BasicSimulationListener(self, 10)
+            if os.isatty(sys.stdout.fileno()) and sum(os.get_terminal_size()):
+                base_list = BasicSimulationListener(self, step=5, silent=True)
+                self.pbar = True
+            else:
+                base_list = BasicSimulationListener(self, step=5)
+                self.pbar = False
             self._progress_listeners.append(base_list)
         for listener in self._progress_listeners:
             if listener not in self._controllers:

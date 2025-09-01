@@ -1,9 +1,10 @@
 import unittest
 
 import numpy as np
+from bsb_arbor import SpikeRecorder
 from bsb_test import FixedPosConfigFixture, NumpyTestCase, RandomStorageFixture
 
-from bsb import MPI, Scaffold
+from bsb import MPI, AdapterController, Scaffold, compose_nodes, config
 
 
 class TestSimulate(
@@ -276,3 +277,125 @@ class TestTargetting(
         sorted_ids = np.sort(spiketrains[0].annotations["gids"])
         self.assertAll(sorted_ids == sub_pop_h_cell)
         self.assertEqual(len(sorted_ids), 4)
+
+
+@unittest.skipIf(MPI.get_size() > 1, "Skipped during parallel testing.")
+class TestAdapterController(
+    FixedPosConfigFixture,
+    RandomStorageFixture,
+    NumpyTestCase,
+    unittest.TestCase,
+    engine_name="hdf5",
+):
+    def setUp(self):
+        super().setUp()
+        self.cfg.network.chunk_size = 50
+        self.cfg.cell_types.add("h_cell", spatial=dict(radius=2, count=20))
+        x_ranges = np.repeat(np.arange(0, 100, 20), 4)
+        y_ranges = np.full((10, 2), [50, 150]).flatten()
+        z_ranges = np.full((5, 4), [50, 50, 150, 150]).flatten()
+
+        positions = []
+        for x, y, z in zip(x_ranges, y_ranges, z_ranges, strict=False):
+            positions.append([x, y, z])
+
+        self.cfg.placement.add(
+            "place_h_cell",
+            strategy="bsb.placement.strategy.FixedPositions",
+            partitions=[],
+            cell_types=["h_cell"],
+            positions=positions,
+        )
+
+        self.cfg.connectivity.add(
+            "test_to_h_cell",
+            dict(
+                strategy="bsb.connectivity.FixedOutdegree",
+                presynaptic=dict(cell_types=["test_cell"]),
+                postsynaptic=dict(cell_types=["h_cell"]),
+                outdegree=1,
+            ),
+        )
+        self.cfg.simulations.add(
+            "test",
+            simulator="arbor",
+            duration=100,
+            resolution=0.5,
+            cell_models={
+                "test_cell": {
+                    "model_strategy": "lif",
+                    "constants": {
+                        "C_m": 250,
+                        "tau_m": 20,
+                        "t_ref": 2.0,
+                        "E_L": 0.0,
+                        "E_R": 0.0,
+                        "V_m": 0.0,
+                        "V_th": 20,
+                    },
+                },
+                "h_cell": {
+                    "model_strategy": "lif",
+                    "constants": {
+                        "C_m": 250,
+                        "tau_m": 20,
+                        "t_ref": 2.0,
+                        "E_L": 0.0,
+                        "E_R": 0.0,
+                        "V_m": 0.0,
+                        "V_th": 20,
+                    },
+                },
+            },
+            connection_models={
+                "test_to_h_cell": {"weight": 20.68015524367846, "delay": 1.5}
+            },
+            devices={},
+        )
+        self.network = Scaffold(self.cfg, self.storage)
+        self.network.compile()
+
+    def test_record_checkpoint(self):
+        """Create a test with an AdapterController that flushes every 10 steps,
+        so with a simulation of 100 of duration it will create 10 segments plus
+        a last one that is empty"""
+
+        class FixedStepController(AdapterController):
+            def __init__(self, **kwargs):
+                self._status = 0
+                self._step = 10
+                self.need_flush = True
+
+            def get_next_checkpoint(self):
+                return self._status + self._step
+
+            def progress(self, kwargs=None):
+                self._status += self._step
+                return self._status
+
+        @config.node
+        class SpikeController(
+            compose_nodes(SpikeRecorder, FixedStepController),
+            classmap_entry="spike_controller",
+        ):
+            def __init__(self, **kwargs):
+                FixedStepController.__init__(self)
+                super().__init__()
+
+        self.network.simulations.test.devices["new_recorder"] = dict(
+            device="spike_controller",
+            targetting={
+                "strategy": "cell_model",
+                "cell_models": ["test_cell"],
+            },
+        )
+        result = self.network.run_simulation("test")
+        segments = result.block.segments
+        self.assertEqual(
+            len(segments), 11, "The simulation should have been split in ten segments"
+        )
+        self.assertEqual(
+            list(segments[-1].spiketrains[0].magnitude),
+            [],
+            "The eleventh segment should be empty",
+        )

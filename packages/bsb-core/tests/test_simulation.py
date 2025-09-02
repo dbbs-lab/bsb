@@ -279,6 +279,33 @@ class TestTargetting(
         self.assertEqual(len(sorted_ids), 4)
 
 
+class FixedStepController(AdapterController):
+    def __init__(self, **kwargs):
+        self._status = 0
+        if hasattr(kwargs, "step"):
+            self._step = kwargs["step"]
+        self.need_flush = True
+
+    def get_next_checkpoint(self):
+        return self._status + self._step
+
+    def progress(self, kwargs=None):
+        self._status += self._step
+        return self._status
+
+
+@config.node
+class SpikeController(
+    compose_nodes(SpikeRecorder, FixedStepController),
+    classmap_entry="spike_controller",
+):
+    step = config.attr(type=float, required=True)
+
+    def __init__(self, **kwargs):
+        FixedStepController.__init__(self, step=self.step)
+        super().__init__()
+
+
 @unittest.skipIf(MPI.get_size() > 1, "Skipped during parallel testing.")
 class TestAdapterController(
     FixedPosConfigFixture,
@@ -368,35 +395,15 @@ class TestAdapterController(
         so with a simulation of 100 of duration it will create 10 segments plus
         a last one that is empty"""
 
-        class FixedStepController(AdapterController):
-            def __init__(self, **kwargs):
-                self._status = 0
-                self._step = 10
-                self.need_flush = True
-
-            def get_next_checkpoint(self):
-                return self._status + self._step
-
-            def progress(self, kwargs=None):
-                self._status += self._step
-                return self._status
-
-        @config.node
-        class SpikeController(
-            compose_nodes(SpikeRecorder, FixedStepController),
-            classmap_entry="spike_controller",
-        ):
-            def __init__(self, **kwargs):
-                FixedStepController.__init__(self)
-                super().__init__()
-
         self.network.simulations.test.devices["new_recorder"] = dict(
             device="spike_controller",
             targetting={
                 "strategy": "cell_model",
                 "cell_models": ["test_cell"],
             },
+            step=10,
         )
+
         result = self.network.run_simulation("test")
         segments = result.block.segments
 
@@ -420,32 +427,19 @@ class TestAdapterController(
             "Spike times in segment 6 fall outside the expected range (60–70).",
         )
 
-    def test_async_checkpoint(self):
-        """Create a test with an AdapterController that flushes every 15 steps,
-        the simulation of duration 100 will be flushed 7 times but the end will
-        not align to a checkpoint"""
+    def test_two_controllers(self):
+        """Test two AdapterController instances together, one configured with 15 steps
+        and the other with 40 steps, it will flush at [ 15,30,40,45,60,75,80,90].
+        Note that not all checkpoints align with the total simulation duration (100)."""
 
-        class FixedStepController(AdapterController):
-            def __init__(self, **kwargs):
-                self._status = 0
-                self._step = 15
-                self.need_flush = True
-
-            def get_next_checkpoint(self):
-                return self._status + self._step
-
-            def progress(self, kwargs=None):
-                self._status += self._step
-                return self._status
-
-        @config.node
-        class SpikeController(
-            compose_nodes(SpikeRecorder, FixedStepController),
-            classmap_entry="spike_controller",
-        ):
-            def __init__(self, **kwargs):
-                FixedStepController.__init__(self)
-                super().__init__()
+        self.network.simulations.test.devices["rec_15"] = dict(
+            device="spike_controller",
+            targetting={
+                "strategy": "cell_model",
+                "cell_models": ["test_cell"],
+            },
+            step=15,
+        )
 
         self.network.simulations.test.devices["new_recorder"] = dict(
             device="spike_controller",
@@ -453,22 +447,30 @@ class TestAdapterController(
                 "strategy": "cell_model",
                 "cell_models": ["test_cell"],
             },
+            step=40,
         )
         result = self.network.run_simulation("test")
         segments = result.block.segments
 
+        self.assertEqual(self.network.simulations.test.devices["rec_15"]._step, 15)
+        self.assertEqual(self.network.simulations.test.devices["new_recorder"]._step, 40)
+
         self.assertEqual(
             len(segments),
-            7,
-            "The simulation should have been split in 7 populated segments",
+            9,
+            "The simulation should have been split in 9 populated segments",
+        )
+        # Check that the 5th segment has the correct times
+        self.assertAll(
+            (segments[4].spiketrains[0].magnitude < 60)
+            & (segments[4].spiketrains[0].magnitude > 45),
+            "Spike times in 5th segment fall outside the expected range (45-60).",
         )
 
         # Check that results in the last part, after last checkpoint, is correctly flushed
+
         self.assertAll(
-            segments[-1].spiketrains[0].magnitude >= 90,
-            "Times in the last segment do not start from 90.",
-        )
-        self.assertAll(
-            segments[-1].spiketrains[0].magnitude < 100,
+            (segments[-1].spiketrains[0].magnitude >= 90)
+            & (segments[-1].spiketrains[0].magnitude < 100),
             "Spike times in last segment fall outside the expected range (90-100).",
         )

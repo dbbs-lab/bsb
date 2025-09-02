@@ -1,7 +1,6 @@
 import abc
 import os
 import sys
-import types
 import typing
 from contextlib import ExitStack
 from time import time
@@ -76,8 +75,7 @@ class SimulationData:
         self.chunks = None
         self.populations = dict()
         self.placement: dict[CellModel, PlacementSet] = {
-            model: model.get_placement_set()
-            for model in simulation.cell_models.values()
+            model: model.get_placement_set() for model in simulation.cell_models.values()
         }
         self.connections = dict()
         self.devices = dict()

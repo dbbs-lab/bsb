@@ -235,9 +235,7 @@ class Population:
 
         :yield: Each GID in the population's ranges
         """
-        yield from itertools.chain.from_iterable(
-            range(r[0], r[1]) for r in self._ranges
-        )
+        yield from itertools.chain.from_iterable(range(r[0], r[1]) for r in self._ranges)
 
 
 class GIDManager:
@@ -467,7 +465,6 @@ class ArborAdapter(SimulatorAdapter):
                         if need_to_flush:
                             self.flush_data(simdata)
             else:
-
                 for t, cnt_ids in self.get_next_checkpoint():
                     arbor_sim.run(t * U.ms, dt=simulation.resolution * U.ms)
                     need_to_flush = self.execute(cnt_ids, simulations=simulations)

@@ -39,41 +39,6 @@ class AdapterController(abc.ABC):
         return
 
 
-class AdapterProgress(AdapterController):
-    def __init__(self, step, duration):
-        self._step = step
-        self._start = self._last_tick = time()
-        self._ticks = 0
-        self._duration = duration
-
-    def tick(self, duration=None):
-        """
-        Report simulation progress.
-        """
-        now = time()
-        tic = now - self._last_tick
-        self._ticks += 1
-        el = now - self._start
-        args = {
-            "progression": self._step,
-            "time": time(),
-            "duration": self._duration,
-            "tick": tic,
-            "elapsed": el,
-        }
-
-        progress = types.SimpleNamespace(**args)
-        self._last_tick = now
-        return progress
-
-    def get_next_checkpoint(self, time):
-        return self._status + self._step
-
-    def progress(self):
-        self._status += self._step
-        return self._status
-
-
 class BasicSimulationListener(AdapterController):
     def __init__(self, adapter, step=1, silent=False):
         self._status = 0
@@ -111,7 +76,8 @@ class SimulationData:
         self.chunks = None
         self.populations = dict()
         self.placement: dict[CellModel, PlacementSet] = {
-            model: model.get_placement_set() for model in simulation.cell_models.values()
+            model: model.get_placement_set()
+            for model in simulation.cell_models.values()
         }
         self.connections = dict()
         self.devices = dict()

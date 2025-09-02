@@ -399,6 +399,7 @@ class TestAdapterController(
         )
         result = self.network.run_simulation("test")
         segments = result.block.segments
+
         self.assertEqual(
             len(segments),
             11,
@@ -412,9 +413,62 @@ class TestAdapterController(
         # Spiketrains in the nth segment should have values between n*10 and (n+1)*10
         self.assertAll(
             segments[6].spiketrains[0].magnitude >= 60,
-            "Times in the 6th segments do not start from 60.",
+            "Times in the 6th segment do not start from 60.",
         )
         self.assertAll(
             segments[6].spiketrains[0].magnitude < 70,
             "Spike times in segment 6 fall outside the expected range (60–70).",
+        )
+
+    def test_async_checkpoint(self):
+        """Create a test with an AdapterController that flushes every 15 steps,
+        the simulation of duration 100 will be flushed 7 times but the end will
+        not align to a checkpoint"""
+
+        class FixedStepController(AdapterController):
+            def __init__(self, **kwargs):
+                self._status = 0
+                self._step = 15
+                self.need_flush = True
+
+            def get_next_checkpoint(self):
+                return self._status + self._step
+
+            def progress(self, kwargs=None):
+                self._status += self._step
+                return self._status
+
+        @config.node
+        class SpikeController(
+            compose_nodes(SpikeRecorder, FixedStepController),
+            classmap_entry="spike_controller",
+        ):
+            def __init__(self, **kwargs):
+                FixedStepController.__init__(self)
+                super().__init__()
+
+        self.network.simulations.test.devices["new_recorder"] = dict(
+            device="spike_controller",
+            targetting={
+                "strategy": "cell_model",
+                "cell_models": ["test_cell"],
+            },
+        )
+        result = self.network.run_simulation("test")
+        segments = result.block.segments
+
+        self.assertEqual(
+            len(segments),
+            7,
+            "The simulation should have been split in 7 populated segments",
+        )
+
+        # Check that results in the last part, after last checkpoint, is correctly flushed
+        self.assertAll(
+            segments[-1].spiketrains[0].magnitude >= 90,
+            "Times in the last segment do not start from 90.",
+        )
+        self.assertAll(
+            segments[-1].spiketrains[0].magnitude < 100,
+            "Spike times in last segment fall outside the expected range (90-100).",
         )

@@ -350,7 +350,15 @@ class TestAdapterController(
             connection_models={
                 "test_to_h_cell": {"weight": 20.68015524367846, "delay": 1.5}
             },
-            devices={},
+            devices=dict(
+                pg={
+                    "device": "poisson_generator",
+                    "rate": 1600,
+                    "targetting": {"strategy": "all"},
+                    "weight": 2000,
+                    "delay": 1.5,
+                }
+            ),
         )
         self.network = Scaffold(self.cfg, self.storage)
         self.network.compile()
@@ -392,10 +400,21 @@ class TestAdapterController(
         result = self.network.run_simulation("test")
         segments = result.block.segments
         self.assertEqual(
-            len(segments), 11, "The simulation should have been split in ten segments"
+            len(segments),
+            11,
+            "The simulation should have been split in 10 populated segments + 1 empty",
         )
         self.assertEqual(
             list(segments[-1].spiketrains[0].magnitude),
             [],
             "The eleventh segment should be empty",
+        )
+        # Spiketrains in the nth segment should have values between n*10 and (n+1)*10
+        self.assertAll(
+            segments[6].spiketrains[0].magnitude >= 60,
+            "Times in the 6th segments do not start from 60.",
+        )
+        self.assertAll(
+            segments[6].spiketrains[0].magnitude < 70,
+            "Spike times in segment 6 fall outside the expected range (60–70).",
         )

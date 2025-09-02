@@ -235,7 +235,9 @@ class Population:
 
         :yield: Each GID in the population's ranges
         """
-        yield from itertools.chain.from_iterable(range(r[0], r[1]) for r in self._ranges)
+        yield from itertools.chain.from_iterable(
+            range(r[0], r[1]) for r in self._ranges
+        )
 
 
 class GIDManager:
@@ -457,21 +459,20 @@ class ArborAdapter(SimulatorAdapter):
                 with self.pbar as pbar:
                     last_time = 0
                     pbar.set_description(names[0])
-                    results = [self.simdata[sim].result for sim in simulations]
                     for t, cnt_ids in self.get_next_checkpoint():
                         arbor_sim.run(t * U.ms, dt=simulation.resolution * U.ms)
                         need_to_flush = self.execute(cnt_ids, simulations=simulations)
                         pbar.update(t - last_time)
                         last_time = t
                         if need_to_flush:
-                            self.collect(results)
+                            self.flush_data(simdata)
             else:
-                results = [self.simdata[sim].result for sim in simulations]
+
                 for t, cnt_ids in self.get_next_checkpoint():
                     arbor_sim.run(t * U.ms, dt=simulation.resolution * U.ms)
                     need_to_flush = self.execute(cnt_ids, simulations=simulations)
                     if need_to_flush:
-                        self.collect(results)
+                        self.flush_data(simdata)
             report(f"Completed simulation. {time.time() - start:.2f}s", level=1)
             if simulation.profiling and arbor.config()["profiling"]:
                 report("printing profiler summary", level=2)
@@ -479,6 +480,11 @@ class ArborAdapter(SimulatorAdapter):
             return [simdata.result]
         finally:
             del self.simdata[simulation]
+
+    def flush_data(self, simdata):
+        simdata.result.flush()
+        # Free Memory
+        simdata.arbor_sim.clear_samplers()
 
     def get_recipe(self, simulation, simdata=None):
         if simdata is None:

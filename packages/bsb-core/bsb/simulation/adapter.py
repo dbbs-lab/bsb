@@ -39,15 +39,15 @@ class AdapterController(abc.ABC):
 
 
 class BasicSimulationListener(AdapterController):
-    def __init__(self, adapter, step=1, silent=False):
+    def __init__(self, adapter, step=1):
         self._status = 0
         self._adapter = adapter
         self._start = self._last_tick = time()
         self._step = step
         self.need_flush = False
         self._sim_name = [sim._name for sim in self._adapter.simdata]
-        if silent:
-            self.progress = self.silently
+        if os.isatty(sys.stdout.fileno()) and sum(os.get_terminal_size()):
+            self.progress = self.use_bar
 
     def get_next_checkpoint(self):
         return self._status + self._step
@@ -65,7 +65,32 @@ class BasicSimulationListener(AdapterController):
         self._status += self._step
         return self._status
 
-    def silently(self, kwargs=None):
+    def progress_bar(self, current_percent, rank, mpi_size):
+        color = "\033[91m"  # red
+        if current_percent > 33:
+            color = "\033[93m"
+        if current_percent > 66:
+            color = "\033[92m"
+        sys.stdout.write(
+            "\x1b[1A" * (int(mpi_size) - rank)
+            + "\r"
+            + str(self._sim_name)
+            + " ["
+            + color
+            + "%s" % ("-" * current_percent + " " * (100 - current_percent))
+            + "\033[0m"
+            + "] "
+            + str(current_percent)
+            + "%"
+            + "\n" * (int(mpi_size) - rank)
+        )
+        sys.stdout.flush()
+
+    def use_bar(self, kwargs=None):
+        current_percent = int((self._status / self._adapter._duration) * 100)
+        rank = self._adapter.comm.get_rank()
+        mpi_size = self._adapter.comm.get_size()
+        self.progress_bar(current_percent, rank, mpi_size)
         self._status += self._step
         return self._status
 
@@ -156,7 +181,7 @@ class SimulatorAdapter(abc.ABC):
     def execute(self, controller_ids, **kwargs):
         flush_point = False
         for i in controller_ids:
-            self._controllers[i].progress(kwargs=kwargs)  # self._controllers[i]()
+            self._controllers[i].progress(kwargs=kwargs)
             flush_point = flush_point or self._controllers[i].need_flush
         return flush_point
 
@@ -176,12 +201,7 @@ class SimulatorAdapter(abc.ABC):
 
     def load_controllers(self, simulation):
         if not self._progress_listeners:
-            if os.isatty(sys.stdout.fileno()) and sum(os.get_terminal_size()):
-                base_list = BasicSimulationListener(self, step=5, silent=True)
-                self.pbar = True
-            else:
-                base_list = BasicSimulationListener(self, step=5)
-                self.pbar = False
+            base_list = BasicSimulationListener(self, step=5)
             self._progress_listeners.append(base_list)
         for listener in self._progress_listeners:
             if listener not in self._controllers:

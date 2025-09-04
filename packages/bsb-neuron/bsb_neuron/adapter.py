@@ -13,7 +13,6 @@ from bsb import (
     report,
 )
 from neo import AnalogSignal
-from tqdm import tqdm
 
 
 class NeuronSimulationData(SimulationData):
@@ -142,28 +141,12 @@ class NeuronAdapter(SimulatorAdapter):
             self.engine.finitialize(self.initial)
             self._duration = max(sim.duration for sim in simulations)
 
-            # If a TTY term is used we load a progress bar
-            if self.pbar:
-                self.pbar = tqdm(total=self._duration)
-                names = [sim.name for sim in simulations]
-                with self.pbar as pbar:
-                    last_time = 0
-                    pbar.set_description(names[0])
-                    results = [self.simdata[sim].result for sim in simulations]
-                    for t, cnt_ids in self.get_next_checkpoint():
-                        pc.psolve(t)
-                        need_to_flush = self.execute(cnt_ids, simulations=simulations)
-                        pbar.update(t - last_time)
-                        last_time = t
-                        if need_to_flush:
-                            self.collect(results)
-            else:
-                results = [self.simdata[sim].result for sim in simulations]
-                for t, cnt_ids in self.get_next_checkpoint():
-                    pc.psolve(t)
-                    need_to_flush = self.execute(cnt_ids, simulations=simulations)
-                    if need_to_flush:
-                        self.collect(results)
+            results = [self.simdata[sim].result for sim in simulations]
+            for t, cnt_ids in self.get_next_checkpoint():
+                pc.psolve(t)
+                need_to_flush = self.execute(cnt_ids, simulations=simulations)
+                if need_to_flush:
+                    self.collect(results)
 
             report("Finished simulation.", level=2)
         finally:

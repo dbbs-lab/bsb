@@ -15,7 +15,6 @@ from bsb import (
     report,
     warn,
 )
-from tqdm import tqdm
 
 if typing.TYPE_CHECKING:
     from .simulation import ArborSimulation
@@ -450,26 +449,11 @@ class ArborAdapter(SimulatorAdapter):
             start = time.time()
             report("running simulation", level=1)
 
-            # If a TTY term is used we load a progress bar
-            if self.pbar:
-                self.pbar = tqdm(total=self._duration)
-                names = [sim.name for sim in simulations]
-                with self.pbar as pbar:
-                    last_time = 0
-                    pbar.set_description(names[0])
-                    for t, cnt_ids in self.get_next_checkpoint():
-                        arbor_sim.run(t * U.ms, dt=simulation.resolution * U.ms)
-                        need_to_flush = self.execute(cnt_ids, simulations=simulations)
-                        pbar.update(t - last_time)
-                        last_time = t
-                        if need_to_flush:
-                            self.flush_data(simdata)
-            else:
-                for t, cnt_ids in self.get_next_checkpoint():
-                    arbor_sim.run(t * U.ms, dt=simulation.resolution * U.ms)
-                    need_to_flush = self.execute(cnt_ids, simulations=simulations)
-                    if need_to_flush:
-                        self.flush_data(simdata)
+            for t, cnt_ids in self.get_next_checkpoint():
+                arbor_sim.run(t * U.ms, dt=simulation.resolution * U.ms)
+                need_to_flush = self.execute(cnt_ids, simulations=simulations)
+                if need_to_flush:
+                    self.flush_data(simdata)
             report(f"Completed simulation. {time.time() - start:.2f}s", level=1)
             if simulation.profiling and arbor.config()["profiling"]:
                 report("printing profiler summary", level=2)

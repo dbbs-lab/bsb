@@ -451,7 +451,7 @@ class ArborAdapter(SimulatorAdapter):
             report("running simulation", level=1)
 
             # If a TTY term is used we load a progress bar
-            if self.pbar and self.comm.get_rank() == 0:
+            if self.pbar:
                 self.pbar = tqdm(total=self._duration)
                 names = [sim.name for sim in simulations]
                 with self.pbar as pbar:

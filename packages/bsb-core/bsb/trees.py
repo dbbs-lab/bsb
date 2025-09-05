@@ -14,7 +14,7 @@ class BoxTreeInterface(abc.ABC):
     """
 
     @abc.abstractmethod
-    def query(self, boxes, unique=False):
+    def query(self, boxes, unique=False):  # pragma: nocover
         """
         Should return a generator that yields lists of intersecting IDs per query box if
         ``unique=False``.
@@ -25,7 +25,7 @@ class BoxTreeInterface(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def __len__(self):
+    def __len__(self):  # pragma: nocover
         pass
 
 

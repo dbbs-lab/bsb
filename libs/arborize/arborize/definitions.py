@@ -268,31 +268,31 @@ class Definition(typing.Generic[CT, CP, I, M, S], abc.ABC):
     @classmethod
     @property
     @abstractmethod
-    def cable_type_class(cls) -> type[CT]:
+    def cable_type_class(cls) -> type[CT]:  # pragma: nocover
         pass
 
     @classmethod
     @property
     @abstractmethod
-    def cable_properties_class(cls) -> type[CP]:
+    def cable_properties_class(cls) -> type[CP]:  # pragma: nocover
         pass
 
     @classmethod
     @property
     @abstractmethod
-    def ion_class(cls) -> type[I]:
+    def ion_class(cls) -> type[I]:  # pragma: nocover
         pass
 
     @classmethod
     @property
     @abstractmethod
-    def mechanism_class(cls) -> type[M]:
+    def mechanism_class(cls) -> type[M]:  # pragma: nocover
         pass
 
     @classmethod
     @property
     @abstractmethod
-    def synapse_class(cls) -> type[S]:
+    def synapse_class(cls) -> type[S]:  # pragma: nocover
         pass
 
     def __init__(self, use_defaults=False):

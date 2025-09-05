@@ -42,9 +42,9 @@ class ArborDevice(DeviceModel):
         return dict(zip(attrs, (getattr(self, attr) for attr in attrs), strict=False))
 
     @abc.abstractmethod
-    def implement_probes(self, simdata, target):
+    def implement_probes(self, simdata, target):  # pragma: nocover
         pass
 
     @abc.abstractmethod
-    def implement_generators(self, simdata, target):
+    def implement_generators(self, simdata, target):  # pragma: nocover
         pass

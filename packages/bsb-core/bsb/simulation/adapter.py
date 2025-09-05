@@ -7,7 +7,7 @@ from time import time
 
 import numpy as np
 
-from bsb import AttributeMissingError, SimulationResult, report
+from bsb import SimulationResult, report
 
 from ..services.mpi import MPIService
 
@@ -87,11 +87,11 @@ class BasicSimulationListener(AdapterController):
         sys.stdout.flush()
 
     def use_bar(self, kwargs=None):
+        self._status += self._step
         current_percent = int((self._status / self._adapter._duration) * 100)
         rank = self._adapter.comm.get_rank()
         mpi_size = self._adapter.comm.get_size()
         self.progress_bar(current_percent, rank, mpi_size)
-        self._status += self._step
         return self._status
 
 
@@ -100,7 +100,8 @@ class SimulationData:
         self.chunks = None
         self.populations = dict()
         self.placement: dict[CellModel, PlacementSet] = {
-            model: model.get_placement_set() for model in simulation.cell_models.values()
+            model: model.get_placement_set()
+            for model in simulation.cell_models.values()
         }
         self.connections = dict()
         self.devices = dict()
@@ -121,7 +122,6 @@ class SimulatorAdapter(abc.ABC):
         self._controllers = []
         self._duration = None
         self._sim_checkpoint = 0
-        self.pbar = False
 
     def simulate(self, *simulations, post_prepare=None):
         """
@@ -203,28 +203,15 @@ class SimulatorAdapter(abc.ABC):
         if not self._progress_listeners:
             base_list = BasicSimulationListener(self, step=5)
             self._progress_listeners.append(base_list)
+
         for listener in self._progress_listeners:
-            if listener not in self._controllers:
-                if hasattr(listener, "progress") and hasattr(
-                    listener, "get_next_checkpoint"
-                ):
-                    self._controllers.append(listener)
-                else:
-                    raise AttributeMissingError(
-                        f"The Simulation listener {listener} does not implement "
-                        f"get_next_checkpoint or progress method,"
-                        f"cannot use it as controller"
-                    )
+            if isinstance(listener, AdapterController) and (
+                listener not in self._controllers
+            ):
+                self._controllers.append(listener)
         for device in simulation.devices.values():
-            if hasattr(device, "get_next_checkpoint"):
-                if hasattr(device, "progress") and hasattr(device, "need_flush"):
-                    self._controllers.append(device)
-                else:
-                    raise AttributeMissingError(
-                        f"Device {device.name} is configured to be a controller "
-                        f"but progress or need_flush attributes"
-                        f" are not defined"
-                    )
+            if isinstance(device, AdapterController):
+                self._controllers.append(device)
 
 
 __all__ = [

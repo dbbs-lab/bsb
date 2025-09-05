@@ -4,7 +4,15 @@ import numpy as np
 from bsb_arbor import SpikeRecorder
 from bsb_test import FixedPosConfigFixture, NumpyTestCase, RandomStorageFixture
 
-from bsb import MPI, AdapterController, Scaffold, compose_nodes, config
+from bsb import (
+    MPI,
+    AdapterController,
+    BasicSimulationListener,
+    Scaffold,
+    compose_nodes,
+    config,
+    get_simulation_adapter,
+)
 
 
 class TestSimulate(
@@ -390,6 +398,41 @@ class TestAdapterController(
         self.network = Scaffold(self.cfg, self.storage)
         self.network.compile()
 
+    def test_controller_registration(self):
+        self.network.simulations.test.devices["rec_15"] = dict(
+            device="spike_controller",
+            targetting={
+                "strategy": "cell_model",
+                "cell_models": ["test_cell"],
+            },
+            step=15,
+        )
+
+        self.network.simulations.test.devices["new_recorder"] = dict(
+            device="spike_recorder",
+            targetting={
+                "strategy": "cell_model",
+                "cell_models": ["test_cell"],
+            },
+        )
+
+        sim = self.network.simulations.test
+        adapter = get_simulation_adapter(sim.simulator)
+        adapter.prepare(sim)
+        self.assertEqual(
+            len(adapter._controllers), 2, "Only two controllers should be registered"
+        )
+        self.assertIsInstance(
+            adapter._controllers[0],
+            BasicSimulationListener,
+            "Default listener is not registered",
+        )
+        self.assertEqual(
+            adapter._controllers[1].name,
+            "rec_15",
+            "Only rec_15 device should be registered",
+        )
+
     def test_record_checkpoint(self):
         """Create a test with an AdapterController that flushes every 10 steps,
         so with a simulation of 100 of duration it will create 10 segments plus
@@ -453,7 +496,9 @@ class TestAdapterController(
         segments = result.block.segments
 
         self.assertEqual(self.network.simulations.test.devices["rec_15"]._step, 15)
-        self.assertEqual(self.network.simulations.test.devices["new_recorder"]._step, 40)
+        self.assertEqual(
+            self.network.simulations.test.devices["new_recorder"]._step, 40
+        )
 
         self.assertEqual(
             len(segments),

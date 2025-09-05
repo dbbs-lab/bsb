@@ -4,7 +4,6 @@ import itertools
 import numpy as np
 from bsb import (
     AdapterError,
-    AdapterProgress,
     Chunk,
     DatasetNotFoundError,
     SimulationData,
@@ -39,6 +38,9 @@ class NeuronResult(SimulationResult):
             segment.analogsignals.append(
                 AnalogSignal(list(v), sampling_period=p.dt * ms, **annotations)
             )
+            # Free the memory
+            if v.size():
+                v.remove(0, v.size() - 1)
 
         self.create_recorder(flush)
 
@@ -103,6 +105,7 @@ class NeuronAdapter(SimulatorAdapter):
             self.create_connections(simulation)
             report("Creating devices", level=2)
             self.create_devices(simulation)
+            self.load_controllers(simulation)
             return self.simdata[simulation]
         except:
             del self.simdata[simulation]
@@ -136,20 +139,20 @@ class NeuronAdapter(SimulatorAdapter):
             pc = self.engine.ParallelContext()
             pc.set_maxstep(10)
             self.engine.finitialize(self.initial)
-            duration = max(sim.duration for sim in simulations)
-            progress = AdapterProgress(duration)
-            for _oi, i in progress.steps(step=1):
-                pc.psolve(i)
-                tick = progress.tick(i)
-                for listener in self._progress_listeners:
-                    listener(simulations, tick)
-            progress.complete()
+            self._duration = max(sim.duration for sim in simulations)
+
+            results = [self.simdata[sim].result for sim in simulations]
+            for t, cnt_ids in self.get_next_checkpoint():
+                pc.psolve(t)
+                need_to_flush = self.execute(cnt_ids, simulations=simulations)
+                if need_to_flush:
+                    self.collect(results)
+
             report("Finished simulation.", level=2)
         finally:
             results = [self.simdata[sim].result for sim in simulations]
             for sim in simulations:
                 del self.simdata[sim]
-
         return results
 
     def create_neurons(self, simulation):

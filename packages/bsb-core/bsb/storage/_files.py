@@ -29,7 +29,7 @@ from ..config._attrs import cfglist
 from ..morphologies.parsers import MorphologyParser
 from ..reporting import warn
 
-if _tp.TYPE_CHECKING:
+if _tp.TYPE_CHECKING:  # pragma: no cover
     from ..core import Scaffold
     from ..morphologies import Morphology
     from ..storage.interfaces import FileStore

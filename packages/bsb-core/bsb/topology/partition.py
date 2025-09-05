@@ -27,7 +27,7 @@ from ..storage._util import _cached_file
 from ..voxels import VoxelSet
 from ._layout import Layout, RhomboidData
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: no cover
     from ..core import Scaffold
 
 
@@ -330,7 +330,7 @@ class Voxels(Partition, abc.ABC, classmap_entry=None):
     """
 
     @abc.abstractmethod
-    def get_voxelset(self):
+    def get_voxelset(self):  # pragma: no cover
         pass
 
     @functools.cached_property
@@ -584,7 +584,7 @@ class AllenStructure(NrrdVoxels, classmap_entry="allen"):
         ).get_content()[0]
         try:
             return json.loads(content)["msg"]
-        except json.decoder.JSONDecodeError as json_error:
+        except json.decoder.JSONDecodeError as json_error:  # pragma: no cover
             raise AllenApiError(
                 "Could not parse the Allen mouse brain region hierarchy, "
                 "most likely because the Allen API website is down. \n"

@@ -8,7 +8,7 @@ from ..config._attrs import cfglist
 from ..exceptions import IndicatorError, PlacementError, PlacementRelationError
 from ..morphologies.selector import MorphologySelector
 
-if typing.TYPE_CHECKING:  # pragma: no cover
+if typing.TYPE_CHECKING:
     from ..cell_types import CellType
     from ..core import Scaffold
 

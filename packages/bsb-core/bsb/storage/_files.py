@@ -29,7 +29,7 @@ from ..config._attrs import cfglist
 from ..morphologies.parsers import MorphologyParser
 from ..reporting import warn
 
-if _tp.TYPE_CHECKING:  # pragma: no cover
+if typing.TYPE_CHECKING:
     from ..core import Scaffold
     from ..morphologies import Morphology
     from ..storage.interfaces import FileStore
@@ -466,15 +466,15 @@ class CodeDependencyNode(FileDependencyNode):
             sys.path = list(reversed(tmp))
 
 
-class OperationCallable(typing.Protocol):
-    def __call__(self, obj: object, **kwargs: typing.Any) -> object:
+class OperationCallable(_tp.Protocol):
+    def __call__(self, obj: object, **kwargs: _tp.Any) -> object:
         pass
 
 
 @config.node
 class Operation:
     func: OperationCallable = config.attr(type=types.function_())
-    parameters: dict[typing.Any] = config.catch_all(type=types.any_())
+    parameters: dict[_tp.Any] = config.catch_all(type=types.any_())
 
     def __init__(self, value=None, /, **kwargs):
         if value is not None:
@@ -622,7 +622,9 @@ class MorphologyOperationCallable(OperationCallable):
     Hello.
     """
 
-    def __call__(self, obj: Morphology, **kwargs: typing.Any) -> Morphology:
+    def __call__(
+        self, obj: Morphology, **kwargs: _tp.Any
+    ) -> Morphology:  # pragma: nocover
         pass
 
 

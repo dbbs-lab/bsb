@@ -30,7 +30,7 @@ class Distributor(abc.ABC):
         node_meter("distribute")(cls)
 
     @abc.abstractmethod
-    def distribute(self, positions, context):  # pragma: no cover
+    def distribute(self, positions, context):  # pragma: nocover
         """
         Is called to distribute cell properties.
 
@@ -51,7 +51,7 @@ class MorphologyDistributor(Distributor):
     may_be_empty = config.attr(type=bool, default=False)
 
     @abc.abstractmethod
-    def distribute(self, positions, morphologies, context):  # pragma: no cover
+    def distribute(self, positions, morphologies, context):  # pragma: nocover
         """
         Is called to distribute cell morphologies and optionally rotations.
 
@@ -132,11 +132,11 @@ class MorphologyGenerator(MorphologyDistributor, classmap_entry=None):
         # Decorate subclasses to measure performance
         node_meter("generate")(cls)
 
-    def distribute(self, positions, morphologies, context):  # pragma: no cover
+    def distribute(self, positions, morphologies, context):  # pragma: nocover
         pass
 
     @abc.abstractmethod
-    def generate(self, positions, morphologies, context):  # pragma: no cover
+    def generate(self, positions, morphologies, context):  # pragma: nocover
         pass
 
 
@@ -147,7 +147,7 @@ class RotationDistributor(Distributor):
     """
 
     @abc.abstractmethod
-    def distribute(self, positions, context):  # pragma: no cover
+    def distribute(self, positions, context):  # pragma: nocover
         pass
 
 

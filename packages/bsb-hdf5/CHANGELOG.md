@@ -1,3 +1,25 @@
+## 6.0.6 (2025-08-26)
+
+### 🩹 Fixes
+
+- warn when hdf5 lock slower than mpilock ([#166](https://github.com/dbbs-lab/bsb/pull/166))
+
+### ❤️ Thank You
+
+- Robin De Schepper
+
+## 6.0.5 (2025-08-26)
+
+This was a version bump only for bsb-hdf5 to align it with other projects, there were no code changes.
+
+## 6.0.4 (2025-07-31)
+
+This was a version bump only for bsb-hdf5 to align it with other projects, there were no code changes.
+
+## 6.0.3 (2025-07-25)
+
+This was a version bump only for bsb-hdf5 to align it with other projects, there were no code changes.
+
 ## 6.0.2 (2025-07-18)
 
 ### 🩹 Fixes

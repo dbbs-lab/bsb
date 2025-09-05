@@ -69,6 +69,7 @@ class Population:
     This class manages a collection of cells from a specific cell model, handling their
     GID ranges and providing methods to access and manipulate subsets of the population.
     """
+
     def __init__(self, simdata, cell_model, offset):
         """
         Initialize a population of cells.
@@ -203,7 +204,9 @@ class Population:
                 start = i
                 stop = i + 1
             prev = i
+        ranges.append((start, stop))
         pop._ranges = ranges
+
         return pop
 
     def _subpop_one(self, item):
@@ -523,7 +526,7 @@ class ArborAdapter(SimulatorAdapter):
 
 def _all_bools(arr):
     try:
-        return all(isinstance(b, bool) for b in arr)
+        return all(np.issubdtype(type(b), np.bool_) for b in arr)
     except TypeError:
         # Not iterable
         return False
@@ -531,7 +534,7 @@ def _all_bools(arr):
 
 def _all_ints(arr):
     try:
-        return all(isinstance(b, int) for b in arr)
+        return all(np.issubdtype(type(b), np.integer) for b in arr)
     except TypeError:
         # Not iterable
         return False

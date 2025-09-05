@@ -42,7 +42,7 @@
       "outputs": ["{projectRoot}/docs/_build/html"],
       "options": {
         "commands": [
-          "npx rimraf _build/html/",
+          "npx -y rimraf _build/html/",
           "uv run sphinx-build -nW -b html . _build/html"
         ],
         "parallel": false,
@@ -71,7 +71,7 @@
       "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
       "options": {
         "commands": [
-          "npx rimraf .coverage*",
+          "npx -y rimraf .coverage*",
           "uv run coverage run --source patch -p -m unittest discover -v -s ./tests",
           "mpiexec -n 2 uv run coverage run --source patch -p -m unittest discover -v -s ./tests",
           "uv run coverage combine",

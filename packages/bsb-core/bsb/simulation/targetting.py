@@ -96,7 +96,7 @@ class FractionFilter:
             # Select `take` elements from data with a boolean mask (otherwise a sorted
             # integer mask would be required)
             idx = np.zeros(len(data), dtype=bool)
-            idx[np.random.default_rng().integers(0, len(data), take)] = True
+            idx[np.random.choice(len(data), take, replace=False)] = True
             return data[idx]
 
     @staticmethod
@@ -322,7 +322,7 @@ class LabelTargetting(LocationTargetting, classmap_entry="label"):
         locs = [
             loc
             for loc in cell.locations.values()
-            if all(l_ in loc.section.labels for l_ in self.labels)
+            if any(l_ in loc.section.labels for l_ in self.labels)
         ]
         return locs
 

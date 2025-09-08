@@ -245,9 +245,7 @@ class SphericalTargettingCellTypes(
     Targets all cell types in a sphere.
     """
 
-    origin: list[float] = config.attr(
-        type=types.list(type=float, size=3), required=True
-    )
+    origin: list[float] = config.attr(type=types.list(type=float, size=3), required=True)
     radius: float = config.attr(type=float, required=True)
 
     @FractionFilter.filter
@@ -277,9 +275,7 @@ class SphericalTargetting(
     Targets all cells in a sphere.
     """
 
-    origin: list[float] = config.attr(
-        type=types.list(type=float, size=3), required=True
-    )
+    origin: list[float] = config.attr(type=types.list(type=float, size=3), required=True)
     radius: float = config.attr(type=float, required=True)
 
     @FractionFilter.filter

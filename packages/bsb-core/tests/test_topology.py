@@ -6,6 +6,7 @@ import numpy as np
 from bsb_test import NumpyTestCase, RandomStorageFixture, get_data_path
 
 from bsb import (
+    MPI,
     AllenApiError,
     AllenStructure,
     Configuration,
@@ -149,25 +150,28 @@ class TestStack(
 class TestNrrdVoxels(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        dataset, h = nrrd.read(get_data_path("orientations", "toy_annotations.nrrd"))
-        copy_h = h.copy()
-        copy_h["sizes"] = h["sizes"][:-1]
-        nrrd.write(
-            get_data_path("orientations", "bad_dimensions.nrrd"),
-            dataset[:, :, 5],
-            header=copy_h,
-        )
-        h["sizes"][2] -= 1
-        nrrd.write(
-            get_data_path("orientations", "bad_dataset.nrrd"),
-            dataset[:, :, :-1],
-            header=h,
-        )
+        if MPI.get_rank() == 0:
+            dataset, h = nrrd.read(get_data_path("orientations", "toy_annotations.nrrd"))
+            copy_h = h.copy()
+            copy_h["sizes"] = h["sizes"][:-1]
+            nrrd.write(
+                get_data_path("orientations", "bad_dimensions.nrrd"),
+                dataset[:, :, 5],
+                header=copy_h,
+            )
+            h["sizes"][2] -= 1
+            nrrd.write(
+                get_data_path("orientations", "bad_dataset.nrrd"),
+                dataset[:, :, :-1],
+                header=h,
+            )
+        MPI.barrier()
 
     @classmethod
     def tearDownClass(cls):
-        os.remove(get_data_path("orientations", "bad_dimensions.nrrd"))
-        os.remove(get_data_path("orientations", "bad_dataset.nrrd"))
+        if MPI.get_rank() == 0:
+            os.remove(get_data_path("orientations", "bad_dimensions.nrrd"))
+            os.remove(get_data_path("orientations", "bad_dataset.nrrd"))
 
     def test_bad_dimensions(self):
         cfg = Configuration.default(
@@ -255,14 +259,19 @@ class TestNrrdVoxels(unittest.TestCase):
 class TestAllenVoxels(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        dataset, h = nrrd.read(get_data_path("orientations", "toy_annotations.nrrd"))
-        h["sizes"][2] -= 1
-        dataset = dataset[:, :, :-1]
-        nrrd.write(get_data_path("orientations", "bad_dataset.nrrd"), dataset, header=h)
+        if MPI.get_rank() == 0:
+            dataset, h = nrrd.read(get_data_path("orientations", "toy_annotations.nrrd"))
+            h["sizes"][2] -= 1
+            dataset = dataset[:, :, :-1]
+            nrrd.write(
+                get_data_path("orientations", "bad_dataset.nrrd"), dataset, header=h
+            )
+        MPI.barrier()
 
     @classmethod
     def tearDownClass(cls):
-        os.remove(get_data_path("orientations", "bad_dataset.nrrd"))
+        if MPI.get_rank() == 0:
+            os.remove(get_data_path("orientations", "bad_dataset.nrrd"))
 
     def test_val(self):
         cfg = Configuration.default(

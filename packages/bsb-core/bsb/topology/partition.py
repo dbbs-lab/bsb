@@ -7,9 +7,8 @@ import functools
 import json
 import typing
 
-import nrrd
 import numpy as np
-from voxcell import RegionMap, VoxelData
+from voxcell import RegionMap
 
 from bsb.config._attrs import cfgdict
 
@@ -388,7 +387,7 @@ class NrrdVoxels(Voxels, classmap_entry="nrrd"):
     """
     mask_value: int = config.attr(type=int)
     """
-    Integer value to filter in mask_source (if it is set, otherwise sources/source) to
+    Integer value to filter in mask_source (if it is set, otherwise sources) to
     create a mask of the voxel set(s) used as input.
     """
     sources: cfgdict[str, NrrdDependencyNode] = config.dict(
@@ -421,7 +420,7 @@ class NrrdVoxels(Voxels, classmap_entry="nrrd"):
     @property
     def voxel_size(self):
         """Size of each voxel."""
-        if self._mask_src is None:
+        if getattr(self, "_mask_src", None) is None:
             self._validate()
         return self._mask_src[0].voxel_size
 
@@ -533,7 +532,8 @@ class AllenStructure(NrrdVoxels, classmap_entry="allen"):
     """
 
     struct_id: int = config.attr(
-        type=int, required=types.mut_excl("struct_id", "struct_name", required=False)
+        type=types.int(min=1),  # ids are positive and 0 is the outside of the brain
+        required=types.mut_excl("struct_id", "struct_name", required=False),
     )
     """
     Id of the region to filter within the annotation volume according to the AMBRH.
@@ -557,16 +557,20 @@ class AllenStructure(NrrdVoxels, classmap_entry="allen"):
     """Additional Volumetric Datasets to attach to the atlas."""
 
     @config.property(type=str)
-    @functools.cache
     def mask_source(self):
         if hasattr(self, "_annotations_file"):
             return self._annotations_file
         else:
-            node = NrrdDependencyNode()
-            node._file = _cached_file(
-                "https://download.alleninstitute.org/informatics-archive/current-release/mouse_ccf/annotation/ccf_2017/annotation_25.nrrd",
-            )
-            return node
+            return self._dl_mask()
+
+    @classmethod
+    @functools.cache
+    def _dl_mask(cls):
+        node = NrrdDependencyNode()
+        node._file = _cached_file(
+            "https://download.alleninstitute.org/informatics-archive/current-release/mouse_ccf/annotation/ccf_2017/annotation_25.nrrd",
+        )
+        return node
 
     @mask_source.setter
     def mask_source(self, value):
@@ -638,14 +642,15 @@ class AllenStructure(NrrdVoxels, classmap_entry="allen"):
     @classmethod
     def get_structure_mask(cls, find):
         """
-        Returns the mask data delineated by the Allen structure.
+        Returns the mask data delineated by the Allen mouse brain
+        atlas.
 
         :param find: Acronym, Name or ID of the Allen structure.
         :type find: str | int
         :returns: A boolean of the mask filtered based on the Allen structure.
         :rtype: Callable[numpy.ndarray]
         """
-        mask_data = VoxelData.load_nrrd(cls._dl_mask()).raw
+        mask_data = cls._dl_mask().load_object().raw
         return cls.get_structure_mask_condition(find)(mask_data)
 
     @classmethod
@@ -688,20 +693,14 @@ class AllenStructure(NrrdVoxels, classmap_entry="allen"):
         self._mask_cond = self.get_structure_mask_condition(id)
 
     def _validate_source_compat(self):
-        super()._validate_source_compat()
+        shape = super()._validate_source_compat()
         # Validate also the atlas datasets shapes with respect to the annotations.
         for k, v in self.datasets.items():
             if np.any(np.array(v.raw.shape[:3]) != np.array(self.annotations.shape)):
                 raise ConfigurationError(
                     f"Shape of dataset {k} does not match the shape of the annotations."
                 )
-
-
-def _safe_hread(s):
-    try:
-        return nrrd.read_header(s)
-    except StopIteration:
-        raise OSError(f"Empty NRRD file '{s}' could not be read.") from None
+        return shape
 
 
 def _repeat_first():

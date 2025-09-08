@@ -1,5 +1,7 @@
+import os
 import unittest
 
+import nrrd
 import numpy as np
 from bsb_test import NumpyTestCase, RandomStorageFixture, get_data_path
 
@@ -7,7 +9,9 @@ from bsb import (
     AllenApiError,
     AllenStructure,
     Configuration,
+    ConfigurationError,
     LayoutError,
+    NodeNotFoundError,
     Scaffold,
     topology,
 )
@@ -142,11 +146,124 @@ class TestStack(
         )
 
 
+class TestNrrdVoxels(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        dataset, h = nrrd.read(get_data_path("orientations", "toy_annotations.nrrd"))
+        copy_h = h.copy()
+        copy_h["sizes"] = h["sizes"][:-1]
+        nrrd.write(
+            get_data_path("orientations", "bad_dimensions.nrrd"),
+            dataset[:, :, 5],
+            header=copy_h,
+        )
+        h["sizes"][2] -= 1
+        nrrd.write(
+            get_data_path("orientations", "bad_dataset.nrrd"),
+            dataset[:, :, :-1],
+            header=h,
+        )
+
+    @classmethod
+    def tearDownClass(cls):
+        os.remove(get_data_path("orientations", "bad_dimensions.nrrd"))
+        os.remove(get_data_path("orientations", "bad_dataset.nrrd"))
+
+    def test_bad_dimensions(self):
+        cfg = Configuration.default(
+            partitions=dict(
+                a=dict(
+                    type="nrrd",
+                    sources={
+                        "annotations": get_data_path(
+                            "orientations", "bad_dimensions.nrrd"
+                        ),
+                    },
+                )
+            ),
+        )
+        part = cfg.partitions.a
+        with self.assertRaises(
+            ConfigurationError, msg="Sources with 2 dimensions should raise an exception"
+        ):
+            _ = part.voxel_size
+
+        cfg = Configuration.default(
+            partitions=dict(
+                a=dict(
+                    type="nrrd",
+                    sources={
+                        "annotations": get_data_path(
+                            "orientations", "toy_annotations.nrrd"
+                        ),
+                        "second_ann": get_data_path("orientations", "bad_dataset.nrrd"),
+                    },
+                )
+            ),
+        )
+        part = cfg.partitions.a
+        with self.assertRaises(
+            ConfigurationError,
+            msg="Sources with different dimensions should raise an exception.",
+        ):
+            _ = part.voxel_size
+
+        cfg = Configuration.default(
+            partitions=dict(
+                a=dict(
+                    type="nrrd",
+                    sources={
+                        "annotations": get_data_path(
+                            "orientations", "toy_annotations.nrrd"
+                        ),
+                        "second_ann": get_data_path("orientations", "bad_dataset.nrrd"),
+                    },
+                    strict=False,
+                )
+            ),
+        )
+        part = cfg.partitions.a
+        with self.assertRaises(
+            ConfigurationError,
+            msg="Sources with different dimensions should raise an exception.",
+        ):
+            _ = part.voxel_size
+
+    def test_mask_value(self):
+        cfg = Configuration.default(
+            partitions=dict(
+                a=dict(
+                    type="nrrd",
+                    sources={
+                        "annotations": get_data_path(
+                            "orientations", "toy_annotations.nrrd"
+                        ),
+                    },
+                    mask_value=10690,
+                )
+            ),
+        )
+        part = cfg.partitions.a
+        vs = part.voxelset
+        self.assertEqual(24, len(vs), "Region has that many voxels")
+
+
 @unittest.skipIf(
     skip_test_allen_api(),
     "Allen API is down",
 )
 class TestAllenVoxels(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        dataset, h = nrrd.read(get_data_path("orientations", "toy_annotations.nrrd"))
+        h["sizes"][2] -= 1
+        dataset = dataset[:, :, :-1]
+        nrrd.write(get_data_path("orientations", "bad_dataset.nrrd"), dataset, header=h)
+
+    @classmethod
+    def tearDownClass(cls):
+        os.remove(get_data_path("orientations", "bad_dataset.nrrd"))
+
     def test_val(self):
         cfg = Configuration.default(
             partitions=dict(a=dict(type="allen", struct_name="VAL")),
@@ -193,3 +310,56 @@ class TestAllenVoxels(unittest.TestCase):
         vs = part.voxelset
         self.assertEqual(24, len(vs), "Region has that many voxels")
         self.assertEqual(24 * 25**3, part.volume(), "Region occupies this much space")
+        mask = part.get_structure_mask(1049)  # DEC id
+        self.assertEqual(
+            mask.shape, (528, 320, 456), "Mask should match Allen dimensions"
+        )
+        self.assertEqual(
+            np.count_nonzero(mask), 85475, "DEC should have this many voxels."
+        )
+        part.mask_source = None
+        self.assertFalse(hasattr(part, "_annotations_file"))
+        self.assertEqual(
+            part.annotations.raw.shape, (528, 320, 456), "Should download allen dataset"
+        )
+
+    def test_wrong_sizes_nrrd(self):
+        cfg = Configuration.default(
+            regions=dict(br=dict(children=["a"])),
+            partitions=dict(
+                a=dict(
+                    type="allen",
+                    mask_source=get_data_path("orientations", "toy_annotations.nrrd"),
+                    struct_id=10690,
+                    atlas_datasets={
+                        "orientations": get_data_path(
+                            "orientations", "toy_orientations.nrrd"
+                        ),
+                        "wrong_dim": get_data_path("orientations", "bad_dataset.nrrd"),
+                    },
+                )
+            ),
+        )
+        part = cfg.partitions.a
+        with self.assertRaises(ConfigurationError, msg="Shape should mismatch"):
+            _ = part.voxelset
+
+    def test_wrong_ids(self):
+        cfg = Configuration.default(
+            regions=dict(br=dict(children=["a"])),
+            partitions=dict(
+                a=dict(
+                    type="allen",
+                    mask_source=get_data_path("orientations", "toy_annotations.nrrd"),
+                    struct_id=1e7,
+                )
+            ),
+        )
+        part = cfg.partitions.a
+        with self.assertRaises(NodeNotFoundError, msg="This id should be not exist"):
+            _ = part.voxelset
+
+        with self.assertRaises(
+            TypeError, msg="Only string, int or float should be accepted"
+        ):
+            _ = AllenStructure.get_structure_idset([852])

@@ -595,7 +595,11 @@ class TestNrrdDependencyNode(
                     atlas_datasets={
                         "orientations": get_data_path(
                             "orientations", "toy_orientations.nrrd"
-                        )
+                        ),
+                        # second dataset to check different shapes but similar volume
+                        "annotations": get_data_path(
+                            "orientations", "toy_annotations.nrrd"
+                        ),
                     },
                     struct_id=10690,
                 )

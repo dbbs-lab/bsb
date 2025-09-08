@@ -119,7 +119,7 @@ class NestDevice(DeviceModel):
         adapter,
         simulation,
         simdata,
-    ):
+    ):  # pragma: nocover
         """
         Create, connect and register the Nest device.
 

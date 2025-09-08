@@ -23,7 +23,7 @@ from .pool import (
 
 class Listener(abc.ABC):
     @abc.abstractmethod
-    def __call__(self, progress: PoolProgress):
+    def __call__(self, progress: PoolProgress):  # pragma: nocover
         pass
 
 

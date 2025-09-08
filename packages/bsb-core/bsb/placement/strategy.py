@@ -68,7 +68,7 @@ class PlacementStrategy(abc.ABC, HasDependencies):
         return f"'{config_name}', placing {ct_names}{part_str}"
 
     @abc.abstractmethod
-    def place(self, chunk, indicators):
+    def place(self, chunk, indicators):  # pragma: nocover
         """
         Central method of each placement strategy. Given a chunk, should fill that chunk
         with cells by calling the scaffold's (available as ``self.scaffold``)

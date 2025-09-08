@@ -18,7 +18,7 @@ dependencies = [
   "errr~=1.2",
   "rtree~=1.0",
   "psutil~=5.8",
-  "pynrrd~=1.0",
+  "voxcell~=3.1",
   "morphio~=3.3",
   "toml~=0.10.0",
   "requests~=2.30",
@@ -118,7 +118,10 @@ branch = true
 source = [ "bsb" ]
 
 [tool.coverage.report]
-exclude_lines = [ "if TYPE_CHECKING:" ]
+exclude_lines = [
+  "if typing.TYPE_CHECKING:",
+  "pragma: nocover"
+]
 show_missing = true
 
 [tool.ruff]

@@ -180,7 +180,7 @@ class ConnectionStrategy(abc.ABC, HasDependencies):
         return f"'{self.name}', connecting {pre} to {post}"
 
     @abc.abstractmethod
-    def connect(self, presyn_collection, postsyn_collection):
+    def connect(self, presyn_collection, postsyn_collection):  # pragma: nocover
         """
         Central method of each connection strategy. Given a pair of ``HemitypeCollection``
         (one for each connection side), should connect cell population using the

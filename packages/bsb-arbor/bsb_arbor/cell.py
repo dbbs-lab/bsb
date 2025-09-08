@@ -24,23 +24,23 @@ class ArborCell(CellModel):
     """Importable reference to the arborize model describing the cell type."""
 
     @abc.abstractmethod
-    def cache_population_data(self, simdata, ps: PlacementSet):
+    def cache_population_data(self, simdata, ps: PlacementSet):  # pragma: nocover
         pass
 
     @abc.abstractmethod
-    def discard_population_data(self):
+    def discard_population_data(self):  # pragma: nocover
         pass
 
     @abc.abstractmethod
-    def get_prefixed_catalogue(self):
+    def get_prefixed_catalogue(self):  # pragma: nocover
         pass
 
     @abc.abstractmethod
-    def get_cell_kind(self, gid):
+    def get_cell_kind(self, gid):  # pragma: nocover
         pass
 
     @abc.abstractmethod
-    def make_receiver_collection(self):
+    def make_receiver_collection(self):  # pragma: nocover
         pass
 
     def get_description(self, gid):

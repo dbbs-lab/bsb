@@ -72,7 +72,7 @@ class PartitionData(abc.ABC):
     """
 
     @abc.abstractmethod
-    def copy(self):
+    def copy(self):  # pragma: nocover
         pass
 
 

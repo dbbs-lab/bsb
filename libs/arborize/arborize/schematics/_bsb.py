@@ -1,9 +1,9 @@
 import itertools
-from typing import TYPE_CHECKING, Optional
+import typing
 
 from ..schematic import Schematic
 
-if TYPE_CHECKING:
+if typing.TYPE_CHECKING:
     import bsb.morphologies
 
     from ..definitions import Definition
@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 def bsb_schematic(
     morphology: "bsb.morphologies.Morphology",
-    definitions: Optional["Definition"] = None,
+    definitions: typing.Optional["Definition"] = None,
 ) -> Schematic:
     """
     Generate a schematic from a bsb.Morphology object.

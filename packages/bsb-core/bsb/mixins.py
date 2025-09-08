@@ -50,7 +50,7 @@ class HasDependencies:
     """
 
     @_abc.abstractmethod
-    def get_deps(self):
+    def get_deps(self):  # pragma: nocover
         pass
 
     @_abc.abstractmethod

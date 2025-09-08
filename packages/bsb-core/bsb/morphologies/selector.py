@@ -30,11 +30,11 @@ class MorphologySelector(abc.ABC):
     scaffold: "Scaffold"
 
     @abc.abstractmethod
-    def validate(self, all_morphos):
+    def validate(self, all_morphos):  # pragma: nocover
         pass
 
     @abc.abstractmethod
-    def pick(self, morphology):
+    def pick(self, morphology):  # pragma: nocover
         pass
 
 

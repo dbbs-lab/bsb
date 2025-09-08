@@ -326,11 +326,11 @@ _patches = defaultdict(list)
 
 class DialectPatch(abc.ABC):
     @abc.abstractmethod
-    def dialect(self, common_text: str) -> str:
+    def dialect(self, common_text: str) -> str:  # pragma: nocover
         pass
 
     @abc.abstractmethod
-    def common(self, dialect_text: str) -> str:
+    def common(self, dialect_text: str) -> str:  # pragma: nocover
         pass
 
     def __init_subclass__(cls, dialect: SupportedDialect, **kwargs):

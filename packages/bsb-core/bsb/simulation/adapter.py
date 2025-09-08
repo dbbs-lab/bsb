@@ -1,14 +1,15 @@
 import abc
-import itertools
-import types
+import os
+import sys
 import typing
 from contextlib import ExitStack
 from time import time
 
 import numpy as np
 
+from bsb import SimulationResult, report
+
 from ..services.mpi import MPIService
-from .results import SimulationResult
 
 if typing.TYPE_CHECKING:
     from ..storage import PlacementSet
@@ -16,34 +17,82 @@ if typing.TYPE_CHECKING:
     from .simulation import Simulation
 
 
-class AdapterProgress:
-    def __init__(self, duration):
-        self._duration = duration
-        self._start = self._last_tick = time()
-        self._ticks = 0
-
-    def tick(self, step):
+class AdapterController(abc.ABC):
+    @abc.abstractmethod
+    def get_next_checkpoint(self):
+        """method to implement that is needed for look for the next checkpoint
+        :return: Next checkpoint time.
+        :rtype: float
         """
-        Report simulation progress.
-        """
-        now = time()
-        tic = now - self._last_tick
-        self._ticks += 1
-        el = now - self._start
-        progress = types.SimpleNamespace(
-            progression=step, duration=self._duration, time=time(), tick=tic, elapsed=el
-        )
-        self._last_tick = now
-        return progress
+        pass
 
-    def steps(self, step=1):
-        steps = itertools.chain(np.arange(0, self._duration, step), (self._duration,))
-        a, b = itertools.tee(steps)
-        next(b, None)
-        yield from zip(a, b, strict=False)
+    @abc.abstractmethod
+    def progress(self):
+        """method that the controller will use to advance to the next checkpoint
+        :return: Next checkpoint time.
+        :rtype: float
+        """
+        pass
 
     def complete(self):
         return
+
+
+class BasicSimulationListener(AdapterController):
+    def __init__(self, adapter, step=1):
+        self._status = 0
+        self._adapter = adapter
+        self._start = self._last_tick = time()
+        self._step = step
+        self.need_flush = False
+        self._sim_name = [sim._name for sim in self._adapter.simdata]
+        if os.isatty(sys.stdout.fileno()) and sum(os.get_terminal_size()):
+            self.progress = self.use_bar
+
+    def get_next_checkpoint(self):
+        return self._status + self._step
+
+    def progress(self, kwargs=None):
+        now = time()
+        tic = now - self._last_tick
+        el_time = now - self._start
+        duration = self._adapter._duration
+        msg = f"Simulation {self._sim_name} | progress: {self._status} - "
+        msg += f"elapsed: {el_time:.2f}s - last step time: {tic:.2f}s - "
+        msg += f"exectuted: {(self._status / duration) * 100:.2f}%"
+        report(msg, level=2)
+        self._last_tick = now
+        self._status += self._step
+        return self._status
+
+    def progress_bar(self, current_percent, rank, mpi_size):
+        color = "\033[91m"  # red
+        if current_percent > 33:
+            color = "\033[93m"
+        if current_percent > 66:
+            color = "\033[92m"
+        sys.stdout.write(
+            "\x1b[1A" * (int(mpi_size) - rank)
+            + "\r"
+            + str(self._sim_name)
+            + " ["
+            + color
+            + "%s" % ("-" * current_percent + " " * (100 - current_percent))
+            + "\033[0m"
+            + "] "
+            + str(current_percent)
+            + "%"
+            + "\n" * (int(mpi_size) - rank)
+        )
+        sys.stdout.flush()
+
+    def use_bar(self, kwargs=None):
+        self._status += self._step
+        current_percent = int((self._status / self._adapter._duration) * 100)
+        rank = self._adapter.comm.get_rank()
+        mpi_size = self._adapter.comm.get_size()
+        self.progress_bar(current_percent, rank, mpi_size)
+        return self._status
 
 
 class SimulationData:
@@ -51,7 +100,8 @@ class SimulationData:
         self.chunks = None
         self.populations = dict()
         self.placement: dict[CellModel, PlacementSet] = {
-            model: model.get_placement_set() for model in simulation.cell_models.values()
+            model: model.get_placement_set()
+            for model in simulation.cell_models.values()
         }
         self.connections = dict()
         self.devices = dict()
@@ -69,6 +119,9 @@ class SimulatorAdapter(abc.ABC):
         self._progress_listeners = []
         self.simdata: dict[Simulation, SimulationData] = dict()
         self.comm = MPIService(comm)
+        self._controllers = []
+        self._duration = None
+        self._sim_checkpoint = 0
 
     def simulate(self, *simulations, post_prepare=None):
         """
@@ -118,9 +171,23 @@ class SimulatorAdapter(abc.ABC):
         """
         pass
 
+    def get_next_checkpoint(self):
+        while self._sim_checkpoint < self._duration:
+            checkpoints = [cnt.get_next_checkpoint() for cnt in self._controllers]
+            self._sim_checkpoint = np.min(checkpoints)
+            cnt_ids = np.where(checkpoints == self._sim_checkpoint)[0]
+            yield (self._sim_checkpoint, cnt_ids)
+
+    def execute(self, controller_ids, **kwargs):
+        flush_point = False
+        for i in controller_ids:
+            self._controllers[i].progress(kwargs=kwargs)
+            flush_point = flush_point or self._controllers[i].need_flush
+        return flush_point
+
     def collect(self, results):
         """
-        Collect the output the simulations that completed.
+        Collect the output the simulations that reached a checkpoint.
 
         :return: Collected simulation results.
         :rtype: list[~bsb.simulation.results.SimulationResult]
@@ -132,5 +199,25 @@ class SimulatorAdapter(abc.ABC):
     def add_progress_listener(self, listener):
         self._progress_listeners.append(listener)
 
+    def load_controllers(self, simulation):
+        if not self._progress_listeners:
+            base_list = BasicSimulationListener(self, step=5)
+            self._progress_listeners.append(base_list)
 
-__all__ = ["AdapterProgress", "SimulationData", "SimulatorAdapter"]
+        for listener in self._progress_listeners:
+            if isinstance(listener, AdapterController) and (
+                listener not in self._controllers
+            ):
+                self._controllers.append(listener)
+        for device in simulation.devices.values():
+            if isinstance(device, AdapterController):
+                self._controllers.append(device)
+
+
+__all__ = [
+    "AdapterProgress",
+    "AdapterController",
+    "BasicSimulationListener",
+    "SimulationData",
+    "SimulatorAdapter",
+]

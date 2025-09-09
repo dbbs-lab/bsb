@@ -65,10 +65,10 @@ simulations:
           V_m: -62.0
     connection_models:
       A_to_B:
-        synapse:
-          model: static_synapse
-          weight: 300
-          delay: 1
+        synapses:
+          - model: static_synapse
+            weight: 300
+            delay: 1
     devices:
       background_noise:
         device: poisson_generator

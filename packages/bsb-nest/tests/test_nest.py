@@ -11,8 +11,6 @@ from bsb_test import NumpyTestCase, RandomStorageFixture, get_test_config
 from nest.lib.hl_api_exceptions import NESTErrors
 from scipy.optimize import curve_fit
 
-from bsb_nest.exceptions import NestConnectError
-
 
 def _conf_single_cell():
     return Configuration(
@@ -827,30 +825,27 @@ class TestNest(
         duration = 100
         resolution = 0.1
         cfg = _conf_two_cells()
-        cfg.simulations = {
-            "test": {
-                "simulator": "nest",
-                "duration": duration,
-                "resolution": resolution,
-                "seed": 1234,
-                "cell_models": {
-                    "A": {"model": "iaf_cond_alpha"},
-                    "C": {"model": "parrot_neuron"},
-                },
-                "connection_models": {
-                    "C_to_A": {
-                        "synapses": [
-                            {"synapse_model": "blabla", "weight": -20.25, "delay": 1},
-                        ],
-                    }
-                },
-                "devices": {},
+        with self.assertRaises(CastError):
+            cfg.simulations = {
+                "test": {
+                    "simulator": "nest",
+                    "duration": duration,
+                    "resolution": resolution,
+                    "seed": 1234,
+                    "cell_models": {
+                        "A": {"model": "iaf_cond_alpha"},
+                        "C": {"model": "parrot_neuron"},
+                    },
+                    "connection_models": {
+                        "C_to_A": {
+                            "synapses": [
+                                {"model": "blabla", "weight": -20.25, "delay": 1},
+                            ],
+                        }
+                    },
+                    "devices": {},
+                }
             }
-        }
-        scaffold = Scaffold(cfg, self.storage)
-        scaffold.compile()
-        with self.assertRaises(NestConnectError):
-            scaffold.run_simulation("test")
 
     def test_error_multisyn(self):
         duration = 100
@@ -919,27 +914,24 @@ class TestNest(
         duration = 100
         resolution = 0.1
         cfg = _conf_two_cells()
-        cfg.simulations = {
-            "test": {
-                "simulator": "nest",
-                "duration": duration,
-                "resolution": resolution,
-                "seed": 1234,
-                "cell_models": {
-                    "A": {"model": "hh_psc_alpha_gap"},
-                    "C": {"model": "hh_psc_alpha_gap"},
-                },
-                "connection_models": {
-                    "C_to_A": {
-                        "synapses": [
-                            {"weight": -20.25},
-                        ],
-                    }
-                },
-                "devices": {},
+        with self.assertRaises(ConfigurationError):
+            cfg.simulations = {
+                "test": {
+                    "simulator": "nest",
+                    "duration": duration,
+                    "resolution": resolution,
+                    "seed": 1234,
+                    "cell_models": {
+                        "A": {"model": "hh_psc_alpha_gap"},
+                        "C": {"model": "hh_psc_alpha_gap"},
+                    },
+                    "connection_models": {
+                        "C_to_A": {
+                            "synapses": [
+                                {"weight": -20.25},
+                            ],
+                        }
+                    },
+                    "devices": {},
+                }
             }
-        }
-        scaffold = Scaffold(cfg, self.storage)
-        scaffold.compile()
-        with self.assertRaises(NestConnectError):
-            scaffold.run_simulation("test")

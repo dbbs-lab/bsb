@@ -8,7 +8,14 @@ from bsb import ConfigurationError, ConnectionModel, compose_nodes, config, type
 from tqdm import tqdm
 
 from .distributions import nest_parameter
-from .exceptions import NestConnectError
+
+
+def _is_delay_required(node):
+    model = node.get("model", NestSynapseSettings.model.default)
+    if model not in nest.Models(mtype="synapses"):
+        raise ConfigurationError(f"Unknown synapse model '{model}'.")
+    else:
+        return nest.GetDefaults(model)["has_delay"]
 
 
 @config.node
@@ -21,7 +28,7 @@ class NestSynapseSettings:
     """Importable reference to the NEST model describing the synapse type."""
     weight = config.attr(type=float, required=True)
     """Weight of the connection between the presynaptic and the postsynaptic cells."""
-    delay = config.attr(type=float, required=False, default=None)
+    delay = config.attr(type=float, required=_is_delay_required, default=None)
     """Delay of the transmission between the presynaptic and the postsynaptic cells."""
     receptor_type = config.attr(type=int)
     """Index of the postsynaptic receptor to target."""
@@ -93,18 +100,6 @@ class NestConnection(compose_nodes(NestConnectionSettings, ConnectionModel)):
 
         conn_specs = self.get_conn_specs()
         for i, syn_spec in enumerate(self.get_syn_specs()):
-            if syn_spec["synapse_model"] not in nest.Models(mtype="synapses"):
-                raise NestConnectError(
-                    f"Unknown synapse model '{syn_spec['synapse_model']}'."
-                )
-            if (
-                nest.GetDefaults(syn_spec["synapse_model"])["has_delay"]
-                and "delay" not in syn_spec
-            ):
-                raise NestConnectError(
-                    f"Synapse model '{syn_spec['synapse_model']}' "
-                    "requires a delay parameter."
-                )
             if len(conn_specs) > 0:
                 nest.Connect(pre_nodes, post_nodes, conn_specs[i], syn_spec)
             else:

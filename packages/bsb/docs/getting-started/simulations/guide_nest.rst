@@ -67,6 +67,17 @@ Therefore, your simulation block should be structured as follows:
               }
         }
 
+    .. code-block:: yaml
+
+        simulations:
+          basal_activity:
+            simulator: nest
+            resolution: 0.1
+            duration: 5000
+          cell_models: {}
+          connection_models: {}
+          devices: {}
+
     .. code-block:: python
 
         config.simulations.add("basal_activity",
@@ -116,6 +127,14 @@ Here, we choose one of the simplest NEST models, the
             }
           },
 
+    .. code-block:: yaml
+
+        cell_models:
+          base_type:
+            model: iaf_cond_alpha
+          top_type:
+            model: iaf_cond_alpha
+
     .. code-block:: python
 
         config.simulations["basal_activity"].cell_models=dict(
@@ -131,7 +150,7 @@ Still, you can modify certain parameters, by setting its :guilabel:`constants` d
     .. code-block:: json
 
       "cell_models": {
-        "base_type": {
+        "top_type": {
           "model": "iaf_cond_alpha",
           "constants": {
             "t_ref": 1.5,
@@ -139,10 +158,19 @@ Still, you can modify certain parameters, by setting its :guilabel:`constants` d
           }
         },
 
+    .. code-block:: yaml
+
+        cell_models:
+          top_type:
+            model: iaf_cond_alpha
+            constants:
+              t_ref: 1.5,
+              V_m: -62.0
+
     .. code-block:: python
 
         config.simulations["basal_activity"].cell_models=dict(
-          base_type={"model":"iaf_cond_alpha", dict(t_ref=1.5, V_m=-62.0)},
+          top_type={"model":"iaf_cond_alpha", dict(t_ref=1.5, V_m=-62.0)},
         )
 
 
@@ -168,6 +196,15 @@ In this example, we assign the ``static_synapse`` model to the connections :guil
             }
         }
       },
+
+    .. code-block:: yaml
+
+        connection_models:
+          A_to_B:
+            synapse:
+              model: static_synapse
+              weight: 300
+              delay: 1
 
     .. code-block:: python
 
@@ -200,33 +237,60 @@ filter elements of your neuron circuit to which you want to link your devices (s
     .. code-block:: json
 
             "devices": {
-                    "background_noise": {
-                      "device": "poisson_generator",
-                      "rate": 20,
-                      "targetting": {
-                        "strategy": "cell_model",
-                        "cell_models": ["base_type"]
-                      },
-                      "weight": 40,
-                      "delay": 1
-                    },
-                    "base_layer_record": {
-                      "device": "spike_recorder",
-                      "delay": 0.1,
-                      "targetting": {
-                        "strategy": "cell_model",
-                        "cell_models": ["base_type"]
-                      }
-                    },
-                    "top_layer_record": {
-                      "device": "spike_recorder",
-                      "delay": 0.1,
-                      "targetting": {
-                        "strategy": "cell_model",
-                        "cell_models": ["top_type"]
-                      }
-                    }
+                "background_noise": {
+                  "device": "poisson_generator",
+                  "rate": 20,
+                  "targetting": {
+                    "strategy": "cell_model",
+                    "cell_models": ["base_type"]
+                  },
+                  "weight": 40,
+                  "delay": 1
+                },
+                "base_layer_record": {
+                  "device": "spike_recorder",
+                  "delay": 0.1,
+                  "targetting": {
+                    "strategy": "cell_model",
+                    "cell_models": ["base_type"]
+                  }
+                },
+                "top_layer_record": {
+                  "device": "spike_recorder",
+                  "delay": 0.1,
+                  "targetting": {
+                    "strategy": "cell_model",
+                    "cell_models": ["top_type"]
+                  }
+                }
             }
+
+    .. code-block:: yaml
+
+        devices:
+          background_noise:
+            device: poisson_generator
+            rate: 10
+            targetting:
+              strategy: cell_model
+              cell_models:
+              - base_type
+            weight: 40
+            delay: 10
+          base_layer_record:
+            device: spike_recorder
+            delay: 0.1
+            targetting:
+              strategy: cell_model
+              cell_models:
+              - base_type
+          top_layer_record:
+            device: spike_recorder
+            delay: 0.1
+            targetting:
+              strategy: cell_model
+              cell_models:
+              - top_type
 
     .. code-block:: python
 
@@ -269,11 +333,11 @@ Final configuration file
 
 .. tab-set-code::
 
-  .. literalinclude:: ../configs/guide-nest.yaml
-    :language: yaml
-
   .. literalinclude:: ../configs/guide-nest.json
     :language: json
+
+  .. literalinclude:: ../configs/guide-nest.yaml
+    :language: yaml
 
   .. literalinclude:: /../examples/tutorials/nest-simulation.py
     :language: python

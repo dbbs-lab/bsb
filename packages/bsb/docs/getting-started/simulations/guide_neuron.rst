@@ -47,18 +47,24 @@ The network configuration should be as follows:
       :language: json
       :lines: 1-68
 
+    .. literalinclude:: /getting-started/configs/guide-neuron.yaml
+      :language: yaml
+      :lines: 1-61
+
     .. literalinclude:: /../examples/tutorials/neuron-simulation.py
       :language: python
       :lines: 1-54
 
 Copy the configuration in you favorite format and put it in the project folder
-as ``neuron-simulation.json`` or  as ``neuron-simulation.py``
+as ``neuron-simulation.[YOUR EXTENSION]``
 
 Then, the configuration should be compiled:
 
 .. code-block:: bash
 
     bsb compile --verbosity 3 neuron-simulation.json
+    # or
+    bsb compile --verbosity 3 neuron-simulation.yaml
     # or
     python neuron-simulation.py
 
@@ -83,6 +89,10 @@ milliseconds) and the :guilabel:`temperature` (celsius unit).
     .. literalinclude:: /getting-started/configs/guide-neuron.json
       :language: json
       :lines: 69-74
+
+    .. literalinclude:: /getting-started/configs/guide-neuron.yaml
+      :language: yaml
+      :lines: 62-67
 
     .. literalinclude:: /../examples/tutorials/neuron-simulation.py
       :language: python
@@ -112,6 +122,10 @@ the ion channel mechanisms are in the attribute :guilabel:`cable_types`.
       :language: json
       :lines: 75-80
 
+    .. literalinclude:: /getting-started/configs/guide-neuron.yaml
+      :language: yaml
+      :lines: 68-71
+
     .. literalinclude:: /../examples/tutorials/neuron-simulation.py
       :language: python
       :lines: 63-65
@@ -133,6 +147,10 @@ model file: :guilabel:`GABA`.
     .. literalinclude:: /getting-started/configs/guide-neuron.json
       :language: json
       :lines: 81-86
+
+    .. literalinclude:: /getting-started/configs/guide-neuron.yaml
+      :language: yaml
+      :lines: 72-77
 
     .. literalinclude:: /../examples/tutorials/neuron-simulation.py
       :language: python
@@ -158,6 +176,10 @@ devices (see the targetting section on :doc:`this page </simulation/intro>` for 
       :language: json
       :lines: 87-127
 
+    .. literalinclude:: /getting-started/configs/guide-neuron.yaml
+      :language: yaml
+      :lines: 78-126
+
     .. literalinclude:: /../examples/tutorials/neuron-simulation.py
       :language: python
       :lines: 77-110
@@ -180,9 +202,11 @@ Final configuration file
 
 .. tab-set-code::
 
-
   .. literalinclude:: /getting-started/configs/guide-neuron.json
     :language: json
+
+  .. literalinclude:: /getting-started/configs/guide-neuron.yaml
+    :language: yaml
 
   .. literalinclude:: /../examples/tutorials/neuron-simulation.py
     :language: python
@@ -202,6 +226,8 @@ So, you need to update your file, using either the ``reconfigure`` command or th
   .. code-block:: bash
 
     bsb reconfigure my_network.hdf5 neuron-simulation.json
+    # or
+    bsb reconfigure my_network.hdf5 neuron-simulation.yaml
 
   .. code-block:: python
 

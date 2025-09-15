@@ -84,12 +84,14 @@ class TransceiverModel(NeuronConnection, classmap_entry="transceiver"):
         pre, _ = cs.load_connections().from_(simdata.chunks).all()
         transmitters = simdata.transmap[self]["transmitters"]
         locs = np.unique(pre[:, :2], axis=0)
+        print("TRANSMITTERS", self.name, locs)
         for loc in locs:
             gid = transmitters[tuple(loc)]
             cell = pop[loc[0]]
             # NEURON only allows 1 spike detector per branch,
             # so we insert it in the first point on the branch.
             point = (loc[1], 0)
+            print("INSERTING", loc[0], point, gid)
             cell.insert_transmitter(gid, point, source=self.source)
 
     def create_receivers(self, simdata, cs):

@@ -61,7 +61,7 @@ simulations:
       top_type:
         model: iaf_cond_alpha
         constants:
-          t_ref: 1.5,
+          t_ref: 1.5
           V_m: -62.0
     connection_models:
       A_to_B:

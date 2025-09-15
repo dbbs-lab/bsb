@@ -53,7 +53,7 @@ The network configuration should be as follows:
 
     .. literalinclude:: /../examples/tutorials/neuron-simulation.py
       :language: python
-      :lines: 1-54
+      :lines: 1-56
 
 Copy the configuration in you favorite format and put it in the project folder
 as ``neuron-simulation.[YOUR EXTENSION]``
@@ -96,7 +96,7 @@ milliseconds) and the :guilabel:`temperature` (celsius unit).
 
     .. literalinclude:: /../examples/tutorials/neuron-simulation.py
       :language: python
-      :lines: 56-61
+      :lines: 58-64
 
 Cell Models
 -----------
@@ -128,7 +128,7 @@ the ion channel mechanisms are in the attribute :guilabel:`cable_types`.
 
     .. literalinclude:: /../examples/tutorials/neuron-simulation.py
       :language: python
-      :lines: 63-65
+      :lines: 66-68
 
 Connection Models
 -----------------
@@ -154,7 +154,7 @@ model file: :guilabel:`GABA`.
 
     .. literalinclude:: /../examples/tutorials/neuron-simulation.py
       :language: python
-      :lines: 66-76
+      :lines: 70-80
 
 To each synapse is assigned a :guilabel:`weight` of 0.001 and a :guilabel:`delay` (ms) of 1.
 
@@ -182,7 +182,7 @@ devices (see the targetting section on :doc:`this page </simulation/intro>` for 
 
     .. literalinclude:: /../examples/tutorials/neuron-simulation.py
       :language: python
-      :lines: 77-110
+      :lines: 82-115
 
 In this example, a :guilabel:`spike_generator` is used to produce ``1`` spike (attribute
 :guilabel:`number`) at ``9`` ms and send it to the cell with ID ``0`` (using the
@@ -210,6 +210,7 @@ Final configuration file
 
   .. literalinclude:: /../examples/tutorials/neuron-simulation.py
     :language: python
+    :lines: 3-118
 
 Running the Simulation
 ----------------------
@@ -234,12 +235,6 @@ So, you need to update your file, using either the ``reconfigure`` command or th
     storage = scaffold.storage
     storage.store_active_config(config)
 
-Once this is done, create a folder in which to store your simulation results:
-
-.. code-block:: bash
-
-    mkdir simulation-results
-
 You can now run your simulation:
 
 .. tab-set-code::
@@ -250,11 +245,16 @@ You can now run your simulation:
 
   .. code-block:: python
 
+        import pathlib
         from bsb import from_storage
 
         scaffold = from_storage("my_network.hdf5")
+        # create the simulation results folder
+        root = pathlib.Path("simulation-results")
+        root.mkdir()
+        # run the simulation and save the results
         result = scaffold.run_simulation("neuronsim")
-        result.write("simulation-results/neuronsimulation.nio", "ow")
+        result.write(root / "neuronsimulation.nio", "ow")
 
 The results of the simulation will be stored in the ``"simulation-results"`` folder.
 

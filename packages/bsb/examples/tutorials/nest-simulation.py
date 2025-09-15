@@ -1,3 +1,5 @@
+import pathlib
+
 import bsb.options
 from bsb import from_storage
 
@@ -6,8 +8,7 @@ bsb.options.verbosity = 3
 scaffold = from_storage("network.hdf5")
 config = scaffold.configuration
 
-config.simulations.add(
-    "basal_activity",
+config.simulations["basal_activity"] = dict(
     simulator="nest",
     resolution=0.1,
     duration=5000,
@@ -15,6 +16,7 @@ config.simulations.add(
     connection_models={},
     devices={},
 )
+
 config.simulations["basal_activity"].cell_models = dict(
     base_type={"model": "iaf_cond_alpha"},
     top_type={"model": "iaf_cond_alpha", "constants": {"t_ref": 1.5, "V_m": -62.0}},
@@ -44,5 +46,9 @@ config.simulations["basal_activity"].devices = dict(
     ),
 )
 
+# create the simulation results folder
+root = pathlib.Path("simulation-results")
+root.mkdir(exist_ok=True)
+# run the simulation and save the results
 result = scaffold.run_simulation("basal_activity")
-result.write("simulation-results/basal_activity.nio", "ow")
+result.write(root / "basal_activity.nio", "ow")

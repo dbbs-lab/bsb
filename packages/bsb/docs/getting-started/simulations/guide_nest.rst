@@ -52,52 +52,22 @@ Therefore, your simulation block should be structured as follows:
 
 .. tab-set-code::
 
-    .. code-block:: json
+    .. literalinclude:: /getting-started/configs/guide-nest.json
+        :language: json
+        :lines: 65-69
 
-        "simulations": {
-            "basal_activity": {
-              "simulator": "nest",
-              "resolution": 0.1,
-              "duration": 5000,
-              "cell_models": {
-              },
-              "connection_models": {
-              },
-              "devices":{
-              }
-        }
+    .. literalinclude:: /getting-started/configs/guide-nest.yaml
+        :language: yaml
+        :lines: 53-57
 
-    .. code-block:: yaml
-
-        simulations:
-          basal_activity:
-            simulator: nest
-            resolution: 0.1
-            duration: 5000
-          cell_models: {}
-          connection_models: {}
-          devices: {}
-
-    .. code-block:: python
-
-        config.simulations.add("basal_activity",
-          simulator="nest",
-          resolution=0.1,
-          duration=5000,
-          cell_models={},
-          connection_models={},
-          devices={}
-        )
+    .. literalinclude:: /../examples/tutorials/nest-simulation.py
+        :language: python
+        :lines: 3-18
 
 .. note::
 
     If you are using Python code, we assume that you load your Scaffold and Configuration
-    from your compiled network file:
-
-    .. code-block:: python
-
-        scaffold = from_storage("network.hdf5")
-        config = scaffold.configuration
+    from your compiled network file.
 
 Cells Models
 ------------
@@ -147,32 +117,17 @@ Still, you can modify certain parameters, by setting its :guilabel:`constants` d
 
 .. tab-set-code::
 
-    .. code-block:: json
+    .. literalinclude:: /getting-started/configs/guide-nest.json
+        :language: json
+        :lines: 70-81
 
-      "cell_models": {
-        "top_type": {
-          "model": "iaf_cond_alpha",
-          "constants": {
-            "t_ref": 1.5,
-            "V_m": -62.0
-          }
-        },
+    .. literalinclude:: /getting-started/configs/guide-nest.yaml
+        :language: yaml
+        :lines: 58-65
 
-    .. code-block:: yaml
-
-        cell_models:
-          top_type:
-            model: iaf_cond_alpha
-            constants:
-              t_ref: 1.5,
-              V_m: -62.0
-
-    .. code-block:: python
-
-        config.simulations["basal_activity"].cell_models=dict(
-          top_type={"model":"iaf_cond_alpha", dict(t_ref=1.5, V_m=-62.0)},
-        )
-
+    .. literalinclude:: /../examples/tutorials/nest-simulation.py
+        :language: python
+        :lines: 20-23
 
 Connection Models
 -----------------
@@ -185,38 +140,17 @@ In this example, we assign the ``static_synapse`` model to the connections :guil
 
 .. tab-set-code::
 
-    .. code-block:: json
+    .. literalinclude:: /getting-started/configs/guide-nest.json
+        :language: json
+        :lines: 82-90
 
-      "connection_models": {
-        "A_to_B": {
-            "synapse": {
-              "model": "static_synapse",
-              "weight": 100,
-              "delay": 1
-            }
-        }
-      },
+    .. literalinclude:: /getting-started/configs/guide-nest.yaml
+        :language: yaml
+        :lines: 66-71
 
-    .. code-block:: yaml
-
-        connection_models:
-          A_to_B:
-            synapse:
-              model: static_synapse
-              weight: 300
-              delay: 1
-
-    .. code-block:: python
-
-        config.simulations["basal_activity"].connection_models=dict(
-          A_to_B=dict(
-            synapse=dict(
-              model="static_synapse",
-              weight=100,
-              delay=1
-            )
-          )
-        )
+    .. literalinclude:: /../examples/tutorials/nest-simulation.py
+        :language: python
+        :lines: 25-27
 
 For this model, the synapse model needs ``weight`` and ``delay`` parameters that are set to 100 and 1 ms,
 respectively.
@@ -234,94 +168,17 @@ filter elements of your neuron circuit to which you want to link your devices (s
 
 .. tab-set-code::
 
-    .. code-block:: json
+    .. literalinclude:: /getting-started/configs/guide-nest.json
+        :language: json
+        :lines: 91-124
 
-            "devices": {
-                "background_noise": {
-                  "device": "poisson_generator",
-                  "rate": 20,
-                  "targetting": {
-                    "strategy": "cell_model",
-                    "cell_models": ["base_type"]
-                  },
-                  "weight": 40,
-                  "delay": 1
-                },
-                "base_layer_record": {
-                  "device": "spike_recorder",
-                  "delay": 0.1,
-                  "targetting": {
-                    "strategy": "cell_model",
-                    "cell_models": ["base_type"]
-                  }
-                },
-                "top_layer_record": {
-                  "device": "spike_recorder",
-                  "delay": 0.1,
-                  "targetting": {
-                    "strategy": "cell_model",
-                    "cell_models": ["top_type"]
-                  }
-                }
-            }
+    .. literalinclude:: /getting-started/configs/guide-nest.yaml
+        :language: yaml
+        :lines: 72-95
 
-    .. code-block:: yaml
-
-        devices:
-          background_noise:
-            device: poisson_generator
-            rate: 10
-            targetting:
-              strategy: cell_model
-              cell_models:
-              - base_type
-            weight: 40
-            delay: 10
-          base_layer_record:
-            device: spike_recorder
-            delay: 0.1
-            targetting:
-              strategy: cell_model
-              cell_models:
-              - base_type
-          top_layer_record:
-            device: spike_recorder
-            delay: 0.1
-            targetting:
-              strategy: cell_model
-              cell_models:
-              - top_type
-
-    .. code-block:: python
-
-            config.simulations["basal_activity"].devices=dict(
-              general_noise=dict(
-                      device= "poisson_generator",
-                      rate= 20,
-                      targetting= {
-                        "strategy": "cell_model",
-                        "cell_models": ["base_type"]
-                      },
-                      weight= 40,
-                      delay= 1
-              ),
-              base_layer_record=dict(
-                      device= "spike_recorder",
-                      delay= 0.1,
-                      targetting= {
-                        "strategy": "cell_model",
-                        "cell_models": ["base_type"]
-                      }
-              ),
-              top_layer_record=dict(
-                      device= "spike_recorder",
-                      delay= 0.1,
-                      targetting= {
-                        "strategy": "cell_model",
-                        "cell_models": ["top_type"]
-                      }
-              )
-            )
+    .. literalinclude:: /../examples/tutorials/nest-simulation.py
+        :language: python
+        :lines: 29-47
 
 In our example, we add a ``poisson_generator`` that simulates cells spiking at ``20`` Hz.
 These latter "cells" are each connected one ``top_type`` cell and transmit their spike events with a delay
@@ -341,7 +198,7 @@ Final configuration file
 
   .. literalinclude:: /../examples/tutorials/nest-simulation.py
     :language: python
-    :lines: 1-45
+    :lines: 3-47
 
 
 Running the Simulation
@@ -365,12 +222,6 @@ So, you need to update your file, using either the ``reconfigure`` command or th
     storage = scaffold.storage
     storage.store_active_config(config)
 
-Once this is done, create a folder in which to store your simulation results:
-
-.. code-block:: bash
-
-    mkdir simulation-results
-
 You can now run your simulation:
 
 .. tab-set-code::
@@ -381,11 +232,16 @@ You can now run your simulation:
 
   .. code-block:: python
 
+        import pathlib
         from bsb import from_storage
 
         scaffold = from_storage("network.hdf5")
+        # create the simulation results folder
+        root = pathlib.Path("simulation-results")
+        root.mkdir()
+        # run the simulation and save the results
         result = scaffold.run_simulation("basal_activity")
-        result.write("simulation-results/basal_activity.nio", "ow")
+        result.write(root / "basal_activity.nio", "ow")
 
 The results of the simulation will be stored in the ``"simulation-results"`` folder.
 

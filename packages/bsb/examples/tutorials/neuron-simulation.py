@@ -1,3 +1,5 @@
+import pathlib
+
 import bsb.options
 from bsb import Configuration, Scaffold
 
@@ -60,9 +62,11 @@ config.simulations.add(
     duration=100,
     temperature=32,
 )
+
 config.simulations["neuronsim"].cell_models = dict(
     stellate_cell=dict(model="Stellate.definitionStellate", parameters=[])
 )
+
 config.simulations["neuronsim"].connection_models = dict(
     stellate_to_stellate=dict(
         synapses=[
@@ -74,6 +78,7 @@ config.simulations["neuronsim"].connection_models = dict(
         ]
     )
 )
+
 config.simulations["neuronsim"].devices = dict(
     spike_generator=dict(
         device="spike_generator",
@@ -111,3 +116,10 @@ config.simulations["neuronsim"].devices = dict(
 
 scaffold = Scaffold(config)
 scaffold.compile(clear=True)
+
+# create the simulation results folder
+root = pathlib.Path("simulation-results")
+root.mkdir(exist_ok=True)
+# run the simulation and save the results
+result = scaffold.run_simulation("neuronsim")
+result.write(root / "neuronsimulation.nio", "ow")

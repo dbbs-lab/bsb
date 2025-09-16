@@ -661,16 +661,15 @@ def walk_node_values(start_node):
         yield node, attr.attr_name, attr.__get__(node, node.__class__)
 
 
-def _resolve_references(root, start=None, /):
+def _resolve_references(root):
     from ._attrs import _setattr
 
-    if start is None:
-        start = root
     if root._config_isfinished:
         for node, attr in walk_node_attributes(root):
             if hasattr(attr, "__ref__"):
                 ref = attr.__ref__(node, root)
-                _setattr(node, attr.attr_name, ref)
+                if ref is not None or getattr(node, attr.attr_name, None) is None:
+                    _setattr(node, attr.attr_name, ref)
 
 
 class WalkIterDescriptor:

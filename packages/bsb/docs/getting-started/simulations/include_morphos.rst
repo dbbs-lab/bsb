@@ -32,7 +32,7 @@ morphology to the scaffold:
 
 .. tab-set-code::
 
-  .. literalinclude:: /../../../examples/include_morphologies/include_morphos.yaml
+  .. literalinclude:: /../../../examples/include-morphologies/include_morphologies/include_morphos.yaml
     :language: yaml
     :lines: 9-10
 
@@ -52,17 +52,17 @@ referencing it by name in :guilabel:`cell_types.base_type.spatial.morphologies`:
 
 .. tab-set-code::
 
-  .. literalinclude:: /../../../examples/include_morphologies/include_morphos.yaml
+  .. literalinclude:: /../../../examples/include-morphologies/include_morphologies/include_morphos.yaml
     :language: yaml
     :lines: 28-34
     :emphasize-lines: 6-7
 
-  .. literalinclude:: /../../../examples/include_morphologies/include_morphos.json
+  .. literalinclude:: /../../../examples/include-morphologies/include_morphologies/include_morphos.json
     :language: json
     :lines: 35-42
     :emphasize-lines: 6
 
-  .. literalinclude:: /../../../examples/include_morphologies/include_morphos.py
+  .. literalinclude:: /../../../examples/include-morphologies/include_morphologies/include_morphos.py
     :language: python
     :lines: 27-34
     :emphasize-lines: 6
@@ -77,17 +77,17 @@ containing the attributes :guilabel:`name` and :guilabel:`file`:
 
 .. tab-set-code::
 
-  .. literalinclude:: /../../../examples/include_morphologies/include_morphos.yaml
+  .. literalinclude:: /../../../examples/include-morphologies/include_morphologies/include_morphos.yaml
     :language: yaml
     :lines: 9-12
     :emphasize-lines: 3-4
 
-  .. literalinclude:: /../../../examples/include_morphologies/include_morphos.json
+  .. literalinclude:: /../../../examples/include-morphologies/include_morphologies/include_morphos.json
     :language: json
     :lines: 12-17
     :emphasize-lines: 3-6
 
-  .. literalinclude:: /../../../examples/include_morphologies/include_morphos.py
+  .. literalinclude:: /../../../examples/include-morphologies/include_morphologies/include_morphos.py
     :language: python
     :lines: 22-25
     :emphasize-lines: 3
@@ -166,15 +166,15 @@ connection strategies such as :doc:`VoxelIntersection </connectivity/connection-
 
 .. tab-set-code::
 
-  .. literalinclude:: /../../../examples/include_morphologies/include_morphos.yaml
+  .. literalinclude:: /../../../examples/include-morphologies/include_morphologies/include_morphos.yaml
     :language: yaml
     :lines: 55-63
 
-  .. literalinclude:: /../../../examples/include_morphologies/include_morphos.json
+  .. literalinclude:: /../../../examples/include-morphologies/include_morphologies/include_morphos.json
     :language: json
     :lines: 65-75
 
-  .. literalinclude:: /../../../examples/include_morphologies/include_morphos.py
+  .. literalinclude:: /../../../examples/include-morphologies/include_morphologies/include_morphos.py
     :language: python
     :lines: 59-64
 
@@ -207,13 +207,13 @@ Final configuration file
 
 .. tab-set-code::
 
-  .. literalinclude:: /../../../examples/include_morphologies/include_morphos.yaml
+  .. literalinclude:: /../../../examples/include-morphologies/include_morphologies/include_morphos.yaml
     :language: yaml
 
-  .. literalinclude:: /../../../examples/include_morphologies/include_morphos.json
+  .. literalinclude:: /../../../examples/include-morphologies/include_morphologies/include_morphos.json
     :language: json
 
-  .. literalinclude:: /../../../examples/include_morphologies/include_morphos.py
+  .. literalinclude:: /../../../examples/include-morphologies/include_morphologies/include_morphos.py
     :language: python
 
 What is next?

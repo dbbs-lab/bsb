@@ -3,7 +3,7 @@
 Your first network
 ##################
 
-Make sure you completed the :doc:`Installation guide</getting-started/getting_started/installation>` before
+Make sure you completed the :doc:`Installation guide</getting-started/installation>` before
 running the example in this section.
 
 .. note::

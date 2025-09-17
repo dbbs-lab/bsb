@@ -20,6 +20,7 @@ jobs:
         run: |
           # find folders inside the example folder
           folders=$(find examples -maxdepth 1 -mindepth 1 -type d)
+          folders=[\"$(echo $folders | sed -r 's/[ ]+/", "/g')\"]
           echo "folders=$folders" >> $GITHUB_OUTPUT
   
   test_examples:

@@ -9,5 +9,5 @@ Examples
 
   label_cells
   plot_morpho
-  atlas/atlas_placement
+  atlas_placement
   place_distribution

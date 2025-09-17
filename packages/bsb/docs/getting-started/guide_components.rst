@@ -13,7 +13,7 @@ component for a new :doc:`Connection strategy </connectivity/connection-strategi
 We will start from the following configuration file (corresponds to the first network file
 from the getting started tutorial):
 
-.. literalinclude:: /getting-started/configs/getting-started.json
+.. literalinclude:: /../../../examples/getting-started/getting_started/getting_started.json
     :language: json
 
 Let's save this new configuration in our project folder under the name ``config_connectome.json``

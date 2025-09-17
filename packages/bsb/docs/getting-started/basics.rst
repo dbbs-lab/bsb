@@ -18,7 +18,7 @@ To follow this tutorial, either create a new python file ``"load_data.py"`` in y
 folder. You can load a stored network from file using the method
 :func:`from_storage <bsb:bsb.core.from_storage>`:
 
-.. literalinclude:: /../examples/tutorials/load_data.py
+.. literalinclude:: /../../../examples/getting-started/getting_started/load_data.py
    :language: python
    :lines: 3-5
    :emphasize-lines: 3
@@ -43,7 +43,7 @@ Its root components such as ``cell_types``, ``placement`` and others are
 also directly available in the Scaffold object, so you can avoid some
 needless typing and repetition.
 
-.. literalinclude:: /../examples/tutorials/load_data.py
+.. literalinclude:: /../../../examples/getting-started/getting_started/load_data.py
    :language: python
    :lines: 8-11
    :emphasize-lines: 1
@@ -55,7 +55,7 @@ The placement data is available through the :class:`PlacementSet <bsb:bsb.storag
 interface. You can access stored placement sets through their name or their cell type.
 This example shows how to access the cell positions of each population:
 
-.. literalinclude:: /../examples/tutorials/load_data.py
+.. literalinclude:: /../../../examples/getting-started/getting_started/load_data.py
    :language: python
    :lines: 14-19
    :emphasize-lines: 2
@@ -74,7 +74,7 @@ used to obtain them (and the pre and postsynaptic cell types in case their are m
 Here we are going to retrieve one connection set using its name (``"A_to_B"``) and print the neuron
 id of each connected pair.
 
-.. literalinclude:: /../examples/tutorials/load_data.py
+.. literalinclude:: /../../../examples/getting-started/getting_started/load_data.py
    :language: python
    :lines: 23-25
    :emphasize-lines: 1

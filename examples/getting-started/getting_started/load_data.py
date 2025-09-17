@@ -16,7 +16,7 @@ for type_name, cell_type in scaffold.cell_types.items():
     pos = ps.load_positions()
     print(f"{len(pos)} {type_name} placed")
     # The positions are a (Nx3) numpy array
-    print("The median cell is located at", np.median(pos, axis=0))
+    print(f"The median cell is located at: {np.median(pos, axis=0)}")
 
 # Load the connection information from the storage
 # for a specific connection set

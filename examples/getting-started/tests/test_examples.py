@@ -35,7 +35,9 @@ class TestExamples(
         self._test_scaffold_results()
 
     def test_python_example(self):
+        import getting_started.geting_started
         # check if load_data runs without any problems
+        import getting_started.load_data
         self.scaffold = from_storage("network.hdf5")
         self._test_scaffold_results()
         os.remove("network.hdf5")

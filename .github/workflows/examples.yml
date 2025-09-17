@@ -1,5 +1,9 @@
 name: Test examples
 on:
+  push: # to test
+    branches:
+      - '**'  # matches every branch ...
+      - '!main'  # ... that is not main
   pull_request:
     types: [ opened, synchronize, reopened, review_requested ]
 

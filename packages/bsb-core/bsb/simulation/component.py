@@ -15,7 +15,8 @@ class SimulationComponent:
         return f"'{self.name}'"
 
     def implement(self, adapter, simulation, simdata):
-        """Method that gives each component the opportunity to store the context they need to operate"""
+        """Method that gives each component the opportunity to store the context
+        they need to operate"""
         pass
 
 

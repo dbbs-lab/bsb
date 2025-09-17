@@ -6,7 +6,6 @@ from bsb_test import FixedPosConfigFixture, NumpyTestCase, RandomStorageFixture
 
 from bsb import (
     MPI,
-    BasicSimulationListener,
     Scaffold,
     config,
     get_simulation_adapter,
@@ -490,9 +489,7 @@ class TestAdapterControllers(
         segments = result.block.segments
 
         self.assertEqual(self.network.simulations.test.devices["rec_15"]._step, 15)
-        self.assertEqual(
-            self.network.simulations.test.devices["new_recorder"]._step, 40
-        )
+        self.assertEqual(self.network.simulations.test.devices["new_recorder"]._step, 40)
 
         self.assertEqual(
             len(segments),

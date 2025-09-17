@@ -7,7 +7,7 @@ from time import time
 
 import numpy as np
 
-from bsb import AttributeMissingError, SimulationResult, report, options
+from bsb import AttributeMissingError, SimulationResult, options, report
 
 from ..services.mpi import MPIService
 
@@ -108,8 +108,7 @@ class SimulationData:
         self.chunks = None
         self.populations = dict()
         self.placement: dict[CellModel, PlacementSet] = {
-            model: model.get_placement_set()
-            for model in simulation.cell_models.values()
+            model: model.get_placement_set() for model in simulation.cell_models.values()
         }
         self.connections = dict()
         self.devices = dict()
@@ -220,7 +219,6 @@ class SimulatorAdapter(abc.ABC):
             component.implement(self, simulation, simdata)
 
     def load_controllers(self, simulation):
-
         for component in simulation.get_components():
             if hasattr(component, "get_next_checkpoint"):
                 if hasattr(component, "progress"):

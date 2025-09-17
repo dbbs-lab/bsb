@@ -5,7 +5,6 @@ import typing
 import nest
 from bsb import (
     AdapterError,
-    BasicSimulationListener,
     SimulationData,
     SimulationResult,
     SimulatorAdapter,

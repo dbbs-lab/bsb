@@ -25,23 +25,23 @@ jobs:
       fail-fast: false
       matrix:
         folder: ${{ fromJSON(needs.find_examples.outputs.matrix) }}
-      steps:
-        - uses: actions/checkout@v4
-          with:
-            fetch-depth: 0
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-        - name: Install apt dependencies
-          run: |
-            sudo apt update
-            sudo apt install libhdf5-dev
+      - name: Install apt dependencies
+        run: |
+          sudo apt update
+          sudo apt install libhdf5-dev
 
-        - name: Install uv
-          uses: astral-sh/setup-uv@v5
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
 
-        - name: Run unittests
-          run: |
-            cd ${{ matrix.folder }}
-            uv sync
-            uv run python -m unittest discover -v -s tests            
-          env:
-            UV_PYTHON: 3.12
+      - name: Run unittests
+        run: |
+          cd ${{ matrix.folder }}
+          uv sync
+          uv run python -m unittest discover -v -s tests
+        env:
+          UV_PYTHON: 3.12

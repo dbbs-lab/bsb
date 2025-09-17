@@ -196,7 +196,7 @@ Because we are not using morphologies here the second and third indexes should b
 
 You have done it! Congrats! Your final `connectome.py` should look like this:
 
-.. literalinclude:: /../examples/tutorials/dist_connection.py
+.. literalinclude:: /../../../examples/writing-components/writing_components/dist_connection.py
     :language: python
 
 .. tip::

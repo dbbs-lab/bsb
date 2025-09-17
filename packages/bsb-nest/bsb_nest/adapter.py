@@ -109,6 +109,11 @@ class NestAdapter(SimulatorAdapter):
             raise AdapterError(f"Unprepared for simulations: {', '.join(unprepared)}")
         report("Simulating...", level=2)
         self._duration = max(sim.duration for sim in simulations)
+        [
+            controller.on_start()
+            for controller in self._controllers
+            if hasattr(controller, "on_start")
+        ]
         try:
             results = [self.simdata[sim].result for sim in simulations]
             with nest.RunManager():

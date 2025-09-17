@@ -92,6 +92,25 @@ class ConfigOption(
         return "network_configuration.json"
 
 
+class SimulationReport(
+    BsbOption,
+    name="simulation_report",
+    cli=("sr", "sreport"),
+    project=("sim_report",),
+    script=("sim_report",),
+    env=("BSB_SIM_REPORT",),
+):
+    """
+    Activate reports during simulations, set the time steps of the report.
+    """
+
+    def setter(self, value):
+        return float(value)
+
+    def getter(self, value):
+        return float(value)
+
+
 class ProfilingOption(
     BsbOption,
     name="profiling",
@@ -155,6 +174,10 @@ def sudo():
 
 def config():
     return ConfigOption
+
+
+def sim_report():
+    return SimulationReport
 
 
 def profiling():

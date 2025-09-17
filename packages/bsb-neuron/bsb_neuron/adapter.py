@@ -140,10 +140,12 @@ class NeuronAdapter(SimulatorAdapter):
             pc.set_maxstep(10)
             self.engine.finitialize(self.initial)
             self._duration = max(sim.duration for sim in simulations)
+            for controller in self._controllers:
+                if hasattr(controller, "on_start"):
+                    controller.on_start()
 
             for t, cnt_ids in self.get_next_checkpoint():
                 pc.psolve(t)
-                print(f"Reached: {t}")
                 self.execute(cnt_ids, simulations=simulations, simdata=self.simdata)
 
             report("Finished simulation.", level=2)

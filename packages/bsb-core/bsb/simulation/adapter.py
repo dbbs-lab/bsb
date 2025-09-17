@@ -7,7 +7,7 @@ from time import time
 
 import numpy as np
 
-from bsb import AttributeMissingError, SimulationResult, report
+from bsb import AttributeMissingError, SimulationResult, report, options
 
 from ..services.mpi import MPIService
 
@@ -39,18 +39,26 @@ class AdapterController(abc.ABC):
 
 
 class BasicSimulationListener(AdapterController):
-    def __init__(self, adapter, step=1):
+    def __init__(self, simulations, adapter, step=1):
         self._status = 0
         self._adapter = adapter
         self._start = self._last_tick = time()
         self._step = step
         self.need_flush = False
-        self._sim_name = [sim._name for sim in self._adapter.simdata]
-        if os.isatty(sys.stdout.fileno()) and sum(os.get_terminal_size()):
+        self._sim_name = [sim._name for sim in simulations]
+        self._use_tty = os.isatty(sys.stdout.fileno()) and sum(os.get_terminal_size())
+        if self._use_tty:
             self.progress = self.use_bar
 
     def get_next_checkpoint(self):
-        return self._status + self._step
+        return self._status
+
+    def on_start(self):
+        if self._use_tty:
+            empty_lines = "\n" * self._adapter.comm.get_size()
+            report(empty_lines, level=1)
+        else:
+            pass
 
     def progress(self, kwargs=None):
         now = time()
@@ -87,11 +95,11 @@ class BasicSimulationListener(AdapterController):
         sys.stdout.flush()
 
     def use_bar(self, kwargs=None):
-        self._status += self._step
         current_percent = int((self._status / self._adapter._duration) * 100)
         rank = self._adapter.comm.get_rank()
         mpi_size = self._adapter.comm.get_size()
         self.progress_bar(current_percent, rank, mpi_size)
+        self._status += self._step
         return self._status
 
 
@@ -116,7 +124,8 @@ class SimulatorAdapter(abc.ABC):
         :param comm: The mpi4py MPI communicator to use. Only nodes in the communicator
           will participate in the simulation. The first node will idle as the main node.
         """
-        self._progress_listeners = []
+        # print(f" Rep CFlag : {} | Verbosity: {options.verbosity}")
+
         self.simdata: dict[Simulation, SimulationData] = dict()
         self.comm = MPIService(comm)
         self._controllers = []
@@ -137,6 +146,12 @@ class SimulatorAdapter(abc.ABC):
             for simulation in simulations:
                 context.enter_context(simulation.scaffold.storage.read_only())
             alldata = []
+            if options.sim_report:
+                listener = BasicSimulationListener(
+                    simulations, self, float(options.sim_report)
+                )
+                self._controllers.append(listener)
+
             for simulation in simulations:
                 data = self.prepare(simulation)
                 alldata.append(data)
@@ -187,7 +202,7 @@ class SimulatorAdapter(abc.ABC):
 
     def collect(self, results):
         """
-        Collect the output the simulations that reached a checkpoint.
+        Collect the output the simulations that completed.
 
         :return: Collected simulation results.
         :rtype: list[~bsb.simulation.results.SimulationResult]
@@ -196,8 +211,8 @@ class SimulatorAdapter(abc.ABC):
             result.flush()
         return results
 
-    def add_progress_listener(self, listener):
-        self._progress_listeners.append(listener)
+    # def add_progress_listener(self, listener):
+    #     self._progress_listeners.append(listener)
 
     def implement_components(self, simulation):
         simdata = self.simdata[simulation]
@@ -205,13 +220,6 @@ class SimulatorAdapter(abc.ABC):
             component.implement(self, simulation, simdata)
 
     def load_controllers(self, simulation):
-        # if not self._progress_listeners:
-        #     base_list = BasicSimulationListener(self, step=5)
-        #     self._progress_listeners.append(base_list)
-
-        for listener in self._progress_listeners:
-            if hasattr(listener, "get_next_checkpoint"):
-                self._controllers.append(listener)
 
         for component in simulation.get_components():
             if hasattr(component, "get_next_checkpoint"):

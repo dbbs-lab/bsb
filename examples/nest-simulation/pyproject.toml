@@ -1,0 +1,30 @@
+[project]
+name = "nest-simulation"
+version = "1.0.0"
+description = "BSB NEST simulation examples"
+readme = "README.md"
+requires-python = ">=3.10,<4"
+dependencies = [
+    "bsb~=6.0",
+    "bsb-nest~=6.0",
+]
+
+[dependency-groups]
+test = [
+    "bsb-test~=6.0",
+]
+
+[tool.uv]
+default-groups = [ "test" ]
+
+[tool.uv.sources.bsb]
+path = "../../packages/bsb"
+editable = true
+
+[tool.uv.sources.bsb-nest]
+path = "../../packages/bsb-nest"
+editable = true
+
+[tool.uv.sources.bsb-test]
+path = "../../packages/bsb-test"
+editable = true

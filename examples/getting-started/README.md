@@ -15,7 +15,7 @@ pip install -e.
 
 ## Usage
 
-The configuration files  in the folder `getting_started` named `getting-started.[extension]` 
+The configuration files in the folder `getting_started` named `getting-started.[extension]` 
 corresponds to the configuration files you should obtain upon completing
 [the BSB getting started tutorial](https://bsb.readthedocs.io/en/latest/getting-started/getting-started_reconstruction.html).
 

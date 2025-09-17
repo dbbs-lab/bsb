@@ -1,7 +1,7 @@
 from neo import io
 
 # Read simulation data
-my_file_name = "simulation-results/NAME_OF_YOUR_NEO_FILE.nio"
+my_file_name = "simulation-results/neuronsimulation.nio"  # adapt the name of the file here
 sim = io.NixIO(my_file_name, mode="ro")
 block = sim.read_all_blocks()[0]
 segment = block.segments[0]

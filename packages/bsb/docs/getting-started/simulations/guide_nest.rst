@@ -52,15 +52,15 @@ Therefore, your simulation block should be structured as follows:
 
 .. tab-set-code::
 
-    .. literalinclude:: /getting-started/configs/guide-nest.json
+    .. literalinclude:: /../../../examples/nest-simulation/guide_nest.json
         :language: json
         :lines: 65-69
 
-    .. literalinclude:: /getting-started/configs/guide-nest.yaml
+    .. literalinclude:: /../../../examples/nest-simulation/guide_nest.yaml
         :language: yaml
         :lines: 53-57
 
-    .. literalinclude:: /../examples/tutorials/nest-simulation.py
+    .. literalinclude:: /../../../examples/nest-simulation/guide_nest.py
         :language: python
         :lines: 3-18
 
@@ -117,15 +117,15 @@ Still, you can modify certain parameters, by setting its :guilabel:`constants` d
 
 .. tab-set-code::
 
-    .. literalinclude:: /getting-started/configs/guide-nest.json
+    .. literalinclude:: /../../../examples/nest-simulation/guide_nest.json
         :language: json
         :lines: 70-81
 
-    .. literalinclude:: /getting-started/configs/guide-nest.yaml
+    .. literalinclude:: /../../../examples/nest-simulation/guide_nest.yaml
         :language: yaml
         :lines: 58-65
 
-    .. literalinclude:: /../examples/tutorials/nest-simulation.py
+    .. literalinclude:: /../../../examples/nest-simulation/guide_nest.py
         :language: python
         :lines: 20-23
 
@@ -140,15 +140,15 @@ In this example, we assign the ``static_synapse`` model to the connections :guil
 
 .. tab-set-code::
 
-    .. literalinclude:: /getting-started/configs/guide-nest.json
+    .. literalinclude:: /../../../examples/nest-simulation/guide_nest.json
         :language: json
         :lines: 82-90
 
-    .. literalinclude:: /getting-started/configs/guide-nest.yaml
+    .. literalinclude:: /../../../examples/nest-simulation/guide_nest.yaml
         :language: yaml
         :lines: 66-71
 
-    .. literalinclude:: /../examples/tutorials/nest-simulation.py
+    .. literalinclude:: /../../../examples/nest-simulation/guide_nest.py
         :language: python
         :lines: 25-27
 
@@ -168,15 +168,15 @@ filter elements of your neuron circuit to which you want to link your devices (s
 
 .. tab-set-code::
 
-    .. literalinclude:: /getting-started/configs/guide-nest.json
+    .. literalinclude:: /../../../examples/nest-simulation/guide_nest.json
         :language: json
         :lines: 91-124
 
-    .. literalinclude:: /getting-started/configs/guide-nest.yaml
+    .. literalinclude:: /../../../examples/nest-simulation/guide_nest.yaml
         :language: yaml
         :lines: 72-95
 
-    .. literalinclude:: /../examples/tutorials/nest-simulation.py
+    .. literalinclude:: /../../../examples/nest-simulation/guide_nest.py
         :language: python
         :lines: 29-47
 
@@ -190,13 +190,13 @@ Final configuration file
 
 .. tab-set-code::
 
-  .. literalinclude:: ../configs/guide-nest.json
+  .. literalinclude:: /../../../examples/nest-simulation/guide_nest.json
     :language: json
 
-  .. literalinclude:: ../configs/guide-nest.yaml
+  .. literalinclude:: /../../../examples/nest-simulation/guide_nest.yaml
     :language: yaml
 
-  .. literalinclude:: /../examples/tutorials/nest-simulation.py
+  .. literalinclude:: /../../../examples/nest-simulation/guide_nest.py
     :language: python
     :lines: 3-47
 

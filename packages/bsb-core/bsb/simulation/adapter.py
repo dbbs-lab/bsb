@@ -7,7 +7,7 @@ from time import time
 
 import numpy as np
 
-from bsb import SimulationResult, report
+from bsb import AttributeMissingError, SimulationResult, report
 
 from ..services.mpi import MPIService
 
@@ -60,7 +60,7 @@ class BasicSimulationListener(AdapterController):
         msg = f"Simulation {self._sim_name} | progress: {self._status} - "
         msg += f"elapsed: {el_time:.2f}s - last step time: {tic:.2f}s - "
         msg += f"exectuted: {(self._status / duration) * 100:.2f}%"
-        report(msg, level=2)
+        report(msg, level=1)
         self._last_tick = now
         self._status += self._step
         return self._status
@@ -174,16 +174,16 @@ class SimulatorAdapter(abc.ABC):
     def get_next_checkpoint(self):
         while self._sim_checkpoint < self._duration:
             checkpoints = [cnt.get_next_checkpoint() for cnt in self._controllers]
-            self._sim_checkpoint = np.min(checkpoints)
+            complete = np.append(
+                checkpoints, self._duration
+            )  # In case of no checkpoint provided
+            self._sim_checkpoint = np.min(complete)
             cnt_ids = np.where(checkpoints == self._sim_checkpoint)[0]
             yield (self._sim_checkpoint, cnt_ids)
 
     def execute(self, controller_ids, **kwargs):
-        flush_point = False
         for i in controller_ids:
             self._controllers[i].progress(kwargs=kwargs)
-            flush_point = flush_point or self._controllers[i].need_flush
-        return flush_point
 
     def collect(self, results):
         """
@@ -199,23 +199,32 @@ class SimulatorAdapter(abc.ABC):
     def add_progress_listener(self, listener):
         self._progress_listeners.append(listener)
 
+    def implement_components(self, simulation):
+        simdata = self.simdata[simulation]
+        for component in simulation.get_components():
+            component.implement(self, simulation, simdata)
+
     def load_controllers(self, simulation):
-        if not self._progress_listeners:
-            base_list = BasicSimulationListener(self, step=5)
-            self._progress_listeners.append(base_list)
+        # if not self._progress_listeners:
+        #     base_list = BasicSimulationListener(self, step=5)
+        #     self._progress_listeners.append(base_list)
 
         for listener in self._progress_listeners:
-            if isinstance(listener, AdapterController) and (
-                listener not in self._controllers
-            ):
+            if hasattr(listener, "get_next_checkpoint"):
                 self._controllers.append(listener)
-        for device in simulation.devices.values():
-            if isinstance(device, AdapterController):
-                self._controllers.append(device)
+
+        for component in simulation.get_components():
+            if hasattr(component, "get_next_checkpoint"):
+                if hasattr(component, "progress"):
+                    self._controllers.append(component)
+                else:
+                    raise AttributeMissingError(
+                        f"Device {component.name} is configured to be a controller "
+                        f"but progress is not defined"
+                    )
 
 
 __all__ = [
-    "AdapterProgress",
     "AdapterController",
     "BasicSimulationListener",
     "SimulationData",

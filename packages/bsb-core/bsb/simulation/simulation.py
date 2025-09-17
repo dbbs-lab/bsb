@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import typing
+import itertools
 
 from .. import config
 from ..config import types as cfgtypes
@@ -53,8 +54,8 @@ class Simulation:
     """
     Dictionary linking the device name to its model.
     """
-    post_prepare: cfglist[typing.Callable[[Simulation, typing.Any], None]] = config.list(
-        type=cfgtypes.function_()
+    post_prepare: cfglist[typing.Callable[[Simulation, typing.Any], None]] = (
+        config.list(type=cfgtypes.function_())
     )
     """
     List of hook functions to call after the simulation has been prepared.
@@ -83,6 +84,14 @@ class Simulation:
             model: self.scaffold.get_connectivity_set(model.name)
             for model in sorted(self.connection_models.values())
         }
+
+    def get_components(self):
+        components = itertools.chain(
+            self.cell_models.values(),
+            self.connection_models.values(),
+            self.devices.values(),
+        )
+        return components
 
 
 __all__ = ["ProgressEvent", "Simulation"]

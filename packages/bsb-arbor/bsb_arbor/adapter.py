@@ -234,7 +234,9 @@ class Population:
 
         :yield: Each GID in the population's ranges
         """
-        yield from itertools.chain.from_iterable(range(r[0], r[1]) for r in self._ranges)
+        yield from itertools.chain.from_iterable(
+            range(r[0], r[1]) for r in self._ranges
+        )
 
 
 class GIDManager:
@@ -413,7 +415,7 @@ class ArborAdapter(SimulatorAdapter):
             self.domain = arbor.partition_load_balance(recipe, context)
             self.gids = set(it.chain.from_iterable(g.gids for g in self.domain.groups))
             simdata.arbor_sim = arbor.simulation(recipe, context, self.domain)
-            self.prepare_samples(simulation, simdata)
+            self.implement_components(simulation)
             self.load_controllers(simulation)
             report("prepared simulation", level=1)
             return simdata
@@ -424,9 +426,9 @@ class ArborAdapter(SimulatorAdapter):
     def get_gid_manager(self, simulation, simdata):
         return GIDManager(simulation, simdata)
 
-    def prepare_samples(self, simulation, simdata):
-        for device in simulation.devices.values():
-            device.prepare_samples(simdata, comm=self.comm)
+    # def prepare_samples(self, simulation, simdata):
+    #     for device in simulation.devices.values():
+    #         device.prepare_samples(simdata, comm=self.comm)
 
     def run(self, *simulations):
         if len(simulations) != 1:
@@ -451,9 +453,7 @@ class ArborAdapter(SimulatorAdapter):
 
             for t, cnt_ids in self.get_next_checkpoint():
                 arbor_sim.run(t * U.ms, dt=simulation.resolution * U.ms)
-                need_to_flush = self.execute(cnt_ids, simulations=simulations)
-                if need_to_flush:
-                    self.flush_data(simdata)
+                self.execute(cnt_ids, simulations=simulations, simdata=simdata)
             report(f"Completed simulation. {time.time() - start:.2f}s", level=1)
             if simulation.profiling and arbor.config()["profiling"]:
                 report("printing profiler summary", level=2)
@@ -461,11 +461,6 @@ class ArborAdapter(SimulatorAdapter):
             return [simdata.result]
         finally:
             del self.simdata[simulation]
-
-    def flush_data(self, simdata):
-        simdata.result.flush()
-        # Free Memory
-        simdata.arbor_sim.clear_samplers()
 
     def get_recipe(self, simulation, simdata=None):
         if simdata is None:

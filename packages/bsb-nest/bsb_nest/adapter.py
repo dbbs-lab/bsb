@@ -90,8 +90,7 @@ class NestAdapter(SimulatorAdapter):
             report("Creating connections...", level=2)
             self.connect_neurons(simulation)
             report("Creating devices...", level=2)
-            self.create_devices(simulation)
-            self.add_progress_listener(BasicSimulationListener(self, 100))
+            self.implement_components(simulation)
             self.load_controllers(simulation)
             return self.simdata[simulation]
         except Exception:
@@ -190,11 +189,6 @@ class NestAdapter(SimulatorAdapter):
                 raise NestConnectError(
                     f"{connection_model} error during connect."
                 ) from None
-
-    def create_devices(self, simulation):
-        simdata = self.simdata[simulation]
-        for device_model in simulation.devices.values():
-            device_model.implement(self, simulation, simdata)
 
     def set_settings(self, simulation: "NestSimulation"):
         nest.set_verbosity(simulation.verbosity)

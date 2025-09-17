@@ -9,9 +9,9 @@ class SpikeRecorder(ArborDevice, classmap_entry="spike_recorder"):
     def boot(self):
         self._gids = set()
 
-    def prepare_samples(self, simdata, comm):
-        super().prepare_samples(simdata, comm)
-        if not comm.get_rank():
+    def implement(self, adapter, simulation, simdata):
+        super().implement(adapter, simulation, simdata)
+        if not adapter.comm.get_rank():
 
             def record_device_spikes(segment):
                 spiketrain = list()

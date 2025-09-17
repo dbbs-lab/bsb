@@ -6,10 +6,8 @@ from bsb_test import FixedPosConfigFixture, NumpyTestCase, RandomStorageFixture
 
 from bsb import (
     MPI,
-    AdapterController,
     BasicSimulationListener,
     Scaffold,
-    compose_nodes,
     config,
     get_simulation_adapter,
 )
@@ -287,8 +285,15 @@ class TestTargetting(
         self.assertEqual(len(sorted_ids), 4)
 
 
-class FixedStepController(AdapterController):
+@config.node
+class SpikeController(
+    SpikeRecorder,
+    classmap_entry="spike_controller",
+):
+    step = config.attr(type=float, required=True)
+
     def __init__(self, **kwargs):
+        super().__init__()
         self._status = 0
         if hasattr(kwargs, "step"):
             self._step = kwargs["step"]
@@ -298,24 +303,17 @@ class FixedStepController(AdapterController):
         return self._status + self._step
 
     def progress(self, kwargs=None):
+        # Flush data
+        simdata = kwargs["simdata"]
+        simdata.result.flush()
+        # Free Memory
+        simdata.arbor_sim.clear_samplers()
         self._status += self._step
         return self._status
 
 
-@config.node
-class SpikeController(
-    compose_nodes(SpikeRecorder, FixedStepController),
-    classmap_entry="spike_controller",
-):
-    step = config.attr(type=float, required=True)
-
-    def __init__(self, **kwargs):
-        FixedStepController.__init__(self, step=self.step)
-        super().__init__()
-
-
 @unittest.skipIf(MPI.get_size() > 1, "Skipped during parallel testing.")
-class TestAdapterController(
+class TestAdapterControllers(
     FixedPosConfigFixture,
     RandomStorageFixture,
     NumpyTestCase,
@@ -420,15 +418,11 @@ class TestAdapterController(
         adapter = get_simulation_adapter(sim.simulator)
         adapter.prepare(sim)
         self.assertEqual(
-            len(adapter._controllers), 2, "Only two controllers should be registered"
+            len(adapter._controllers), 1, "Only two controllers should be registered"
         )
-        self.assertIsInstance(
-            adapter._controllers[0],
-            BasicSimulationListener,
-            "Default listener is not registered",
-        )
+
         self.assertEqual(
-            adapter._controllers[1].name,
+            adapter._controllers[0].name,
             "rec_15",
             "Only rec_15 device should be registered",
         )

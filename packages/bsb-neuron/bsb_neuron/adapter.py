@@ -104,7 +104,7 @@ class NeuronAdapter(SimulatorAdapter):
             report("Creating transmitters", level=2)
             self.create_connections(simulation)
             report("Creating devices", level=2)
-            self.create_devices(simulation)
+            self.implement_components(simulation)
             self.load_controllers(simulation)
             return self.simdata[simulation]
         except:
@@ -141,12 +141,10 @@ class NeuronAdapter(SimulatorAdapter):
             self.engine.finitialize(self.initial)
             self._duration = max(sim.duration for sim in simulations)
 
-            results = [self.simdata[sim].result for sim in simulations]
             for t, cnt_ids in self.get_next_checkpoint():
                 pc.psolve(t)
-                need_to_flush = self.execute(cnt_ids, simulations=simulations)
-                if need_to_flush:
-                    self.collect(results)
+                print(f"Reached: {t}")
+                self.execute(cnt_ids, simulations=simulations, simdata=self.simdata)
 
             report("Finished simulation.", level=2)
         finally:
@@ -178,11 +176,6 @@ class NeuronAdapter(SimulatorAdapter):
                     simulation, simdata, cs
                 )
 
-    def create_devices(self, simulation):
-        simdata = self.simdata[simulation]
-        for device_model in simulation.devices.values():
-            device_model.implement(self, simulation, simdata)
-
     def _allocate_transmitters(self, simulation):
         simdata = self.simdata[simulation]
         first = self.next_gid
@@ -200,7 +193,9 @@ class NeuronAdapter(SimulatorAdapter):
         offset = 0
         transmap = {}
 
-        pre_types = set(cs.pre_type for cs in simulation.get_connectivity_sets().values())
+        pre_types = set(
+            cs.pre_type for cs in simulation.get_connectivity_sets().values()
+        )
         for pre_type in sorted(pre_types, key=lambda pre_type: pre_type.name):
             data = []
             for _cm, cs in simulation.get_connectivity_sets().items():
@@ -217,7 +212,9 @@ class NeuronAdapter(SimulatorAdapter):
                     continue
 
                 # Now look up which transmitters are on our chunks
-                pre_t, _ = cs.load_connections().from_(simdata.chunks).as_globals().all()
+                pre_t, _ = (
+                    cs.load_connections().from_(simdata.chunks).as_globals().all()
+                )
                 our_cm_transmitters = np.unique(pre_t[:, :2], axis=0)
                 # Look up the local ids of those transmitters
                 pre_lc, _ = cs.load_connections().from_(simdata.chunks).all()

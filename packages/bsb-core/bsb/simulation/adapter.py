@@ -17,28 +17,7 @@ if typing.TYPE_CHECKING:
     from .simulation import Simulation
 
 
-class AdapterController(abc.ABC):
-    @abc.abstractmethod
-    def get_next_checkpoint(self):
-        """method to implement that is needed for look for the next checkpoint
-        :return: Next checkpoint time.
-        :rtype: float
-        """
-        pass
-
-    @abc.abstractmethod
-    def progress(self):
-        """method that the controller will use to advance to the next checkpoint
-        :return: Next checkpoint time.
-        :rtype: float
-        """
-        pass
-
-    def complete(self):
-        return
-
-
-class BasicSimulationListener(AdapterController):
+class BasicSimulationListener:
     def __init__(self, simulations, adapter, step=1):
         self._status = 0
         self._adapter = adapter
@@ -145,9 +124,9 @@ class SimulatorAdapter(abc.ABC):
             for simulation in simulations:
                 context.enter_context(simulation.scaffold.storage.read_only())
             alldata = []
-            if options.sim_report:
+            if options.simulation_report:
                 listener = BasicSimulationListener(
-                    simulations, self, float(options.sim_report)
+                    simulations, self, options.simulation_report
                 )
                 self._controllers.append(listener)
 
@@ -231,7 +210,6 @@ class SimulatorAdapter(abc.ABC):
 
 
 __all__ = [
-    "AdapterController",
     "BasicSimulationListener",
     "SimulationData",
     "SimulatorAdapter",

@@ -95,9 +95,9 @@ class ConfigOption(
 class SimulationReport(
     BsbOption,
     name="simulation_report",
-    cli=("sr", "sreport"),
-    project=("sim_report",),
-    script=("sim_report",),
+    cli=("sr", "simulation_report"),
+    project=("simulation_report",),
+    script=("simulation_report",),
     env=("BSB_SIM_REPORT",),
 ):
     """
@@ -176,7 +176,7 @@ def config():
     return ConfigOption
 
 
-def sim_report():
+def simulation_report():
     return SimulationReport
 
 

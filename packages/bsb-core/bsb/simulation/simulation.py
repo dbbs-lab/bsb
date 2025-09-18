@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import typing
 import itertools
+import typing
 
 from .. import config
 from ..config import types as cfgtypes
@@ -54,8 +54,8 @@ class Simulation:
     """
     Dictionary linking the device name to its model.
     """
-    post_prepare: cfglist[typing.Callable[[Simulation, typing.Any], None]] = (
-        config.list(type=cfgtypes.function_())
+    post_prepare: cfglist[typing.Callable[[Simulation, typing.Any], None]] = config.list(
+        type=cfgtypes.function_()
     )
     """
     List of hook functions to call after the simulation has been prepared.

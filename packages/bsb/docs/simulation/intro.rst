@@ -262,7 +262,8 @@ which can be accessed through the :guilabel:`annotations` attribute:
   Unlike the spike train case, the :guilabel:`analogsignals` attribute contains a separate ``AnalogSignal``
   object for each target of the device.
 
-Further Features
-================
+Advanced Features
+=================
 There are other features of the simulation block that can be explored:
+
 * :doc:`Controllers </simulation/simulation-controllers>`

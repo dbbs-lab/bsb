@@ -18,7 +18,7 @@ Example: A simple controlling Device
 ------------------------------------
 
 This example demonstrates how to extend a custom Device named :guilabel:`MyDevice` to act as a controller.
-This controller updates a status attribute and prints its value every fixed time step.
+This controller updates a :guilabel:`status` attribute and prints the value of :guilabel:`ids` attribute every fixed time step.
 
 .. code-block:: python
 
@@ -37,7 +37,7 @@ This controller updates a status attribute and prints its value every fixed time
 
         def progress(self):
             self.status += self.step
-            print(self.status)
+            print(self.ids)
 
 
 

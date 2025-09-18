@@ -7,17 +7,14 @@ from bsb import parse_configuration_file, Scaffold, from_storage
 from bsb_test import RandomStorageFixture
 
 CONFIG_FOLDER = abspath(join(dirname(dirname(__file__)), "writing_components"))
+path.insert(1, CONFIG_FOLDER)
 
 
-class TestExamples(
+class TestComponentsExamples(
     RandomStorageFixture,
     unittest.TestCase,
     engine_name="hdf5",
 ):
-    def setUp(self):
-        super().setUp()
-        path.insert(1, CONFIG_FOLDER)
-
     def _test_scaffold_results(self):
         self.assertEqual(
             len(self.scaffold.cell_types["base_type"].get_placement_set()), 1560
@@ -42,5 +39,7 @@ class TestExamples(
         self.scaffold.compile()
 
     def test_python_example(self):
+        import writing_components  # noqa: F401
+
         self.scaffold = from_storage("network.hdf5")
         os.remove("network.hdf5")

@@ -83,7 +83,8 @@ class DistributionPlacement(PlacementStrategy):
                 if num_selected > 0:
                     # Assign a random position to the cells within this Chunk
                     positions = (
-                        np.random.rand(num_selected, 3) * chunk.dimensions + chunk.ldc
+                        np.random.rand(int(num_selected), 3) * chunk.dimensions
+                        + chunk.ldc
                     )
                     all_positions = np.concatenate([all_positions, positions])
             self.place_cells(indicator, all_positions, chunk)

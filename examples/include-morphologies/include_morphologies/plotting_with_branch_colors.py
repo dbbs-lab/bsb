@@ -4,8 +4,8 @@ from matplotlib.pylab import plt
 
 from bsb import from_storage
 
-scaffold = from_storage("my_circuit.hdf5")
-cell_type_name = "my_cell_type"
+scaffold = from_storage("network.hdf5")
+cell_type_name = "base_type"  # to which is attached the neuron_A.swc morpho
 ps = scaffold.get_placement_set(cell_type_name)
 
 # We will only display one cell here
@@ -36,4 +36,5 @@ mins = np.min(morpho.points, axis=0)
 maxs = np.max(morpho.points, axis=0)
 ax1.plot([mins + max(maxs - mins)])
 
-plt.show()
+# plt.show()
+fig.savefig("cell_morphology.png", dpi=200)

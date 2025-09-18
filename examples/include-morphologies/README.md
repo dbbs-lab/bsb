@@ -28,3 +28,10 @@ python include_morphologies/include_morphos.py
 ```
 
 You should obtain a `network.hdf5` file from this reconstruction.
+You can then display the morphologies of the file, following 
+[this tutorial](https://bsb.readthedocs.io/en/latest/examples/plot_morpho.html).
+
+The python script presented in this tutorial can be launched from the terminal:
+```bash
+python getting_started/plotting_with_branch_colors.py
+```

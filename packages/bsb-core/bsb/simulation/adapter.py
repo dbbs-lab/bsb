@@ -33,13 +33,15 @@ class BasicSimulationListener:
 
     def on_start(self):
         if self._use_tty:
-            empty_lines = "\n" * self._adapter.comm.get_size()
+            empty_lines = ""
             report(empty_lines, level=1)
+            self.progress_bar(0)
         else:
             pass
 
     def progress(self, kwargs=None):
         now = time()
+        self._status += self._step
         tic = now - self._last_tick
         el_time = now - self._start
         duration = self._adapter._duration
@@ -48,36 +50,31 @@ class BasicSimulationListener:
         msg += f"exectuted: {(self._status / duration) * 100:.2f}%"
         report(msg, level=1)
         self._last_tick = now
-        self._status += self._step
         return self._status
 
-    def progress_bar(self, current_percent, rank, mpi_size):
+    def progress_bar(self, current_percent):
         color = "\033[91m"  # red
         if current_percent > 33:
             color = "\033[93m"
         if current_percent > 66:
             color = "\033[92m"
-        sys.stdout.write(
-            "\x1b[1A" * (int(mpi_size) - rank)
+        msg = (
+            "\x1b[1A"
             + "\r"
             + str(self._sim_name)
             + " ["
             + color
             + "%s" % ("-" * current_percent + " " * (100 - current_percent))
-            + "\033[0m"
-            + "] "
+            + "\033[0m] "
             + str(current_percent)
             + "%"
-            + "\n" * (int(mpi_size) - rank)
         )
-        sys.stdout.flush()
+        report(msg, level=1)
 
     def use_bar(self, kwargs=None):
-        current_percent = int((self._status / self._adapter._duration) * 100)
-        rank = self._adapter.comm.get_rank()
-        mpi_size = self._adapter.comm.get_size()
-        self.progress_bar(current_percent, rank, mpi_size)
         self._status += self._step
+        current_percent = int((self._status / self._adapter._duration) * 100)
+        self.progress_bar(current_percent)
         return self._status
 
 

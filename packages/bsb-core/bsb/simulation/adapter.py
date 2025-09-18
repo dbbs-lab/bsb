@@ -23,14 +23,13 @@ class BasicSimulationListener:
         self._adapter = adapter
         self._start = self._last_tick = time()
         self._step = step
-        self.need_flush = False
         self._sim_name = [sim._name for sim in simulations]
         self._use_tty = os.isatty(sys.stdout.fileno()) and sum(os.get_terminal_size())
         if self._use_tty:
             self.progress = self.use_bar
 
     def get_next_checkpoint(self):
-        return self._status
+        return self._status + self._step
 
     def on_start(self):
         if self._use_tty:
@@ -188,9 +187,6 @@ class SimulatorAdapter(abc.ABC):
         for result in results:
             result.flush()
         return results
-
-    # def add_progress_listener(self, listener):
-    #     self._progress_listeners.append(listener)
 
     def implement_components(self, simulation):
         simdata = self.simdata[simulation]

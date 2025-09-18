@@ -6,9 +6,11 @@ from bsb_test import FixedPosConfigFixture, NumpyTestCase, RandomStorageFixture
 
 from bsb import (
     MPI,
+    AttributeMissingError,
     Scaffold,
     config,
     get_simulation_adapter,
+    options,
 )
 
 
@@ -294,12 +296,9 @@ class SpikeController(
     def __init__(self, **kwargs):
         super().__init__()
         self._status = 0
-        if hasattr(kwargs, "step"):
-            self._step = kwargs["step"]
-        self.need_flush = True
 
     def get_next_checkpoint(self):
-        return self._status + self._step
+        return self._status + self.step
 
     def progress(self, kwargs=None):
         # Flush data
@@ -307,7 +306,7 @@ class SpikeController(
         simdata.result.flush()
         # Free Memory
         simdata.arbor_sim.clear_samplers()
-        self._status += self._step
+        self._status += self.step
         return self._status
 
 
@@ -417,7 +416,7 @@ class TestAdapterControllers(
         adapter = get_simulation_adapter(sim.simulator)
         adapter.prepare(sim)
         self.assertEqual(
-            len(adapter._controllers), 1, "Only two controllers should be registered"
+            len(adapter._controllers), 1, "Only one controller should be registered"
         )
 
         self.assertEqual(
@@ -425,6 +424,58 @@ class TestAdapterControllers(
             "rec_15",
             "Only rec_15 device should be registered",
         )
+
+    def test_registration_of_listener(self):
+        self.network.simulations.test.devices["rec_15"] = dict(
+            device="spike_controller",
+            targetting={
+                "strategy": "cell_model",
+                "cell_models": ["test_cell"],
+            },
+            step=15,
+        )
+        options.simulation_report = 100
+
+        sim = self.network.simulations.test
+        adapter = get_simulation_adapter(sim.simulator)
+        adapter.simulate(sim)
+        self.assertEqual(
+            len(adapter._controllers), 2, "Exactly two controllers should be registered"
+        )
+
+        self.assertEqual(
+            adapter._controllers[0]._sim_name,
+            ["test"],
+            "The first controller should be the listener",
+        )
+
+    def test_incorrect_controller(self):
+        @config.node
+        class RottenController(
+            SpikeRecorder,
+            classmap_entry="rotten_controller",
+        ):
+            step = config.attr(type=float, required=True)
+
+            def __init__(self, **kwargs):
+                super().__init__()
+                self._status = 0
+
+            def get_next_checkpoint(self):
+                return self._status + self.step
+
+        self.network.simulations.test.devices["rec_15"] = dict(
+            device="rotten_controller",
+            targetting={
+                "strategy": "cell_model",
+                "cell_models": ["test_cell"],
+            },
+            step=15,
+        )
+        sim = self.network.simulations.test
+        adapter = get_simulation_adapter(sim.simulator)
+        with self.assertRaises(AttributeMissingError):
+            adapter.prepare(sim)
 
     def test_record_checkpoint(self):
         """Create a test with an AdapterController that flushes every 10 steps,

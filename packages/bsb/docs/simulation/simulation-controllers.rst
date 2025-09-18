@@ -2,19 +2,23 @@
 Simulation Controllers
 ######################
 
-Sometimes can be useful to stop the simulation at a certain checkpoint and trigger an action: could it be to reset a
-value or to save data. Here it is possible to make use of this feature with the controllers system:
-in practice the BSB will allow you to customize a SimulationComponent, either Cell, Connection od Device, to trigger an action at
-defined checkpoints.
+The Brain Scaffold Builder (BSB) allows you to define and trigger actions at specific checkpoints during a simulation.
+This is useful for tasks such as resetting values, saving data, or updating a component's state.
+You can apply this feature to any SimulationComponent (including ``cell_model``, ``connection_model`` and ``device``) by implementing a Controller.
 
-A controller is a Component that present two methods:
+A Controller is a component that must implement two primary methods:
 
- * get_next_checkpoint , method that will be called to ask the controller at what time will be its next checkpoint. It should return a *float* .
- * progress, method where to implement the action to trigger when the checkpoint is reached.
+  * ``get_next_checkpoint()``: This method returns a *float* representing the time of the next checkpoint. The simulation adapter calls this to determine when the controller's progress method should be triggered.
 
-optionally it could be implemented a method called on_start if is desired to trigger an action before the simulation starts.
+  * ``progress()``: This method contains the logic for the action to be performed when the checkpoint is reached.
 
-Example to extend a device MyDevice to be a controller that every fixed step will update status attribute and print it:
+An optional third method, ``on_start()``, can also be implemented to trigger an action at the beginning of the simulation.
+
+Example: A simple controlling Device
+------------------------------------
+
+This example demonstrates how to extend a custom Device named :guilabel:`MyDevice` to act as a controller.
+This controller updates a status attribute and prints its value every fixed time step.
 
 .. code-block:: python
 
@@ -31,12 +35,9 @@ Example to extend a device MyDevice to be a controller that every fixed step wil
         def get_next_checkpoint(self):
             return self.status + self.step
 
-        def progress(self, kwargs=None):
+        def progress(self):
             self.status += self.step
             print(self.status)
 
-.. note:
-    The progress method needs kwargs in the arguments, in default adapters it will receive as keyword arguments:
-    * simulations= list of Simulation objects that are run
-    * simdata= all the SimulationData stored
+
 

@@ -297,15 +297,18 @@ class SpikeController(
         super().__init__()
         self._status = 0
 
+    def implement(self, adapter, simulation, simdata):
+        super().implement(adapter, simulation, simdata)
+        self._simdata = simdata
+
     def get_next_checkpoint(self):
         return self._status + self.step
 
     def progress(self, kwargs=None):
         # Flush data
-        simdata = kwargs["simdata"]
-        simdata.result.flush()
+        self._simdata.result.flush()
         # Free Memory
-        simdata.arbor_sim.clear_samplers()
+        self._simdata.arbor_sim.clear_samplers()
         self._status += self.step
         return self._status
 

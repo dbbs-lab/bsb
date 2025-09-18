@@ -39,7 +39,7 @@ class BasicSimulationListener:
         else:
             pass
 
-    def progress(self, kwargs=None):
+    def progress(self):
         now = time()
         self._status += self._step
         tic = now - self._last_tick
@@ -71,7 +71,7 @@ class BasicSimulationListener:
         )
         report(msg, level=1)
 
-    def use_bar(self, kwargs=None):
+    def use_bar(self):
         self._status += self._step
         current_percent = int((self._status / self._adapter._duration) * 100)
         self.progress_bar(current_percent)
@@ -172,7 +172,7 @@ class SimulatorAdapter(abc.ABC):
 
     def execute(self, controller_ids, **kwargs):
         for i in controller_ids:
-            self._controllers[i].progress(kwargs=kwargs)
+            self._controllers[i].progress()
 
     def collect(self, results):
         """

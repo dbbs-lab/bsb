@@ -118,7 +118,7 @@ class NestAdapter(SimulatorAdapter):
             with nest.RunManager():
                 for t, cnt_ids in self.get_next_checkpoint():
                     nest.Run(t - self._prev_chkpoint)
-                    need_to_flush = self.execute(cnt_ids, simulations=simulations)
+                    need_to_flush = self.execute(cnt_ids)
                     if need_to_flush:
                         self.collect(results)
                     self._prev_chkpoint = t

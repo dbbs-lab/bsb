@@ -146,7 +146,7 @@ class NeuronAdapter(SimulatorAdapter):
 
             for t, cnt_ids in self.get_next_checkpoint():
                 pc.psolve(t)
-                self.execute(cnt_ids, simulations=simulations, simdata=self.simdata)
+                self.execute(cnt_ids)
 
             report("Finished simulation.", level=2)
         finally:

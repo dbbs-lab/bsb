@@ -454,7 +454,7 @@ class ArborAdapter(SimulatorAdapter):
 
             for t, cnt_ids in self.get_next_checkpoint():
                 arbor_sim.run(t * U.ms, dt=simulation.resolution * U.ms)
-                self.execute(cnt_ids, simulations=simulations, simdata=simdata)
+                self.execute(cnt_ids)
             report(f"Completed simulation. {time.time() - start:.2f}s", level=1)
             if simulation.profiling and arbor.config()["profiling"]:
                 report("printing profiler summary", level=2)

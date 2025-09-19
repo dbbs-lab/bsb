@@ -28,14 +28,16 @@ This controller updates a :guilabel:`status` attribute and prints the value of :
     ):
         step = config.attr(type=float, required=True)
 
-        def __init__(self, **kwargs):
+        def __init__(self):
             super().__init__()
             self.status = 0
 
         def get_next_checkpoint(self):
+        # Here insert the logic to determine the timing of your next checkpoint
             return self.status + self.step
 
         def progress(self):
+        # The checkpoint is reached, execute all the desired actions
             self.status += self.step
             print(self.ids)
 

@@ -119,6 +119,13 @@ Run a simulation from a compiled network architecture.
 * ``-o``, ``--output-folder``: Output the simulation results to an existing folder.
   If omitted, the current folder is used.
 
+* ``-v``, ``--verbosity``: Defines the verbosity level: 0 is completely silent, 1 is default,
+  2 is verbose, 3 is progress and 4 is debug.
+
+* ``--sr``, ``simulation_report``: Set the interval (in milliseconds, simulation time) for reporting simulation progress.
+  For example, use ``--sr 100`` to report progress every 100 ms.
+  If you omit this flag, the simulation will run without reporting progress.
+
 
 .. _bsb_cache:
 

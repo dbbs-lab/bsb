@@ -133,7 +133,6 @@ if typing.TYPE_CHECKING:
   import bsb.voxels
 
 AdapterError: type["bsb.exceptions.AdapterError"]
-AdapterProgress: type["bsb.simulation.adapter.AdapterProgress"]
 AfterConnectivityHook: type["bsb.postprocessing.AfterConnectivityHook"]
 AfterPlacementHook: type["bsb.postprocessing.AfterPlacementHook"]
 AllToAll: type["bsb.connectivity.general.AllToAll"]
@@ -141,6 +140,7 @@ AllenApiError: type["bsb.exceptions.AllenApiError"]
 AllenStructure: type["bsb.topology.partition.AllenStructure"]
 AttributeMissingError: type["bsb.exceptions.AttributeMissingError"]
 BaseCommand: type["bsb.cli.commands.BaseCommand"]
+BasicSimulationListener: type["bsb.simulation.adapter.BasicSimulationListener"]
 BidirectionalContact: type["bsb.postprocessing.BidirectionalContact"]
 BootError: type["bsb.exceptions.BootError"]
 BoxTree: type["bsb.trees.BoxTree"]

@@ -16,15 +16,15 @@ class Probe(ArborDevice):
                 f"`{self.probe_type}` is not a valid probe type for `{self.name}`"
             )
 
-    def implement(self, target):
-        probe_args = ("where", "mechanism", "ion", "state")
-        kwargs = dict((k, getattr(self, k)) for k in probe_args if hasattr(self, k))
-        return [getattr(arbor, self.get_probe_name())(**kwargs)]
+    # def implement(self, target):
+    #     probe_args = ("where", "mechanism", "ion", "state")
+    #     kwargs = dict((k, getattr(self, k)) for k in probe_args if hasattr(self, k))
+    #     return [getattr(arbor, self.get_probe_name())(**kwargs)]
 
-    def prepare_samples(self, sim, comm):
-        super().prepare_samples(sim, comm)
+    def implement(self, adapter, simulation, simdata):
+        super().implement(adapter, simulation, simdata)
         for probe_id, handle in zip(self._probe_ids, self._handles, strict=False):
-            self.adapter.result.add(ProbeRecorder(self, sim, probe_id, handle))
+            self.adapter.result.add(ProbeRecorder(self, simdata, probe_id, handle))
 
 
 class ProbeRecorder:

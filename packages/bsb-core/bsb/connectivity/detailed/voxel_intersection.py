@@ -71,20 +71,22 @@ class VoxelIntersection(Intersectional, ConnectionStrategy):
             )
             nb_points = np.array([len(m) for m in cand_mset])
             if not np.all(nb_points):
+                u_empty = np.unique(cand_mset.get_indices()[nb_points == 0])
                 hemitype_text = (
                     "postsynaptic" if self.favor_cache == "pre" else "presynaptic"
                 )
                 warn(
-                    f"{warn_message}{np.array(cand_mset.names)[nb_points == 0]}, "
+                    f"{warn_message}{np.array(cand_mset.names)[u_empty]}, "
                     f"assigned to {hemitype_text} cell: {cand_set.cell_type.name}."
                 )
             nb_points = np.array([len(m) for m in target_mset])
             if not np.all(nb_points):
+                u_empty = np.unique(target_mset.get_indices()[nb_points == 0])
                 hemitype_text = (
                     "presynaptic" if self.favor_cache == "pre" else "postsynaptic"
                 )
                 warn(
-                    f"{warn_message}{np.array(target_mset.names)[nb_points == 0]}, "
+                    f"{warn_message}{np.array(target_mset.names)[u_empty]}, "
                     f"assigned to {hemitype_text} cell: {target_set.cell_type.name}."
                 )
             self._match_voxel_intersection(

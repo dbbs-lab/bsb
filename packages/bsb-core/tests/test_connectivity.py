@@ -440,7 +440,8 @@ class TestConnWithSubCellLabels(
         conn = self.network.connectivity.self_intersect
         conn.connect = connect_spy.__get__(conn)
         try:
-            self.network.compile(append=True, skip_placement=True)
+            with self.assertWarns(UserWarning):
+                self.network.compile(append=True, skip_placement=True)
         except Exception as e:
             raise
             self.fail(f"Unexpected error: {e}")
@@ -621,8 +622,7 @@ class TestVoxelIntersection(
         )
         self.network.connectivity.intersect.presynaptic.morphology_labels = ["tip"]
         self.network.connectivity.intersect.postsynaptic.morphology_labels = ["top"]
-        with self.assertWarns(UserWarning):
-            self.network.compile()
+        self.network.compile()
         cs = self.network.get_connectivity_set("intersect")
         pre_chunks, pre_locs, post_chunks, post_locs = next(
             cs.load_connections().chunk_iter()

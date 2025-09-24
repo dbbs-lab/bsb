@@ -11,7 +11,7 @@ config.network.y = 200.0
 config.network.z = 300.0
 config.network.chunk_size = [100, 100, 100]
 
-config.partitions.add("stellate_layer", thickness=100)
+config.partitions.add("stellate_layer", thickness=300)
 
 config.regions.add(
     "brain_region",
@@ -52,7 +52,8 @@ config.connectivity.add(
     "stellate_to_stellate",
     strategy="bsb.connectivity.VoxelIntersection",
     presynaptic=dict(cell_types=["stellate_cell"], morphology_labels=["axon"]),
-    postsynaptic=dict(cell_types=["stellate_cell"], morphology_labels=["dendites"]),
+    postsynaptic=dict(cell_types=["stellate_cell"], morphology_labels=["dendrites"]),
+    affinity=0.5,
 )
 
 config.simulations.add(
@@ -61,6 +62,9 @@ config.simulations.add(
     resolution=0.025,
     duration=100,
     temperature=32,
+    cell_models={},
+    connection_models={},
+    devices={},
 )
 
 config.simulations["neuronsim"].cell_models = dict(

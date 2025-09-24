@@ -19,13 +19,13 @@ for signal in my_signals:
     if name_device == "synapses_rec" and not has_plotted_synapse:
         synapse_type = signal.annotations["synapse_type"]
         out_filename = (
-            f"simulation-results/{name_device}_{str(cell_id)}_{synapse_type}.png"
+            f"simulation-results/synapses_rec_{str(cell_id)}_{synapse_type}.png"
         )
         has_plotted_synapse = True
     # If the signal comes from a voltage recorder,
     # and if we did not plot a neuron recording yet
     elif name_device == "vrecorder" and not has_plotted_neuron:
-        out_filename = f"simulation-results/{name_device}_{str(cell_id)}.png"
+        out_filename = f"simulation-results/vrecorder_{str(cell_id)}.png"
         has_plotted_neuron = True
     # If we plotted both types of recording, we exit the loop
     elif has_plotted_neuron and has_plotted_synapse:

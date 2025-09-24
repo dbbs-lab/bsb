@@ -45,15 +45,15 @@ The network configuration should be as follows:
 
     .. literalinclude:: /../../../examples/neuron-simulation/neuron_simulation/guide_neuron.json
       :language: json
-      :lines: 1-68
+      :lines: 1-69
 
     .. literalinclude:: /../../../examples/neuron-simulation/neuron_simulation/guide_neuron.yaml
       :language: yaml
-      :lines: 1-61
+      :lines: 1-62
 
     .. literalinclude:: /../../../examples/neuron-simulation/neuron_simulation/guide_neuron.py
       :language: python
-      :lines: 1-56
+      :lines: 1-57
 
 Copy the configuration in you favorite format and put it in the project folder
 as ``neuron-simulation.[YOUR EXTENSION]``
@@ -88,15 +88,15 @@ milliseconds) and the :guilabel:`temperature` (celsius unit).
 
     .. literalinclude:: /../../../examples/neuron-simulation/neuron_simulation/guide_neuron.json
       :language: json
-      :lines: 69-74
+      :lines: 70-75
 
     .. literalinclude:: /../../../examples/neuron-simulation/neuron_simulation/guide_neuron.yaml
       :language: yaml
-      :lines: 62-67
+      :lines: 63-68
 
     .. literalinclude:: /../../../examples/neuron-simulation/neuron_simulation/guide_neuron.py
       :language: python
-      :lines: 58-64
+      :lines: 59-68
 
 Cell Models
 -----------
@@ -120,15 +120,15 @@ the ion channel mechanisms are in the attribute :guilabel:`cable_types`.
 
     .. literalinclude:: /../../../examples/neuron-simulation/neuron_simulation/guide_neuron.json
       :language: json
-      :lines: 75-80
+      :lines: 76-81
 
     .. literalinclude:: /../../../examples/neuron-simulation/neuron_simulation/guide_neuron.yaml
       :language: yaml
-      :lines: 68-71
+      :lines: 69-72
 
     .. literalinclude:: /../../../examples/neuron-simulation/neuron_simulation/guide_neuron.py
       :language: python
-      :lines: 66-68
+      :lines: 70-72
 
 Connection Models
 -----------------
@@ -146,15 +146,15 @@ model file: :guilabel:`GABA`.
 
     .. literalinclude:: /../../../examples/neuron-simulation/neuron_simulation/guide_neuron.json
       :language: json
-      :lines: 81-86
+      :lines: 82-87
 
     .. literalinclude:: /../../../examples/neuron-simulation/neuron_simulation/guide_neuron.yaml
       :language: yaml
-      :lines: 72-77
+      :lines: 73-78
 
     .. literalinclude:: /../../../examples/neuron-simulation/neuron_simulation/guide_neuron.py
       :language: python
-      :lines: 70-80
+      :lines: 74-84
 
 To each synapse is assigned a :guilabel:`weight` of 0.001 and a :guilabel:`delay` (ms) of 1.
 
@@ -174,15 +174,15 @@ devices (see the targetting section on :doc:`this page </simulation/intro>` for 
 
     .. literalinclude:: /../../../examples/neuron-simulation/neuron_simulation/guide_neuron.json
       :language: json
-      :lines: 87-127
+      :lines: 88-128
 
     .. literalinclude:: /../../../examples/neuron-simulation/neuron_simulation/guide_neuron.yaml
       :language: yaml
-      :lines: 78-126
+      :lines: 79-127
 
     .. literalinclude:: /../../../examples/neuron-simulation/neuron_simulation/guide_neuron.py
       :language: python
-      :lines: 82-115
+      :lines: 86-119
 
 In this example, a :guilabel:`spike_generator` is used to produce ``1`` spike (attribute
 :guilabel:`number`) at ``9`` ms and send it to the cell with ID ``0`` (using the
@@ -210,7 +210,7 @@ Final configuration file
 
   .. literalinclude:: /../../../examples/neuron-simulation/neuron_simulation/guide_neuron.py
     :language: python
-    :lines: 3-118
+    :lines: 3-122
 
 Running the Simulation
 ----------------------

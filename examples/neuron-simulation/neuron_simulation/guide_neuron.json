@@ -63,7 +63,8 @@
       "postsynaptic": {
         "cell_types": ["stellate_cell"],
         "morphology_labels" : ["dendrites"]
-      }
+      },
+      "affinity": 0.5
     }
   },
   "simulations": {
@@ -85,22 +86,22 @@
         }
       },
       "devices": {
-          "spike_generator": {
-              "device": "spike_generator",
-              "start": 9,
-              "number": 1,
-              "weight": 0.01,
-              "delay": 1,
-              "targetting": {
-                "strategy": "by_id",
-                "ids": {"stellate_cell": [0]}
-              },
-              "locations": {
-                "strategy": "branch",
-                "labels": ["dendrites"]
-              },
-              "synapses" : ["AMPA", "NMDA"]
-            },
+        "spike_generator": {
+          "device": "spike_generator",
+          "start": 9,
+          "number": 1,
+          "weight": 0.01,
+          "delay": 1,
+          "targetting": {
+            "strategy": "by_id",
+            "ids": {"stellate_cell": [0]}
+          },
+          "locations": {
+            "strategy": "branch",
+            "labels": ["dendrites"]
+          },
+          "synapses" : ["AMPA", "NMDA"]
+        },
         "vrecorder": {
           "device": "voltage_recorder",
           "targetting": {

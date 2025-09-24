@@ -59,6 +59,7 @@ connectivity:
         - stellate_cell
       morphology_labels:
         - dendrites
+    affinity: 0.5
 simulations:
   neuronsim:
     simulator: neuron

@@ -66,21 +66,27 @@ class VoxelIntersection(Intersectional, ConnectionStrategy):
             else:
                 target_mset = target_morpho(target_set)
                 cand_mset = cand_morpho(cand_set)
-            warn_message = f"{self.name}: No morphology point matching label filters for"
-            if not np.all([len(m) for m in cand_mset]):
+            warn_message = (
+                f"{self.name}: No point matching label filters for morphologies: "
+            )
+            nb_points = np.array([len(m) for m in cand_mset])
+            if not np.all(nb_points):
                 hemitype_text = (
                     "postsynaptic" if self.favor_cache == "pre" else "presynaptic"
                 )
-                warn(f"{warn_message} {hemitype_text} cell {cand_set.cell_type.name}.")
-                # no contact possible skipping
-                continue
-            if not np.all([len(m) for m in target_mset]):
+                warn(
+                    f"{warn_message}{np.array(cand_mset.names)[nb_points == 0]}, "
+                    f"assigned to {hemitype_text} cell: {cand_set.cell_type.name}."
+                )
+            nb_points = np.array([len(m) for m in target_mset])
+            if not np.all(nb_points):
                 hemitype_text = (
                     "presynaptic" if self.favor_cache == "pre" else "postsynaptic"
                 )
-                warn(f"{warn_message} {hemitype_text} cell {target_set.cell_type.name}.")
-                # no contact possible skipping
-                continue
+                warn(
+                    f"{warn_message}{np.array(target_mset.names)[nb_points == 0]}, "
+                    f"assigned to {hemitype_text} cell: {target_set.cell_type.name}."
+                )
             self._match_voxel_intersection(
                 match_itr, target_set, cand_set, target_mset, cand_mset
             )

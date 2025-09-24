@@ -54,7 +54,7 @@ referencing it by name in :guilabel:`cell_types.base_type.spatial.morphologies`:
 
   .. literalinclude:: /../../../examples/include-morphologies/include_morphologies/include_morphos.yaml
     :language: yaml
-    :lines: 28-34
+    :lines: 26-32
     :emphasize-lines: 6-7
 
   .. literalinclude:: /../../../examples/include-morphologies/include_morphologies/include_morphos.json
@@ -168,7 +168,7 @@ connection strategies such as :doc:`VoxelIntersection </connectivity/connection-
 
   .. literalinclude:: /../../../examples/include-morphologies/include_morphologies/include_morphos.yaml
     :language: yaml
-    :lines: 55-63
+    :lines: 52-60
 
   .. literalinclude:: /../../../examples/include-morphologies/include_morphologies/include_morphos.json
     :language: json
@@ -181,21 +181,54 @@ connection strategies such as :doc:`VoxelIntersection </connectivity/connection-
 Note also that with Voxel Intersection,
 you can specify which parts of the morphologies should create contacts (e.g, dendrites and axons):
 
-.. code-block:: json
+.. tab-set-code::
+
+  .. code-block:: yaml
+
+    connectivity:
+      A_to_B:
+        strategy: bsb.connectivity.VoxelIntersection
+        presynaptic:
+          cell_types:
+          - base_type
+          morphology_labels:
+          - axon
+        postsynaptic:
+          cell_types:
+          - top_type
+          morphology_labels:
+          - dendrites
+
+  .. code-block:: json
 
     "connectivity": {
-    "A_to_B": {
-      "strategy": "bsb.connectivity.VoxelIntersection",
-      "presynaptic": {
-        "cell_types": ["base_type"],
-        "morphology_labels": ["axon"]
-      },
-      "postsynaptic": {
+      "A_to_B": {
+        "strategy": "bsb.connectivity.VoxelIntersection",
+        "presynaptic": {
+          "cell_types": ["base_type"],
+          "morphology_labels": ["axon"]
+        },
+        "postsynaptic": {
           "cell_types": ["top_type"],
           "morphology_labels": ["dendrites"]
+        }
       }
     }
-  }
+
+  .. code-block:: python
+
+    config.connectivity.add(
+        "A_to_B",
+        strategy="bsb.connectivity.VoxelIntersection",
+        presynaptic=dict(
+            cell_types=["base_type"],
+            morphology_labels=["axon"],
+        ),
+        postsynaptic=dict(
+            cell_types=["top_type"],
+            morphology_labels=["dendrites"],
+        ),
+    )
 
 This happens thanks to the labels that are attached to your morphology points.
 

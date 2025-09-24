@@ -581,16 +581,20 @@ class AllenStructure(NrrdVoxels, classmap_entry="allen"):
         return self.source is None and len(self.sources) == 0
 
     @config.property(type=str)
-    @functools.cache
     def mask_source(self):
         if hasattr(self, "_annotations_file"):
             return self._annotations_file
         else:
-            node = NrrdDependencyNode()
-            node._file = _cached_file(
-                "https://download.alleninstitute.org/informatics-archive/current-release/mouse_ccf/annotation/ccf_2017/annotation_25.nrrd",
-            )
-            return node
+            return self._dl_mask()
+
+    @classmethod
+    @functools.cache
+    def _dl_mask(cls):
+        node = NrrdDependencyNode()
+        node._file = _cached_file(
+            "https://download.alleninstitute.org/informatics-archive/current-release/mouse_ccf/annotation/ccf_2017/annotation_25.nrrd",
+        )
+        return node
 
     @mask_source.setter
     def mask_source(self, value):
@@ -644,7 +648,7 @@ class AllenStructure(NrrdVoxels, classmap_entry="allen"):
         :returns: A boolean of the mask filtered based on the Allen structure.
         :rtype: Callable[numpy.ndarray]
         """
-        mask_data, _ = nrrd.read(cls._dl_mask())
+        mask_data = cls._dl_mask().load_object()
         return cls.get_structure_mask_condition(find)(mask_data)
 
     @classmethod

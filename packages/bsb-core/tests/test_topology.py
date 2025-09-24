@@ -1,11 +1,14 @@
 import unittest
 
 import numpy as np
-from bsb_test import NumpyTestCase, RandomStorageFixture, get_data_path
+from bsb_test import (
+    NumpyTestCase,
+    RandomStorageFixture,
+    get_data_path,
+    skip_test_allen_api,
+)
 
 from bsb import (
-    AllenApiError,
-    AllenStructure,
     Configuration,
     LayoutError,
     Scaffold,
@@ -73,16 +76,6 @@ class TestTopology(unittest.TestCase):
         self.assertEqual(
             [[1, 0, 0], [1, 0, 1], [2, 0, 0], [2, 0, 1]], l_.to_chunks(cs).tolist()
         )
-
-
-def skip_test_allen_api():
-    try:
-        AllenStructure._dl_structure_ontology()
-    except AllenApiError:
-        return True
-    except Exception:
-        pass
-    return False
 
 
 class TestStack(

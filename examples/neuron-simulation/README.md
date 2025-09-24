@@ -19,15 +19,15 @@ The configuration files in the folder `neuron_simulation` named `guide_neuron.[e
 corresponds to the configuration files you should obtain upon completing
 [the BSB NEURON guide](https://bsb.readthedocs.io/en/latest/getting-started/simulations/guide_neuron.html).
 
-To run the BSB reconstruction and simulation, run the following command in this folder:
+To run the BSB reconstruction and simulation, run the following command in the `neuron_simulation` folder:
 ```bash
-bsb compile neuron_simulation/guide_neuron.yaml -v 3 --clear
+bsb compile guide_neuron.yaml -v 3 --clear
 bsb simulate my_network.hdf5 neuronsim -o simulation-results
 # or
-bsb compile neuron_simulation/guide_neuron.json -v 3 --clear
+bsb compile guide_neuron.json -v 3 --clear
 bsb simulate my_network.hdf5 neuronsim -o simulation-results
 # or
-python neuron_simulation/guide_neuron.py
+python guide_neuron.py
 ```
 
 You should obtain a `network.hdf5` file from this reconstruction and the results of the 
@@ -37,6 +37,6 @@ You can then extract NEURON simulation results, following
 
 The python script presented in this tutorial can be launched from the terminal:
 ```bash
-python neuron_simulation/analyze_analog_results.py
+python analyze_analog_results.py
 ```
 Note that you might need to adapt it to your simulation output files.

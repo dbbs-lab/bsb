@@ -14,6 +14,8 @@ from pathlib import Path
 import numpy as _np
 import requests
 from bsb import (
+    AllenApiError,
+    AllenStructure,
     Chunk,
     Configuration,
     Scaffold,
@@ -246,6 +248,16 @@ def skipIfOffline(url=None, scheme: UrlScheme = None):
     return unittest.skipIf(offline, err_msg)
 
 
+def skip_test_allen_api():
+    try:
+        AllenStructure._dl_structure_ontology()
+    except AllenApiError:
+        return True
+    except Exception:
+        pass
+    return False
+
+
 class SpoofedEntryPoint(EntryPoint):
     def __new__(cls, name, value, group, advert):
         try:
@@ -320,6 +332,7 @@ __all__ = [
     "get_morphology_path",
     "get_all_morphology_paths",
     "skipIfOffline",
+    "skip_test_allen_api",
     "SpoofedEntryPoint",
     "plugin_context",
     "spoof_plugin",

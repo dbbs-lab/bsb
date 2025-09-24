@@ -5,9 +5,10 @@
     "root": "allen_densities.hdf5"
   },
   "network": {
-    "x": 4000.0,
-    "y": 4000.0,
-    "z": 4000.0
+    "x": 13200,
+    "y": 8000,
+    "z": 11400,
+    "chunk_size": 250
   },
   "regions": {
     "brain": {"children": ["declive"]}
@@ -24,28 +25,24 @@
     "my_cell": {
       "spatial": {
         "radius": 2.5,
-        "density_key": "my_cell_density",
         "density": 0.003
+      }
+    },
+    "my_other_cell": {
+      "spatial": {
+        "radius": 2.5,
+        "density_key": "my_cell_density"
       }
     }
   },
   "placement": {
     "example_placement": {
-      "cls": "bsb.placement.RandomPlacement",
-      "cell_types": ["my_cell"],
+      "strategy": "bsb.placement.RandomPlacement",
+      "cell_types": [
+        "my_cell",
+        "my_other_cell"
+      ],
       "partitions": ["declive"]
     }
-  },
-  "after_placement": {
-
-  },
-  "connectivity": {
-
-  },
-  "after_connectivity": {
-
-  },
-  "simulations": {
-
   }
 }

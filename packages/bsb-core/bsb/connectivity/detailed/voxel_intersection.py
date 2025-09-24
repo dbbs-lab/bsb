@@ -72,11 +72,15 @@ class VoxelIntersection(Intersectional, ConnectionStrategy):
                     "postsynaptic" if self.favor_cache == "pre" else "presynaptic"
                 )
                 warn(f"{warn_message} {hemitype_text} cell {cand_set.cell_type.name}.")
+                # no contact possible skipping
+                continue
             if not np.all([len(m) for m in target_mset]):
                 hemitype_text = (
                     "presynaptic" if self.favor_cache == "pre" else "postsynaptic"
                 )
                 warn(f"{warn_message} {hemitype_text} cell {target_set.cell_type.name}.")
+                # no contact possible skipping
+                continue
             self._match_voxel_intersection(
                 match_itr, target_set, cand_set, target_mset, cand_mset
             )

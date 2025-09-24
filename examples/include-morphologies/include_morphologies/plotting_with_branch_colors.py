@@ -30,11 +30,12 @@ for branch in morpho.branches:
             for i in range(len(branch.points))
         ]
     )
-    ax1.plot(x[~is_axon], y[~is_axon], z[~is_axon], c="blue")
-    ax1.plot(x[is_axon], y[is_axon], z[is_axon], c="red")
-mins = np.min(morpho.points, axis=0)
-maxs = np.max(morpho.points, axis=0)
-ax1.plot([mins + max(maxs - mins)])
-
+    (dendrite,) = ax1.plot(x[~is_axon], y[~is_axon], z[~is_axon], c="blue")
+    (axon,) = ax1.plot(x[is_axon], y[is_axon], z[is_axon], c="red")
+ax1.set_xlabel("x [µm]")
+ax1.set_ylabel("y [µm]")
+ax1.set_zlabel("z [µm]")
+if len(morpho.branches) > 0:
+    ax1.legend([dendrite, axon], ["dendrites", "axon"])
 # plt.show()
 fig.savefig("cell_morphology.png", dpi=200)

@@ -38,7 +38,7 @@ config.cell_types.add(
     "top_type",
     spatial=dict(
         radius=7,
-        count=10,
+        count=40,
         morphologies=["neuron_B"],
     ),
 )

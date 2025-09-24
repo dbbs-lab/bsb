@@ -1,0 +1,52 @@
+import os
+from os.path import dirname, abspath, isfile, join
+from sys import path
+import unittest
+
+from bsb import parse_configuration_file, Scaffold, from_storage
+from bsb_test import RandomStorageFixture
+
+CONFIG_FOLDER = abspath(join(dirname(dirname(__file__)), "include_morphologies"))
+path.insert(1, CONFIG_FOLDER)
+
+
+class TestIncludeMorphoExamples(
+    RandomStorageFixture,
+    unittest.TestCase,
+    engine_name="hdf5",
+):
+    def setUp(self):
+        super().setUp()
+        os.chdir(CONFIG_FOLDER)
+
+    def _test_scaffold_results(self):
+        self.assertEqual(
+            len(self.scaffold.cell_types["base_type"].get_placement_set()), 1560
+        )
+        self.assertEqual(
+            len(self.scaffold.cell_types["top_type"].get_placement_set()), 40
+        )
+        self.assertGreater(len(self.scaffold.get_connectivity_set("A_to_B")), 1000)
+
+    def test_json_example(self):
+        self.cfg = parse_configuration_file(join(CONFIG_FOLDER, "include_morphos.json"))
+        self.scaffold = Scaffold(self.cfg, self.storage)
+        self.scaffold.compile()
+        self._test_scaffold_results()
+
+    def test_yaml_example(self):
+        self.cfg = parse_configuration_file(join(CONFIG_FOLDER, "include_morphos.yaml"))
+        self.scaffold = Scaffold(self.cfg, self.storage)
+        self.scaffold.compile()
+        self._test_scaffold_results()
+
+    def test_python_example(self):
+        import include_morphos  # noqa: F401
+
+        self.scaffold = from_storage("network.hdf5")
+        self._test_scaffold_results()
+        # check if plotting_with_branch_colors runs without any problems
+        import plotting_with_branch_colors  # noqa: F401
+        self.assertTrue(isfile("cell_morphology.png"))
+        os.remove("network.hdf5")
+        os.remove("cell_morphology.png")

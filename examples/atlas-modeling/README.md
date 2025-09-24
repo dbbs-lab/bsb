@@ -23,7 +23,7 @@ To run the BSB reconstruction, run the following command in the `atlas_modeling`
 ```bash
 bsb compile atlas_structure.json -v 3 --clear
 ```
-You should obtain a `network.hdf5` file from this reconstruction.
+You should obtain a `allen_densities.hdf5` file from this reconstruction.
 
 You can also learn how to manipulate the Allen Brain Region Hierarchy with the python script in the
 same folder:

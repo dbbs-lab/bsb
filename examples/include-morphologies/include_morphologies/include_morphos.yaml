@@ -10,8 +10,6 @@ morphologies:
 - neuron_A.swc
 - name: neuron_B
   file: neuron2.swc
-- name: neron_NM
-  file: nm://cell005_GroundTruth
 regions:
   brain_region:
     type: stack
@@ -38,7 +36,6 @@ cell_types:
       count: 40
       morphologies:
       - neuron_B
-      - neuron_NM
 placement:
   base_placement:
     strategy: bsb.placement.RandomPlacement

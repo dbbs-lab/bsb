@@ -44,5 +44,6 @@
       ],
       "partitions": ["declive"]
     }
-  }
+  },
+  "connectivity": {}
 }

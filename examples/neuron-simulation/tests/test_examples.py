@@ -1,13 +1,13 @@
 import os
 import re
 import shutil
-from neo import io
-from os.path import dirname, abspath, join, isdir, isfile
-from sys import path
 import unittest
+from os.path import abspath, dirname, isdir, isfile, join
+from sys import path
 
-from bsb import parse_configuration_file, Scaffold, from_storage
+from bsb import Scaffold, from_storage, parse_configuration_file
 from bsb_test import RandomStorageFixture
+from neo import io
 
 CONFIG_FOLDER = abspath(join(dirname(dirname(__file__)), "neuron_simulation"))
 path.insert(1, CONFIG_FOLDER)
@@ -19,8 +19,8 @@ class TestNeuronExamples(
     engine_name="hdf5",
 ):
     def _cleanup(self):
-        if isdir("simulations-results"):
-            shutil.rmtree("simulations-results")
+        if isdir("simulation-results"):
+            shutil.rmtree("simulation-results")
 
     def setUp(self):
         os.chdir(CONFIG_FOLDER)
@@ -51,8 +51,8 @@ class TestNeuronExamples(
             if signal.name == "synapses_rec":
                 count_synapses += 1
             self.assertEqual(signal.t_start, 0)
-            self.assertEqual(signal.t_stop, 100)
-            self.assertEqual(len(signal.magnitude), 100 / 0.025)
+            self.assertEqual(signal.t_stop, 5000)
+            self.assertEqual(len(signal.magnitude), 5000 / 0.1)
 
         # we should get some results for each recording type
         self.assertGreater(count_neurons, 5)
@@ -79,19 +79,17 @@ class TestNeuronExamples(
 
         self.scaffold = from_storage("my_network.hdf5")
         self._test_scaffold_results()
-        self.assertTrue(isfile("simulations-results/neuronsimulation.nio"))
-        results = io.NixIO("simulations-results/neuronsimulation.nio", mode="ro")
+        self.assertTrue(isfile("simulation-results/neuronsimulation.nio"))
+        results = io.NixIO("simulation-results/neuronsimulation.nio", mode="ro")
         self._test_simulation_results(
             results.read_all_blocks()[0].segments[0].analogsignals
         )
         # check if analyze analog results runs without any problems
         import analyze_analog_results  # noqa: F401
 
-        files = os.listdir("simulations-results")  # two pngs 1 nio file
-        self.assertTrue("neuronsimulation.nio" in files)
+        files = os.listdir("simulation-results")  # two pngs 1 nio file
+        self.assertEqual(len(files), 3)
         self.assertTrue(any([re.search("^vrecorder_[0-9]+\.png$", f) for f in files]))
-        self.assertTrue(
-            any([re.search("^synapses_rec_[0-9]+\.png$", f) for f in files])
-        )
+        self.assertTrue(any([re.search("^synapses_rec_[0-9]+\.png$", f) for f in files]))
 
         os.remove("my_network.hdf5")

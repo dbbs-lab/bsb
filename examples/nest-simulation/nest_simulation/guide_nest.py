@@ -81,6 +81,8 @@ config.simulations["basal_activity"].devices = dict(
     ),
 )
 
+scaffold.compile(clear=True)
+
 # create the simulation results folder
 root = pathlib.Path("simulation-results")
 root.mkdir(exist_ok=True)

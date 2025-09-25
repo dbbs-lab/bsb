@@ -1,3 +1,5 @@
+from itertools import islice
+
 import numpy as np
 
 from bsb import from_storage
@@ -21,5 +23,6 @@ for type_name, cell_type in scaffold.cell_types.items():
 # Load the connection information from the storage
 # for a specific connection set
 cs = scaffold.get_connectivity_set("A_to_B")
-for src_locs, dest_locs in cs.load_connections():
+# prints the first 100 connections
+for src_locs, dest_locs in islice(cs.load_connections(), 100):
     print(f"Cell id: {src_locs[0]} connects to cell {dest_locs[0]}")

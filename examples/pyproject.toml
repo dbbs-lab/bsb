@@ -1,0 +1,39 @@
+[project]
+name = "examples"
+version = "6.0.6"
+description = "BSB examples"
+requires-python = ">=3.9,<4"
+readme = 'README.md'
+dependencies = []
+
+[tool.hatch.build.targets.wheel]
+packages = ["examples"]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[dependency-groups]
+dev = ["ruff>=0.8.2"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.ruff]
+exclude = [ ".ruff_cache", ".svn", ".tox", ".venv", "dist" ]
+line-length = 90
+indent-width = 4
+
+  [tool.ruff.format]
+  quote-style = "double"
+  indent-style = "space"
+  skip-magic-trailing-comma = false
+  line-ending = "auto"
+  docstring-code-format = true
+  docstring-code-line-length = 90
+
+  [tool.ruff.lint]
+  select = [ "E", "F", "UP", "B", "SIM", "I" ]
+  ignore = []
+  fixable = ["ALL"]
+  unfixable = []

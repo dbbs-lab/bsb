@@ -1,9 +1,9 @@
 import os
-from os.path import dirname, abspath, join
-from sys import path
 import unittest
+from os.path import abspath, dirname, join
+from sys import path
 
-from bsb import parse_configuration_file, Scaffold
+from bsb import Scaffold, parse_configuration_file
 from bsb_test import RandomStorageFixture, skip_test_allen_api
 
 CONFIG_FOLDER = abspath(join(dirname(dirname(__file__)), "atlas_modeling"))

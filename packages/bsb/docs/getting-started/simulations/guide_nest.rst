@@ -62,7 +62,7 @@ Therefore, your simulation block should be structured as follows:
 
     .. literalinclude:: /../../../examples/nest-simulation/nest_simulation/guide_nest.py
         :language: python
-        :lines: 3-18
+        :lines: 46-53
 
 .. note::
 
@@ -127,7 +127,7 @@ Still, you can modify certain parameters, by setting its :guilabel:`constants` d
 
     .. literalinclude:: /../../../examples/nest-simulation/nest_simulation/guide_nest.py
         :language: python
-        :lines: 20-23
+        :lines: 55-58
 
 Connection Models
 -----------------
@@ -150,7 +150,7 @@ In this example, we assign the ``static_synapse`` model to the connections :guil
 
     .. literalinclude:: /../../../examples/nest-simulation/nest_simulation/guide_nest.py
         :language: python
-        :lines: 25-27
+        :lines: 60-62
 
 For this model, the synapse model needs ``weight`` and ``delay`` parameters that are set to 100 and 1 ms,
 respectively.
@@ -178,7 +178,7 @@ filter elements of your neuron circuit to which you want to link your devices (s
 
     .. literalinclude:: /../../../examples/nest-simulation/nest_simulation/guide_nest.py
         :language: python
-        :lines: 29-47
+        :lines: 64-82
 
 In our example, we add a ``poisson_generator`` that simulates cells spiking at ``20`` Hz.
 These latter "cells" are each connected one ``top_type`` cell and transmit their spike events with a delay
@@ -198,7 +198,7 @@ Final configuration file
 
   .. literalinclude:: /../../../examples/nest-simulation/nest_simulation/guide_nest.py
     :language: python
-    :lines: 3-47
+    :lines: 46-82
 
 
 Running the Simulation

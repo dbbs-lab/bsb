@@ -1,9 +1,9 @@
 import os
-from os.path import dirname, abspath, isfile, join
-from sys import path
 import unittest
+from os.path import abspath, dirname, isfile, join
+from sys import path
 
-from bsb import parse_configuration_file, Scaffold, from_storage
+from bsb import Scaffold, from_storage, parse_configuration_file
 from bsb_test import RandomStorageFixture
 
 CONFIG_FOLDER = abspath(join(dirname(dirname(__file__)), "include_morphologies"))
@@ -47,6 +47,7 @@ class TestIncludeMorphoExamples(
         self._test_scaffold_results()
         # check if plotting_with_branch_colors runs without any problems
         import plotting_with_branch_colors  # noqa: F401
+
         self.assertTrue(isfile("cell_morphology.png"))
         os.remove("network.hdf5")
         os.remove("cell_morphology.png")

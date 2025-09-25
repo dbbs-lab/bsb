@@ -8,28 +8,10 @@ on:
     types: [ opened, synchronize, reopened, review_requested ]
 
 jobs:
-  find_examples:
+  test_examples:
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.list-examples.outputs.folders }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - id: list-examples
-        run: |
-          # find folders inside the example folder
-          folders=$(find examples -maxdepth 1 -mindepth 1 -type d)
-          folders=[\"$(echo $folders | sed -r 's/[ ]+/", "/g')\"]
-          echo "folders=$folders" >> $GITHUB_OUTPUT
-  
-  test_examples:
-    needs: [ find_examples ]
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        folder: ${{ fromJSON(needs.find_examples.outputs.matrix) }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -40,13 +22,23 @@ jobs:
           sudo apt update
           sudo apt install libhdf5-dev
 
+      - name: Install nodejs
+        run: |
+          curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+          \. "$HOME/.nvm/nvm.sh"
+          nvm install --lts
+
       - name: Install uv
         uses: astral-sh/setup-uv@v5
 
+      - name: Cache NEST
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.NEST_FOLDER }}
+          key: ${{ runner.os }}-3.12-nest
+
       - name: Run unittests
         run: |
-          cd ${{ matrix.folder }}
-          uv sync
-          uv run python -m unittest discover -v -s tests
+          ./nx run examples:tests
         env:
           UV_PYTHON: 3.12

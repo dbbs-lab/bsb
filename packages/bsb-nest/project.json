@@ -18,7 +18,7 @@
       "options": {
         "commands": [
           "uv pip install cmake cython~=3.0.12",
-          "uv run bash install-nest.sh"
+          "uv run bash ../../devtools/install-nest.sh"
         ],
         "parallel": false,
         "cwd": "{projectRoot}"

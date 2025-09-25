@@ -20,7 +20,7 @@ folder. You can load a stored network from file using the method
 
 .. literalinclude:: /../../../examples/getting-started/getting_started/load_data.py
    :language: python
-   :lines: 3-5
+   :lines: 5-7
    :emphasize-lines: 3
 
 Once you have loaded the `Scaffold` object, you have access to its `Configuration`
@@ -45,7 +45,7 @@ needless typing and repetition.
 
 .. literalinclude:: /../../../examples/getting-started/getting_started/load_data.py
    :language: python
-   :lines: 8-11
+   :lines: 10-13
    :emphasize-lines: 1
 
 Placement data
@@ -57,7 +57,7 @@ This example shows how to access the cell positions of each population:
 
 .. literalinclude:: /../../../examples/getting-started/getting_started/load_data.py
    :language: python
-   :lines: 14-19
+   :lines: 16-21
    :emphasize-lines: 2
 
 Take some time to familiarize yourself with `PlacementSet` methods
@@ -76,8 +76,8 @@ id of each connected pair.
 
 .. literalinclude:: /../../../examples/getting-started/getting_started/load_data.py
    :language: python
-   :lines: 23-25
-   :emphasize-lines: 1
+   :lines: 1, 25-28
+   :emphasize-lines: 2
 
 See more info on how to manipulate `ConnectivitySet` :doc:`here </connectivity/connectivity-set>`.
 

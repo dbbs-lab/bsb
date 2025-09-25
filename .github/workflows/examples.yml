@@ -7,6 +7,10 @@ on:
   pull_request:
     types: [ opened, synchronize, reopened, review_requested ]
 
+env:
+  NEST_VERSION: 3.7
+  NEST_FOLDER: ${{ github.workspace }}/.nx/installation/nest
+
 jobs:
   test_examples:
     runs-on: ubuntu-latest

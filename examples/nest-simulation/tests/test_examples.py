@@ -1,12 +1,11 @@
 import os
 import shutil
 import unittest
-from os.path import abspath, dirname, join, isdir, isfile
+from os.path import abspath, dirname, isdir, isfile, join
 from sys import path
 
 import numpy as np
-
-from bsb import parse_configuration_file, Scaffold, from_storage
+from bsb import Scaffold, from_storage, parse_configuration_file
 from bsb_test import RandomStorageFixture
 from neo import io
 

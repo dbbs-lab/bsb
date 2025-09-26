@@ -43,6 +43,6 @@ jobs:
 
       - name: Run unittests
         run: |
-          ./nx run examples:tests
+          ./nx run examples:test
         env:
           UV_PYTHON: 3.12

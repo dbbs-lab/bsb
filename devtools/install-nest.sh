@@ -1,9 +1,9 @@
 # Get Nest installation folder
+echo "NEST folder: $NEST_FOLDER"
 if [ -z "$NEST_FOLDER" ]; then
   SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]:-$0}"; )" &> /dev/null && pwd 2> /dev/null; )";
   NEST_FOLDER="$(dirname $SCRIPT_DIR)/.nx/installation/nest";
 fi
-echo "NEST folder: $NEST_FOLDER"
 # Get NEST version
 if [ -z "$NEST_VERSION" ]; then NEST_VERSION="3.7"; fi
 

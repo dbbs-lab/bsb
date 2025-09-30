@@ -50,7 +50,7 @@ class PlacementDud(PlacementStrategy):
 class VoxTest(Voxels, classmap_entry="vox_test"):
     loc_data = np.random.rand(8, 8, 8)
 
-    def get_voxelset(self):
+    def to_voxels(self):
         return VoxelSet(
             np.transpose(np.nonzero(self.loc_data)),
             np.array([100, 100, 100], dtype=int),
@@ -185,6 +185,19 @@ class TestIndicators(
         with self.assertRaises(IndicatorError):
             indicators["cell_no_ind"].guess()
 
+    def test_guess_vox_density_without_voxels(self):
+        cfg = Configuration.default(
+            partitions=dict(dud_layer2=dict(thickness=120)),
+            cell_types=dict(cell_density_key=dict(spatial={"density_key": "vox_density", "radius": 5.6})),
+            placement=dict(dud3=dict(strategy="bsb.placement.RandomPlacement",
+            partitions=["dud_layer2"],
+            cell_types=["cell_density_key"],))
+        )
+        self.network = Scaffold(cfg, self.storage)
+        indic = self.network.placement["dud3"].get_indicators()["cell_density_key"]
+        with self.assertRaises(PlacementError):
+            indic.guess()
+
     def test_guess_vox_density(self):
         indicators = self.placement2.get_indicators()
         dud3_ind = indicators["cell_rel_dens_key"]
@@ -194,8 +207,8 @@ class TestIndicators(
         predicted_count = (self.voxels.loc_data * 100**3).flatten()
         guess4 = dud4_ind.guess()
         self.assertTrue(abs(np.sum(predicted_count) - guess4) <= 1)
-        guess4 = dud4_ind.guess(voxels=self.voxels.get_voxelset())
-        guess3 = dud3_ind.guess(voxels=self.voxels.get_voxelset())
+        guess4 = dud4_ind.guess(voxels=self.voxels.to_voxels())
+        guess3 = dud3_ind.guess(voxels=self.voxels.to_voxels())
         self.assertTrue(np.all(np.absolute(predicted_count - guess4) <= 1))
 
         self.assertTrue(
@@ -225,7 +238,7 @@ class TestIndicators(
         self.placement2.overrides.cell_density_key.density_key = "bla"
         with self.assertRaises(RuntimeError):
             # voxel density key not found
-            dud4_ind.guess(voxels=self.voxels.get_voxelset())
+            dud4_ind.guess(voxels=self.voxels.to_voxels())
 
     def test_regression_issue_885(self):
         # Test placement with count ratio in separated partitions

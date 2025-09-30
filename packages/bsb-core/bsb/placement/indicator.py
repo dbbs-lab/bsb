@@ -74,7 +74,7 @@ class PlacementIndicator:
     def guess(self, chunk=None, voxels=None):
         """
         Estimate the count of cell to place based on the cell_type's PlacementIndications.
-        Float estimates are converted to int using an acceptance- rejection method.
+        Float estimates are converted to int using an acceptance-rejection method.
 
         :param chunk: if provided, will estimate the number of cell within the Chunk.
         :type chunk: bsb.storage._chunks.Chunk
@@ -155,7 +155,10 @@ class PlacementIndicator:
             if voxels is None:
                 estimate = 0
                 for p in self.partitions:
-                    estimate += np.sum(self._estim_for_voxels(p.voxelset, density_key))
+                    try:
+                        estimate += np.sum(self._estim_for_voxels(p.to_voxels(), density_key))
+                    except IndexError as _:
+                        raise PlacementError(f"Partition {p} voxelset does not have the density key {density_key}")
             elif density_key in voxels.data_keys:
                 estimate = self._estim_for_voxels(voxels, density_key)
             else:

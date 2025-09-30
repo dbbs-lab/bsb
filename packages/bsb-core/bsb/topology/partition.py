@@ -113,6 +113,9 @@ class Partition(abc.ABC):
     def to_voxels(self):
         """
         Voxelize the partition's occupation.
+
+        :returns: VoxelSet of the Partition sources.
+        :rtype: bsb.voxels.VoxelSet
         """
 
         chunk_size = self.scaffold.network.chunk_size
@@ -193,6 +196,9 @@ class Rhomboid(Partition, classmap_entry="rhomboid"):
     Boolean flag to authorize the translation of the partition.
     """
     orientation: list[float] = config.attr(type=types.list(type=float, size=3))
+    """
+    Vector describing the 3D orientation of the partition.
+    """
     can_rotate: bool = config.attr(type=bool, default=True)
     """
     Boolean flag to authorize the rotation of the partition.
@@ -328,13 +334,9 @@ class Voxels(Partition, abc.ABC, classmap_entry=None):
     Partition based on a set of voxels.
     """
 
-    @abc.abstractmethod
-    def get_voxelset(self):  # pragma: nocover
-        pass
-
     @functools.cached_property
     def voxelset(self):
-        return self.get_voxelset()
+        return self.to_voxels()
 
     def to_chunks(self, chunk_size):
         return self.voxelset.snap_to_grid(chunk_size, unique=True)
@@ -374,7 +376,7 @@ class Voxels(Partition, abc.ABC, classmap_entry=None):
 @config.node
 class NrrdVoxels(Voxels, classmap_entry="nrrd"):
     """
-    Voxel partition whose voxelset is loaded from a NRRD file.
+    Voxel partition whose voxelset is loaded from an NRRD file.
 
     By default, it includes all the nonzero voxels in the file, but other masking
     conditions can be specified. Additionally, data can be associated to each voxel by
@@ -452,13 +454,7 @@ class NrrdVoxels(Voxels, classmap_entry="nrrd"):
             mask = np.nonzero(mask)
         return mask
 
-    def get_voxelset(self):
-        """
-        Creates a VoxelSet of the sources of the Partition that matches its mask.
-
-        :returns: VoxelSet of the Partition sources.
-        """
-
+    def to_voxels(self):
         mask = self.get_mask()
         voxel_data = None
         if not self.mask_only:

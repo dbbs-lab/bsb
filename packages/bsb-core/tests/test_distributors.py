@@ -146,7 +146,7 @@ class TestVolumetricRotations(
     def test_distribute(self):
         self.network.compile(clear=True)
         positions = self.network.get_placement_set("a").load_positions()
-        voxel_set = self.network.partitions.a.get_voxelset()
+        voxel_set = self.network.partitions.a.to_voxels()
         region_ids = np.asarray(
             voxel_set.data[:, 0][voxel_set.index_of(positions)], dtype=int
         )

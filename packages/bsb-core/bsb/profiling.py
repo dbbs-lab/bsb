@@ -1,60 +1,29 @@
 import atexit
 import cProfile
 import functools
+import importlib.metadata
+import inspect
+import json
 import pickle
 import sys
-import traceback
 import warnings
 from functools import cache
-from time import time
 from uuid import uuid4
 
+from opentelemetry import trace
+
 from .services import MPI
-
-
-class Meter:
-    def __init__(self, name, data):
-        self.name = name
-        self.data = data
-        self._starts = []
-        self._stops = []
-
-    def __enter__(self):
-        self.start()
-
-    def start(self):
-        self._starts.append(time())
-
-    def __exit__(self, exc, exc_type, tb):
-        self.stop()
-        self._exc = exc, exc_type, traceback.format_tb(tb)
-
-    def stop(self):
-        self._stops.append(time())
-
-    @property
-    def calls(self):
-        return len(self._starts)
-
-    @property
-    def elapsed(self):
-        return sum(e - s for s, e in zip(self._starts, self._stops, strict=False))
 
 
 class ProfilingSession:
     def __init__(self):
         self._started = False
-        self._meters = []
         self.name = "bsb_profiling"
         self._current_f = None
         self._flushcounter = 0
 
     def set_name(self, name):
         self.name = name
-
-    @property
-    def meters(self):
-        return self._meters.copy()
 
     def start(self):
         if not self._started:
@@ -68,11 +37,6 @@ class ProfilingSession:
             self._started = False
             self.profile.disable()
             atexit.unregister(self.flush)
-
-    def meter(self, name, **data):
-        meter = Meter(name, data)
-        self._meters.append(meter)
-        return meter
 
     def flush(self, stats=True):
         profile = self.profile
@@ -101,10 +65,10 @@ class ProfilingSession:
         if self._current_f is None:
             self.flush()
         sys.argv = ["snakeviz", f"{self._current_f}.prf"]
-
-        snakeviz()
-
-        sys.argv = args
+        try:
+            snakeviz()
+        finally:
+            sys.argv = args
 
     @staticmethod
     def load(fstem):
@@ -125,58 +89,84 @@ def activate_session(name=None):
     return session
 
 
-def node_meter(*methods):
-    def get_node_method_name(method, args, kwargs):
-        return (
-            f"{args[0].get_node_name()}[{args[0].__class__.__name__}].{method.__name__}"
-        )
-
-    def decorator(node_cls):
-        for method_name in methods:
-            if method := getattr(node_cls, method_name, None):
-                setattr(node_cls, method_name, meter(method, name_f=get_node_method_name))
-
-        return node_cls
-
-    return decorator
-
-
-def meter(f=None, *, name_f=None):
-    def decorated(*args, **kwargs):
-        import bsb.options
-
-        if bsb.options.profiling:
-            session = get_active_session()
-            name = name_f(f, args, kwargs) if name_f else f.__name__
-            with session.meter(name, args=str(args), kwargs=str(kwargs)):
-                r = f(*args, **kwargs)
-            session.flush(stats=False)
-            return r
-        else:
-            return f(*args, **kwargs)
-
-    if f is None:
-
-        def decorator(g):
-            nonlocal f
-            f = g
-            return functools.wraps(f)(decorated)
-
-        return decorator
-    else:
-        return functools.wraps(f)(decorated)
-
-
 def view_profile(fstem):
     ProfilingSession.load(fstem).view()
 
 
 __all__ = [
-    "Meter",
     "ProfilingSession",
     "activate_session",
     "get_active_session",
-    "meter",
-    "node_meter",
     "view_profile",
 ]
+_otel_tracer = trace.get_tracer("bsb", str(importlib.metadata.version("bsb-core")))
+
+
+def _instrument_command(cls):
+    _orig_handler = cls.handler
+
+    @functools.wraps(cls.handler)
+    def handler(self, context):
+        attributes = {
+            "bsb.type": "command_handler",
+            "bsb.command_class": cls.__name__,
+            "bsb.command_name": cls.name,
+        }
+
+        if hasattr(cls, "get_options"):
+            attributes["bsb.command_options"] = [
+                f"{k}={getattr(context, k)}" for k, v in self.get_options().items()
+            ]
+
+        with _otel_tracer.start_as_current_span(
+            cls.name,
+            attributes=attributes,
+        ):
+            return _orig_handler(self, context)
+
+    cls.handler = handler
+    return cls
+
+
+def _get_implemented_abstracts(cls):
+    """Return dict mapping base class → set of abstract methods implemented in cls."""
+    result = {}
+    subclass_abstracts = getattr(cls, "__abstractmethods__", frozenset())
+    for base in cls.__mro__:
+        if not hasattr(base, "__abstractmethods__"):
+            continue
+        base_abstracts = base.__abstractmethods__
+        # Abstract methods from this base that are now implemented in cls
+        implemented = base_abstracts - subclass_abstracts
+        if implemented:
+            result[base] = implemented
+    return result
+
+
+def _instrument_node(cls):
+    for base, implemented in _get_implemented_abstracts(cls).items():
+        for attr in implemented:
+            orig_method = getattr(cls, attr)
+            if inspect.isfunction(orig_method):
+                wrapped = _make_otel_handler(cls, base, attr, orig_method)
+                setattr(cls, attr, wrapped)
+
+
+def _make_otel_handler(cls, base, attr, orig_method):
+    """Return a wrapper function for a single method."""
+
+    @functools.wraps(orig_method)
+    def handler(self, *args, **kwargs):
+        with _otel_tracer.start_as_current_span(
+            f"{cls.__name__}.{attr}",
+            attributes={
+                "bsb.type": "component_method",
+                "bsb.component_type": base.__name__,
+                "bsb.component_class": cls.__name__,
+                "bsb.component_method": attr,
+                "bsb.component_attributes": json.dumps(self.__tree__()),
+            },
+        ):
+            return orig_method(self, *args, **kwargs)
+
+    return handler

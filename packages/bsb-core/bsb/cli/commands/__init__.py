@@ -10,7 +10,8 @@ BSB.
 import argparse
 
 from ...exceptions import CommandError
-from ...reporting import _instrument_command, report
+from ...profiling import _instrument_command
+from ...reporting import report
 
 
 class BaseParser(argparse.ArgumentParser):

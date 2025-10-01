@@ -5,7 +5,7 @@ import sys
 
 from .._contexts import get_cli_context, reset_cli_context
 from ..exceptions import CommandError, DryrunError
-from ..reporting import _otel_tracer
+from ..profiling import _otel_tracer
 from .commands import load_root_command
 
 

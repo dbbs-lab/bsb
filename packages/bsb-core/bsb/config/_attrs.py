@@ -15,7 +15,7 @@ from ..exceptions import (
     NoReferenceAttributeSignal,
     RequirementError,
 )
-from ..reporting import _instrument_node
+from ..profiling import _instrument_node
 from ._compile import _wrap_reserved
 from ._hooks import run_hook
 from ._make import (

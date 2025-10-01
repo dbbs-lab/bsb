@@ -12,7 +12,6 @@ from .._util import ichain, obj_str_insert
 from ..config import refs, types
 from ..exceptions import ConnectivityError
 from ..mixins import HasDependencies
-from ..profiling import node_meter
 from ..reporting import warn
 from ..storage._chunks import Chunk
 
@@ -158,11 +157,6 @@ class ConnectionStrategy(abc.ABC, HasDependencies):
     Specifies how to name the output ConnectivitySets in which the connections between
     cell type pairs are stored.
     """
-
-    def __init_subclass__(cls, **kwargs):
-        super(cls, cls).__init_subclass__(**kwargs)
-        # Decorate subclasses to measure performance
-        node_meter("connect")(cls)
 
     def __hash__(self):
         return id(self)

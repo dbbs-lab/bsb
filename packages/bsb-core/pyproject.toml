@@ -29,7 +29,8 @@ dependencies = [
   "dashing-next~=0.1",
   "shortuuid~=1.0",
   "quantities~=0.15.0",
-  "exceptiongroup>=1.2.0"
+  "exceptiongroup>=1.2.0",
+  "opentelemetry-api~=1.0"
 ]
 
   [[project.authors]]

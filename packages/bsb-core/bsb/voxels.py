@@ -622,39 +622,64 @@ def _eq_sides(sides, n):
     return solution
 
 
+def is_within(vox, dataset):
+    """
+    Check if a list of voxels are within a dataset, based on its shape.
+    :param numpy.ndarray vox: 3D (list of) voxel position(s)
+    :param numpy.ndarray dataset: array to test
+    :return: True if vox is within the dataset.
+    """
+    if len(vox.shape) != 2 or not len(dataset.shape) >= 3 or vox.shape[-1] != 3:
+        result = np.zeros(vox.shape[0], dtype=bool)
+    else:
+        result = (
+            np.all(vox >= 0, axis=-1)
+            * (vox[:, 0] < dataset.shape[0])
+            * (vox[:, 1] < dataset.shape[1])
+            * (vox[:, 2] < dataset.shape[2])
+        )
+    return result
+
+
 def voxel_data_of(voxel, dataset):
     """
-    Retrieve voxel information from a dataset.
-    :param numpy.ndarray voxel: voxel coordinates
+    Retrieve the list of voxel information from a dataset.
+    :param numpy.ndarray voxel: list of voxel coordinates
     :param numpy.ndarray dataset: 3D numpy dataset
     :return: data stored at the point position.
     """
     loc_dataset = np.asarray(dataset)
-    if is_within(voxel, loc_dataset):
-        return loc_dataset[voxel[0], voxel[1], voxel[2]]
+    if np.all(is_within(voxel, loc_dataset)):
+        return loc_dataset[
+            np.take(voxel, 0, axis=-1),
+            np.take(voxel, 1, axis=-1),
+            np.take(voxel, 2, axis=-1),
+        ]
     else:
         raise ValueError(
-            f"Position is outside of the dataset.\nShape: {loc_dataset.shape}."
+            f"Positions are outside of the dataset.\nShape: {loc_dataset.shape}."
         )
 
 
 def voxel_orient(orientation_field, voxel):
     """
-    Retrieve the orientation vector at a point location
+    Retrieve the orientation vector at a list of voxels
     :param numpy.ndarray orientation_field: brain orientation field
-    :param numpy.ndarray voxel: voxel coordinates
+    :param numpy.ndarray voxel: list of voxel coordinates
     :return: 3D orientation vector.
     :rtype: numpy.ndarray
     """
-    loc_orient = voxel_data_of(voxel, orientation_field)
-    if np.all(np.linalg.norm(loc_orient) == 0) or np.isnan(loc_orient).any():
-        raise ValueError("No value for the provided location.")
+    loc_orient = np.copy(voxel_data_of(voxel, orientation_field))
+    if np.any(np.isnan(loc_orient), axis=-1) or np.any(
+        np.linalg.norm(loc_orient, axis=-1) == 0
+    ):
+        raise ValueError("Null norm or NaN vector at the provided locations.")
     return loc_orient
 
 
 def voxel_rotation_of(orientation_field, voxel, default_vector=None):
     """
-    Retrieve the rotation to apply at a certain location to orient a point towards
+    Retrieve the rotation to apply at a voxel location to orient a point towards
     the orientation field.
     :param numpy.ndarray orientation_field: brain orientation field
     :param numpy.ndarray voxel: voxel coordinates
@@ -665,8 +690,10 @@ def voxel_rotation_of(orientation_field, voxel, default_vector=None):
     """
     if default_vector is None:
         default_vector = np.array([0.0, -1.0, 0.0])
-    loc_orient = voxel_orient(orientation_field, voxel)
-    return Rotation.from_matrix(rotation_matrix_from_vectors(default_vector, -loc_orient))
+    loc_orient = voxel_orient(orientation_field, voxel[np.newaxis, ...])
+    return Rotation.from_matrix(
+        rotation_matrix_from_vectors(default_vector, -loc_orient[0])
+    )
 
 
 def crosses_voxel(voxel, last_voxel):
@@ -678,24 +705,6 @@ def crosses_voxel(voxel, last_voxel):
     :rtype: bool
     """
     return np.any(np.absolute(voxel - last_voxel) >= 1)
-
-
-def is_within(vox, dataset):
-    """
-    Check if a voxel location is within a dataset's dimension, based on its shape.
-    :param numpy.ndarray vox: 3D position of the voxel
-    :param numpy.ndarray dataset: array to test
-    :return: True if vox is within the dataset.
-    :rtype: bool
-    """
-    return (
-        len(dataset.shape) >= 3
-        and len(vox) >= 3
-        and np.all(vox >= 0)
-        and (vox[0] < dataset.shape[0])
-        and (vox[1] < dataset.shape[1])
-        and (vox[2] < dataset.shape[2])
-    )
 
 
 # https://stackoverflow.com/a/24769712/1016004

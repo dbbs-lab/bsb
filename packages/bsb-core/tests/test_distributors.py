@@ -131,11 +131,12 @@ class TestVolumetricRotations(
                     partitions=["a"],
                     distribute=dict(
                         rotations=VolumetricRotations(
-                            orientation_path=get_data_path(
-                                "orientations", "toy_orientations.nrrd"
-                            ),
-                            orientation_resolution=25.0,
-                            default_vector=np.array([-1.0, 0.0, 0.0]),
+                            orientation_path={
+                                "file": get_data_path(
+                                    "orientations", "toy_orientations.nrrd"
+                                ),
+                                "default_vector": np.array([1.0, 0.0, 0.0]),
+                            }
                         ),
                     ),
                 ),
@@ -170,12 +171,3 @@ class TestVolumetricRotations(
         )
         # orientation field x component should be close to 0.
         self.assertTrue(np.all(np.absolute(rotations[pos_w_rot][:, 0]) < 0.5))
-        self.cfg["placement"]["a"]["distribute"]["rotations"].space_origin = [
-            1000,
-            1000,
-            1000,
-        ]
-
-        self.network.compile(clear=True)
-        rotations = np.array(self.network.get_placement_set("a").load_rotations())
-        self.assertTrue(np.array_equal(np.all(rotations == 0.0, axis=1), region_ids > 0))

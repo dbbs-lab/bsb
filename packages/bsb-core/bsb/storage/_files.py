@@ -496,13 +496,6 @@ class NrrdDependencyNode(FilePipelineMixin, FileDependencyNode):
     Configuration dependency node to load NRRD files.
     """
 
-    space_origin = config.attr(
-        required=False,
-        default=lambda: np.array([0.0, 0.0, 0.0]),
-        call_default=True,
-        type=types.ndarray(),
-    )
-    """Origin point for the datasets."""
     default_vector = config.attr(
         required=False,
         default=lambda: np.array([0.0, -1.0, 0.0]),
@@ -539,7 +532,7 @@ class NrrdDependencyNode(FilePipelineMixin, FileDependencyNode):
         :rtype: numpy.ndarray
         """
         return np.asarray(
-            np.floor((np.asarray(point) - self.space_origin) / self.voxel_size),
+            np.floor(point / self.voxel_size),
             dtype=int,
         )
 

@@ -29,6 +29,7 @@ from bsb.voxels import (
     voxel_orient,
     voxel_rotation_of,
 )
+from tests.test_topology import skip_test_allen_api
 
 
 class TestVoxelSet(NumpyTestCase, unittest.TestCase):
@@ -583,6 +584,10 @@ class TestVoxelData(unittest.TestCase):
         VoxelData(np.array([1]), keys=["alpha"])[0]
 
 
+@unittest.skipIf(
+    skip_test_allen_api(),
+    "Allen API is down",
+)
 class TestNrrdDependencyNode(
     RandomStorageFixture,
     NetworkFixture,
@@ -616,12 +621,10 @@ class TestNrrdDependencyNode(
         self.network.compile(clear=True)
         self.annotations = self.network.partitions["a"].mask_source
         self.resolution = 25.0
-        self.origin = np.array([0.0, 0.0, 0.0])
         self.shape = np.array([10, 8, 8])
         self.orientations = self.network.partitions["a"].voxel_datasets["orientations"]
 
     def test_getters(self):
-        self.assertAll(self.annotations.space_origin == self.origin)
         self.assertAll(self.annotations.default_vector == self.default_vector)
         self.assertEqual(self.annotations.voxel_size, self.resolution)
         expected = {
@@ -632,7 +635,7 @@ class TestNrrdDependencyNode(
             "space directions": np.eye(3) * self.resolution,
             "endian": "little",
             "encoding": "gzip",
-            "space origin": self.origin,
+            "space origin": np.array([0.0, 0.0, 0.0]),
         }
 
         self.assertDictEqual(expected, dict(self.annotations.get_header()))
@@ -646,9 +649,9 @@ class TestNrrdDependencyNode(
         predicted = np.array([4, 5, 5])
         self.assertAll(predicted == self.annotations.voxel_of(position))
         annotations = self.annotations.load_object().raw
-        self.assertTrue(is_within(self.shape - 1, annotations))
-        self.assertFalse(is_within(self.shape, annotations))
-        self.assertFalse(is_within(np.array([0, 0, -1]), annotations))
+        self.assertTrue(is_within((self.shape - 1)[np.newaxis, ...], annotations))
+        self.assertFalse(is_within(self.shape[np.newaxis, ...], annotations))
+        self.assertFalse(is_within(np.array([[0, 0, -1]]), annotations))
 
         self.assertTrue(crosses_voxel(predicted, position2))
         self.assertFalse(crosses_voxel(position2, position2))
@@ -658,18 +661,18 @@ class TestNrrdDependencyNode(
         self.assertAll(
             np.isclose(
                 [-1, 0, 0],
-                voxel_data_of(np.array([2, 2, 1]), orientations),
+                voxel_data_of(np.array([[2, 2, 1]]), orientations),
                 atol=2e-1,
             )
         )
         with self.assertRaises(ValueError):
-            voxel_data_of(np.array([9, 7, 8]), orientations)
+            voxel_data_of(np.array([[9, 7, 8]]), orientations)
         self.assertAll(
-            voxel_data_of(np.array([2, 2, 1]), orientations)
-            == voxel_orient(orientations, np.array([2, 2, 1]))
+            voxel_data_of(np.array([[2, 2, 1]]), orientations)
+            == voxel_orient(orientations, np.array([[2, 2, 1]]))
         )
         with self.assertRaises(ValueError):
-            voxel_orient(orientations, np.array([0, 0, 0]))
+            voxel_orient(orientations, np.array([[0, 0, 0]]))
 
     def test_voxel_rotation(self):
         orientations = self.orientations.load_object().raw

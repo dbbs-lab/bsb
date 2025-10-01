@@ -599,7 +599,7 @@ class TestNrrdDependencyNode(
                 a=dict(
                     type="allen",
                     mask_source=get_data_path("orientations", "toy_annotations.nrrd"),
-                    atlas_datasets={
+                    voxel_datasets={
                         "orientations": get_data_path(
                             "orientations", "toy_orientations.nrrd"
                         ),
@@ -618,7 +618,7 @@ class TestNrrdDependencyNode(
         self.resolution = 25.0
         self.origin = np.array([0.0, 0.0, 0.0])
         self.shape = np.array([10, 8, 8])
-        self.orientations = self.network.partitions["a"].atlas_datasets["orientations"]
+        self.orientations = self.network.partitions["a"].voxel_datasets["orientations"]
 
     def test_getters(self):
         self.assertAll(self.annotations.space_origin == self.origin)

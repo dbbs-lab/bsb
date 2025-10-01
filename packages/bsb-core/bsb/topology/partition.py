@@ -502,6 +502,12 @@ class NrrdVoxels(Voxels, classmap_entry="nrrd"):
             src_shape = np.minimum.reduce([*source_sizes.values()])
         first = _repeat_first()
         # Check for any size mismatch
+        resolutions = [s.voxel_size for s in all_headers]
+        if any(size != first(size) for size in resolutions):
+            raise ConfigurationError(
+                f"NRRD resolution mismatch in `{self.get_node_name()}`: {resolutions}"
+            )
+        first = _repeat_first()
         if self.strict and any(size != first(size) for size in all_sizes.values()):
             raise ConfigurationError(
                 f"NRRD file size mismatch in `{self.get_node_name()}`: {all_sizes}"
@@ -547,10 +553,10 @@ class AllenStructure(NrrdVoxels, classmap_entry="allen"):
 
     If struct_name is set, then struct_id should not be set.
     """
-    atlas_datasets: cfgdict[str, NrrdDependencyNode] = config.dict(
+    voxel_datasets: cfgdict[str, NrrdDependencyNode] = config.dict(
         required=False, type=NrrdDependencyNode
     )
-    """Additional Volumetric Datasets to attach to the atlas."""
+    """Additional Volumetric Datasets to attach to the partition."""
 
     @config.property(type=str)
     def mask_source(self):
@@ -615,7 +621,7 @@ class AllenStructure(NrrdVoxels, classmap_entry="allen"):
         to the annotations.
         :rtype: dict[str, :class:`voxcell.voxel_data.VoxelData`]
         """
-        return {k: v.load_object() for k, v in self.atlas_datasets.items()}
+        return {k: v.load_object() for k, v in self.voxel_datasets.items()}
 
     @classmethod
     def get_structure_mask_condition(cls, find):
@@ -639,7 +645,7 @@ class AllenStructure(NrrdVoxels, classmap_entry="allen"):
     def get_structure_mask(cls, find):
         """
         Returns the mask data delineated by the Allen mouse brain
-        atlas.
+        region.
 
         :param find: Acronym, Name or ID of the Allen structure.
         :type find: str | int
@@ -690,7 +696,13 @@ class AllenStructure(NrrdVoxels, classmap_entry="allen"):
 
     def _validate_source_compat(self):
         shape = super()._validate_source_compat()
-        # Validate also the atlas datasets shapes with respect to the annotations.
+        # Validate also the atlas datasets shapes and resolutions
+        # with respect to the annotations.
+        for k, v in self.voxel_datasets.items():
+            if v.voxel_size != self.mask_source.voxel_size:
+                raise ConfigurationError(
+                    f"Resolution of dataset {k} does not match the annotations'."
+                )
         for k, v in self.datasets.items():
             if np.any(np.array(v.raw.shape[:3]) != np.array(self.annotations.shape)):
                 raise ConfigurationError(

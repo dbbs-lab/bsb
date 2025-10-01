@@ -233,6 +233,55 @@ class TestNrrdVoxels(unittest.TestCase):
         ):
             _ = part.voxel_size
 
+    def test_diff_resolution(self):
+        cfg = Configuration.default(
+            partitions=dict(
+                a=dict(
+                    type="nrrd",
+                    sources={
+                        "annotations": {
+                            "file": get_data_path("orientations", "toy_annotations.nrrd"),
+                            "voxel_size": 22,
+                        },
+                        "other": {
+                            "file": get_data_path("orientations", "toy_annotations.nrrd"),
+                            "voxel_size": 25,
+                        },
+                    },
+                )
+            ),
+        )
+        part = cfg.partitions.a
+        with self.assertRaises(
+            ConfigurationError,
+            msg="Sources with different resolutions should raise an exception",
+        ):
+            _ = part.voxel_size
+
+        cfg = Configuration.default(
+            partitions=dict(
+                a=dict(
+                    type="nrrd",
+                    mask_source={
+                        "file": get_data_path("orientations", "toy_annotations.nrrd"),
+                        "voxel_size": 22,
+                    },
+                    sources={
+                        "other": {
+                            "file": get_data_path("orientations", "toy_annotations.nrrd"),
+                            "voxel_size": 25,
+                        },
+                    },
+                )
+            ),
+        )
+        part = cfg.partitions.a
+        with self.assertRaises(
+            ConfigurationError,
+            msg="Mask and Source with different resolutions should raise an exception",
+        ):
+            _ = part.voxel_size
+
     def test_mask_value(self):
         cfg = Configuration.default(
             partitions=dict(
@@ -332,6 +381,29 @@ class TestAllenVoxels(unittest.TestCase):
             part.annotations.raw.shape, (528, 320, 456), "Should download allen dataset"
         )
 
+    def test_wrong_resolutions_nrrd(self):
+        cfg = Configuration.default(
+            regions=dict(br=dict(children=["a"])),
+            partitions=dict(
+                a=dict(
+                    type="allen",
+                    mask_source=get_data_path("orientations", "toy_annotations.nrrd"),
+                    struct_id=10690,
+                    voxel_datasets={
+                        "orientations": {
+                            "file": get_data_path(
+                                "orientations", "toy_orientations.nrrd"
+                            ),
+                            "voxel_size": 22,
+                        },
+                    },
+                )
+            ),
+        )
+        part = cfg.partitions.a
+        with self.assertRaises(ConfigurationError, msg="Resolution should mismatch"):
+            _ = part.voxelset
+
     def test_wrong_sizes_nrrd(self):
         cfg = Configuration.default(
             regions=dict(br=dict(children=["a"])),
@@ -340,7 +412,7 @@ class TestAllenVoxels(unittest.TestCase):
                     type="allen",
                     mask_source=get_data_path("orientations", "toy_annotations.nrrd"),
                     struct_id=10690,
-                    atlas_datasets={
+                    voxel_datasets={
                         "orientations": get_data_path(
                             "orientations", "toy_orientations.nrrd"
                         ),

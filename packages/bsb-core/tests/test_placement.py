@@ -188,10 +188,18 @@ class TestIndicators(
     def test_guess_vox_density_without_voxels(self):
         cfg = Configuration.default(
             partitions=dict(dud_layer2=dict(thickness=120)),
-            cell_types=dict(cell_density_key=dict(spatial={"density_key": "vox_density", "radius": 5.6})),
-            placement=dict(dud3=dict(strategy="bsb.placement.RandomPlacement",
-            partitions=["dud_layer2"],
-            cell_types=["cell_density_key"],))
+            cell_types=dict(
+                cell_density_key=dict(
+                    spatial={"density_key": "vox_density", "radius": 5.6}
+                )
+            ),
+            placement=dict(
+                dud3=dict(
+                    strategy="bsb.placement.RandomPlacement",
+                    partitions=["dud_layer2"],
+                    cell_types=["cell_density_key"],
+                )
+            ),
         )
         self.network = Scaffold(cfg, self.storage)
         indic = self.network.placement["dud3"].get_indicators()["cell_density_key"]

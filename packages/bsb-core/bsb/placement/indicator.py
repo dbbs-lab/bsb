@@ -156,9 +156,14 @@ class PlacementIndicator:
                 estimate = 0
                 for p in self.partitions:
                     try:
-                        estimate += np.sum(self._estim_for_voxels(p.to_voxels(), density_key))
+                        estimate += np.sum(
+                            self._estim_for_voxels(p.to_voxels(), density_key)
+                        )
                     except IndexError as _:
-                        raise PlacementError(f"Partition {p} voxelset does not have the density key {density_key}")
+                        raise PlacementError(
+                            f"Partition {p} voxelset does not have "
+                            f"the density key {density_key}"
+                        ) from None
             elif density_key in voxels.data_keys:
                 estimate = self._estim_for_voxels(voxels, density_key)
             else:

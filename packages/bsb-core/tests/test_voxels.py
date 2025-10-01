@@ -22,6 +22,13 @@ from bsb import (
     VoxelData,
     VoxelSet,
 )
+from bsb.voxels import (
+    crosses_voxel,
+    is_within,
+    voxel_data_of,
+    voxel_orient,
+    voxel_rotation_of,
+)
 
 
 class TestVoxelSet(NumpyTestCase, unittest.TestCase):
@@ -635,56 +642,40 @@ class TestNrrdDependencyNode(
         position = np.array(
             [5 * self.resolution - 0.01, 5 * self.resolution, (5 + 0.5) * self.resolution]
         )
-        position2 = np.array(
-            [5 * self.resolution, 5 * self.resolution, 5 * self.resolution]
-        )
-        position3 = np.array(
-            [
-                6 * self.resolution - 0.01,
-                6 * self.resolution - 0.01,
-                6 * self.resolution - 0.01,
-            ]
-        )
+        position2 = np.array([5, 5, 5])
         predicted = np.array([4, 5, 5])
         self.assertAll(predicted == self.annotations.voxel_of(position))
         annotations = self.annotations.load_object().raw
-        self.assertTrue(self.annotations.is_within(self.shape - 1, annotations))
-        self.assertFalse(self.annotations.is_within(self.shape, annotations))
-        self.assertFalse(self.annotations.is_within(np.array([0, 0, -1]), annotations))
+        self.assertTrue(is_within(self.shape - 1, annotations))
+        self.assertFalse(is_within(self.shape, annotations))
+        self.assertFalse(is_within(np.array([0, 0, -1]), annotations))
 
-        self.assertTrue(self.annotations.crosses_voxel(position, position2))
-        self.assertFalse(self.annotations.crosses_voxel(position2, position3))
+        self.assertTrue(crosses_voxel(predicted, position2))
+        self.assertFalse(crosses_voxel(position2, position2))
 
     def test_voxel_orientation(self):
         orientations = self.orientations.load_object().raw
         self.assertAll(
             np.isclose(
                 [-1, 0, 0],
-                self.annotations.voxel_data_of(
-                    np.array([2, 2, 1]) * self.resolution, orientations
-                ),
+                voxel_data_of(np.array([2, 2, 1]), orientations),
                 atol=2e-1,
             )
         )
         with self.assertRaises(ValueError):
-            self.annotations.voxel_data_of(
-                np.array([9, 7, 8]) * self.resolution, orientations
-            )
+            voxel_data_of(np.array([9, 7, 8]), orientations)
         self.assertAll(
-            self.annotations.voxel_data_of(
-                np.array([2, 2, 1]) * self.resolution, orientations
-            )
-            == self.annotations.voxel_orient(
-                orientations, np.array([2, 2, 1]) * self.resolution
-            )
+            voxel_data_of(np.array([2, 2, 1]), orientations)
+            == voxel_orient(orientations, np.array([2, 2, 1]))
         )
         with self.assertRaises(ValueError):
-            self.annotations.voxel_orient(orientations, np.array([0, 0, 0]))
+            voxel_orient(orientations, np.array([0, 0, 0]))
 
     def test_voxel_rotation(self):
         orientations = self.orientations.load_object().raw
-        point = np.array([2, 2, 1]) * self.resolution
-        rotation = self.orientations.voxel_rotation_of(orientations, point).as_euler(
-            "xyz", degrees=True
-        )
+        tested_voxel = np.array([2, 2, 1])
+        point = tested_voxel * self.resolution
+        voxel = self.orientations.voxel_of(point)
+        self.assertAll(tested_voxel == voxel)
+        rotation = voxel_rotation_of(orientations, voxel).as_euler("xyz", degrees=True)
         self.assertAll(np.isclose([0, 0, 90], rotation, atol=10))

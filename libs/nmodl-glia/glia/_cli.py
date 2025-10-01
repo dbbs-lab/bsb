@@ -183,7 +183,7 @@ def new():
 
 
 def _guess_name(ctx, param, value):
-    if value == param.default:
+    if value == (param.default if param.default is not click.core.UNSET else None):
         try:
             name = ModName.parse_path(ctx.params["source"])
             if param.name == "name":

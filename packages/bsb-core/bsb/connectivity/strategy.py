@@ -121,7 +121,7 @@ class HemitypeCollection:
         ]
 
 
-@config.dynamic(attr_name="strategy", required=True)
+@config.dynamic(attr_name="strategy", required=True, auto_classmap=True)
 class ConnectionStrategy(abc.ABC, HasDependencies):
     scaffold: Scaffold
     name: str = config.attr(key=True)

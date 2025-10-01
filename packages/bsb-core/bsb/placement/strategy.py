@@ -22,7 +22,7 @@ if typing.TYPE_CHECKING:
     from ..topology.partition import Partition
 
 
-@config.dynamic(attr_name="strategy", required=True)
+@config.dynamic(attr_name="strategy", required=True, auto_classmap=True)
 class PlacementStrategy(abc.ABC, HasDependencies):
     """
     Quintessential interface of the placement module.

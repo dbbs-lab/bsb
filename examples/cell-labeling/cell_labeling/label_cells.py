@@ -4,6 +4,7 @@ import numpy as np
 from bsb import AfterPlacementHook, config, refs, types
 
 
+@config.node
 class LabelCellA(AfterPlacementHook):
     """
     Subdivide a cell population into 2 subpopulations based on their
@@ -24,8 +25,8 @@ class LabelCellA(AfterPlacementHook):
         # create a filter that split the cells according to
         # the mean of their positions along the chosen axis
         mean_pos = np.mean(cell_positions[:, self.axis])
-        subpopulation_1 = np.asarray(cell_positions >= mean_pos, dtype=int)
-        subpopulation_2 = np.asarray(cell_positions < mean_pos, dtype=int)
+        subpopulation_1 = np.where(cell_positions[:, self.axis] <= mean_pos)[0]
+        subpopulation_2 = np.where(cell_positions[:, self.axis] > mean_pos)[0]
 
         # set the cell label according to the filter
         ps.label(labels=["cell_A_type_1"], cells=subpopulation_1)

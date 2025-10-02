@@ -169,6 +169,7 @@ class TestNrrdVoxels(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        MPI.barrier()
         if MPI.get_rank() == 0:
             os.remove(get_data_path("orientations", "bad_dimensions.nrrd"))
             os.remove(get_data_path("orientations", "bad_dataset.nrrd"))
@@ -319,6 +320,7 @@ class TestAllenVoxels(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        MPI.barrier()
         if MPI.get_rank() == 0:
             os.remove(get_data_path("orientations", "bad_dataset.nrrd"))
 

@@ -6,6 +6,12 @@ fi
 # Get NEST version
 if [ -z "$NEST_VERSION" ]; then NEST_VERSION="3.7"; fi
 
+# Trying to load NEST
+INSTALLATION_FOLDER="$NEST_FOLDER/install/"
+if [ -f "$INSTALLATION_FOLDER/bin/nest_vars.sh" ]; then
+  . "$INSTALLATION_FOLDER/bin/nest_vars.sh"
+fi
+
 # Check if NEST has been already installed
 if [ "$(which nest)" != "" ];  then
   INSTALLED_VERSION=$(echo $(nest --version) | grep -o -E 'version [0-9.]+' | sed 's/version //')
@@ -25,11 +31,11 @@ fi
 sudo apt install libgsl-dev -y
 
 # Checkout NEST version
-cd "$NEST_FOLDER"
+cd "$NEST_FOLDER" || exit 1
 git checkout tags/v"$NEST_VERSION"
 mkdir -p build
-cd build
+cd build || exit 1
 
-cmake .. -Dwith-mpi=ON
+cmake .. -Dwith-mpi=ON -DCMAKE_INSTALL_PREFIX=$INSTALLATION_FOLDER
 
 make install

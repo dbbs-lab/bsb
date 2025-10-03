@@ -45,7 +45,7 @@ tree = {
             },
             "connection_models": {
                 "gif_pop_psc_exp": {
-                    "rules": ["all_to_all"],
+                    "rule": "all_to_all",
                     "synapses": [{"weight": -6.25, "delay": 1}],
                 }
             },

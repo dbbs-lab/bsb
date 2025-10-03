@@ -42,13 +42,10 @@ class NestConnectionSettings:
     Class interfacing a NEST connection rule.
     """
 
-    rules = config.list(type=str)
-    """List of references to NEST connection rules used to connect the cells."""
-    constants = config.list(
-        type=types.dict(type=types.any_()),
-        required=types.same_size("rules", "constants", required=False),
-    )
-    """List of dictionary of parameters to assign to the connection rule."""
+    rule = config.attr(type=str)
+    """Importable reference to the NEST connection rule used to connect the cells."""
+    constants = config.catch_all(type=types.any_())
+    """Dictionary of parameters to assign to the connection rule."""
 
 
 class LazySynapseCollection:
@@ -76,7 +73,7 @@ class LazySynapseCollection:
 @config.dynamic(attr_name="model_strategy", required=False)
 class NestConnection(compose_nodes(NestConnectionSettings, ConnectionModel)):
     """
-    Class interfacing a NEST connection, including its connection rules and synaptic
+    Class interfacing a NEST connection, including its connection rule and synaptic
     parameters.
     """
 
@@ -89,19 +86,12 @@ class NestConnection(compose_nodes(NestConnectionSettings, ConnectionModel)):
     synapses = config.list(type=NestSynapseSettings, required=True)
     """List of synapse models to use for a connection."""
 
-    def boot(self):
-        if 0 < len(self.rules) != len(self.synapses):
-            raise ConfigurationError(
-                "If NEST connection rules are provided, there should be one per synapse."
-            )
-
     def create_connections(self, simdata, pre_nodes, post_nodes, cs, comm):
         import nest
 
-        conn_specs = self.get_conn_specs()
-        for i, syn_spec in enumerate(self.get_syn_specs()):
-            if len(conn_specs) > 0:
-                nest.Connect(pre_nodes, post_nodes, conn_specs[i], syn_spec)
+        for syn_spec in self.get_syn_specs():
+            if self.rule is not None:
+                nest.Connect(pre_nodes, post_nodes, self.get_conn_spec(), syn_spec)
             else:
                 comm.barrier()
                 for pre_locs, post_locs in self.predict_mem_iterator(
@@ -185,14 +175,11 @@ class NestConnection(compose_nodes(NestConnectionSettings, ConnectionModel)):
         else:
             return self.connection_model
 
-    def get_conn_specs(self):
-        return [
-            {
-                "rule": rule,
-                **constants,
-            }
-            for rule, constants in zip(self.rules, self.constants, strict=False)
-        ]
+    def get_conn_spec(self):
+        return {
+            "rule": self.rule,
+            **self.constants,
+        }
 
     def get_syn_specs(self):
         return [

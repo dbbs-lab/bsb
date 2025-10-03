@@ -847,41 +847,6 @@ class TestNest(
                 }
             }
 
-    def test_error_multisyn(self):
-        duration = 100
-        resolution = 0.1
-        cfg = _conf_two_cells()
-        cfg.simulations = {
-            "test": {
-                "simulator": "nest",
-                "duration": duration,
-                "resolution": resolution,
-                "seed": 1234,
-                "cell_models": {
-                    "A": {"model": "iaf_cond_alpha"},
-                    "C": {"model": "parrot_neuron"},
-                },
-                "connection_models": {
-                    "C_to_A": {
-                        "rules": ["fixed_indegree"],
-                        "constants": [{"indegree": 1}],
-                        "synapses": [
-                            {"weight": -20.25, "delay": 1},
-                            {"weight": -60.25, "delay": 30},
-                        ],
-                    }
-                },
-                "devices": {},
-            }
-        }
-        with self.assertRaises(BootError):
-            Scaffold(cfg, self.storage)
-        cfg.simulations["test"].connection_models["C_to_A"].rules.append("fixed_indegree")
-        cfg.simulations["test"].connection_models["C_to_A"].constants.append(
-            {"indegree": 1}
-        )
-        Scaffold(cfg, self.storage)
-
     def test_gap_junctions_syn(self):
         duration = 100
         resolution = 0.1

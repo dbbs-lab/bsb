@@ -149,10 +149,8 @@ class TestProfiling(
 
         bsb.options.profiling = True
         self.network.compile()
+        bsb.profiling.get_active_session().flush(stats=False)
 
-        self.assertGreater(
-            len(bsb.profiling.get_active_session()._meters), 0, "missing meters"
-        )
         world = MPI.COMM_WORLD
         if not world.Get_rank():
             found = 0

@@ -171,12 +171,14 @@ def _replace_closure_cells(method, old, new):
         if cell.cell_contents is old:
             cell.cell_contents = new
         elif inspect.isfunction(cell.cell_contents):
-            # WARNING: If you end up with an infinitely recursive call here, you probably have a decorator factory
-            # somewhere that stores references to node class methods in a closure. I haven't figured out completely
-            # why it leads to infinite recursion. The solution is to split the factory into 2 pieces so that instead
-            # of a closure, the reference to the node class method can be stored as a function call argument. Split
-            # the factory into an outer function that retrieves the node class method and passes it to an inner
-            # function that produces the decorator and calls the original function. See
+            # WARNING: If you end up with an infinitely recursive call here, you probably
+            # have a decorator factory somewhere that stores references to node class
+            # methods in a closure. I haven't figured out completely why it leads to
+            # infinite recursion. The solution is to split the factory into 2 pieces so
+            # that instead of a closure, the reference to the node class method can be
+            # stored as a function call argument. Split the factory into an outer function
+            # that retrieves the node class method and passes it to an inner function that
+            # produces the decorator and calls the original function. See
             # `bsb.reporting._instrument_node` for an example of this.
             _replace_closure_cells(cell.cell_contents, old, new)
 

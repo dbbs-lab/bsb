@@ -43,7 +43,7 @@ class NestConnectionSettings:
     """
 
     rules = config.list(type=str)
-    """List of references to Nest connection rules used to connect the cells."""
+    """List of references to NEST connection rules used to connect the cells."""
     constants = config.list(
         type=types.dict(type=types.any_()),
         required=types.same_size("rules", "constants", required=False),

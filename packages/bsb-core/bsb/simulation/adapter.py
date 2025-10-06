@@ -161,13 +161,15 @@ class SimulatorAdapter(abc.ABC):
             # Filter out invalid "regressive" checkpoints,
             # and default to the end of the simulation
             chkp_noregressive = [
-                chkpoint for chkpoint in checkpoints if chkpoint > current_checkpoint
+                checkpoint
+                for checkpoint in checkpoints
+                if checkpoint > current_checkpoint
             ]
             current_checkpoint = min(*chkp_noregressive, self._duration)
             participants = [
                 self._controllers[i]
-                for i, chp in enumerate(checkpoints)
-                if chp == current_checkpoint
+                for i, checkpoint in enumerate(checkpoints)
+                if checkpoint == current_checkpoint
             ]
             yield (current_checkpoint, participants)
 

@@ -1,3 +1,7 @@
+## 6.0.7 (2025-10-06)
+
+This was a version bump only for bsb-json to align it with other projects, there were no code changes.
+
 ## 6.0.6 (2025-08-26)
 
 This was a version bump only for bsb-json to align it with other projects, there were no code changes.

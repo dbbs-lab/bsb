@@ -655,7 +655,7 @@ class AllenStructure(NrrdVoxels, classmap_entry="allen"):
         return np.array(id_roi)
 
     def _validate(self):
-        # If neither sources or mask_source were provided,
+        # If neither sources nor mask_source were provided,
         # use allen ccfv3 annotation volume
         if self.mask_only and self.mask_source is None:
             self.mask_source = self._dl_mask()

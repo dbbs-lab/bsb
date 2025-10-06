@@ -537,6 +537,7 @@ class NrrdDependencyNode(FilePipelineMixin, FileDependencyNode):
     def voxel_of(self, point):
         """
         Convert a 3D float position into a voxel based coordinate.
+
         :param numpy.ndarray point: floating point
         :return: 3D voxel coordinate
         :rtype: numpy.ndarray
@@ -549,10 +550,11 @@ class NrrdDependencyNode(FilePipelineMixin, FileDependencyNode):
     def is_compatible(self, other_nrrd: NrrdDependencyNode):
         """
         Check if the current nrrd file is compatible with the provided one.
+
         :param NrrdDependencyNode other_nrrd: other file to compare against
-        :rtype: bool
-        :return: True if the two datasets are registered in the same coordinate framework
+        :returns: True if the two datasets are registered in the same coordinate framework
             and if their voxel size is the same.
+        :rtype: bool
         """
         if other_nrrd.voxel_size != self.voxel_size:
             return False

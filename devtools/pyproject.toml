@@ -5,7 +5,7 @@ description = """
     This is a monorepo-only meta-package for package managers,
     tools and IDEs to use as an anchor. Do not attempt to publish.
 """
-requires-python = ">=3.12,<4"
+requires-python = ">=3.10,<4"
 dependencies = [
     "bsb",
     "bsb-arbor",

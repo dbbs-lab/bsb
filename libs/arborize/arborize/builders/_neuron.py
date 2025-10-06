@@ -125,7 +125,6 @@ class NeuronModel:
         la = self.get_location(loc)
         if source is None:
             if hasattr(la.section, "_transmitter"):
-                print("ALREADY HAS TRANSMITTER", la.section, la.section._transmitter.gid)
                 if gid != la.section._transmitter.gid:
                     raise TransmitterError(
                         "A transmitter already exists"
@@ -133,12 +132,9 @@ class NeuronModel:
                     )
                 return la.section._transmitter
             else:
-                print("INSERTING IN PRISTINE SECTION", la.section.__neuron__())
                 seg = self.get_segment(loc, sx)
-                print("SEGMENT", seg.__neuron__())
                 tm = p.ParallelCon(seg, gid, **kwargs)
                 la.section._transmitter = tm
-                print("INSERTED IN PRISTINE SECTION", gid, la.section._transmitter)
         else:
             if hasattr(la.section, "_source"):
                 if gid != la.section._source_gid:

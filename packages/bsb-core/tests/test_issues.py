@@ -49,7 +49,6 @@ class TestIssues(unittest.TestCase):
             config = Root430(
                 examples=dict(), extensions=dict(x=dict(ex_mut=4, ref="missing"))
             )
-            print("ref", config.extensions.x.ref)
 
     def test_802(self):
         """

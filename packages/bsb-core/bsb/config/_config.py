@@ -13,6 +13,7 @@ from ..storage._files import (
     CodeDependencyNode,
     MorphologyDependencyNode,
     MorphologyPipelineNode,
+    NrrdDependencyNode,
 )
 from ..storage.interfaces import StorageNode
 from ..topology import Partition, Region, RegionGroup, create_topology, get_partitions
@@ -79,6 +80,13 @@ class Configuration:
     )
     """
     Morphology files and processing pipelines.
+    """
+    voxel_datasets: cfgdict[str, NrrdDependencyNode] = config.dict(
+        type=NrrdDependencyNode,
+        required=False,
+    )
+    """
+    NRRD Volumetric dataset files.
     """
     storage: StorageNode = config.attr(
         type=StorageNode,

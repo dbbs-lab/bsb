@@ -10,10 +10,8 @@ import typing
 import numpy as np
 from voxcell import RegionMap
 
-from bsb.config._attrs import cfgdict
-
 from .. import config
-from ..config import types
+from ..config import refs, types
 from ..exceptions import (
     AllenApiError,
     ConfigurationError,
@@ -383,7 +381,7 @@ class NrrdVoxels(Voxels, classmap_entry="nrrd"):
     inclusion of (multiple) source NRRD files.
     """
 
-    mask_source: NrrdDependencyNode = config.attr(type=NrrdDependencyNode)
+    mask_source: NrrdDependencyNode = config.ref(refs.vox_dset_ref)
     """
     Path to the NRRD file containing the volumetric annotation data of the Partition.
     """
@@ -392,12 +390,9 @@ class NrrdVoxels(Voxels, classmap_entry="nrrd"):
     Integer value to filter in mask_source (if it is set, otherwise sources) to
     create a mask of the voxel set(s) used as input.
     """
-    sources: cfgdict[str, NrrdDependencyNode] = config.dict(
-        type=NrrdDependencyNode, required=False
-    )
+    sources: list[NrrdDependencyNode] = config.reflist(refs.vox_dset_ref)
     """
     List of paths to NRRD files containing volumetric data to associate to the Partition.
-    If sources is set, then source should not be set.
     """
     sparse: bool = config.attr(type=bool, default=True)
     """
@@ -466,7 +461,7 @@ class NrrdVoxels(Voxels, classmap_entry="nrrd"):
             np.transpose(mask),
             self.voxel_size,
             data=voxel_data,
-            data_keys=list(self.sources.keys()),
+            data_keys=self.sources,
         )
 
     def _validate(self):
@@ -476,7 +471,7 @@ class NrrdVoxels(Voxels, classmap_entry="nrrd"):
         return shape
 
     def _validate_sources(self):
-        self._src = list(self.sources.values()).copy()
+        self._src = self.sources.copy()
         if self.mask_source is not None:
             self._mask_src = [self.mask_source]
         else:
@@ -553,17 +548,6 @@ class AllenStructure(NrrdVoxels, classmap_entry="allen"):
 
     If struct_name is set, then struct_id should not be set.
     """
-    voxel_datasets: cfgdict[str, NrrdDependencyNode] = config.dict(
-        required=False, type=NrrdDependencyNode
-    )
-    """Additional Volumetric Datasets to attach to the partition."""
-
-    @config.property(type=str)
-    def mask_source(self):
-        if hasattr(self, "_annotations_file"):
-            return self._annotations_file
-        else:
-            return self._dl_mask()
 
     @classmethod
     @functools.cache
@@ -573,14 +557,6 @@ class AllenStructure(NrrdVoxels, classmap_entry="allen"):
             "https://download.alleninstitute.org/informatics-archive/current-release/mouse_ccf/annotation/ccf_2017/annotation_25.nrrd",
         )
         return node
-
-    @mask_source.setter
-    def mask_source(self, value):
-        self._mask_source = value
-        if value is not None:
-            self._annotations_file = NrrdDependencyNode(file=value)
-        elif hasattr(self, "_annotations_file"):
-            delattr(self, "_annotations_file")
 
     @classmethod
     @functools.cache
@@ -613,15 +589,6 @@ class AllenStructure(NrrdVoxels, classmap_entry="allen"):
         :rtype: voxcell.voxel_data.VoxelData
         """
         return self.mask_source.load_object()
-
-    @functools.cached_property
-    def datasets(self):
-        """
-        Return a dictionary of VoxelData instances corresponding to the datasets attached
-        to the annotations.
-        :rtype: dict[str, :class:`voxcell.voxel_data.VoxelData`]
-        """
-        return {k: v.load_object() for k, v in self.voxel_datasets.items()}
 
     @classmethod
     def get_structure_mask_condition(cls, find):
@@ -687,28 +654,19 @@ class AllenStructure(NrrdVoxels, classmap_entry="allen"):
             raise NodeNotFoundError("Could not find a node that satisfies constraints.")
         return np.array(id_roi)
 
+    def _validate(self):
+        # If neither sources or mask_source were provided,
+        # use allen ccfv3 annotation volume
+        if self.mask_only and self.mask_source is None:
+            self.mask_source = self._dl_mask()
+        super()._validate()
+
     def _validate_mask_condition(self):
         # We override the `NrrdVoxels`' `_validate_mask_condition` and use this
         # function as a hook to find and set the mask condition to select every voxel that
         # has an id that is part of the structure.
         id = self.struct_id if self.struct_id is not None else self.struct_name
         self._mask_cond = self.get_structure_mask_condition(id)
-
-    def _validate_source_compat(self):
-        shape = super()._validate_source_compat()
-        # Validate also the atlas datasets shapes and resolutions
-        # with respect to the annotations.
-        for k, v in self.voxel_datasets.items():
-            if v.voxel_size != self.mask_source.voxel_size:
-                raise ConfigurationError(
-                    f"Resolution of dataset {k} does not match the annotations'."
-                )
-        for k, v in self.datasets.items():
-            if np.any(np.array(v.raw.shape[:3]) != np.array(self.annotations.shape)):
-                raise ConfigurationError(
-                    f"Shape of dataset {k} does not match the shape of the annotations."
-                )
-        return shape
 
 
 def _repeat_first():

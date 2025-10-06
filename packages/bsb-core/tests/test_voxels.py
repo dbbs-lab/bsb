@@ -1,8 +1,10 @@
+import os
 import random
 import unittest
 from itertools import chain as _ic
 from itertools import count as _ico
 
+import nrrd
 import numpy as np
 import voxcell
 from bsb_test import (
@@ -14,6 +16,7 @@ from bsb_test import (
 )
 
 from bsb import (
+    MPI,
     Branch,
     Chunk,
     Configuration,
@@ -596,33 +599,48 @@ class TestNrrdDependencyNode(
     unittest.TestCase,
     engine_name="hdf5",
 ):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        if MPI.get_rank() == 0:
+            dataset, h = nrrd.read(get_data_path("orientations", "toy_annotations.nrrd"))
+            h["sizes"][2] -= 1
+            dataset = dataset[:, :, :-1]
+            nrrd.write(
+                get_data_path("orientations", "bad_dataset.nrrd"), dataset, header=h
+            )
+        MPI.barrier()
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+        MPI.barrier()
+        if MPI.get_rank() == 0:
+            os.remove(get_data_path("orientations", "bad_dataset.nrrd"))
+
     def setUp(self):
         self.default_vector = np.array([0.0, -1.0, 0.0])
         self.cfg = Configuration.default(
-            regions=dict(reg=dict(children=["a"])),
-            partitions=dict(
-                a=dict(
-                    type="allen",
-                    mask_source=get_data_path("orientations", "toy_annotations.nrrd"),
-                    voxel_datasets={
-                        "orientations": get_data_path(
-                            "orientations", "toy_orientations.nrrd"
-                        ),
-                        # second dataset to check different shapes but similar volume
-                        "annotations": get_data_path(
-                            "orientations", "toy_annotations.nrrd"
-                        ),
-                    },
-                    struct_id=10690,
-                )
-            ),
+            voxel_datasets={
+                "orientations": {
+                    "file": get_data_path("orientations", "toy_orientations.nrrd"),
+                    "cache": True,
+                },
+                # second dataset to check different shapes but similar volume
+                "annotations": get_data_path("orientations", "toy_annotations.nrrd"),
+                "other_resolution": {
+                    "file": get_data_path("orientations", "toy_annotations.nrrd"),
+                    "voxel_size": 22,
+                },
+                "bad_dataset": get_data_path("orientations", "bad_dataset.nrrd"),
+            },
         )
         super().setUp()
         self.network.compile(clear=True)
-        self.annotations = self.network.partitions["a"].mask_source
+        self.annotations = self.network.configuration.voxel_datasets["annotations"]
         self.resolution = 25.0
         self.shape = np.array([10, 8, 8])
-        self.orientations = self.network.partitions["a"].voxel_datasets["orientations"]
+        self.orientations = self.network.configuration.voxel_datasets["orientations"]
 
     def test_getters(self):
         self.assertAll(self.annotations.default_vector == self.default_vector)
@@ -682,3 +700,16 @@ class TestNrrdDependencyNode(
         self.assertAll(tested_voxel == voxel)
         rotation = voxel_rotation_of(orientations, voxel).as_euler("xyz", degrees=True)
         self.assertAll(np.isclose([0, 0, 90], rotation, atol=10))
+
+    def test_compatibility(self):
+        self.assertTrue(self.annotations.is_compatible(self.orientations))
+        self.assertFalse(
+            self.annotations.is_compatible(
+                self.network.configuration.voxel_datasets["bad_dataset"]
+            )
+        )
+        self.assertFalse(
+            self.annotations.is_compatible(
+                self.network.configuration.voxel_datasets["other_resolution"]
+            )
+        )

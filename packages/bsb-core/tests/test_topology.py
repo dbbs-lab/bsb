@@ -150,6 +150,7 @@ class TestStack(
 class TestNrrdVoxels(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        super().setUpClass()
         if MPI.get_rank() == 0:
             dataset, h = nrrd.read(get_data_path("orientations", "toy_annotations.nrrd"))
             copy_h = h.copy()
@@ -169,6 +170,7 @@ class TestNrrdVoxels(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        super().tearDownClass()
         MPI.barrier()
         if MPI.get_rank() == 0:
             os.remove(get_data_path("orientations", "bad_dimensions.nrrd"))
@@ -176,14 +178,13 @@ class TestNrrdVoxels(unittest.TestCase):
 
     def test_bad_dimensions(self):
         cfg = Configuration.default(
+            voxel_datasets={
+                "annotations": get_data_path("orientations", "bad_dimensions.nrrd")
+            },
             partitions=dict(
                 a=dict(
                     type="nrrd",
-                    sources={
-                        "annotations": get_data_path(
-                            "orientations", "bad_dimensions.nrrd"
-                        ),
-                    },
+                    sources=["annotations"],
                 )
             ),
         )
@@ -194,15 +195,14 @@ class TestNrrdVoxels(unittest.TestCase):
             _ = part.voxel_size
 
         cfg = Configuration.default(
+            voxel_datasets={
+                "annotations": get_data_path("orientations", "toy_annotations.nrrd"),
+                "second_ann": get_data_path("orientations", "bad_dataset.nrrd"),
+            },
             partitions=dict(
                 a=dict(
                     type="nrrd",
-                    sources={
-                        "annotations": get_data_path(
-                            "orientations", "toy_annotations.nrrd"
-                        ),
-                        "second_ann": get_data_path("orientations", "bad_dataset.nrrd"),
-                    },
+                    sources=["annotations", "second_ann"],
                 )
             ),
         )
@@ -214,15 +214,14 @@ class TestNrrdVoxels(unittest.TestCase):
             _ = part.voxel_size
 
         cfg = Configuration.default(
+            voxel_datasets={
+                "annotations": get_data_path("orientations", "toy_annotations.nrrd"),
+                "second_ann": get_data_path("orientations", "bad_dataset.nrrd"),
+            },
             partitions=dict(
                 a=dict(
                     type="nrrd",
-                    sources={
-                        "annotations": get_data_path(
-                            "orientations", "toy_annotations.nrrd"
-                        ),
-                        "second_ann": get_data_path("orientations", "bad_dataset.nrrd"),
-                    },
+                    sources=["annotations", "second_ann"],
                     strict=False,
                 )
             ),
@@ -236,19 +235,20 @@ class TestNrrdVoxels(unittest.TestCase):
 
     def test_diff_resolution(self):
         cfg = Configuration.default(
+            voxel_datasets={
+                "annotations": {
+                    "file": get_data_path("orientations", "toy_annotations.nrrd"),
+                    "voxel_size": 22,
+                },
+                "other": {
+                    "file": get_data_path("orientations", "toy_annotations.nrrd"),
+                    "voxel_size": 25,
+                },
+            },
             partitions=dict(
                 a=dict(
                     type="nrrd",
-                    sources={
-                        "annotations": {
-                            "file": get_data_path("orientations", "toy_annotations.nrrd"),
-                            "voxel_size": 22,
-                        },
-                        "other": {
-                            "file": get_data_path("orientations", "toy_annotations.nrrd"),
-                            "voxel_size": 25,
-                        },
-                    },
+                    sources=["annotations", "other"],
                 )
             ),
         )
@@ -260,19 +260,21 @@ class TestNrrdVoxels(unittest.TestCase):
             _ = part.voxel_size
 
         cfg = Configuration.default(
+            voxel_datasets={
+                "annotations": {
+                    "file": get_data_path("orientations", "toy_annotations.nrrd"),
+                    "voxel_size": 22,
+                },
+                "other": {
+                    "file": get_data_path("orientations", "toy_annotations.nrrd"),
+                    "voxel_size": 25,
+                },
+            },
             partitions=dict(
                 a=dict(
                     type="nrrd",
-                    mask_source={
-                        "file": get_data_path("orientations", "toy_annotations.nrrd"),
-                        "voxel_size": 22,
-                    },
-                    sources={
-                        "other": {
-                            "file": get_data_path("orientations", "toy_annotations.nrrd"),
-                            "voxel_size": 25,
-                        },
-                    },
+                    mask_source="annotations",
+                    sources=["other"],
                 )
             ),
         )
@@ -285,14 +287,13 @@ class TestNrrdVoxels(unittest.TestCase):
 
     def test_mask_value(self):
         cfg = Configuration.default(
+            voxel_datasets={
+                "annotations": get_data_path("orientations", "toy_annotations.nrrd")
+            },
             partitions=dict(
                 a=dict(
                     type="nrrd",
-                    sources={
-                        "annotations": get_data_path(
-                            "orientations", "toy_annotations.nrrd"
-                        ),
-                    },
+                    sources=["annotations"],
                     mask_value=10690,
                 )
             ),
@@ -307,23 +308,6 @@ class TestNrrdVoxels(unittest.TestCase):
     "Allen API is down",
 )
 class TestAllenVoxels(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        if MPI.get_rank() == 0:
-            dataset, h = nrrd.read(get_data_path("orientations", "toy_annotations.nrrd"))
-            h["sizes"][2] -= 1
-            dataset = dataset[:, :, :-1]
-            nrrd.write(
-                get_data_path("orientations", "bad_dataset.nrrd"), dataset, header=h
-            )
-        MPI.barrier()
-
-    @classmethod
-    def tearDownClass(cls):
-        MPI.barrier()
-        if MPI.get_rank() == 0:
-            os.remove(get_data_path("orientations", "bad_dataset.nrrd"))
-
     def test_val(self):
         cfg = Configuration.default(
             partitions=dict(a=dict(type="allen", struct_name="VAL")),
@@ -357,11 +341,14 @@ class TestAllenVoxels(unittest.TestCase):
 
     def test_mask_nrrd(self):
         cfg = Configuration.default(
+            voxel_datasets={
+                "toy_annotations": get_data_path("orientations", "toy_annotations.nrrd")
+            },
             regions=dict(br=dict(children=["a"])),
             partitions=dict(
                 a=dict(
                     type="allen",
-                    mask_source=get_data_path("orientations", "toy_annotations.nrrd"),
+                    mask_source="toy_annotations",
                     struct_id=10690,
                 )
             ),
@@ -377,63 +364,17 @@ class TestAllenVoxels(unittest.TestCase):
         self.assertEqual(
             np.count_nonzero(mask), 85475, "DEC should have this many voxels."
         )
-        part.mask_source = None
-        self.assertFalse(hasattr(part, "_annotations_file"))
-        self.assertEqual(
-            part.annotations.raw.shape, (528, 320, 456), "Should download allen dataset"
-        )
-
-    def test_wrong_resolutions_nrrd(self):
-        cfg = Configuration.default(
-            regions=dict(br=dict(children=["a"])),
-            partitions=dict(
-                a=dict(
-                    type="allen",
-                    mask_source=get_data_path("orientations", "toy_annotations.nrrd"),
-                    struct_id=10690,
-                    voxel_datasets={
-                        "orientations": {
-                            "file": get_data_path(
-                                "orientations", "toy_orientations.nrrd"
-                            ),
-                            "voxel_size": 22,
-                        },
-                    },
-                )
-            ),
-        )
-        part = cfg.partitions.a
-        with self.assertRaises(ConfigurationError, msg="Resolution should mismatch"):
-            _ = part.voxelset
-
-    def test_wrong_sizes_nrrd(self):
-        cfg = Configuration.default(
-            regions=dict(br=dict(children=["a"])),
-            partitions=dict(
-                a=dict(
-                    type="allen",
-                    mask_source=get_data_path("orientations", "toy_annotations.nrrd"),
-                    struct_id=10690,
-                    voxel_datasets={
-                        "orientations": get_data_path(
-                            "orientations", "toy_orientations.nrrd"
-                        ),
-                        "wrong_dim": get_data_path("orientations", "bad_dataset.nrrd"),
-                    },
-                )
-            ),
-        )
-        part = cfg.partitions.a
-        with self.assertRaises(ConfigurationError, msg="Shape should mismatch"):
-            _ = part.voxelset
 
     def test_wrong_ids(self):
         cfg = Configuration.default(
+            voxel_datasets={
+                "annotations": get_data_path("orientations", "toy_annotations.nrrd")
+            },
             regions=dict(br=dict(children=["a"])),
             partitions=dict(
                 a=dict(
                     type="allen",
-                    mask_source=get_data_path("orientations", "toy_annotations.nrrd"),
+                    mask_source="annotations",
                     struct_id=1e7,
                 )
             ),

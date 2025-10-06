@@ -9,7 +9,6 @@ from .. import config
 from ..exceptions import EmptySelectionError
 from ..morphologies import MorphologySet, RotationSet
 from ..profiling import node_meter
-from ..storage._files import NrrdDependencyNode
 from ..topology.partition import Partition
 from ..voxels import voxel_rotation_of
 from .indicator import PlacementIndications
@@ -175,7 +174,7 @@ class RandomRotations(RotationDistributor, classmap_entry="random"):
 
 @config.node
 class VolumetricRotations(RotationDistributor, classmap_entry="orientation_field"):
-    orientation_path = config.attr(required=True, type=NrrdDependencyNode)
+    orientation_path = config.ref(config.refs.vox_dset_ref, required=True)
     """
     Path to the nrrd file containing the volumetric orientation field.
 

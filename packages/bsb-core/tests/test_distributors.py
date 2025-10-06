@@ -114,13 +114,19 @@ class TestVolumetricRotations(
 ):
     def setUp(self):
         self.cfg = Configuration.default(
+            voxel_datasets=dict(
+                annotations=get_data_path("orientations", "toy_annotations.nrrd"),
+                orientations={
+                    "file": get_data_path("orientations", "toy_orientations.nrrd"),
+                    "default_vector": np.array([1.0, 0.0, 0.0]),
+                    "cache": True,
+                },
+            ),
             regions=dict(reg=dict(children=["a"])),
             partitions=dict(
                 a=dict(
                     type="nrrd",
-                    sources=dict(
-                        annotations=get_data_path("orientations", "toy_annotations.nrrd")
-                    ),
+                    sources=["annotations"],
                 )
             ),
             cell_types=dict(a=dict(spatial=dict(radius=2, density=1e-4))),
@@ -130,14 +136,7 @@ class TestVolumetricRotations(
                     cell_types=["a"],
                     partitions=["a"],
                     distribute=dict(
-                        rotations=VolumetricRotations(
-                            orientation_path={
-                                "file": get_data_path(
-                                    "orientations", "toy_orientations.nrrd"
-                                ),
-                                "default_vector": np.array([1.0, 0.0, 0.0]),
-                            }
-                        ),
+                        rotations=VolumetricRotations(orientation_path="orientations"),
                     ),
                 ),
             ),

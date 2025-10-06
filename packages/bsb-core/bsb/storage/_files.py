@@ -4,6 +4,7 @@ import abc as _abc
 import contextlib as _cl
 import datetime as _dt
 import email.utils as _eml
+import functools
 import functools as _ft
 import hashlib as _hl
 import os
@@ -504,6 +505,9 @@ class NrrdDependencyNode(FilePipelineMixin, FileDependencyNode):
     )
     """Default orientation vector of each position."""
 
+    cache = config.attr(type=bool, default=False)
+    """Should the dataset be cached when loaded?"""
+
     @config.property(type=int)
     def voxel_size(self):
         """Size of each voxel."""
@@ -521,7 +525,13 @@ class NrrdDependencyNode(FilePipelineMixin, FileDependencyNode):
         with self.file.provide_locally() as (path, encoding):
             return VoxelData.load_nrrd(path)
 
+    @functools.cache
+    def _get_data_cached(self):
+        return self.pipe(self.get_data())
+
     def load_object(self):
+        if self.cache:
+            return self._get_data_cached()
         return self.pipe(self.get_data())
 
     def voxel_of(self, point):
@@ -534,6 +544,21 @@ class NrrdDependencyNode(FilePipelineMixin, FileDependencyNode):
         return np.asarray(
             np.floor(point / self.voxel_size),
             dtype=int,
+        )
+
+    def is_compatible(self, other_nrrd: NrrdDependencyNode):
+        """
+        Check if the current nrrd file is compatible with the provided one.
+        :param NrrdDependencyNode other_nrrd: other file to compare against
+        :rtype: bool
+        :return: True if the two datasets are registered in the same coordinate framework
+            and if their voxel size is the same.
+        """
+        if other_nrrd.voxel_size != self.voxel_size:
+            return False
+        return np.all(
+            np.array(other_nrrd.load_object().raw.shape[:3])
+            == np.array(self.load_object().raw.shape)
         )
 
 

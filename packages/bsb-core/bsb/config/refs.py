@@ -27,6 +27,16 @@ class Reference:  # pragma: nocover
         return here
 
 
+class VoxelDatasetReference(Reference):
+    def __call__(self, root, here):
+        return root.voxel_datasets
+
+    def is_ref(self, value):
+        from ..storage._files import NrrdDependencyNode
+
+        return isinstance(value, NrrdDependencyNode)
+
+
 class CellTypeReference(Reference):
     def __call__(self, root, here):
         return root.cell_types
@@ -35,16 +45,6 @@ class CellTypeReference(Reference):
         from ..cell_types import CellType
 
         return isinstance(value, CellType)
-
-
-class ConnectionTypeReference(Reference):
-    def __call__(self, root, here):
-        return root.connectivity
-
-    def is_ref(self, value):
-        from ..connectivity import ConnectionStrategy
-
-        return isinstance(value, ConnectionStrategy)
 
 
 class PartitionReference(Reference):
@@ -112,8 +112,8 @@ class SimCellModelReference(Reference):
         return isinstance(value, CellModel)
 
 
+vox_dset_ref = VoxelDatasetReference()
 cell_type_ref = CellTypeReference()
-conn_type_ref = ConnectionTypeReference()
 partition_ref = PartitionReference()
 placement_ref = PlacementReference()
 connectivity_ref = ConnectivityReference()
@@ -124,7 +124,6 @@ sim_cell_model_ref = SimCellModelReference()
 __all__ = [
     "Reference",
     "cell_type_ref",
-    "conn_type_ref",
     "partition_ref",
     "placement_ref",
     "connectivity_ref",

@@ -165,7 +165,7 @@ class SimulatorAdapter(abc.ABC):
                 for checkpoint in checkpoints
                 if checkpoint > current_checkpoint
             ]
-            current_checkpoint = min(*chkp_noregressive, self._duration)
+            current_checkpoint = min(chkp_noregressive, default=self._duration)
             participants = [
                 self._controllers[i]
                 for i, checkpoint in enumerate(checkpoints)

@@ -424,10 +424,6 @@ class ArborAdapter(SimulatorAdapter):
     def get_gid_manager(self, simulation, simdata):
         return GIDManager(simulation, simdata)
 
-    # def prepare_samples(self, simulation, simdata):
-    #     for device in simulation.devices.values():
-    #         device.prepare_samples(simdata, comm=self.comm)
-
     def run(self, *simulations):
         if len(simulations) != 1:
             raise RuntimeError(
@@ -448,13 +444,10 @@ class ArborAdapter(SimulatorAdapter):
 
             start = time.time()
             report("running simulation", level=1)
-            for controller in self._controllers:
-                if hasattr(controller, "on_start"):
-                    controller.on_start()
 
             for t, cnt_ids in self.get_next_checkpoint():
                 arbor_sim.run(t * U.ms, dt=simulation.resolution * U.ms)
-                self.execute(cnt_ids)
+                self.execute_checkpoints(cnt_ids)
             report(f"Completed simulation. {time.time() - start:.2f}s", level=1)
             if simulation.profiling and arbor.config()["profiling"]:
                 report("printing profiler summary", level=2)

@@ -58,12 +58,12 @@ verbosity = "bsb._options:verbosity"
 sudo = "bsb._options:sudo"
 version = "bsb._options:version"
 config = "bsb._options:config"
-simulation_report = "bsb._options:simulation_report"
+sim_console_progress= "bsb._options:sim_console_progress"
 profiling = "bsb._options:profiling"
 debug_pool = "bsb._options:debug_pool"
 
-  [project.scripts]
-  bsb = "bsb.cli:handle_cli"
+[project.scripts]
+bsb = "bsb.cli:handle_cli"
 
 [dependency-groups]
 test = [

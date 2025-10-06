@@ -131,15 +131,15 @@ List of options
 
   * *env*: ``BSB_CONFIG_FILE``
 
-* ``simulation_report``: Add a listener to do reporting of simulation progress, the report will be updated every time step.
+* ``sim_console_progress``: Add a listener to do reporting of simulation progress, the report will be updated every time step.
 
-  * *script*: ``simulation_report``
+  * *script*: ``sim_console_progress``
 
-  * *cli*: ``sr``, ``simulation_report``
+  * *cli*: ``scp``, ``sim_console_progress``
 
-  * *project*: ``simulation_report``
+  * *project*: ``sim_console_progress``
 
-  * *env*: ``BSB_SIM_REPORT``
+  * *env*: ``BSB_SIM_PROGRESS``
 
 .. _project_settings:
 

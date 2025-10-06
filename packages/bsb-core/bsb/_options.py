@@ -92,13 +92,13 @@ class ConfigOption(
         return "network_configuration.json"
 
 
-class SimulationReport(
+class SimulationProgress(
     BsbOption,
-    name="simulation_report",
-    cli=("sr", "simulation_report"),
-    project=("simulation_report",),
-    script=("simulation_report",),
-    env=("BSB_SIM_REPORT",),
+    name="sim_console_progress",
+    cli=("scp", "sim_console_progress"),
+    project=("sim_console_progress",),
+    script=("sim_console_progress",),
+    env=("BSB_SIM_PROGRESS",),
 ):
     """
     Activate reports during simulations, set the time steps of the report.
@@ -176,8 +176,8 @@ def config():
     return ConfigOption
 
 
-def simulation_report():
-    return SimulationReport
+def sim_console_progress():
+    return SimulationProgress
 
 
 def profiling():

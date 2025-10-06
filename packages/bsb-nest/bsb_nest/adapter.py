@@ -108,19 +108,13 @@ class NestAdapter(SimulatorAdapter):
             raise AdapterError(f"Unprepared for simulations: {', '.join(unprepared)}")
         report("Simulating...", level=2)
         self._duration = max(sim.duration for sim in simulations)
-        [
-            controller.on_start()
-            for controller in self._controllers
-            if hasattr(controller, "on_start")
-        ]
+
         try:
             results = [self.simdata[sim].result for sim in simulations]
             with nest.RunManager():
-                for t, cnt_ids in self.get_next_checkpoint():
+                for t, controllers in self.get_next_checkpoint():
                     nest.Run(t - self._prev_chkpoint)
-                    need_to_flush = self.execute(cnt_ids)
-                    if need_to_flush:
-                        self.collect(results)
+                    self.execute_checkpoints(controllers)
                     self._prev_chkpoint = t
 
         finally:

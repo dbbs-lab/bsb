@@ -10,9 +10,8 @@ A Controller is a component that must implement two primary methods:
 
   * ``get_next_checkpoint()``: This method returns a *float* representing the time of the next checkpoint. The simulation adapter calls this to determine when the controller's progress method should be triggered.
 
-  * ``progress()``: This method contains the logic for the action to be performed when the checkpoint is reached.
+  * ``run_checkpoint()``: This method contains the logic for the action to be performed when the checkpoint is reached.
 
-An optional third method, ``on_start()``, can also be implemented to trigger an action at the beginning of the simulation.
 
 Example: A simple controlling Device
 ------------------------------------

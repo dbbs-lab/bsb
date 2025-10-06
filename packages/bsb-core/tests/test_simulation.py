@@ -226,7 +226,6 @@ class TestTargetting(
         positions = ps.load_positions()
         expected_ids = np.where(positions[:, 0] <= 40)
 
-        print(f"result: {result} - len: {len(result.block.segments)}")
         spiketrains = result.block.segments[0].spiketrains
         for spiketrain in spiketrains:
             sorted_ids = np.sort(spiketrain.annotations["gids"])
@@ -304,7 +303,7 @@ class SpikeController(
     def get_next_checkpoint(self):
         return self._status + self.step
 
-    def progress(self, kwargs=None):
+    def run_checkpoint(self, kwargs=None):
         # Flush data
         self._simdata.result.flush()
         # Free Memory
@@ -437,7 +436,7 @@ class TestAdapterControllers(
             },
             step=15,
         )
-        options.simulation_report = 100
+        options.sim_console_progress = 100
 
         sim = self.network.simulations.test
         adapter = get_simulation_adapter(sim.simulator)

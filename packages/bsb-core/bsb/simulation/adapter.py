@@ -5,8 +5,6 @@ import typing
 from contextlib import ExitStack
 from time import time
 
-import numpy as np
-
 from bsb import AttributeMissingError, SimulationResult, options, report
 
 from ..services.mpi import MPIService
@@ -26,20 +24,12 @@ class BasicSimulationListener:
         self._sim_name = [sim._name for sim in simulations]
         self._use_tty = os.isatty(sys.stdout.fileno()) and sum(os.get_terminal_size())
         if self._use_tty:
-            self.progress = self.use_bar
+            self.run_checkpoint = self.use_bar
 
     def get_next_checkpoint(self):
         return self._status + self._step
 
-    def on_start(self):
-        if self._use_tty:
-            empty_lines = ""
-            report(empty_lines, level=1)
-            self.progress_bar(0)
-        else:
-            pass
-
-    def progress(self):
+    def run_checkpoint(self):
         now = time()
         self._status += self._step
         tic = now - self._last_tick
@@ -72,6 +62,8 @@ class BasicSimulationListener:
         report(msg, level=1)
 
     def use_bar(self):
+        if not self._status:
+            report("", level=1)
         self._status += self._step
         current_percent = int((self._status / self._adapter._duration) * 100)
         self.progress_bar(current_percent)
@@ -104,7 +96,7 @@ class SimulatorAdapter(abc.ABC):
         self.comm = MPIService(comm)
         self._controllers = []
         self._duration = None
-        self._sim_checkpoint = 0
+        # self._sim_checkpoint = 0
 
     def simulate(self, *simulations, post_prepare=None):
         """
@@ -120,9 +112,9 @@ class SimulatorAdapter(abc.ABC):
             for simulation in simulations:
                 context.enter_context(simulation.scaffold.storage.read_only())
             alldata = []
-            if options.simulation_report:
+            if options.sim_console_progress:
                 listener = BasicSimulationListener(
-                    simulations, self, options.simulation_report
+                    simulations, self, options.sim_console_progress
                 )
                 self._controllers.append(listener)
 
@@ -161,18 +153,27 @@ class SimulatorAdapter(abc.ABC):
         pass
 
     def get_next_checkpoint(self):
-        while self._sim_checkpoint < self._duration:
-            checkpoints = [cnt.get_next_checkpoint() for cnt in self._controllers]
-            complete = np.append(
-                checkpoints, self._duration
-            )  # In case of no checkpoint provided
-            self._sim_checkpoint = np.min(complete)
-            cnt_ids = np.where(checkpoints == self._sim_checkpoint)[0]
-            yield (self._sim_checkpoint, cnt_ids)
+        current_checkpoint = 0
+        while current_checkpoint < self._duration:
+            checkpoints = [
+                controller.get_next_checkpoint() for controller in self._controllers
+            ]
+            # Filter out invalid "regressive" checkpoints,
+            # and default to the end of the simulation
+            chkp_noregressive = [
+                chkpoint for chkpoint in checkpoints if chkpoint > current_checkpoint
+            ]
+            current_checkpoint = min(*chkp_noregressive, self._duration)
+            participants = [
+                self._controllers[i]
+                for i, chp in enumerate(checkpoints)
+                if chp == current_checkpoint
+            ]
+            yield (current_checkpoint, participants)
 
-    def execute(self, controller_ids, **kwargs):
-        for i in controller_ids:
-            self._controllers[i].progress()
+    def execute_checkpoints(self, controllers):
+        for controller in controllers:
+            controller.run_checkpoint()
 
     def collect(self, results):
         """
@@ -193,7 +194,7 @@ class SimulatorAdapter(abc.ABC):
     def load_controllers(self, simulation):
         for component in simulation.get_components():
             if hasattr(component, "get_next_checkpoint"):
-                if hasattr(component, "progress"):
+                if hasattr(component, "run_checkpoint"):
                     self._controllers.append(component)
                 else:
                     raise AttributeMissingError(

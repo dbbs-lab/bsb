@@ -46,7 +46,7 @@ class Root430:
 class TestIssues(unittest.TestCase):
     def test_430(self):
         with self.assertRaises(CfgReferenceError, msg="Regression of issue #430"):
-            config = Root430(
+            _config = Root430(
                 examples=dict(), extensions=dict(x=dict(ex_mut=4, ref="missing"))
             )
 

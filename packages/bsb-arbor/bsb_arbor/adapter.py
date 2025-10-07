@@ -445,16 +445,18 @@ class ArborAdapter(SimulatorAdapter):
             start = time.time()
             report("running simulation", level=1)
 
-            for t, cnt_ids in self.get_next_checkpoint():
+            for t, checkpoint_controllers in self.get_next_checkpoint():
                 arbor_sim.run(t * U.ms, dt=simulation.resolution * U.ms)
-                self.execute_checkpoints(cnt_ids)
+                self.execute_checkpoints(checkpoint_controllers)
             report(f"Completed simulation. {time.time() - start:.2f}s", level=1)
             if simulation.profiling and arbor.config()["profiling"]:
                 report("printing profiler summary", level=2)
                 report(arbor.profiler_summary(), level=1)
             return [simdata.result]
         finally:
+            results = [self.simdata[sim].result for sim in simulations]
             del self.simdata[simulation]
+        return results
 
     def get_recipe(self, simulation, simdata=None):
         if simdata is None:

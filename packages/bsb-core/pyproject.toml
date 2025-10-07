@@ -62,8 +62,8 @@ sim_console_progress= "bsb._options:sim_console_progress"
 profiling = "bsb._options:profiling"
 debug_pool = "bsb._options:debug_pool"
 
-[project.scripts]
-bsb = "bsb.cli:handle_cli"
+  [project.scripts]
+  bsb = "bsb.cli:handle_cli"
 
 [dependency-groups]
 test = [

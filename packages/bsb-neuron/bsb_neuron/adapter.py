@@ -141,9 +141,9 @@ class NeuronAdapter(SimulatorAdapter):
             self.engine.finitialize(self.initial)
             self._duration = max(sim.duration for sim in simulations)
 
-            for t, cnt_ids in self.get_next_checkpoint():
+            for t, checkpoint_controllers in self.get_next_checkpoint():
                 pc.psolve(t)
-                self.execute_checkpoints(cnt_ids)
+                self.execute_checkpoints(checkpoint_controllers)
 
             report("Finished simulation.", level=2)
         finally:

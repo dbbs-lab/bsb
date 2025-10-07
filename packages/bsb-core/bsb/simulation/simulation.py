@@ -86,12 +86,11 @@ class Simulation:
         }
 
     def get_components(self):
-        components = itertools.chain(
+        return itertools.chain(
             self.cell_models.values(),
             self.connection_models.values(),
             self.devices.values(),
         )
-        return components
 
 
 __all__ = ["ProgressEvent", "Simulation"]

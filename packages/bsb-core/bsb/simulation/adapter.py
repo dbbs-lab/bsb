@@ -5,6 +5,8 @@ import typing
 from contextlib import ExitStack
 from time import time
 
+from tqdm import tqdm
+
 from bsb import AttributeMissingError, SimulationResult, options, report
 
 from ..services.mpi import MPIService
@@ -15,7 +17,7 @@ if typing.TYPE_CHECKING:
     from .simulation import Simulation
 
 
-class BasicSimulationListener:
+class FixedStepProgressController:
     def __init__(self, simulations, adapter, step=1):
         self._status = 0
         self._adapter = adapter
@@ -24,7 +26,14 @@ class BasicSimulationListener:
         self._sim_name = [sim._name for sim in simulations]
         self._use_tty = os.isatty(sys.stdout.fileno()) and sum(os.get_terminal_size())
         if self._use_tty:
-            self.run_checkpoint = self.use_bar
+
+            def void():
+                self._status += self._step
+
+            if not self._adapter.comm.get_rank():
+                self.run_checkpoint = self.use_bar
+            else:
+                self.run_checkpoint = void
 
     def get_next_checkpoint(self):
         return self._status + self._step
@@ -40,34 +49,16 @@ class BasicSimulationListener:
         msg += f"exectuted: {(self._status / duration) * 100:.2f}%"
         report(msg, level=1)
         self._last_tick = now
-        return self._status
-
-    def progress_bar(self, current_percent):
-        color = "\033[91m"  # red
-        if current_percent > 33:
-            color = "\033[93m"
-        if current_percent > 66:
-            color = "\033[92m"
-        msg = (
-            "\x1b[1A"
-            + "\r"
-            + str(self._sim_name)
-            + " ["
-            + color
-            + "%s" % ("-" * current_percent + " " * (100 - current_percent))
-            + "\033[0m] "
-            + str(current_percent)
-            + "%"
-        )
-        report(msg, level=1)
 
     def use_bar(self):
         if not self._status:
-            report("", level=1)
+            self._progress_bar = tqdm(total=self._adapter._duration)
+        elif self._adapter.current_checkpoint == self._adapter._duration:
+            self._progress_bar.update(self._adapter.current_checkpoint - self._status)
+            self._progress_bar.close()
+        else:
+            self._progress_bar.update(self._adapter.current_checkpoint - self._status)
         self._status += self._step
-        current_percent = int((self._status / self._adapter._duration) * 100)
-        self.progress_bar(current_percent)
-        return self._status
 
 
 class SimulationData:
@@ -90,13 +81,12 @@ class SimulatorAdapter(abc.ABC):
         :param comm: The mpi4py MPI communicator to use. Only nodes in the communicator
           will participate in the simulation. The first node will idle as the main node.
         """
-        # print(f" Rep CFlag : {} | Verbosity: {options.verbosity}")
 
         self.simdata: dict[Simulation, SimulationData] = dict()
         self.comm = MPIService(comm)
         self._controllers = []
         self._duration = None
-        # self._sim_checkpoint = 0
+        self.current_checkpoint = 0
 
     def simulate(self, *simulations, post_prepare=None):
         """
@@ -113,7 +103,7 @@ class SimulatorAdapter(abc.ABC):
                 context.enter_context(simulation.scaffold.storage.read_only())
             alldata = []
             if options.sim_console_progress:
-                listener = BasicSimulationListener(
+                listener = FixedStepProgressController(
                     simulations, self, options.sim_console_progress
                 )
                 self._controllers.append(listener)
@@ -153,8 +143,7 @@ class SimulatorAdapter(abc.ABC):
         pass
 
     def get_next_checkpoint(self):
-        current_checkpoint = 0
-        while current_checkpoint < self._duration:
+        while self.current_checkpoint < self._duration:
             checkpoints = [
                 controller.get_next_checkpoint() for controller in self._controllers
             ]
@@ -163,15 +152,15 @@ class SimulatorAdapter(abc.ABC):
             chkp_noregressive = [
                 checkpoint
                 for checkpoint in checkpoints
-                if checkpoint > current_checkpoint
+                if checkpoint > self.current_checkpoint
             ]
-            current_checkpoint = min(chkp_noregressive, default=self._duration)
+            self.current_checkpoint = min(chkp_noregressive, default=self._duration)
             participants = [
                 self._controllers[i]
                 for i, checkpoint in enumerate(checkpoints)
-                if checkpoint == current_checkpoint
+                if checkpoint == self.current_checkpoint
             ]
-            yield (current_checkpoint, participants)
+            yield (self.current_checkpoint, participants)
 
     def execute_checkpoints(self, controllers):
         for controller in controllers:
@@ -201,12 +190,12 @@ class SimulatorAdapter(abc.ABC):
                 else:
                     raise AttributeMissingError(
                         f"Device {component.name} is configured to be a controller "
-                        f"but progress is not defined"
+                        f"but run_checkpoint is not defined"
                     )
 
 
 __all__ = [
-    "BasicSimulationListener",
+    "FixedStepProgressController",
     "SimulationData",
     "SimulatorAdapter",
 ]

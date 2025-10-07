@@ -112,12 +112,13 @@ class NestAdapter(SimulatorAdapter):
         try:
             results = [self.simdata[sim].result for sim in simulations]
             with nest.RunManager():
-                for t, controllers in self.get_next_checkpoint():
+                for t, checkpoint_controllers in self.get_next_checkpoint():
                     nest.Run(t - self._prev_chkpoint)
-                    self.execute_checkpoints(controllers)
+                    self.execute_checkpoints(checkpoint_controllers)
                     self._prev_chkpoint = t
 
         finally:
+            results = [self.simdata[sim].result for sim in simulations]
             for sim in simulations:
                 del self.simdata[sim]
 

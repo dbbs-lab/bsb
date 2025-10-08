@@ -7,7 +7,7 @@ from time import time
 
 from tqdm import tqdm
 
-from bsb import AttributeMissingError, SimulationResult, options, report
+from bsb import AttributeMissingError, SimulationResult, options
 
 from ..services.mpi import MPIService
 
@@ -25,29 +25,33 @@ class FixedStepProgressController:
         self._step = step
         self._sim_name = [sim._name for sim in simulations]
         self._use_tty = os.isatty(sys.stdout.fileno()) and sum(os.get_terminal_size())
+
+        def silent():
+            self._status += self._step
+
         if self._use_tty:
-
-            def void():
-                self._status += self._step
-
             if not self._adapter.comm.get_rank():
                 self.run_checkpoint = self.use_bar
             else:
-                self.run_checkpoint = void
+                self.run_checkpoint = silent
+        else:
+            if self._adapter.comm.get_rank():
+                self.run_checkpoint = silent
 
     def get_next_checkpoint(self):
         return self._status + self._step
 
     def run_checkpoint(self):
         now = time()
-        self._status += self._step
+        sim_time = self._adapter.current_checkpoint
         tic = now - self._last_tick
         el_time = now - self._start
         duration = self._adapter._duration
-        msg = f"Simulation {self._sim_name} | progress: {self._status} - "
+        msg = f"Simulation {self._sim_name} | progress: {sim_time:.2f} "
         msg += f"elapsed: {el_time:.2f}s - last step time: {tic:.2f}s - "
-        msg += f"exectuted: {(self._status / duration) * 100:.2f}%"
-        report(msg, level=1)
+        msg += f"exectuted: {(sim_time / duration) * 100:.2f}%"
+        self._status += self._step
+        print(msg)
         self._last_tick = now
 
     def use_bar(self):

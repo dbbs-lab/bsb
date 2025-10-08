@@ -11,13 +11,15 @@ from bsb_test import NumpyTestCase, RandomStorageFixture, get_test_config
 from nest.lib.hl_api_exceptions import NESTErrors
 from scipy.optimize import curve_fit
 
+from bsb_nest import NestAdapter
+
 
 def _conf_single_cell():
     return Configuration(
         {
             "name": "test",
             "storage": {"engine": "hdf5"},
-            "network": {"x": 1, "y": 1, "z": 1},
+            "network": {"x": 100, "y": 100, "z": 100},
             "partitions": {"B": {"type": "layer", "thickness": 1}},
             "cell_types": {"A": {"spatial": {"radius": 1, "count": 1}}},
             "placement": {
@@ -900,3 +902,77 @@ class TestNest(
                     "devices": {},
                 }
             }
+
+    def test_multisyn_collocation(self):
+        cfg = _conf_single_cell()
+        cfg.cell_types.add("C", {"spatial": {"radius": 1, "count": 30}})
+        cfg.placement.add(
+            "placement_C",
+            {
+                "strategy": "bsb.placement.RandomPlacement",
+                "cell_types": ["C"],
+                "partitions": ["B"],
+            },
+        )
+        cfg.connectivity.add(
+            "C_to_A",
+            {
+                "strategy": "bsb.connectivity.AllToAll",
+                "presynaptic": {"cell_types": ["C"]},
+                "postsynaptic": {"cell_types": ["A"]},
+            },
+        )
+        cfg.simulations = {
+            "test": {
+                "simulator": "nest",
+                "duration": 100,
+                "resolution": 0.1,
+                "seed": 1234,
+                "cell_models": {
+                    "A": {
+                        "model": "iaf_cond_alpha",
+                        "constants": {
+                            "V_reset": -70,  # V_m, E_L and V_reset are the same
+                        },
+                    },
+                    "C": {"model": "parrot_neuron"},
+                },
+                "connection_models": {
+                    "C_to_A": {
+                        "rule": "pairwise_bernoulli",  # random connection rule
+                        "p": 0.6,
+                        "synapses": [
+                            {"weight": 30, "delay": 1.0, "model": "static_synapse"},
+                            {"weight": 30, "delay": 1.0, "model": "stdp_synapse"},
+                        ],
+                    }
+                },
+                "devices": {},
+            }
+        }
+        scaffold = Scaffold(cfg, self.storage)
+        scaffold.compile()
+        adapter = NestAdapter()
+        adapter.reset_kernel()
+        adapter.prepare(scaffold.simulations["test"])
+        conn_data = np.array(
+            [
+                (
+                    conn.source,
+                    conn.target,
+                    1
+                    if conn.synapse_model == "static_synapse"
+                    else 2
+                    if conn.synapse_model == "stdp_synapse"
+                    else 0,
+                )
+                for conn in nest.GetConnections()
+            ]
+        )
+        u, c = np.unique(conn_data[:, 2], return_counts=True)
+        self.assertAll(np.array([1, 2]) == u)
+        self.assertEqual(c[0], c[1])
+        self.assertAll(
+            conn_data[:, :2][conn_data[:, 2] == 1]
+            == conn_data[:, :2][conn_data[:, 2] == 2]
+        )

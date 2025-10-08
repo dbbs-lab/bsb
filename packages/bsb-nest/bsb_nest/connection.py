@@ -89,24 +89,32 @@ class NestConnection(compose_nodes(NestConnectionSettings, ConnectionModel)):
     def create_connections(self, simdata, pre_nodes, post_nodes, cs, comm):
         import nest
 
-        for syn_spec in self.get_syn_specs():
-            if self.rule is not None:
-                nest.Connect(pre_nodes, post_nodes, self.get_conn_spec(), syn_spec)
-            else:
+        syn_specs = self.get_syn_specs()
+        if self.rule is not None:
+            nest.Connect(
+                pre_nodes,
+                post_nodes,
+                self.get_conn_spec(),
+                nest.CollocatedSynapses(*syn_specs),
+            )
+        else:
+            comm.barrier()
+            for pre_locs, post_locs in self.predict_mem_iterator(
+                pre_nodes, post_nodes, cs, comm
+            ):
                 comm.barrier()
-                for pre_locs, post_locs in self.predict_mem_iterator(
-                    pre_nodes, post_nodes, cs, comm
-                ):
-                    comm.barrier()
-                    if len(pre_locs) == 0 or len(post_locs) == 0:
-                        continue
-                    cell_pairs, multiplicity = np.unique(
-                        np.column_stack((pre_locs[:, 0], post_locs[:, 0])),
-                        return_counts=True,
-                        axis=0,
-                    )
-                    prel = pre_nodes.tolist()
-                    postl = post_nodes.tolist()
+                if len(pre_locs) == 0 or len(post_locs) == 0:
+                    continue
+                cell_pairs, multiplicity = np.unique(
+                    np.column_stack((pre_locs[:, 0], post_locs[:, 0])),
+                    return_counts=True,
+                    axis=0,
+                )
+                prel = pre_nodes.tolist()
+                postl = post_nodes.tolist()
+                # cannot use CollocatedSynapses with a list of weight and delay
+                # so loop over the syn_specs
+                for syn_spec in syn_specs:
                     ssw = {**syn_spec}
                     bw = syn_spec["weight"]
                     ssw["weight"] = [bw * m for m in multiplicity]
@@ -119,7 +127,7 @@ class NestConnection(compose_nodes(NestConnectionSettings, ConnectionModel)):
                         ssw,
                         return_synapsecollection=False,
                     )
-                comm.barrier()
+            comm.barrier()
         return LazySynapseCollection(pre_nodes, post_nodes)
 
     def predict_mem_iterator(self, pre_nodes, post_nodes, cs, comm):

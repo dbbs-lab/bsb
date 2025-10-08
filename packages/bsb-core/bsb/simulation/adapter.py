@@ -53,6 +53,7 @@ class FixedStepProgressController:
     def use_bar(self):
         if not self._status:
             self._progress_bar = tqdm(total=self._adapter._duration)
+            self._progress_bar.update(self._adapter.current_checkpoint - self._status)
         elif self._adapter.current_checkpoint == self._adapter._duration:
             self._progress_bar.update(self._adapter.current_checkpoint - self._status)
             self._progress_bar.close()

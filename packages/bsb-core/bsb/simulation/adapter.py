@@ -27,7 +27,7 @@ class FixedStepProgressController:
         self._use_tty = os.isatty(sys.stdout.fileno()) and sum(os.get_terminal_size())
 
         def silent():
-            self._status += self._step
+            self._status = self._adapter.current_checkpoint
 
         if self._use_tty:
             if not self._adapter.comm.get_rank():
@@ -43,14 +43,13 @@ class FixedStepProgressController:
 
     def run_checkpoint(self):
         now = time()
-        sim_time = self._adapter.current_checkpoint
+        self._status = self._adapter.current_checkpoint
         tic = now - self._last_tick
         el_time = now - self._start
         duration = self._adapter._duration
-        msg = f"Simulation {self._sim_name} | progress: {sim_time:.2f} "
+        msg = f"Simulation {self._sim_name} | progress: {self._status:.2f} "
         msg += f"elapsed: {el_time:.2f}s - last step time: {tic:.2f}s - "
-        msg += f"exectuted: {(sim_time / duration) * 100:.2f}%"
-        self._status += self._step
+        msg += f"exectuted: {(self._status / duration) * 100:.2f}%"
         print(msg)
         self._last_tick = now
 
@@ -63,7 +62,7 @@ class FixedStepProgressController:
             self._progress_bar.close()
         else:
             self._progress_bar.update(self._adapter.current_checkpoint - self._status)
-        self._status += self._step
+        self._status = self._adapter.current_checkpoint
 
 
 class SimulationData:

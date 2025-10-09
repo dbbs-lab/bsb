@@ -114,12 +114,15 @@ class TestVolumetricRotations(
 ):
     def setUp(self):
         self.cfg = Configuration.default(
-            voxel_datasets=dict(
-                annotations=get_data_path("orientations", "toy_annotations.nrrd"),
+            files=dict(
+                annotations={
+                    "type": "nrrd",
+                    "file": get_data_path("orientations", "toy_annotations.nrrd"),
+                },
                 orientations={
+                    "type": "nrrd",
                     "file": get_data_path("orientations", "toy_orientations.nrrd"),
                     "default_vector": np.array([1.0, 0.0, 0.0]),
-                    "cache": True,
                 },
             ),
             regions=dict(reg=dict(children=["a"])),

@@ -11,9 +11,9 @@ from ..postprocessing import AfterConnectivityHook, AfterPlacementHook
 from ..simulation.simulation import Simulation
 from ..storage._files import (
     CodeDependencyNode,
+    FileDependencyNode,
     MorphologyDependencyNode,
     MorphologyPipelineNode,
-    NrrdDependencyNode,
 )
 from ..storage.interfaces import StorageNode
 from ..topology import Partition, Region, RegionGroup, create_topology, get_partitions
@@ -81,12 +81,12 @@ class Configuration:
     """
     Morphology files and processing pipelines.
     """
-    voxel_datasets: cfgdict[str, NrrdDependencyNode] = config.dict(
-        type=NrrdDependencyNode,
+    files: cfgdict[str, FileDependencyNode] = config.dict(
+        type=FileDependencyNode,
         required=False,
     )
     """
-    NRRD Volumetric dataset files.
+    Files to attach to the network.
     """
     storage: StorageNode = config.attr(
         type=StorageNode,

@@ -4,7 +4,6 @@ import abc as _abc
 import contextlib as _cl
 import datetime as _dt
 import email.utils as _eml
-import functools
 import functools as _ft
 import hashlib as _hl
 import os
@@ -370,7 +369,13 @@ def _get_scheme(scheme: str) -> FileScheme:
         raise KeyError(f"{scheme} is not a known file scheme.") from None
 
 
-@config.node
+@config.dynamic(
+    attr_name="type",
+    required=False,
+    default="file",
+    classmap_entry="file",
+    auto_classmap=True,
+)
 class FileDependencyNode:
     scaffold: Scaffold
     file: FileDependency = config.attr(type=FileDependency)
@@ -407,7 +412,7 @@ class FileDependencyNode:
 
 
 @config.node
-class CodeDependencyNode(FileDependencyNode):
+class CodeDependencyNode(FileDependencyNode, classmap_entry="code"):
     """
     Allow the loading of external code during network loading.
     """
@@ -492,7 +497,7 @@ class FilePipelineMixin:
 
 
 @config.node
-class NrrdDependencyNode(FilePipelineMixin, FileDependencyNode):
+class NrrdDependencyNode(FilePipelineMixin, FileDependencyNode, classmap_entry="nrrd"):
     """
     Configuration dependency node to load NRRD files.
     """
@@ -504,9 +509,6 @@ class NrrdDependencyNode(FilePipelineMixin, FileDependencyNode):
         type=types.ndarray(),
     )
     """Default orientation vector of each position."""
-
-    cache = config.attr(type=bool, default=False)
-    """Should the dataset be cached when loaded?"""
 
     @config.property(type=int)
     def voxel_size(self):
@@ -525,13 +527,7 @@ class NrrdDependencyNode(FilePipelineMixin, FileDependencyNode):
         with self.file.provide_locally() as (path, encoding):
             return VoxelData.load_nrrd(path)
 
-    @functools.cache
-    def _get_data_cached(self):
-        return self.pipe(self.get_data())
-
     def load_object(self):
-        if self.cache:
-            return self._get_data_cached()
         return self.pipe(self.get_data())
 
     def voxel_of(self, point):
@@ -583,7 +579,9 @@ class MorphologyOperation(Operation):
 
 
 @config.node
-class MorphologyDependencyNode(FilePipelineMixin, FileDependencyNode):
+class MorphologyDependencyNode(
+    FilePipelineMixin, FileDependencyNode, classmap_entry="morphology"
+):
     """
     Configuration dependency node to load morphology files.
 

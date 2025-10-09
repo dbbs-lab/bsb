@@ -27,9 +27,21 @@ class Reference:  # pragma: nocover
         return here
 
 
+class FileReference(Reference):
+    def __call__(self, root, here):
+        return root.files
+
+    def is_ref(self, value):
+        from ..storage._files import FileDependencyNode
+
+        return isinstance(value, FileDependencyNode)
+
+
 class VoxelDatasetReference(Reference):
     def __call__(self, root, here):
-        return root.voxel_datasets
+        from ..storage._files import NrrdDependencyNode
+
+        return {k: v for k, v in root.files.items() if isinstance(v, NrrdDependencyNode)}
 
     def is_ref(self, value):
         from ..storage._files import NrrdDependencyNode

@@ -178,8 +178,11 @@ class TestNrrdVoxels(unittest.TestCase):
 
     def test_bad_dimensions(self):
         cfg = Configuration.default(
-            voxel_datasets={
-                "annotations": get_data_path("orientations", "bad_dimensions.nrrd")
+            files={
+                "annotations": {
+                    "type": "nrrd",
+                    "file": get_data_path("orientations", "bad_dimensions.nrrd"),
+                }
             },
             partitions=dict(
                 a=dict(
@@ -195,9 +198,15 @@ class TestNrrdVoxels(unittest.TestCase):
             _ = part.voxel_size
 
         cfg = Configuration.default(
-            voxel_datasets={
-                "annotations": get_data_path("orientations", "toy_annotations.nrrd"),
-                "second_ann": get_data_path("orientations", "bad_dataset.nrrd"),
+            files={
+                "annotations": {
+                    "type": "nrrd",
+                    "file": get_data_path("orientations", "toy_annotations.nrrd"),
+                },
+                "second_ann": {
+                    "type": "nrrd",
+                    "file": get_data_path("orientations", "bad_dataset.nrrd"),
+                },
             },
             partitions=dict(
                 a=dict(
@@ -214,9 +223,15 @@ class TestNrrdVoxels(unittest.TestCase):
             _ = part.voxel_size
 
         cfg = Configuration.default(
-            voxel_datasets={
-                "annotations": get_data_path("orientations", "toy_annotations.nrrd"),
-                "second_ann": get_data_path("orientations", "bad_dataset.nrrd"),
+            files={
+                "annotations": {
+                    "type": "nrrd",
+                    "file": get_data_path("orientations", "toy_annotations.nrrd"),
+                },
+                "second_ann": {
+                    "type": "nrrd",
+                    "file": get_data_path("orientations", "bad_dataset.nrrd"),
+                },
             },
             partitions=dict(
                 a=dict(
@@ -235,12 +250,14 @@ class TestNrrdVoxels(unittest.TestCase):
 
     def test_diff_resolution(self):
         cfg = Configuration.default(
-            voxel_datasets={
+            files={
                 "annotations": {
+                    "type": "nrrd",
                     "file": get_data_path("orientations", "toy_annotations.nrrd"),
                     "voxel_size": 22,
                 },
                 "other": {
+                    "type": "nrrd",
                     "file": get_data_path("orientations", "toy_annotations.nrrd"),
                     "voxel_size": 25,
                 },
@@ -260,12 +277,14 @@ class TestNrrdVoxels(unittest.TestCase):
             _ = part.voxel_size
 
         cfg = Configuration.default(
-            voxel_datasets={
+            files={
                 "annotations": {
+                    "type": "nrrd",
                     "file": get_data_path("orientations", "toy_annotations.nrrd"),
                     "voxel_size": 22,
                 },
                 "other": {
+                    "type": "nrrd",
                     "file": get_data_path("orientations", "toy_annotations.nrrd"),
                     "voxel_size": 25,
                 },
@@ -287,8 +306,11 @@ class TestNrrdVoxels(unittest.TestCase):
 
     def test_mask_value(self):
         cfg = Configuration.default(
-            voxel_datasets={
-                "annotations": get_data_path("orientations", "toy_annotations.nrrd")
+            files={
+                "annotations": {
+                    "type": "nrrd",
+                    "file": get_data_path("orientations", "toy_annotations.nrrd"),
+                }
             },
             partitions=dict(
                 a=dict(
@@ -341,8 +363,11 @@ class TestAllenVoxels(unittest.TestCase):
 
     def test_mask_nrrd(self):
         cfg = Configuration.default(
-            voxel_datasets={
-                "toy_annotations": get_data_path("orientations", "toy_annotations.nrrd")
+            files={
+                "toy_annotations": {
+                    "type": "nrrd",
+                    "file": get_data_path("orientations", "toy_annotations.nrrd"),
+                }
             },
             regions=dict(br=dict(children=["a"])),
             partitions=dict(
@@ -367,8 +392,11 @@ class TestAllenVoxels(unittest.TestCase):
 
     def test_wrong_ids(self):
         cfg = Configuration.default(
-            voxel_datasets={
-                "annotations": get_data_path("orientations", "toy_annotations.nrrd")
+            files={
+                "annotations": {
+                    "type": "nrrd",
+                    "file": get_data_path("orientations", "toy_annotations.nrrd"),
+                }
             },
             regions=dict(br=dict(children=["a"])),
             partitions=dict(

@@ -621,26 +621,33 @@ class TestNrrdDependencyNode(
     def setUp(self):
         self.default_vector = np.array([0.0, -1.0, 0.0])
         self.cfg = Configuration.default(
-            voxel_datasets={
+            files={
                 "orientations": {
+                    "type": "nrrd",
                     "file": get_data_path("orientations", "toy_orientations.nrrd"),
-                    "cache": True,
                 },
                 # second dataset to check different shapes but similar volume
-                "annotations": get_data_path("orientations", "toy_annotations.nrrd"),
+                "annotations": {
+                    "type": "nrrd",
+                    "file": get_data_path("orientations", "toy_annotations.nrrd"),
+                },
                 "other_resolution": {
+                    "type": "nrrd",
                     "file": get_data_path("orientations", "toy_annotations.nrrd"),
                     "voxel_size": 22,
                 },
-                "bad_dataset": get_data_path("orientations", "bad_dataset.nrrd"),
+                "bad_dataset": {
+                    "type": "nrrd",
+                    "file": get_data_path("orientations", "bad_dataset.nrrd"),
+                },
             },
         )
         super().setUp()
         self.network.compile(clear=True)
-        self.annotations = self.network.configuration.voxel_datasets["annotations"]
+        self.annotations = self.network.configuration.files["annotations"]
         self.resolution = 25.0
         self.shape = np.array([10, 8, 8])
-        self.orientations = self.network.configuration.voxel_datasets["orientations"]
+        self.orientations = self.network.configuration.files["orientations"]
 
     def test_getters(self):
         self.assertAll(self.annotations.default_vector == self.default_vector)
@@ -705,11 +712,11 @@ class TestNrrdDependencyNode(
         self.assertTrue(self.annotations.is_compatible(self.orientations))
         self.assertFalse(
             self.annotations.is_compatible(
-                self.network.configuration.voxel_datasets["bad_dataset"]
+                self.network.configuration.files["bad_dataset"]
             )
         )
         self.assertFalse(
             self.annotations.is_compatible(
-                self.network.configuration.voxel_datasets["other_resolution"]
+                self.network.configuration.files["other_resolution"]
             )
         )

@@ -14,6 +14,7 @@ from .. import config
 from ..config import refs
 from ..exceptions import ConfigurationError
 from ..mixins import NotParallel
+from ..reporting import report
 from ..storage._chunks import Chunk
 from .strategy import PlacementStrategy
 
@@ -92,7 +93,7 @@ class CsvImportPlacement(ImportPlacement):
                     est_memsize = (len(others) + 3) * i * 8
                     av_mem = psutil.virtual_memory().available
                     if est_memsize > av_mem / 10:
-                        print(
+                        report(
                             "FLUSHING, AVAILABLE MEM:",
                         )
                         self._flush(indicators)

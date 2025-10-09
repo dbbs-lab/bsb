@@ -970,9 +970,12 @@ class TestNest(
             ]
         )
         u, c = np.unique(conn_data[:, 2], return_counts=True)
-        self.assertAll(np.array([1, 2]) == u)
-        self.assertEqual(c[0], c[1])
+        self.assertAll(np.array([1, 2]) == u, "synapses should be either static or stdp")
+        self.assertEqual(
+            c[0], c[1], "there should be as many static and stdp connections"
+        )
         self.assertAll(
             conn_data[:, :2][conn_data[:, 2] == 1]
-            == conn_data[:, :2][conn_data[:, 2] == 2]
+            == conn_data[:, :2][conn_data[:, 2] == 2],
+            "the cell pairs should be the same for static and stdp synapses",
         )

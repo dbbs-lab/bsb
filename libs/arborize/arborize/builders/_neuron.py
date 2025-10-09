@@ -42,7 +42,16 @@ class NeuronModel:
 
     def get_segment(self, loc: "Location", sx=0.5) -> "Segment":
         la = self.get_location(loc)
-        return la.section(la.arc(sx))
+        arc = la.arc(sx)
+        # The start (0) and end (1) of a Section are special 0 area nodes
+        # that may be shared with sibling or child Section respectively.
+        # It's not safe to use these in a parallel context, see
+        # https://github.com/dbbs-lab/bsb/issues/159
+        if arc == 0:
+            arc = 0.0001
+        if arc == 1:
+            arc = 0.9999
+        return la.section(arc)
 
     def get_sections_with_label(self, label: str):
         return [s for s in self.sections if label in s.labels]
@@ -123,7 +132,8 @@ class NeuronModel:
                     )
                 return la.section._transmitter
             else:
-                tm = p.ParallelCon(self.get_segment(loc, sx), gid, **kwargs)
+                seg = self.get_segment(loc, sx)
+                tm = p.ParallelCon(seg, gid, **kwargs)
                 la.section._transmitter = tm
         else:
             if hasattr(la.section, "_source"):

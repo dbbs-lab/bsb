@@ -880,24 +880,38 @@ class ConfigurationReferenceAttribute(ConfigurationAttribute):
         populate=None,
         backref=None,
         pop_unique=True,
+        hard_reference=True,
         **kwargs,
     ):
         self.ref_lambda = reference
         self.ref_key = key
-        self.ref_type = ref_type
+        self._ref_type = ref_type
         self.populate = populate
         self.backref = backref
         self.pop_unique = pop_unique
+        self.hard_reference = hard_reference
         # No need to cast to any types: the reference we fetch will already have been cast
         if "type" in kwargs:  # pragma: nocover
             del kwargs["type"]
         super().__init__(**kwargs)
 
+    @builtins.property
+    def ref_type(self):
+        return self._ref_type or getattr(self.ref_lambda, "type", None)
+
     def get_ref_key(self):
         return self.ref_key or (self.attr_name + "_reference")
 
     def __set__(self, instance, value, key=None):
-        if self.is_reference_value(value):
+        if (
+            not self.hard_reference
+            and isinstance(value, builtins.dict)
+            and self.ref_type is not None
+        ):
+            # This is not a reference, we attempt to cast it.
+            self.type = self._set_type(self.ref_type, None)
+            super().__set__(instance, value)
+        elif self.is_reference_value(value):
             _setattr(instance, self.attr_name, value)
         else:
             setattr(instance, self.get_ref_key(), value)
@@ -993,7 +1007,29 @@ class ConfigurationReferenceListAttribute(ConfigurationReferenceAttribute):
             _setattr(instance, self.attr_name, [])
             return
         try:
-            remote_keys = builtins.list(iter(value))
+            # we prepare a config list which contains both
+            # the elements already cast and the ones which
+            # need to be resolved later.
+            if self.ref_type is not None:
+                remote_keys = cfglist()
+                remote_keys._config_parent = instance
+                remote_keys._config_attr = self
+                remote_keys._elem_type = self.ref_type
+            else:
+                # we cannot cast the elements because we do not know
+                # their type, so we only store them
+                remote_keys = []
+            for v in value:
+                if hasattr(self.ref_lambda, "is_ref") and self.ref_lambda.is_ref(v):
+                    # the element is already cast
+                    builtins.list.append(remote_keys, v)
+                elif self.hard_reference or not isinstance(v, builtins.dict):
+                    # The element is a reference that needs to be
+                    # resolved later
+                    builtins.list.append(remote_keys, v)
+                else:
+                    # The element can be cast directly
+                    remote_keys.append(v)
         except TypeError:
             raise CfgReferenceError(
                 f"Reference list '{value}' of "

@@ -174,7 +174,9 @@ class RandomRotations(RotationDistributor, classmap_entry="random"):
 
 @config.node
 class VolumetricRotations(RotationDistributor, classmap_entry="orientation_field"):
-    orientation_path = config.ref(config.refs.vox_dset_ref, required=True)
+    orientation_path = config.ref(
+        config.refs.vox_dset_ref, required=True, hard_reference=False
+    )
     """
     Path to the nrrd file containing the volumetric orientation field.
 

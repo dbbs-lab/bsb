@@ -26,57 +26,67 @@ class Reference:  # pragma: nocover
                 return None
         return here
 
+    def is_ref(self, value):
+        return isinstance(value, self.type)
+
+    @property
+    def type(self):
+        return None
+
 
 class FileReference(Reference):
     def __call__(self, root, here):
         return root.files
 
-    def is_ref(self, value):
+    @property
+    def type(self):
         from ..storage._files import FileDependencyNode
 
-        return isinstance(value, FileDependencyNode)
+        return FileDependencyNode
 
 
 class VoxelDatasetReference(Reference):
     def __call__(self, root, here):
+        return {k: v for k, v in root.files.items() if isinstance(v, self.type)}
+
+    @property
+    def type(self):
         from ..storage._files import NrrdDependencyNode
 
-        return {k: v for k, v in root.files.items() if isinstance(v, NrrdDependencyNode)}
-
-    def is_ref(self, value):
-        from ..storage._files import NrrdDependencyNode
-
-        return isinstance(value, NrrdDependencyNode)
+        return NrrdDependencyNode
 
 
 class CellTypeReference(Reference):
     def __call__(self, root, here):
         return root.cell_types
 
-    def is_ref(self, value):
+    @property
+    def type(self):
         from ..cell_types import CellType
 
-        return isinstance(value, CellType)
+        return CellType
 
 
 class PartitionReference(Reference):
     def __call__(self, root, here):
         return root.partitions
 
-    def is_ref(self, value):
+    @property
+    def type(self):
         from ..topology import Partition
 
-        return isinstance(value, Partition)
+        return Partition
 
 
 class RegionReference(Reference):
     def __call__(self, root, here):
         return root.regions
 
-    def is_ref(self, value):
+    @property
+    def type(self):
         from ..topology import Region
 
-        return isinstance(value, Region)
+        return Region
 
 
 class RegionalReference(Reference):
@@ -95,20 +105,22 @@ class PlacementReference(Reference):
     def __call__(self, root, here):
         return root.placement
 
-    def is_ref(self, value):
+    @property
+    def type(self):
         from ..placement import PlacementStrategy
 
-        return isinstance(value, PlacementStrategy)
+        return PlacementStrategy
 
 
 class ConnectivityReference(Reference):
     def __call__(self, root, here):
         return root.connectivity
 
-    def is_ref(self, value):
+    @property
+    def type(self):
         from ..connectivity import ConnectionStrategy
 
-        return isinstance(value, ConnectionStrategy)
+        return ConnectionStrategy
 
 
 class SimCellModelReference(Reference):
@@ -118,12 +130,14 @@ class SimCellModelReference(Reference):
         sim = self.up(here, Simulation)
         return sim.cell_models
 
-    def is_ref(self, value):
+    @property
+    def type(self):
         from ..simulation.cell import CellModel
 
-        return isinstance(value, CellModel)
+        return CellModel
 
 
+file_ref = VoxelDatasetReference()
 vox_dset_ref = VoxelDatasetReference()
 cell_type_ref = CellTypeReference()
 partition_ref = PartitionReference()
@@ -135,6 +149,8 @@ sim_cell_model_ref = SimCellModelReference()
 
 __all__ = [
     "Reference",
+    "file_ref",
+    "vox_dset_ref",
     "cell_type_ref",
     "partition_ref",
     "placement_ref",

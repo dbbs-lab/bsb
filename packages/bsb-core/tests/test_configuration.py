@@ -457,8 +457,9 @@ class TestConfigRefList(unittest.TestCase):
             def __call__(self, root, here):
                 return self.up(here)
 
-            def is_ref(self, value):
-                return isinstance(value, Node)
+            @property
+            def type(self):
+                return Node
 
         class NodeMixin:
             children = config.reflist(NodeReference())
@@ -477,6 +478,43 @@ class TestConfigRefList(unittest.TestCase):
             node.children[0],
             node,
             "Mixin reference should be resolved",
+        )
+
+    def test_soft_ref(self):
+        cfg = Configuration.default(
+            files={
+                "annotations": {
+                    "type": "nrrd",
+                    "file": get_data_path("orientations", "toy_annotations.nrrd"),
+                }
+            },
+            partitions=dict(
+                a=dict(
+                    type="nrrd",
+                    mask_source={
+                        "type": "nrrd",
+                        "file": get_data_path("orientations", "toy_annotations.nrrd"),
+                    },
+                    sources=[
+                        {
+                            "type": "nrrd",
+                            "file": get_data_path("orientations", "toy_annotations.nrrd"),
+                        },
+                        "annotations",
+                    ],
+                    mask_value=10690,
+                )
+            ),
+        )
+        part = cfg.partitions.a
+        self.assertIsNotNone(part.mask_source)
+        source = part.mask_source.load_object().raw
+        self.assertTrue(
+            np.all(
+                (source == part.sources[0].load_object().raw)
+                * (source == part.sources[1].load_object().raw)
+            ),
+            "Direct declaration should be allowed for soft references attributes.",
         )
 
 

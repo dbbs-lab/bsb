@@ -17,15 +17,13 @@ A controller is a component that must implement two primary methods:
 Example: A simple controlling Device
 ------------------------------------
 
-This example demonstrates how to extend a custom device named :guilabel:`MyDevice` to act as a controller.
-This controller updates the :guilabel:`status` attribute and outputs its value at every fixed time step.
+This example demonstrates how to create a controller named :guilabel:`NewController` that updates
+the :guilabel:`status` attribute and outputs its value at every fixed time step.
 
 .. code-block:: python
 
     @config.node
-    class NewController(
-        MyDevice
-    ):
+    class NewController:
         step = config.attr(type=float, required=True)
 
         def __init__(self):

@@ -21,7 +21,8 @@ if typing.TYPE_CHECKING:
 
 
 class NestResult(SimulationResult):
-    # It seems that this class is not used
+    # It seems that the record method is not used,
+    # probably we will have to uniform the behavior with NeuronResult
     def record(self, nc, **annotations):
         recorder = nest.Create("spike_recorder", params={"record_to": "memory"})
         nest.Connect(nc, recorder)

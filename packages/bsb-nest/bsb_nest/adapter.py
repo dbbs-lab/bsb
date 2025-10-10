@@ -185,10 +185,8 @@ class NestAdapter(SimulatorAdapter):
                         simdata, pre_nodes, post_nodes, cs, self.comm
                     )
                 )
-            except Exception:
-                raise NestConnectError(
-                    f"{connection_model} error during connect."
-                ) from None
+            except Exception as e:
+                raise NestConnectError(f"{connection_model} error during connect.") from e
 
     def set_settings(self, simulation: "NestSimulation"):
         nest.set_verbosity(simulation.verbosity)

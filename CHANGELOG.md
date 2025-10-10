@@ -1,3 +1,15 @@
+## 6.0.7 (2025-10-06)
+
+### 🩹 Fixes
+
+- `insert_transmitter` unique under NEURON 9 ([#177](https://github.com/dbbs-lab/bsb/pull/177))
+- click default value test for None values ([077e582](https://github.com/dbbs-lab/bsb/commit/077e582))
+
+### ❤️ Thank You
+
+- drodarie
+- Robin De Schepper
+
 ## 6.0.6 (2025-08-26)
 
 ### 🩹 Fixes

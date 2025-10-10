@@ -128,8 +128,9 @@ list of values use the :func:`types.list <bsb:bsb.config.types.list>` syntax ins
 Configuration references
 ========================
 
-References refer to other locations in the configuration. In the configuration the
-configured string will be fetched from the referenced node:
+Reference attributes are ways that refer to other locations in the configuration.
+Upon resolving the configuration, the referred value will be fetched from
+the referenced node:
 
 .. code-block:: json
 
@@ -138,8 +139,9 @@ configured string will be fetched from the referenced node:
     "where": "A"
   }
 
-Assuming that ``where`` is a reference to ``locations``, location ``A`` will be retrieved
-and placed under ``where`` so that in the config object:
+Assuming here that ``where`` is a reference attribute, referring to ``locations``,
+Location ``A`` will be retrieved during the `Configuration` building and placed under
+``where``. Once this is done, you can access the configuration attributes normally:
 
 .. code-block:: python
 
@@ -149,89 +151,30 @@ and placed under ``where`` so that in the config object:
   >>> print(conf.where)
   'very close'
 
-  >>> print(conf.where_reference)
-  'A'
-
-References are defined inside of configuration nodes by passing a `reference object
-<quick-reference-object>`_ to the :func:`bsb:bsb.config.ref` function:
+Reference attributes are defined inside the configuration nodes by passing a
+:ref:`quick-reference-object` to the :func:`bsb:bsb.config.ref` function.
 
 .. code-block:: python
+
+  def my_ref_object(root, here):
+    return here["locations"]
 
   @config.node
   class Locations:
     locations = config.dict(type=str)
-    where = config.ref(lambda root, here: here["locations"])
+    where = config.ref(my_ref_object)
 
-After the configuration has been cast all nodes are visited to check if they are a
-reference and if so the value from elsewhere in the configuration is retrieved. The
-original string from the configuration is also stored in ``node.<ref>_reference``.
+.. note::
+    Make sure that you understand what each of the Reference term corresponds to.
+    In our example:
 
-After the configuration is loaded it is possible to either give a new reference key
-(usually a string) or a new reference value. In most cases the configuration will
-automatically detect what you are passing into the reference:
+    - ``where`` is here a Reference attribute
+    - ``my_ref_object`` is a Reference object
+    - ``locations`` is the referenced node
+    - ``'very close'`` is the referred value
 
-.. code-block::
-
-  >>> cfg = from_json("mouse_cerebellum.json")
-  >>> cfg.cell_types.granule_cell.placement.layer.name
-  'granular_layer'
-  >>> cfg.cell_types.granule_cell.placement.layer = 'molecular_layer'
-  >>> cfg.cell_types.granule_cell.placement.layer.name
-  'molecular_layer'
-  >>> cfg.cell_types.granule_cell.placement.layer = cfg.layers.purkinje_layer
-  >>> cfg.cell_types.granule_cell.placement.layer.name
-  'purkinje_layer'
-
-As you can see, by passing the reference a string the object is fetched from the reference
-location, but we can also directly pass the object the reference string would point to.
-This behavior is controlled by the ``ref_type`` keyword argument on the ``config.ref``
-call and the ``is_ref`` method on the reference object. If neither is given it defaults to
-checking whether the value is an instance of ``str``:
-
-.. code-block:: python
-
-  @config.node
-  class CandySelect:
-    candies = config.dict(type=Candy)
-    special_candy = config.ref(lambda root, here: here.candies, ref_type=Candy)
-
-  class CandyReference(config.refs.Reference):
-    def __call__(self, root, here):
-      return here.candies
-
-    def is_ref(self, value):
-      return isinstance(value, Candy)
-
-  @config.node
-  class CandySelect:
-    candies = config.dict(type=Candy)
-    special_candy = config.ref(CandyReference())
-
-The above code will make sure that only ``Candy`` objects are seen as references and all
-other types are seen as keys that need to be looked up. It is recommended you do this even
-in trivial cases to prevent bugs.
-
-.. _quick-reference-object:
-
-Reference object
-----------------
-
-The reference object is a callable object that takes 2 arguments: the configuration root
-node and the referring node. Using these 2 locations it should return a configuration node
-from which the reference value can be retrieved.
-
-.. code-block:: python
-
-  def locations_reference(root, here):
-    return root.locations
-
-This reference object would create the link seen in the first reference example.
-
-Reference lists
----------------
-
-Reference lists are akin to references but instead of a single key they are a list of
-reference keys:
+You can also create a reference list attribute, by providing a list of
+reference keys to the :func:`bsb:bsb.config.reflist` function:
 
 .. code-block:: json
 
@@ -240,21 +183,126 @@ reference keys:
     "where": ["A", "B"]
   }
 
-Results in ``cfg.where == ["very close", "very far"]``. As with references you can set a
-new list and all items will either be looked up or kept as is if they're a reference value
-already.
+.. code-block:: python
+
+    def my_ref_object(root, here):
+        return here["locations"]
+
+    @config.node
+    class Locations:
+        locations = config.dict(type=str)
+        where = config.reflist(my_ref_object)
+
+Note that we are using the same Reference object here.
 
 .. warning::
+  Appending elements to reference lists currently does not convert the new value. Also note
+  that reference lists are quite indestructible; setting them to ``None`` just resets them.
 
-  Appending elements to these lists currently does not convert the new value. Also note
-  that reference lists are quite indestructible; setting them to `None` just resets them
-  and the reference key list (``.<attr>_references``) to ``[]``.
+Many nodes of the BSB Configuration contain reference attributes. For instance,
+a ``placement`` node contains reference list attributes to the ``cell_types`` and ``partitions``.
 
+.. _quick-reference-object:
+
+Reference object
+----------------
+
+The minimal implementation of a `Reference` object is a function which returns
+the node containing the referred value starting from the configuration's ``root`` or the
+current node (``here``):
+
+.. code-block:: python
+
+  @config.node
+  class Locations:
+      locations = config.dict(type=str)
+      where = config.ref(lambda root, here: here["locations"])
+
+The BSB also provides the :class:`Reference<bsb:bsb.config.Reference>` class.
+Through this interface, you can additionally define the expected ``type`` of the
+referenced node. For instance, to create a reference to the ``cell_types``:
+
+.. code-block:: python
+
+    class CellTypeReference(Reference):
+        def __call__(self, root, here):
+            # This function will be called to find the cell types
+            # located at the root of the Configuration
+            return root.cell_types
+
+        @property
+        def type(self):
+            # This property will be called to check the referred value type.
+            from bsb import CellType
+
+            return CellType
+
+    @config.node
+    class Locations:
+        cell_type = config.ref(CellTypeReference())
+
+.. note::
+    The type of the referred value is actually tested by the function
+    ``is_ref`` of the ``Reference`` class, which calls the property ``type``.
+
+Reference attribute
+-------------------
+
+On top of the Reference object, you can pass some parameters to a Reference attribute to
+enforce the casting of the referred value:
+
+- ``ref_type``: Expected type of the referred value. If not provided, will try to fetch it
+  from the ``type`` property of the Reference object.
+- ``hard_reference``: Boolean flag to prevent the attribute to also be set by casting a
+  provided configuration dictionary. By default, it is set to ``True``.
+
+With ``hard_reference`` set to ``False``, you can provide either a reference or castable
+configuration dictionary:
+
+.. code-block:: python
+
+    def my_ref_object(root, here):
+        return here["locations"]
+
+    @config.node
+    class Locations:
+        locations = config.dict(type=str)
+        where = config.reflist(my_ref_object, hard_reference=False)
+
+.. code-block:: json
+
+  {
+    "locations": {"A": "very close", "B": "very far"},
+    "where": ["A", {"C": "local"}]
+  }
+
+.. code-block:: python
+
+  >>> print(conf.where)
+  ['very close', 'local']
+
+After the configuration is loaded, it is possible to either give a new reference key
+(usually a string) or a new reference value. In most cases the configuration will
+automatically detect what you are passing into the reference:
+
+.. code-block::
+
+  >>> cfg.placement.general_placement.partitions.granular_layer.name
+  'granular_layer'
+  >>> cfg.placement.general_placement.partitions.granular_layer = 'molecular_layer'
+  >>> cfg.placement.general_placement.partitions.granular_layer.name
+  'molecular_layer'
+  >>> cfg.placement.general_placement.partitions.granular_layer = cfg.partitions.purkinje_layer
+  >>> cfg.placement.general_placement.partitions.granular_layer
+  'purkinje_layer'
+
+As you can see, by passing the reference a string the object is fetched from the reference
+location, but we can also directly pass the object the reference string would point to.
 
 Bidirectional references
 ------------------------
 
-The object that a reference points to can be "notified" that it is being referenced by the
+The referenced node can be "notified" that it is being referenced by the
 ``populate`` mechanism. This mechanism stores the referrer on the referee creating a
 bidirectional reference. If the ``populate`` argument is given to the ``config.ref`` call
 the referrer will append itself to the list on the referee under the attribute given by

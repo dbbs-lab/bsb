@@ -11,12 +11,34 @@ node as arguments, and returns another node in the configuration object::
 More advanced usage of references will include custom reference errors.
 """
 
+import abc
 
-class Reference:  # pragma: nocover
+
+class Reference(abc.ABC):  # noqa: B024
+    """
+    Interface to create reference to pass to `bsb.config.ref`
+    or `bsb.config.reflist`
+    """
+
     def __call__(self, root, here):
+        """
+        Function to retrieve the location of the reference
+
+        :param root: root of the configuration object
+        :param here: current node in the configuration object
+        """
         return here
 
     def up(self, here, to=None):
+        """
+        Get the parent node of the configuration node ``here``.
+        If ``to`` is provided, will search ``here``'s ascendants
+        until onw matches ``to``'s type.
+
+        :param here: starting node
+        :param to: type of the ascendant to find
+        :return: The first matching parent node of ``here``
+        """
         if to is None:
             return here._config_parent
         while not isinstance(here, to):
@@ -27,10 +49,21 @@ class Reference:  # pragma: nocover
         return here
 
     def is_ref(self, value):
+        """
+        Check if the provided value corresponds to
+        the type of the reference
+
+        :param value: value to check
+        :rtype: bool
+        :return: True if the value has the type of the reference
+        """
         return isinstance(value, self.type)
 
     @property
     def type(self):
+        """
+        Return the type of the reference
+        """
         return None
 
 
@@ -137,7 +170,7 @@ class SimCellModelReference(Reference):
         return CellModel
 
 
-file_ref = VoxelDatasetReference()
+file_ref = FileReference()
 vox_dset_ref = VoxelDatasetReference()
 cell_type_ref = CellTypeReference()
 partition_ref = PartitionReference()

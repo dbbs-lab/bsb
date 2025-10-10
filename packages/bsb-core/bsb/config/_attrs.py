@@ -1020,12 +1020,14 @@ class ConfigurationReferenceListAttribute(ConfigurationReferenceAttribute):
                 # their type, so we only store them
                 remote_keys = []
             for v in value:
-                if hasattr(self.ref_lambda, "is_ref") and self.ref_lambda.is_ref(v):
-                    # the element is already cast
-                    builtins.list.append(remote_keys, v)
-                elif self.hard_reference or not isinstance(v, builtins.dict):
-                    # The element is a reference that needs to be
-                    # resolved later
+                if (
+                    hasattr(self.ref_lambda, "is_ref")
+                    and self.ref_lambda.is_ref(v)
+                    or self.hard_reference
+                    or not isinstance(v, builtins.dict)
+                ):
+                    # The element is already cast
+                    # or is a reference that needs to be resolved later
                     builtins.list.append(remote_keys, v)
                 else:
                     # The element can be cast directly

@@ -44,11 +44,10 @@ If no parent is given the command is added under the root ``bsb`` command:
     def handler(self, namespace):
       print("My subcommand was run")
 
-In setup.py (assuming the above module is importable as ``my_pkg.commands``)::
+In pyproject.toml (assuming the above module is importable as ``my_pkg.commands``)::
 
-  "entry_points": {
-    "bsb.commands" = ["my_commands = my_pkg.commands"]
-  }
+  [project.entry-points."bsb.commands"]
+   my_commands = "my_pkg:commands"
 
 After installing the setup with pip your command will be available::
 

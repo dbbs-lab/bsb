@@ -408,11 +408,13 @@ class ArborAdapter(SimulatorAdapter):
             report("MPI processes:", context.ranks, level=2)
             report("Threads per process:", context.threads, level=2)
             recipe = self.get_recipe(simulation, simdata)
+            self._duration = simulation.duration
             # Gap junctions are required for domain decomposition
             self.domain = arbor.partition_load_balance(recipe, context)
             self.gids = set(it.chain.from_iterable(g.gids for g in self.domain.groups))
             simdata.arbor_sim = arbor.simulation(recipe, context, self.domain)
-            self.prepare_samples(simulation, simdata)
+            self.implement_components(simulation)
+            self.load_controllers(simulation)
             report("prepared simulation", level=1)
             return simdata
         except Exception:
@@ -421,10 +423,6 @@ class ArborAdapter(SimulatorAdapter):
 
     def get_gid_manager(self, simulation, simdata):
         return GIDManager(simulation, simdata)
-
-    def prepare_samples(self, simulation, simdata):
-        for device in simulation.devices.values():
-            device.prepare_samples(simdata, comm=self.comm)
 
     def run(self, *simulations):
         if len(simulations) != 1:
@@ -446,14 +444,19 @@ class ArborAdapter(SimulatorAdapter):
 
             start = time.time()
             report("running simulation", level=1)
-            arbor_sim.run(simulation.duration * U.ms, dt=simulation.resolution * U.ms)
-            report(f"completed simulation. {time.time() - start:.2f}s", level=1)
+
+            for t, checkpoint_controllers in self.get_next_checkpoint():
+                arbor_sim.run(t * U.ms, dt=simulation.resolution * U.ms)
+                self.execute_checkpoints(checkpoint_controllers)
+            report(f"Completed simulation. {time.time() - start:.2f}s", level=1)
             if simulation.profiling and arbor.config()["profiling"]:
                 report("printing profiler summary", level=2)
                 report(arbor.profiler_summary(), level=1)
             return [simdata.result]
         finally:
+            results = [self.simdata[sim].result for sim in simulations]
             del self.simdata[simulation]
+        return results
 
     def get_recipe(self, simulation, simdata=None):
         if simdata is None:

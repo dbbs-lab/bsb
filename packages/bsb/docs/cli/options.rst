@@ -131,6 +131,16 @@ List of options
 
   * *env*: ``BSB_CONFIG_FILE``
 
+* ``sim_console_progress``: Add a listener to do reporting of simulation progress, the report will be updated every time step.
+
+  * *script*: ``sim_console_progress``
+
+  * *cli*: ``scp``, ``sim_console_progress``
+
+  * *project*: ``sim_console_progress``
+
+  * *env*: ``BSB_SIM_PROGRESS``
+
 .. _project_settings:
 
 ``pyproject.toml`` structure
@@ -175,11 +185,10 @@ inherits from :class:`bsb:bsb.option.BsbOption`:
   __plugin__ = GreetingsOption
 
 Plugins are installed by ``pip`` which takes its information from
-``setup.py``/``setup.cfg``, where you can specify an entry point::
+``pyproject.toml``, where you can specify an entry point::
 
-  "entry_points": {
-    "bsb.options" = ["greeting = my_pkg.greetings"]
-  }
+  [project.entry-points."bsb.options"]
+   greeting = "my_pkg:greetings"
 
 After installing the setup with ``pip`` your option will be available::
 

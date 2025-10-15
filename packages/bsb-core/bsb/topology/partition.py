@@ -381,7 +381,7 @@ class NrrdVoxels(Voxels, classmap_entry="nrrd"):
     inclusion of (multiple) source NRRD files.
     """
 
-    mask_source: NrrdDependencyNode = config.ref(refs.vox_dset_ref, hard_reference=False)
+    mask_source: NrrdDependencyNode = config.ref(refs.vox_dset_ref, reference_only=False)
     """
     Path to the NRRD file containing the volumetric annotation data of the Partition.
     """
@@ -391,7 +391,7 @@ class NrrdVoxels(Voxels, classmap_entry="nrrd"):
     create a mask of the voxel set(s) used as input.
     """
     sources: list[NrrdDependencyNode] = config.reflist(
-        refs.vox_dset_ref, hard_reference=False
+        refs.vox_dset_ref, reference_only=False
     )
     """
     List of paths to NRRD files containing volumetric data to associate to the Partition.

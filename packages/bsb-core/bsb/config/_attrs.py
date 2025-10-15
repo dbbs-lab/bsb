@@ -451,15 +451,9 @@ class ConfigurationAttribute:
     def fset(self, instance, value):
         return _setattr(instance, self.attr_name, value)
 
-    def __set__(self, instance, value):
-        if _hasattr(instance, self.attr_name):
-            ex_value = _getattr(instance, self.attr_name)
-            _unset_nodes(ex_value)
-        if value is None:
-            # Don't try to cast None to a value of the attribute type.
-            return self.fset(instance, None)
+    def _cast(self, instance, value):
         try:
-            value = self.type(value, _parent=instance, _key=self.attr_name)
+            return self.type(value, _parent=instance, _key=self.attr_name)
         except ValueError:
             # This value error should only arise when users are manually setting
             # attributes in an already bootstrapped config tree.
@@ -477,6 +471,15 @@ class ConfigurationAttribute:
                 instance,
                 self.attr_name,
             ) from e
+
+    def __set__(self, instance, value):
+        if _hasattr(instance, self.attr_name):
+            ex_value = _getattr(instance, self.attr_name)
+            _unset_nodes(ex_value)
+        if value is None:
+            # Don't try to cast None to a value of the attribute type.
+            return self.fset(instance, None)
+        value = self._cast(instance, value)
         self.flag_dirty(instance)
         # The value was cast to its intended type and the new value can be set.
         self.fset(instance, value)
@@ -880,7 +883,7 @@ class ConfigurationReferenceAttribute(ConfigurationAttribute):
         populate=None,
         backref=None,
         pop_unique=True,
-        hard_reference=True,
+        reference_only=True,
         **kwargs,
     ):
         self.ref_lambda = reference
@@ -889,29 +892,30 @@ class ConfigurationReferenceAttribute(ConfigurationAttribute):
         self.populate = populate
         self.backref = backref
         self.pop_unique = pop_unique
-        self.hard_reference = hard_reference
+        self.reference_only = reference_only
         # No need to cast to any types: the reference we fetch will already have been cast
-        if "type" in kwargs:  # pragma: nocover
-            del kwargs["type"]
+        if "type" in kwargs:
+            raise AttributeError(
+                "Reference attributes must set ref_type instead of type."
+            )
         super().__init__(**kwargs)
 
     @builtins.property
     def ref_type(self):
-        return self._ref_type or getattr(self.ref_lambda, "type", None)
+        def missing_ref_type(*args, **kwargs):
+            raise CastError("Reference attribute cannot cast values. Set ref_type.")
+
+        return self._ref_type or getattr(
+            self.ref_lambda, "type", missing_ref_type if not self.reference_only else None
+        )
 
     def get_ref_key(self):
         return self.ref_key or (self.attr_name + "_reference")
 
     def __set__(self, instance, value, key=None):
-        if (
-            not self.hard_reference
-            and isinstance(value, builtins.dict)
-            and self.ref_type is not None
-        ):
-            # This is not a reference, we attempt to cast it.
-            self.type = self._set_type(self.ref_type, None)
-            super().__set__(instance, value)
-        elif self.is_reference_value(value):
+        # TODO: set type in init
+        self.type = self.ref_type
+        if self.is_reference_value(value):
             _setattr(instance, self.attr_name, value)
         else:
             setattr(instance, self.get_ref_key(), value)
@@ -959,12 +963,25 @@ class ConfigurationReferenceAttribute(ConfigurationAttribute):
         return remote, getattr(instance, local_attr)
 
     def resolve_reference(self, instance, remote, key):
-        if key not in remote:
-            raise CfgReferenceError(
+        try:
+            value = remote[key]
+        except (KeyError, TypeError):
+            msg = remote.get_node_name() if hasattr(remote, "get_node_name") else remote
+            msg = (
                 f"Reference '{key}' of {self.get_node_name(instance)} "
-                f"does not exist in {remote.get_node_name()}"
+                "does not exist in "
+                f"{msg}"
             )
-        value = remote[key]
+            if self.reference_only:
+                raise CfgReferenceError(msg) from None
+            else:
+                try:
+                    value = self._cast(instance, key)
+                except CastError:
+                    raise CfgReferenceError(
+                        f"{msg} and could not be casted to {self.ref_type}."
+                    ) from None
+
         if self.populate:
             self.populate_reference(instance, value)
         if self.backref:
@@ -1002,36 +1019,19 @@ class ConfigurationReferenceAttribute(ConfigurationAttribute):
 
 class ConfigurationReferenceListAttribute(ConfigurationReferenceAttribute):
     def __set__(self, instance, value, key=None):
+        # TODO: set type in init and create cfgreflist
+        self.type = self.ref_type
+        _cfglist = cfglist()
+        _cfglist._config_parent = instance
+        _cfglist._config_attr = self
+        _cfglist._elem_type = self.ref_type
+        _cfglist.extend(builtins.list())
+        _setattr(instance, self.attr_name, _cfglist)
         if value is None:
             setattr(instance, self.get_ref_key(), [])
-            _setattr(instance, self.attr_name, [])
             return
         try:
-            # we prepare a config list which contains both
-            # the elements already cast and the ones which
-            # need to be resolved later.
-            if self.ref_type is not None:
-                remote_keys = cfglist()
-                remote_keys._config_parent = instance
-                remote_keys._config_attr = self
-                remote_keys._elem_type = self.ref_type
-            else:
-                # we cannot cast the elements because we do not know
-                # their type, so we only store them
-                remote_keys = []
-            for v in value:
-                if (
-                    hasattr(self.ref_lambda, "is_ref")
-                    and self.ref_lambda.is_ref(v)
-                    or self.hard_reference
-                    or not isinstance(v, builtins.dict)
-                ):
-                    # The element is already cast
-                    # or is a reference that needs to be resolved later
-                    builtins.list.append(remote_keys, v)
-                else:
-                    # The element can be cast directly
-                    remote_keys.append(v)
+            remote_keys = builtins.list(iter(value))
         except TypeError:
             raise CfgReferenceError(
                 f"Reference list '{value}' of "

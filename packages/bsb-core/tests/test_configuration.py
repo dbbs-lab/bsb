@@ -416,7 +416,7 @@ class TestConfigRef(unittest.TestCase):
         @config.node
         class Test:
             name = config.attr(required=True)
-            name_ref = config.ref(lambda root, here: here, required=True, type=int)
+            name_ref = config.ref(lambda root, here: here, required=True)
             type_ref = config.ref(lambda root, here: here, ref_type=str)
 
         @config.root
@@ -429,6 +429,10 @@ class TestConfigRef(unittest.TestCase):
 
         with self.assertRaises(CfgReferenceError):
             Resolver({"test": {"name": "Johnny", "name_ref": "nname"}})
+
+    def test_setting_type(self):
+        with self.assertRaises(AttributeError):
+            _ref = config.ref(lambda root, here: here, required=True, type=int)
 
 
 @config.root
@@ -518,12 +522,13 @@ class TestConfigRefList(unittest.TestCase):
         )
 
 
-class HasRefsReference:
+class HasRefsReference(Reference):
     def __call__(self, r, h):
         return r
 
-    def is_ref(self, value):
-        return isinstance(value, HasRefs)
+    @property
+    def type(self):
+        return HasRefs
 
 
 @config.node

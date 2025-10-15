@@ -168,9 +168,9 @@ Reference attributes are defined inside the configuration nodes by passing a
     Make sure that you understand what each of the Reference term corresponds to.
     In our example:
 
-    - ``where`` is here a Reference attribute
+    - ``where`` is here a reference attribute or referrer
     - ``my_ref_object`` is a Reference object
-    - ``locations`` is the referenced node
+    - ``locations`` is the referenced node or referee
     - ``'very close'`` is the referred value
 
 You can also create a reference list attribute, by providing a list of
@@ -245,18 +245,18 @@ referenced node. For instance, to create a reference to the ``cell_types``:
     The type of the referred value is actually tested by the function
     ``is_ref`` of the ``Reference`` class, which calls the property ``type``.
 
-Reference attribute
--------------------
+Referred object casting
+-----------------------
 
-On top of the Reference object, you can pass some parameters to a Reference attribute to
+On top of the Reference object, you can pass some parameters to a reference attribute to
 enforce the casting of the referred value:
 
 - ``ref_type``: Expected type of the referred value. If not provided, will try to fetch it
   from the ``type`` property of the Reference object.
-- ``hard_reference``: Boolean flag to prevent the attribute to also be set by casting a
+- ``reference_only``: Boolean flag to prevent the attribute to also be set by casting a
   provided configuration dictionary. By default, it is set to ``True``.
 
-With ``hard_reference`` set to ``False``, you can provide either a reference or castable
+With ``reference_only`` set to ``False``, you can provide either a reference or castable
 configuration dictionary:
 
 .. code-block:: python
@@ -267,7 +267,7 @@ configuration dictionary:
     @config.node
     class Locations:
         locations = config.dict(type=str)
-        where = config.reflist(my_ref_object, hard_reference=False)
+        where = config.reflist(my_ref_object, reference_only=False)
 
 .. code-block:: json
 
@@ -282,7 +282,7 @@ configuration dictionary:
   ['very close', 'local']
 
 After the configuration is loaded, it is possible to either give a new reference key
-(usually a string) or a new reference value. In most cases the configuration will
+(usually a string) or a new reference value. In most cases, the configuration will
 automatically detect what you are passing into the reference:
 
 .. code-block::
@@ -303,10 +303,11 @@ Bidirectional references
 ------------------------
 
 The referenced node can be "notified" that it is being referenced by the
-``populate`` mechanism. This mechanism stores the referrer on the referee creating a
-bidirectional reference. If the ``populate`` argument is given to the ``config.ref`` call
-the referrer will append itself to the list on the referee under the attribute given by
-the value of the ``populate`` kwarg (or create a new list if it doesn't exist).
+``populate`` of the reference attribute.
+This mechanism stores the referrer instance on the referenced node creating a
+bidirectional reference. During configuration references resolution, the referrer will append
+its instance to the list on the referee under the attribute given by the referred value
+(or create a new list if it doesn't exist).
 
 .. code-block:: json
 
@@ -326,6 +327,9 @@ the value of the ``populate`` kwarg (or create a new list if it doesn't exist).
     name = config.attr(key=True)
     elements = config.attr(type=list, default=list, call_default=True)
 
+  def container_ref(root, here):
+    return root.containers
+
   @config.node
   class Element:
     container = config.ref(container_ref, populate="elements")
@@ -333,7 +337,7 @@ the value of the ``populate`` kwarg (or create a new list if it doesn't exist).
 This would result in ``cfg.containers.A.elements == [cfg.elements.a]``.
 
 You can overwrite the default *append or create* population behavior by creating a
-descriptor for the population attribute and define a ``__populate__`` method on it:
+descriptor for the referenced attribute and define a ``__populate__`` method on it:
 
 .. code-block:: python
 
@@ -359,7 +363,47 @@ descriptor for the population attribute and define a ``__populate__`` method on 
       else:
         print("We only store referrers coming from a .square configuration attribute")
 
-.. todo: Mention ``pop_unique``
+  @config.node
+  class Container:
+    name = config.attr(key=True)
+    elements = config.attr(type=PopulationAttribute)
+
+  def container_ref(root, here):
+    return root.containers
+
+  @config.node
+  class Element:
+    container = config.ref(container_ref, populate="elements")
+
+In the previous example, we were making sure that each value stored in the ``PopulationAttribute``
+was unique by leveraging the ``set`` type. Note that you can also set the boolean flag
+``pop_unique`` (``True`` by default) of the referrer (here ``Element.container``) and pass it as
+the ``unique_list`` parameter to the ``__populate__`` method of the referee attribute.
+
+.. code-block:: python
+
+  class PopulationAttribute:
+  # [...]
+
+    def __set__(self, instance, value):
+      instance._population = list(value)
+
+    def __populate__(self, instance, value, unique_list=False):
+        print("We're referenced in", value.get_node_name())
+      if (
+          value.get_node_name().endswith(".square") and
+          (not unique_list or value not in instance._population)
+        ):
+            instance._population.append(value)
+      else:
+        print("We only store referrers coming from a .square configuration attribute")
+
+  # [...]
+
+  @config.node
+  class Element:
+    container = config.ref(container_ref, populate="elements", pop_unique=False)
+
 
 Examples
 ========

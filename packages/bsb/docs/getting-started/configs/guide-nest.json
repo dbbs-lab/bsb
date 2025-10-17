@@ -81,11 +81,13 @@
       },
       "connection_models": {
         "A_to_B": {
-          "synapse": {
-            "model": "static_synapse",
-            "weight": 300,
-            "delay": 1
-          }
+          "synapses": [
+            {
+              "model": "static_synapse",
+              "weight": 300,
+              "delay": 1
+            }
+          ]
         }
       },
       "devices": {

@@ -1,9 +1,17 @@
 import unittest
 
 import numpy as np
+from bsb_arbor import SpikeRecorder
 from bsb_test import FixedPosConfigFixture, NumpyTestCase, RandomStorageFixture
 
-from bsb import MPI, Scaffold
+from bsb import (
+    MPI,
+    AttributeMissingError,
+    Scaffold,
+    config,
+    get_simulation_adapter,
+    options,
+)
 
 
 class TestSimulate(
@@ -275,3 +283,283 @@ class TestTargetting(
         sorted_ids = np.sort(spiketrains[0].annotations["gids"])
         self.assertAll(sorted_ids == sub_pop_h_cell)
         self.assertEqual(len(sorted_ids), 4)
+
+
+@config.node
+class SpikeController(
+    SpikeRecorder,
+    classmap_entry="spike_controller",
+):
+    step = config.attr(type=float, required=True)
+
+    def __init__(self, **kwargs):
+        super().__init__()
+        self._status = 0
+
+    def implement(self, adapter, simulation, simdata):
+        super().implement(adapter, simulation, simdata)
+        self._simdata = simdata
+
+    def get_next_checkpoint(self):
+        return self._status + self.step
+
+    def run_checkpoint(self, kwargs=None):
+        # Flush data
+        self._simdata.result.flush()
+        # Free Memory
+        self._simdata.arbor_sim.clear_samplers()
+        self._status += self.step
+        return self._status
+
+
+@unittest.skipIf(MPI.get_size() > 1, "Skipped during parallel testing.")
+class TestAdapterControllers(
+    FixedPosConfigFixture,
+    RandomStorageFixture,
+    NumpyTestCase,
+    unittest.TestCase,
+    engine_name="hdf5",
+):
+    def setUp(self):
+        super().setUp()
+        self.cfg.network.chunk_size = 50
+        self.cfg.cell_types.add("h_cell", spatial=dict(radius=2, count=20))
+        x_ranges = np.repeat(np.arange(0, 100, 20), 4)
+        y_ranges = np.full((10, 2), [50, 150]).flatten()
+        z_ranges = np.full((5, 4), [50, 50, 150, 150]).flatten()
+
+        positions = []
+        for x, y, z in zip(x_ranges, y_ranges, z_ranges, strict=False):
+            positions.append([x, y, z])
+
+        self.cfg.placement.add(
+            "place_h_cell",
+            strategy="bsb.placement.strategy.FixedPositions",
+            partitions=[],
+            cell_types=["h_cell"],
+            positions=positions,
+        )
+
+        self.cfg.connectivity.add(
+            "test_to_h_cell",
+            dict(
+                strategy="bsb.connectivity.FixedOutdegree",
+                presynaptic=dict(cell_types=["test_cell"]),
+                postsynaptic=dict(cell_types=["h_cell"]),
+                outdegree=1,
+            ),
+        )
+        self.cfg.simulations.add(
+            "test",
+            simulator="arbor",
+            duration=100,
+            resolution=0.5,
+            cell_models={
+                "test_cell": {
+                    "model_strategy": "lif",
+                    "constants": {
+                        "C_m": 250,
+                        "tau_m": 20,
+                        "t_ref": 2.0,
+                        "E_L": 0.0,
+                        "E_R": 0.0,
+                        "V_m": 0.0,
+                        "V_th": 20,
+                    },
+                },
+                "h_cell": {
+                    "model_strategy": "lif",
+                    "constants": {
+                        "C_m": 250,
+                        "tau_m": 20,
+                        "t_ref": 2.0,
+                        "E_L": 0.0,
+                        "E_R": 0.0,
+                        "V_m": 0.0,
+                        "V_th": 20,
+                    },
+                },
+            },
+            connection_models={
+                "test_to_h_cell": {"weight": 20.68015524367846, "delay": 1.5}
+            },
+            devices=dict(
+                pg={
+                    "device": "poisson_generator",
+                    "rate": 1600,
+                    "targetting": {"strategy": "all"},
+                    "weight": 2000,
+                    "delay": 1.5,
+                }
+            ),
+        )
+        self.network = Scaffold(self.cfg, self.storage)
+        self.network.compile()
+
+    def test_controller_registration(self):
+        self.network.simulations.test.devices["rec_15"] = dict(
+            device="spike_controller",
+            targetting={
+                "strategy": "cell_model",
+                "cell_models": ["test_cell"],
+            },
+            step=15,
+        )
+
+        self.network.simulations.test.devices["new_recorder"] = dict(
+            device="spike_recorder",
+            targetting={
+                "strategy": "cell_model",
+                "cell_models": ["test_cell"],
+            },
+        )
+
+        sim = self.network.simulations.test
+        adapter = get_simulation_adapter(sim.simulator)
+        adapter.prepare(sim)
+        self.assertEqual(
+            len(adapter._controllers), 1, "Only one controller should be registered"
+        )
+
+        self.assertEqual(
+            adapter._controllers[0].name,
+            "rec_15",
+            "Only rec_15 device should be registered",
+        )
+
+    def test_registration_of_listener(self):
+        self.network.simulations.test.devices["rec_15"] = dict(
+            device="spike_controller",
+            targetting={
+                "strategy": "cell_model",
+                "cell_models": ["test_cell"],
+            },
+            step=15,
+        )
+        options.sim_console_progress = 100
+
+        sim = self.network.simulations.test
+        adapter = get_simulation_adapter(sim.simulator)
+        adapter.simulate(sim)
+        self.assertEqual(
+            len(adapter._controllers), 2, "Exactly two controllers should be registered"
+        )
+
+        self.assertEqual(
+            adapter._controllers[0]._sim_name,
+            ["test"],
+            "The first controller should be the listener",
+        )
+
+    def test_incorrect_controller(self):
+        @config.node
+        class RottenController(
+            SpikeRecorder,
+            classmap_entry="rotten_controller",
+        ):
+            step = config.attr(type=float, required=True)
+
+            def __init__(self, **kwargs):
+                super().__init__()
+                self._status = 0
+
+            def get_next_checkpoint(self):
+                return self._status + self.step
+
+        self.network.simulations.test.devices["rec_15"] = dict(
+            device="rotten_controller",
+            targetting={
+                "strategy": "cell_model",
+                "cell_models": ["test_cell"],
+            },
+            step=15,
+        )
+        sim = self.network.simulations.test
+        adapter = get_simulation_adapter(sim.simulator)
+        with self.assertRaises(AttributeMissingError):
+            adapter.prepare(sim)
+
+    def test_record_checkpoint(self):
+        """Create a test with an AdapterController that flushes every 10 steps,
+        so with a simulation of 100 of duration it will create 10 segments plus
+        a last one that is empty"""
+
+        self.network.simulations.test.devices["new_recorder"] = dict(
+            device="spike_controller",
+            targetting={
+                "strategy": "cell_model",
+                "cell_models": ["test_cell"],
+            },
+            step=10,
+        )
+
+        result = self.network.run_simulation("test")
+        segments = result.block.segments
+
+        self.assertEqual(
+            len(segments),
+            11,
+            "The simulation should have been split in 10 populated segments + 1 empty",
+        )
+        self.assertEqual(
+            list(segments[-1].spiketrains[0].magnitude),
+            [],
+            "The eleventh segment should be empty",
+        )
+        # Spiketrains in the nth segment should have values between n*10 and (n+1)*10
+        self.assertAll(
+            segments[6].spiketrains[0].magnitude >= 60,
+            "Times in the 6th segment do not start from 60.",
+        )
+        self.assertAll(
+            segments[6].spiketrains[0].magnitude < 70,
+            "Spike times in segment 6 fall outside the expected range (60–70).",
+        )
+
+    def test_two_controllers(self):
+        """Test two AdapterController instances together, one configured with 15 steps
+        and the other with 40 steps, it will flush at [ 15,30,40,45,60,75,80,90].
+        Note that not all checkpoints align with the total simulation duration (100)."""
+
+        self.network.simulations.test.devices["rec_15"] = dict(
+            device="spike_controller",
+            targetting={
+                "strategy": "cell_model",
+                "cell_models": ["test_cell"],
+            },
+            step=15,
+        )
+
+        self.network.simulations.test.devices["new_recorder"] = dict(
+            device="spike_controller",
+            targetting={
+                "strategy": "cell_model",
+                "cell_models": ["test_cell"],
+            },
+            step=40,
+        )
+        result = self.network.run_simulation("test")
+        segments = result.block.segments
+
+        self.assertEqual(self.network.simulations.test.devices["rec_15"]._step, 15)
+        self.assertEqual(self.network.simulations.test.devices["new_recorder"]._step, 40)
+
+        self.assertEqual(
+            len(segments),
+            9,
+            "The simulation should have been split in 9 populated segments",
+        )
+        # Check that the 5th segment has the correct times
+        self.assertAll(
+            (segments[4].spiketrains[0].magnitude < 60)
+            & (segments[4].spiketrains[0].magnitude > 45),
+            "Spike times in 5th segment fall outside the expected range (45-60).",
+        )
+
+        # Check that results in the last part, after last checkpoint, is correctly flushed
+
+        self.assertAll(
+            (segments[-1].spiketrains[0].magnitude >= 90)
+            & (segments[-1].spiketrains[0].magnitude < 100),
+            "Spike times in last segment fall outside the expected range (90-100).",
+        )

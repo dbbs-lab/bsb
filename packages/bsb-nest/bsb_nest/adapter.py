@@ -5,7 +5,6 @@ import typing
 import nest
 from bsb import (
     AdapterError,
-    AdapterProgress,
     SimulationData,
     SimulationResult,
     SimulatorAdapter,
@@ -22,6 +21,8 @@ if typing.TYPE_CHECKING:
 
 
 class NestResult(SimulationResult):
+    # It seems that the record method is not used,
+    # probably we will have to uniform the behavior with NeuronResult
     def record(self, nc, **annotations):
         recorder = nest.Create("spike_recorder", params={"record_to": "memory"})
         nest.Connect(nc, recorder)
@@ -38,6 +39,7 @@ class NestResult(SimulationResult):
                     **annotations,
                 )
             )
+            # Free the Memory -> not possible to free the memory while sim is running
 
         self.create_recorder(flush)
 
@@ -46,6 +48,7 @@ class NestAdapter(SimulatorAdapter):
     def __init__(self, comm=None):
         super().__init__(comm=comm)
         self.loaded_modules = set()
+        self._prev_chkpoint = 0
 
     def simulate(self, *simulations, post_prepare=None):
         try:
@@ -87,7 +90,8 @@ class NestAdapter(SimulatorAdapter):
             report("Creating connections...", level=2)
             self.connect_neurons(simulation)
             report("Creating devices...", level=2)
-            self.create_devices(simulation)
+            self.implement_components(simulation)
+            self.load_controllers(simulation)
             return self.simdata[simulation]
         except Exception:
             del self.simdata[simulation]
@@ -104,18 +108,21 @@ class NestAdapter(SimulatorAdapter):
         if unprepared:
             raise AdapterError(f"Unprepared for simulations: {', '.join(unprepared)}")
         report("Simulating...", level=2)
-        duration = max(sim.duration for sim in simulations)
-        progress = AdapterProgress(duration)
+        self._duration = max(sim.duration for sim in simulations)
+
         try:
+            results = [self.simdata[sim].result for sim in simulations]
             with nest.RunManager():
-                for oi, i in progress.steps(step=1):
-                    nest.Run(i - oi)
-                    progress.tick(i)
+                for t, checkpoint_controllers in self.get_next_checkpoint():
+                    nest.Run(t - self._prev_chkpoint)
+                    self.execute_checkpoints(checkpoint_controllers)
+                    self._prev_chkpoint = t
+
         finally:
             results = [self.simdata[sim].result for sim in simulations]
             for sim in simulations:
                 del self.simdata[sim]
-        progress.complete()
+
         report("Simulation done.", level=2)
         return results
 
@@ -178,15 +185,8 @@ class NestAdapter(SimulatorAdapter):
                         simdata, pre_nodes, post_nodes, cs, self.comm
                     )
                 )
-            except Exception:
-                raise NestConnectError(
-                    f"{connection_model} error during connect."
-                ) from None
-
-    def create_devices(self, simulation):
-        simdata = self.simdata[simulation]
-        for device_model in simulation.devices.values():
-            device_model.implement(self, simulation, simdata)
+            except Exception as e:
+                raise NestConnectError(f"{connection_model} error during connect.") from e
 
     def set_settings(self, simulation: "NestSimulation"):
         nest.set_verbosity(simulation.verbosity)

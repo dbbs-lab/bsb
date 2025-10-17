@@ -32,7 +32,7 @@ be read from the ``MY_SETTING`` environment variable.
 import contextlib
 import functools
 
-from ._options import ProfilingOption, VerbosityOption
+from ._options import ProfilingOption, SimulationProgress, VerbosityOption
 
 # Store the module magic for unpolluted namespace copy
 _module_magic = globals().copy()
@@ -388,6 +388,7 @@ sys.modules[__name__] = _om
 
 register_option("verbosity", VerbosityOption())
 register_option("profiling", ProfilingOption())
+register_option("sim_console_progress", SimulationProgress())
 
 # Static public API
 __all__ = [

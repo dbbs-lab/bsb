@@ -485,6 +485,7 @@ class TestConfigRefList(unittest.TestCase):
         )
 
     def test_soft_ref(self):
+        node = NrrdDependencyNode(get_data_path("orientations", "toy_annotations.nrrd"))
         cfg = Configuration.default(
             files={
                 "annotations": {
@@ -503,8 +504,9 @@ class TestConfigRefList(unittest.TestCase):
                         {
                             "type": "nrrd",
                             "file": get_data_path("orientations", "toy_annotations.nrrd"),
-                        },
-                        "annotations",
+                        },  # one value to cast
+                        "annotations",  # one reference
+                        node,  # one value already casted
                     ],
                     mask_value=10690,
                 )
@@ -513,6 +515,25 @@ class TestConfigRefList(unittest.TestCase):
         part = cfg.partitions.a
         self.assertIsNotNone(part.mask_source)
         source = part.mask_source.load_object().raw
+        self.assertTrue(
+            np.all(
+                (source == part.sources[0].load_object().raw)
+                * (source == part.sources[1].load_object().raw)
+                * (source == part.sources[2].load_object().raw)
+            ),
+            "All datasets in reflist should have been resolved.",
+        )
+        # You should be able to override an elem of the array with a ref.
+        cfg.partitions.a.sources[0] = "annotations"
+        self.assertTrue(
+            np.all(
+                (source == part.sources[0].load_object().raw)
+                * (source == part.sources[1].load_object().raw)
+            ),
+            "Direct declaration should be allowed for reference list attributes.",
+        )
+        # You should be able to override an elem of the array with a value.
+        cfg.partitions.a.sources[0] = node
         self.assertTrue(
             np.all(
                 (source == part.sources[0].load_object().raw)

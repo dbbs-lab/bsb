@@ -898,7 +898,8 @@ class ConfigurationReferenceAttribute(ConfigurationAttribute):
             raise AttributeError(
                 "Reference attributes must set ref_type instead of type."
             )
-        super().__init__(**kwargs)
+        # self.type will be used to cast if necessary
+        super().__init__(**kwargs, type=lambda *a, **k: self.ref_type(*a, **k))
 
     @builtins.property
     def ref_type(self):
@@ -913,8 +914,6 @@ class ConfigurationReferenceAttribute(ConfigurationAttribute):
         return self.ref_key or (self.attr_name + "_reference")
 
     def __set__(self, instance, value, key=None):
-        # TODO: set type in init
-        self.type = self.ref_type
         if self.is_reference_value(value):
             _setattr(instance, self.attr_name, value)
         else:
@@ -969,8 +968,7 @@ class ConfigurationReferenceAttribute(ConfigurationAttribute):
             msg = remote.get_node_name() if hasattr(remote, "get_node_name") else remote
             msg = (
                 f"Reference '{key}' of {self.get_node_name(instance)} "
-                "does not exist in "
-                f"{msg}"
+                f"does not exist in {msg}"
             )
             if self.reference_only:
                 raise CfgReferenceError(msg) from None
@@ -1019,14 +1017,13 @@ class ConfigurationReferenceAttribute(ConfigurationAttribute):
 
 class ConfigurationReferenceListAttribute(ConfigurationReferenceAttribute):
     def __set__(self, instance, value, key=None):
-        # TODO: set type in init and create cfgreflist
-        self.type = self.ref_type
         _cfglist = cfglist()
         _cfglist._config_parent = instance
         _cfglist._config_attr = self
         _cfglist._elem_type = self.ref_type
         _cfglist.extend(builtins.list())
         _setattr(instance, self.attr_name, _cfglist)
+        self.flag_dirty(instance)
         if value is None:
             setattr(instance, self.get_ref_key(), [])
             return
@@ -1063,7 +1060,10 @@ class ConfigurationReferenceListAttribute(ConfigurationReferenceAttribute):
         return self.resolve_reference_list(instance, remote, remote_keys)
 
     def resolve_reference_list(self, instance, remote, remote_keys):
-        refs = []
+        refs = getattr(instance, self.attr_name)
+        # Do not use cfglist.clear as it might delete
+        # the referenced node scaffold attribute
+        builtins.list.clear(refs)
         for remote_key in remote_keys:
             if not self.is_reference_value(remote_key):
                 reference = self.resolve_reference(instance, remote, remote_key)
@@ -1073,7 +1073,8 @@ class ConfigurationReferenceListAttribute(ConfigurationReferenceAttribute):
                 # already we skip it and should call populate_reference ourselves.
                 if self.populate:
                     self.populate_reference(instance, reference)
-            refs.append(reference)
+            # the item is already resolved so we just append it.
+            builtins.list.append(refs, reference)
         return refs
 
     def __populate__(self, instance, value, unique_list=False):
@@ -1089,7 +1090,9 @@ class ConfigurationReferenceListAttribute(ConfigurationReferenceAttribute):
         should_pop = has_pop and (not unique_list or is_new)
         should_ref = should_pop or not has_pop
         if should_pop:
-            population.append(value)
+            # use list.append as cfglist.append will call resolve_reference
+            # creating an infinite loop
+            builtins.list.append(population, value)
         if should_ref:
             if not has_refs:
                 setattr(instance, self.get_ref_key(), [value])

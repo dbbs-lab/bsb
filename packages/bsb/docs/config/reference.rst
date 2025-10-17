@@ -44,6 +44,11 @@ Morphologies
 
 .. autoconfig:: bsb.storage._files.MorphologyDependencyNode
 
+Files
+=====
+
+.. autoconfig:: bsb.storage._files.FileDependencyNode
+
 Regions
 =======
 

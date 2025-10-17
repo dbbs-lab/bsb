@@ -128,10 +128,11 @@ class RegionalReference(Reference):
         merged.update(root.partitions)
         return merged
 
-    def is_ref(self, value):
+    @property
+    def type(self):
         from ..topology import Partition, Region
 
-        return isinstance(value, Region | Partition)
+        return Region | Partition
 
 
 class PlacementReference(Reference):

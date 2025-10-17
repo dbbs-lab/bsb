@@ -39,7 +39,7 @@ Configuration
 -------------
 
 The Configuration of a Scaffold is available as ``scaffold.configuration``.
-Its root components such as ``cell_types``, ``placement`` and others are
+Most of its root components such as ``cell_types``, ``placement`` are
 also directly available in the Scaffold object, so you can avoid some
 needless typing and repetition.
 
@@ -47,6 +47,9 @@ needless typing and repetition.
    :language: python
    :lines: 8-11
    :emphasize-lines: 1
+
+There are two main configuration components that are not directly available
+through scaffold: these are the ``morphologies`` and ``files``.
 
 Placement data
 --------------

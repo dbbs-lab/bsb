@@ -16,7 +16,7 @@
   "partitions": {
     "declive": {
       "type": "allen",
-      "source": "my_cell_density.nrrd",
+      "source": "data/my_cell_density.nrrd",
       "keys": ["my_cell_density"],
       "struct_name": "DEC"
     }

@@ -15,17 +15,17 @@ pip install -e.
 
 ## Usage
 
-The configuration files in the folder `include_morphologies` named `include_morphos.[extension]` corresponds to the
+The configuration files in the folder `configs` named `include_morphos.[extension]` corresponds to the
 configuration files you should obtain upon completing
 [the BSB morphology guide](https://bsb.readthedocs.io/en/latest/getting-started/simulations/include_morphos.html).
 
-To run the BSB reconstruction, run the following command in the `include_morphologies` folder:
+To run the BSB reconstruction, run the following command in this folder:
 ```bash
-bsb compile include_morphos.yaml -v 3 --clear
+bsb compile configs/include_morphos.yaml -v 3 --clear
 # or
-bsb compile include_morphos.json -v 3 --clear
+bsb compile configs/include_morphos.json -v 3 --clear
 # or
-python include_morphos.py
+python scripts/include_morphos.py
 ```
 
 You should obtain a `network.hdf5` file from this reconstruction.
@@ -34,5 +34,5 @@ You can then display the morphologies of the file, following
 
 The python script presented in this tutorial can be launched from the terminal:
 ```bash
-python plotting_with_branch_colors.py
+python scripts/plotting_with_branch_colors.py
 ```

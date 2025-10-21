@@ -20,7 +20,7 @@ for handling electrophysiology data.
 Let's extract the spike train data produced by your last simulation. First, load the content from
 your ``simulation-results/NAME_OF_YOUR_NEO_FILE.nio`` file, use the following code:
 
-.. literalinclude:: /../../../examples/nest-simulation/nest_simulation/analyze_spike_results.py
+.. literalinclude:: /../../../examples/nest-simulation/scripts/analyze_spike_results.py
     :language: python
     :lines: 1-8
 
@@ -36,7 +36,7 @@ Each :class:`SpikeTrain <neo.core.SpikeTrain>` object holds information about th
 the size of the cell population, and an array of the IDs of spiking cells, accessible through the
 ``array_annotations`` attribute:
 
-.. literalinclude:: /../../../examples/nest-simulation/nest_simulation/analyze_spike_results.py
+.. literalinclude:: /../../../examples/nest-simulation/scripts/analyze_spike_results.py
     :language: python
     :lines: 10-23
 

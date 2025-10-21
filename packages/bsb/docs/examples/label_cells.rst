@@ -13,18 +13,19 @@ name, e.g. :guilabel:`Labels`:
 
 .. tab-set-code::
 
-  .. literalinclude:: /../../../examples/cell-labeling/cell_labeling/cell_labeling.json
+  .. literalinclude:: /../../../examples/cell-labeling/configs/cell_labeling.json
     :language: json
     :lines: 40-45
 
-  .. literalinclude:: /../../../examples/cell-labeling/cell_labeling/cell_labeling.yaml
+  .. literalinclude:: /../../../examples/cell-labeling/configs/cell_labeling.yaml
     :language: yaml
     :lines: 31-34
 
-  .. literalinclude:: /../../../examples/cell-labeling/cell_labeling/cell_labeling.py
+  .. literalinclude:: /../../../examples/cell-labeling/scripts/cell_labeling.py
     :language: python
     :lines: 35-39
 
+Here, we are linking the class ``LabelCellA`` stored in the file ``cell_labeling/label_cells.py``.
 For more information on linking your Python classes to the configuration file see
 :doc:`this section </config/nodes>`.
 
@@ -44,7 +45,7 @@ will be assigned the label ``cell_A_type_1`` and the rest ``cell_A_type_2``.
 
 You can then filter back these cells like so:
 
-.. literalinclude:: /../../../examples/cell-labeling/cell_labeling/test_labels.py
+.. literalinclude:: /../../../examples/cell-labeling/scripts/test_labels.py
   :language: python
 
 Full example configuration file
@@ -52,11 +53,11 @@ Full example configuration file
 
 .. tab-set-code::
 
-  .. literalinclude:: /../../../examples/cell-labeling/cell_labeling/cell_labeling.json
+  .. literalinclude:: /../../../examples/cell-labeling/configs/cell_labeling.json
     :language: json
 
-  .. literalinclude:: /../../../examples/cell-labeling/cell_labeling/cell_labeling.yaml
+  .. literalinclude:: /../../../examples/cell-labeling/configs/cell_labeling.yaml
     :language: yaml
 
-  .. literalinclude:: /../../../examples/cell-labeling/cell_labeling/cell_labeling.py
+  .. literalinclude:: /../../../examples/cell-labeling/scripts/cell_labeling.py
     :language: python

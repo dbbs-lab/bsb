@@ -16,7 +16,7 @@ print("Structure IDs:", ids)
 mask = AllenStructure.get_structure_mask(struct)
 print("The structure contains", np.sum(mask), "voxels")
 # You can use this to mask other images of the brain, such as a fictitious density file:
-brain_image, _ = nrrd.read("my_cell_density.nrrd")
+brain_image, _ = nrrd.read("data/my_cell_density.nrrd")
 struct_image = np.where(mask, brain_image, np.nan)
 # Or, if you prefer an array of the values:
 struct_values = brain_image[mask]

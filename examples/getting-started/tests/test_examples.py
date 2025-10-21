@@ -6,8 +6,8 @@ from sys import path
 from bsb import Scaffold, from_storage, parse_configuration_file
 from bsb_test import RandomStorageFixture
 
-CONFIG_FOLDER = abspath(join(dirname(dirname(__file__)), "getting_started"))
-path.insert(1, CONFIG_FOLDER)
+ROOT_FOLDER = abspath(dirname(dirname(__file__)))
+path.insert(1, ROOT_FOLDER)
 
 
 class TestGettingStartedExamples(
@@ -25,23 +25,23 @@ class TestGettingStartedExamples(
         self.assertEqual(len(self.scaffold.get_connectivity_set("A_to_B")), 40 * 1560)
 
     def test_json_example(self):
-        self.cfg = parse_configuration_file(join(CONFIG_FOLDER, "getting_started.json"))
+        self.cfg = parse_configuration_file(join(ROOT_FOLDER, "configs", "getting_started.json"))
         self.scaffold = Scaffold(self.cfg, self.storage)
         self.scaffold.compile()
         self._test_scaffold_results()
 
     def test_yaml_example(self):
-        self.cfg = parse_configuration_file(join(CONFIG_FOLDER, "getting_started.yaml"))
+        self.cfg = parse_configuration_file(join(ROOT_FOLDER, "configs", "getting_started.yaml"))
         self.scaffold = Scaffold(self.cfg, self.storage)
         self.scaffold.compile()
         self._test_scaffold_results()
 
     def test_python_example(self):
-        import getting_started  # noqa: F401
+        import scripts.getting_started  # noqa: F401
 
         self.scaffold = from_storage("network.hdf5")
         self._test_scaffold_results()
         # check if load_data runs without any problems
-        import load_data  # noqa: F401
+        import scripts.load_data  # noqa: F401
 
         os.remove("network.hdf5")

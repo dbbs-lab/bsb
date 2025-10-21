@@ -21,7 +21,7 @@ config.regions.add(
 
 config.morphologies = [
     dict(
-        file="StellateCell.swc",
+        file="data/StellateCell.swc",
         parser={
             "tags": {
                 "16": ["dendrites", "proximal_dendrites"],
@@ -68,7 +68,7 @@ config.simulations.add(
 )
 
 config.simulations["neuronsim"].cell_models = dict(
-    stellate_cell=dict(model="Stellate.definitionStellate", parameters=[])
+    stellate_cell=dict(model="data.Stellate.definitionStellate", parameters=[])
 )
 
 config.simulations["neuronsim"].connection_models = dict(

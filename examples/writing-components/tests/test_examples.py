@@ -6,8 +6,8 @@ from sys import path
 from bsb import Scaffold, from_storage, parse_configuration_file
 from bsb_test import RandomStorageFixture
 
-CONFIG_FOLDER = abspath(join(dirname(dirname(__file__)), "writing_components"))
-path.insert(1, CONFIG_FOLDER)
+ROOT_FOLDER = abspath(dirname(dirname(__file__)))
+path.insert(1, ROOT_FOLDER)
 
 
 class TestComponentsExamples(
@@ -26,20 +26,20 @@ class TestComponentsExamples(
 
     def test_json_example(self):
         self.cfg = parse_configuration_file(
-            join(CONFIG_FOLDER, "writing_components.json")
+            join(ROOT_FOLDER, "configs", "writing_components.json")
         )
         self.scaffold = Scaffold(self.cfg, self.storage)
         self.scaffold.compile()
 
     def test_yaml_example(self):
         self.cfg = parse_configuration_file(
-            join(CONFIG_FOLDER, "writing_components.yaml")
+            join(ROOT_FOLDER, "configs", "writing_components.yaml")
         )
         self.scaffold = Scaffold(self.cfg, self.storage)
         self.scaffold.compile()
 
     def test_python_example(self):
-        import writing_components  # noqa: F401
+        import scripts.writing_components  # noqa: F401
 
         self.scaffold = from_storage("network.hdf5")
         os.remove("network.hdf5")

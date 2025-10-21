@@ -9,8 +9,8 @@ from bsb import Scaffold, from_storage, parse_configuration_file
 from bsb_test import RandomStorageFixture
 from neo import io
 
-CONFIG_FOLDER = abspath(join(dirname(dirname(__file__)), "nest_simulation"))
-path.insert(1, CONFIG_FOLDER)
+ROOT_FOLDER = abspath(dirname(dirname(__file__)))
+path.insert(1, ROOT_FOLDER)
 
 
 class TestNestExamples(
@@ -23,7 +23,7 @@ class TestNestExamples(
             shutil.rmtree("simulation-results")
 
     def setUp(self):
-        os.chdir(CONFIG_FOLDER)
+        os.chdir(ROOT_FOLDER)
         super().setUp()
         self._cleanup()
 
@@ -55,7 +55,7 @@ class TestNestExamples(
         self.assertEqual(np.max(neuron_ids), 1600 + 1)
 
     def test_json_example(self):
-        self.cfg = parse_configuration_file(join(CONFIG_FOLDER, "guide_nest.json"))
+        self.cfg = parse_configuration_file(join(ROOT_FOLDER, "configs", "guide_nest.json"))
         self.scaffold = Scaffold(self.cfg, self.storage)
         self.scaffold.compile()
         self._test_scaffold_results()
@@ -63,7 +63,7 @@ class TestNestExamples(
         self._test_simulation_results(results.spiketrains)
 
     def test_yaml_example(self):
-        self.cfg = parse_configuration_file(join(CONFIG_FOLDER, "guide_nest.yaml"))
+        self.cfg = parse_configuration_file(join(ROOT_FOLDER, "configs", "guide_nest.yaml"))
         self.scaffold = Scaffold(self.cfg, self.storage)
         self.scaffold.compile()
         self._test_scaffold_results()
@@ -71,7 +71,7 @@ class TestNestExamples(
         self._test_simulation_results(results.spiketrains)
 
     def test_python_example(self):
-        import guide_nest  # noqa: F401
+        import scripts.guide_nest  # noqa: F401
 
         self.scaffold = from_storage("network.hdf5")
         self._test_scaffold_results()
@@ -81,7 +81,7 @@ class TestNestExamples(
             results.read_all_blocks()[0].segments[0].spiketrains
         )
         # check if analyze analog results runs without any problems
-        import analyze_spike_results  # noqa: F401
+        import scripts.analyze_spike_results  # noqa: F401
 
         files = os.listdir("simulation-results")  # 1 png and 1 nio file
         self.assertTrue("raster_plot.png" in files)

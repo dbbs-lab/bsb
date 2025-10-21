@@ -18,19 +18,19 @@ pip install -e.
 
 ## Usage
 
-The configuration files in the folder `nest_simulation` named `guide_nest.[extension]`
+The configuration files in the folder `configs` named `guide_nest.[extension]`
 corresponds to the configuration files you should obtain upon completing
 [the BSB NEST guide](https://bsb.readthedocs.io/en/latest/getting-started/simulations/guide_nest.html).
 
 To run the BSB reconstruction and simulation, run the following command in this folder:
 ```bash
-bsb compile nest_simulation/guide_nest.yaml -v 3 --clear
+bsb compile configs/guide_nest.yaml -v 3 --clear
 bsb simulate network.hdf5 basal_activity -o simulation-results
 # or
-bsb compile nest_simulation/guide_nest.json -v 3 --clear
+bsb compile configs/guide_nest.json -v 3 --clear
 bsb simulate network.hdf5 basal_activity -o simulation-results
 # or
-python nest_simulation/guide_nest.py
+python scripts/guide_nest.py
 ```
 
 You should obtain a `network.hdf5` file from this reconstruction and the results of the 
@@ -40,6 +40,6 @@ You can then extract NEST simulation results, following
 
 The python script presented in this tutorial can be launched from the terminal:
 ```bash
-python nest_simulation/analyze_spike_results.py
+python scripts/analyze_spike_results.py
 ```
 Note that you might need to adapt it to your simulation output files.

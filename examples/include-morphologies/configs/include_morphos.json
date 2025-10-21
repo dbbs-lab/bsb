@@ -10,10 +10,10 @@
     "z": 200.0
   },
   "morphologies": [
-    "neuron_A.swc",
+    "data/neuron_A.swc",
     {
       "name": "neuron_B",
-      "file": "neuron2.swc"
+      "file": "data/neuron2.swc"
     }
   ],
   "regions": {

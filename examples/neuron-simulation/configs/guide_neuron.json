@@ -23,7 +23,7 @@
   },
   "morphologies": [
     {
-      "file": "StellateCell.swc",
+      "file": "data/StellateCell.swc",
       "parser":{
         "tags": {
             "16": ["dendrites", "proximal_dendrites"],
@@ -75,7 +75,7 @@
       "temperature": 32,
       "cell_models": {
         "stellate_cell": {
-          "model": "Stellate.definitionStellate",
+          "model": "data.Stellate.definitionStellate",
           "parameters": []
         }    
       },

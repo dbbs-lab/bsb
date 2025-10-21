@@ -15,17 +15,17 @@ pip install -e.
 
 ## Usage
 
-The configuration files in the folder `writing_components` named `writing_components/writing_components.[extension]` 
+The configuration files in the folder `configs` named `writing_components.[extension]` 
 corresponds to the configuration files you should obtain upon completing
 [the BSB tutorial on writing components](https://bsb.readthedocs.io/en/latest/getting-started/guide_components.html).
 
 To run the BSB reconstruction, run the following command in this folder:
 ```bash
-bsb compile writing_components/writing_components.yaml -v 3 --clear
+bsb compile configs/writing_components.yaml -v 3 --clear
 # or
-bsb compile writing_components/writing_components.json -v 3 --clear
+bsb compile configs/writing_components.json -v 3 --clear
 # or
-python writing_components/writing_components.py
+python scripts/writing_components.py
 ```
 
 You should obtain a `network.hdf5` file from this reconstruction.

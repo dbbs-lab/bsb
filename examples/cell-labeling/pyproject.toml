@@ -23,3 +23,6 @@ editable = true
 [tool.uv.sources.bsb-test]
 path = "../../packages/bsb-test"
 editable = true
+
+[tools.bsb]
+config = "configs/cell_labeling.yaml"

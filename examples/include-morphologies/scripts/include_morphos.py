@@ -20,8 +20,8 @@ config.regions.add(
 )
 
 config.morphologies = [
-    "neuron_A.swc",
-    dict(name="neuron_B", file="neuron2.swc"),
+    "data/neuron_A.swc",
+    dict(name="neuron_B", file="data/neuron2.swc"),
 ]
 
 config.cell_types.add(

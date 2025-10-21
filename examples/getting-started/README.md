@@ -15,17 +15,17 @@ pip install -e.
 
 ## Usage
 
-The configuration files in the folder `getting_started` named `getting-started.[extension]` 
+The configuration files in the folder `scripts` named `getting-started.[extension]` 
 corresponds to the configuration files you should obtain upon completing
 [the BSB getting started tutorial](https://bsb.readthedocs.io/en/latest/getting-started/getting-started_reconstruction.html).
 
 To run the BSB reconstruction, run the following command in this folder:
 ```bash
-bsb compile getting_started/getting-started.yaml -v 3 --clear
+bsb compile configs/getting-started.yaml -v 3 --clear
 # or
-bsb compile getting_started/getting-started.json -v 3 --clear
+bsb compile configs/getting-started.json -v 3 --clear
 # or
-python getting_started/getting-started.py
+python scripts/getting-started.py
 ```
 
 You should obtain a `network.hdf5` file from this reconstruction.
@@ -34,5 +34,5 @@ You can then explore the content of the file, following
 
 The python script presented in this tutorial can be launched from the terminal:
 ```bash
-python getting_started/load_data.py
+python scripts/load_data.py
 ```

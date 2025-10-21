@@ -10,8 +10,8 @@ Run your first NEURON simulation
 In this tutorial, we present how to configure a NEURON simulation for a multi-compartment
 neuron network.
 
-Install requirements
-====================
+Pre-requirements
+================
 
 `NEURON <https://www.neuron.yale.edu/neuron/>`_ is one of the supported simulators of the
 BSB. As for the other simulator, its adapter code is stored in a separate repository:
@@ -29,34 +29,46 @@ We will also need some model files for NEURON which you can obtain and link to b
 
     pip install dbbs-catalogue
 
+Create a ``data`` folder in your project folder and save inside:
+
+- A custom stellate cell morphology :download:`here </../../../examples/neuron-simulation/data/StellateCell.swc>` as ``StellateCell.swc``.
+- The Stellate model available :download:`here </../../../examples/neuron-simulation/data/Stellate.py>` as ``Stellate.py``.
+
+
 BSB reconstruction for this tutorial
-====================================
+------------------------------------
 
 For this example, we will build a network consisting of a single ``layer`` of
 ``stellate_cells`` connected through axon-dendrite overlap, using the strategy
 :doc:`VoxelIntersection </connectivity/connection-strategies>`.
-The morphology of a custom stellate cell is provided
-:download:`here </../../../examples/neuron-simulation/neuron_simulation/StellateCell.swc>`.
-Please save this file in your project folder as ``StellateCell.swc``.
 
 The network configuration should be as follows:
 
 .. tab-set-code::
 
-    .. literalinclude:: /../../../examples/neuron-simulation/neuron_simulation/guide_neuron.json
+    .. literalinclude:: /../../../examples/neuron-simulation/configs/guide_neuron.json
       :language: json
       :lines: 1-69
 
-    .. literalinclude:: /../../../examples/neuron-simulation/neuron_simulation/guide_neuron.yaml
+    .. literalinclude:: /../../../examples/neuron-simulation/configs/guide_neuron.yaml
       :language: yaml
       :lines: 1-62
 
-    .. literalinclude:: /../../../examples/neuron-simulation/neuron_simulation/guide_neuron.py
+    .. literalinclude:: /../../../examples/neuron-simulation/scripts/guide_neuron.py
       :language: python
       :lines: 1-57
 
 Copy the configuration in you favorite format and put it in the project folder
 as ``neuron-simulation.[YOUR EXTENSION]``
+
+At this stage, your project folder should contain these files:
+
+| .
+| ├── data
+| │    ├── StellateCell.swc
+| │    └── Stellate.py
+| ├── pyproject.toml
+| └── neuron-simulation.yaml  # or .json or .py
 
 Then, the configuration should be compiled:
 
@@ -86,15 +98,15 @@ milliseconds) and the :guilabel:`temperature` (celsius unit).
 
 .. tab-set-code::
 
-    .. literalinclude:: /../../../examples/neuron-simulation/neuron_simulation/guide_neuron.json
+    .. literalinclude:: /../../../examples/neuron-simulation/configs/guide_neuron.json
       :language: json
       :lines: 70-75
 
-    .. literalinclude:: /../../../examples/neuron-simulation/neuron_simulation/guide_neuron.yaml
+    .. literalinclude:: /../../../examples/neuron-simulation/configs/guide_neuron.yaml
       :language: yaml
       :lines: 63-68
 
-    .. literalinclude:: /../../../examples/neuron-simulation/neuron_simulation/guide_neuron.py
+    .. literalinclude:: /../../../examples/neuron-simulation/scripts/guide_neuron.py
       :language: python
       :lines: 59-68
 
@@ -106,9 +118,8 @@ to define the cell's behavior.
 
 In short, these models encapsulate all the specifications for ion channels and synapses
 covering all compartments of the neuron. Discussing NEURON model characteristics is
-beyond the scope of this guide; therefore, a ready-to-use Stellate model is provided
-:download:`here </../../../examples/neuron-simulation/neuron_simulation/Stellate.py>`. Save it as a ``Stellate.py``
-file in your project folder and review its contents.
+beyond the scope of this guide; therefore, we will leverage the ``data/Stellate.py``
+NEURON model provided before. Please review its contents.
 
 Within the model file, you will find a model definition called
 :guilabel:`definitionStellate`, which includes all the customized parameters. This is
@@ -118,15 +129,15 @@ the ion channel mechanisms are in the attribute :guilabel:`cable_types`.
 
 .. tab-set-code::
 
-    .. literalinclude:: /../../../examples/neuron-simulation/neuron_simulation/guide_neuron.json
+    .. literalinclude:: /../../../examples/neuron-simulation/configs/guide_neuron.json
       :language: json
       :lines: 76-81
 
-    .. literalinclude:: /../../../examples/neuron-simulation/neuron_simulation/guide_neuron.yaml
+    .. literalinclude:: /../../../examples/neuron-simulation/configs/guide_neuron.yaml
       :language: yaml
       :lines: 69-72
 
-    .. literalinclude:: /../../../examples/neuron-simulation/neuron_simulation/guide_neuron.py
+    .. literalinclude:: /../../../examples/neuron-simulation/scripts/guide_neuron.py
       :language: python
       :lines: 70-72
 
@@ -144,15 +155,15 @@ model file: :guilabel:`GABA`.
 
 .. tab-set-code::
 
-    .. literalinclude:: /../../../examples/neuron-simulation/neuron_simulation/guide_neuron.json
+    .. literalinclude:: /../../../examples/neuron-simulation/configs/guide_neuron.json
       :language: json
       :lines: 82-87
 
-    .. literalinclude:: /../../../examples/neuron-simulation/neuron_simulation/guide_neuron.yaml
+    .. literalinclude:: /../../../examples/neuron-simulation/configs/guide_neuron.yaml
       :language: yaml
       :lines: 73-78
 
-    .. literalinclude:: /../../../examples/neuron-simulation/neuron_simulation/guide_neuron.py
+    .. literalinclude:: /../../../examples/neuron-simulation/scripts/guide_neuron.py
       :language: python
       :lines: 74-84
 
@@ -172,15 +183,15 @@ devices (see the targetting section on :doc:`this page </simulation/intro>` for 
 
 .. tab-set-code::
 
-    .. literalinclude:: /../../../examples/neuron-simulation/neuron_simulation/guide_neuron.json
+    .. literalinclude:: /../../../examples/neuron-simulation/configs/guide_neuron.json
       :language: json
       :lines: 88-128
 
-    .. literalinclude:: /../../../examples/neuron-simulation/neuron_simulation/guide_neuron.yaml
+    .. literalinclude:: /../../../examples/neuron-simulation/configs/guide_neuron.yaml
       :language: yaml
       :lines: 79-127
 
-    .. literalinclude:: /../../../examples/neuron-simulation/neuron_simulation/guide_neuron.py
+    .. literalinclude:: /../../../examples/neuron-simulation/scripts/guide_neuron.py
       :language: python
       :lines: 86-119
 
@@ -202,13 +213,13 @@ Final configuration file
 
 .. tab-set-code::
 
-  .. literalinclude:: /../../../examples/neuron-simulation/neuron_simulation/guide_neuron.json
+  .. literalinclude:: /../../../examples/neuron-simulation/configs/guide_neuron.json
     :language: json
 
-  .. literalinclude:: /../../../examples/neuron-simulation/neuron_simulation/guide_neuron.yaml
+  .. literalinclude:: /../../../examples/neuron-simulation/configs/guide_neuron.yaml
     :language: yaml
 
-  .. literalinclude:: /../../../examples/neuron-simulation/neuron_simulation/guide_neuron.py
+  .. literalinclude:: /../../../examples/neuron-simulation/scripts/guide_neuron.py
     :language: python
     :lines: 3-122
 

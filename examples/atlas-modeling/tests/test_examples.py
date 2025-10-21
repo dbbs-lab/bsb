@@ -6,8 +6,8 @@ from sys import path
 from bsb import Scaffold, parse_configuration_file
 from bsb_test import RandomStorageFixture, skip_test_allen_api
 
-CONFIG_FOLDER = abspath(join(dirname(dirname(__file__)), "atlas_modeling"))
-path.insert(1, CONFIG_FOLDER)
+ROOT_FOLDER = abspath(dirname(dirname(__file__)))
+path.insert(1, ROOT_FOLDER)
 
 
 @unittest.skipIf(
@@ -20,11 +20,11 @@ class TestAtlasExamples(
     engine_name="hdf5",
 ):
     def setUp(self):
+        os.chdir(ROOT_FOLDER)
         super().setUp()
-        os.chdir(CONFIG_FOLDER)
 
     def test_json_example(self):
-        self.cfg = parse_configuration_file(join(CONFIG_FOLDER, "allen_structure.json"))
+        self.cfg = parse_configuration_file(join(ROOT_FOLDER, "configs", "allen_structure.json"))
         self.scaffold = Scaffold(self.cfg, self.storage)
         self.scaffold.compile()
         nb_voxels_dec_ccfv3 = 213303
@@ -45,4 +45,4 @@ class TestAtlasExamples(
 
     def test_python_example(self):
         # should run without errors
-        import allen_structure  # noqa: F401
+        import scripts.allen_structure  # noqa: F401

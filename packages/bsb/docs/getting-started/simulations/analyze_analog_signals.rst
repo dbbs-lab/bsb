@@ -23,7 +23,7 @@ unique ``segment`` since all our data is recorded with the same time frame (see
 Let's extract the simulation block data produced by your last simulation. First, load the content from
 your ``simulation-results/NAME_OF_YOUR_NEO_FILE.nio`` file, use the following code:
 
-.. literalinclude:: /../../../examples/neuron-simulation/neuron_simulation/analyze_analog_results.py
+.. literalinclude:: /../../../examples/neuron-simulation/scripts/analyze_analog_results.py
     :language: python
     :lines: 1-8
 
@@ -35,7 +35,7 @@ Each :class:`AnalogSignal <neo.core.AnalogSignal>` object contains information a
 the sampling rate, and an array of the simulated measurement values.
 Additional information is available through the annotations attribute.
 
-.. literalinclude:: /../../../examples/neuron-simulation/neuron_simulation/analyze_analog_results.py
+.. literalinclude:: /../../../examples/neuron-simulation/scripts/analyze_analog_results.py
     :language: python
     :lines: 10-44
 

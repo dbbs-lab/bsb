@@ -19,12 +19,12 @@ You can add/overwrite tags by setting the :guilabel:`tags` attribute:
   {
     "parser": "bsb",
     "tags": {
-      4: ["dendrites", "apical_dendrites"],
-      5: ["dendrites", "basal_dendrites"],
-      6: ["axon", "axon_initial_segment"],
-      7: ["axon", "axon_hillock"],
-      8: ["axon", "myelin"],
-      9: ["axon", "myelin", "node_of_ranvier"]
+      "4": ["dendrites", "apical_dendrites"],
+      "5": ["dendrites", "basal_dendrites"],
+      "6": ["axon", "axon_initial_segment"],
+      "7": ["axon", "axon_hillock"],
+      "8": ["axon", "myelin"],
+      "9": ["axon", "myelin", "node_of_ranvier"]
     }
   }
 

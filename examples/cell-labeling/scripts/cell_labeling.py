@@ -34,7 +34,7 @@ config.placement.add(
 
 config.after_placement.add(
     "Labels",
-    strategy="label_cells.LabelCellA",
+    strategy="cell_labeling.label_cells.LabelCellA",
     cell_type="cell_A",
 )
 

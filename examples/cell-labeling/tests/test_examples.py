@@ -6,8 +6,8 @@ from sys import path
 from bsb import Scaffold, from_storage, parse_configuration_file
 from bsb_test import RandomStorageFixture
 
-CONFIG_FOLDER = abspath(join(dirname(dirname(__file__)), "cell_labeling"))
-path.insert(1, CONFIG_FOLDER)
+ROOT_FOLDER = abspath(dirname(dirname(__file__)))
+path.insert(1, ROOT_FOLDER)
 
 
 class TestCellLabelingExamples(
@@ -16,8 +16,8 @@ class TestCellLabelingExamples(
     engine_name="hdf5",
 ):
     def setUp(self):
+        os.chdir(ROOT_FOLDER)
         super().setUp()
-        os.chdir(CONFIG_FOLDER)
 
     def _test_scaffold_results(self):
         self.assertEqual(
@@ -25,23 +25,23 @@ class TestCellLabelingExamples(
         )
 
     def test_json_example(self):
-        self.cfg = parse_configuration_file(join(CONFIG_FOLDER, "cell_labeling.json"))
+        self.cfg = parse_configuration_file(join(ROOT_FOLDER, "configs", "cell_labeling.json"))
         self.scaffold = Scaffold(self.cfg, self.storage)
         self.scaffold.compile()
         self._test_scaffold_results()
 
     def test_yaml_example(self):
-        self.cfg = parse_configuration_file(join(CONFIG_FOLDER, "cell_labeling.yaml"))
+        self.cfg = parse_configuration_file(join(ROOT_FOLDER, "configs", "cell_labeling.yaml"))
         self.scaffold = Scaffold(self.cfg, self.storage)
         self.scaffold.compile()
         self._test_scaffold_results()
 
     def test_python_example(self):
-        import cell_labeling  # noqa: F401
+        import scripts.cell_labeling  # noqa: F401
 
         self.scaffold = from_storage("network.hdf5")
         self._test_scaffold_results()
         # check if load_data runs without any problems
-        import test_labels  # noqa: F401
+        import scripts.test_labels  # noqa: F401
 
         os.remove("network.hdf5")

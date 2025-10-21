@@ -21,7 +21,7 @@ config = Configuration.default(
 
 config.placement = {
     "alpha_placement": {
-        "strategy": "distrib_placement.DistributionPlacement",
+        "strategy": "writing_components.distrib_placement.DistributionPlacement",
         "distribution": {"distribution": "alpha", "a": 8},
         "axis": 0,
         "direction": "negative",
@@ -37,7 +37,7 @@ config.placement = {
 
 config.connectivity = {
     "A_to_B": {
-        "strategy": "dist_connection.DistanceConnectivity",
+        "strategy": "writing_components.dist_connection.DistanceConnectivity",
         "radius": 100,
         "presynaptic": {"cell_types": ["base_type"]},
         "postsynaptic": {"cell_types": ["top_type"]},

@@ -30,7 +30,7 @@ cell_types:
       count: 40
 placement:
   alpha_placement:
-    strategy: distrib_placement.DistributionPlacement
+    strategy: writing_components.distrib_placement.DistributionPlacement
     distribution:
       distribution: alpha
       a: 8
@@ -48,7 +48,7 @@ placement:
     - top_layer
 connectivity:
   A_to_B:
-    strategy: dist_connection.DistanceConnectivity
+    strategy: writing_components.dist_connection.DistanceConnectivity
     radius: 100
     presynaptic:
       cell_types:

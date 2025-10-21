@@ -12,7 +12,7 @@ values to each voxel, and place cells accordingly.
 
 We start by defining the basics: a region, an ``allen`` partition and a cell type:
 
-.. literalinclude:: /../../../examples/atlas-modeling/atlas_modeling/allen_structure.json
+.. literalinclude:: /../../../examples/atlas-modeling/configs/allen_structure.json
   :language: json
   :lines: 13-18,21-30,37
   :emphasize-lines: 6-7
@@ -28,7 +28,7 @@ You can find the ids, acronyms and names in the Allen Brain Atlas brain region h
 If we now place our ``my_cell`` in the ``declive``, it will be placed with a fixed
 density of ``0.003/μm^3``:
 
-.. literalinclude:: /../../../examples/atlas-modeling/atlas_modeling/allen_structure.json
+.. literalinclude:: /../../../examples/atlas-modeling/configs/allen_structure.json
   :language: json
   :lines: 38-42,44-47
 
@@ -36,7 +36,7 @@ If however, we have data of the cell densities available for a new cell type ``m
 we can link our ``declive`` partition to it, by loading it as a :guilabel:`source` file:
 
 
-.. literalinclude:: /../../../examples/atlas-modeling/atlas_modeling/allen_structure.json
+.. literalinclude:: /../../../examples/atlas-modeling/configs/allen_structure.json
   :language: json
   :lines: 16-23
   :emphasize-lines: 4-5
@@ -51,11 +51,11 @@ we might need to load multiple densities for multiple cell types, or orientation
 other data. We can do this by specifying a :guilabel:`density_key`:
 
 
-.. literalinclude:: /../../../examples/atlas-modeling/atlas_modeling/allen_structure.json
+.. literalinclude:: /../../../examples/atlas-modeling/configs/allen_structure.json
   :language: json
   :lines: 24,31-37
   :emphasize-lines: 5
 
 That's it! If we compile the network, ``my_other_cell`` will be placed into ``declive`` with
 different densities in each voxel, according to the values provided in
-``my_cell_density.nrrd``.
+``data/my_cell_density.nrrd``.

@@ -25,6 +25,7 @@ from bsb import (
     DynamicObjectNotFoundError,
     NrrdDependencyNode,
     PackageRequirementWarning,
+    Region,
     RegionGroup,
     RequirementError,
     Scaffold,
@@ -32,6 +33,7 @@ from bsb import (
     UnresolvedClassCastError,
     config,
     from_storage,
+    refs,
 )
 from bsb._package_spec import get_missing_requirement_reason
 from bsb.config import Configuration, _attrs, compose_nodes, types
@@ -524,7 +526,7 @@ class TestConfigRefList(unittest.TestCase):
             "All datasets in reflist should have been resolved.",
         )
         # You should be able to override an elem of the array with a ref.
-        cfg.partitions.a.sources[0] = "annotations"
+        part.sources[0] = "annotations"
         self.assertTrue(
             np.all(
                 (source == part.sources[0].load_object().raw)
@@ -532,15 +534,40 @@ class TestConfigRefList(unittest.TestCase):
             ),
             "Direct declaration should be allowed for reference list attributes.",
         )
-        # You should be able to override an elem of the array with a value.
-        cfg.partitions.a.sources[0] = node
+        src = part.sources.pop(1)
+        self.assertEqual(len(part.sources), 2)
+        self.assertTrue(
+            hasattr(src, "_config_parent") and src._config_parent == cfg.files
+        )
+        self.assertEqual(src, cfg.files["annotations"])
+        # You should be able to add an elem of the array with a value.
+        part.sources.append(node)
+        self.assertEqual(len(part.sources), 3)
         self.assertTrue(
             np.all(
                 (source == part.sources[0].load_object().raw)
                 * (source == part.sources[1].load_object().raw)
+                * (source == part.sources[2].load_object().raw)
             ),
             "Direct declaration should be allowed for soft references attributes.",
         )
+        src = part.sources.pop()
+        self.assertEqual(len(part.sources), 2)
+        self.assertTrue(hasattr(src, "_config_parent") and src._config_parent is None)
+
+    def test_region_ref(self):
+        @config.root
+        class X:
+            regions = config.attr(type=dict)
+            list = config.reflist(refs.region_ref)
+            ref = config.ref(refs.region_ref)
+
+        x = X(regions={"a": Region(children=[])}, list=[])
+        x.list.append("a")
+        x.ref = "a"
+        x._config_root = None
+        with self.assertRaises(CfgReferenceError):
+            x.ref = "a"
 
 
 class HasRefsReference(Reference):

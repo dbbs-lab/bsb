@@ -919,7 +919,7 @@ class ConfigurationReferenceAttribute(ConfigurationAttribute):
         else:
             setattr(instance, self.get_ref_key(), value)
             if self.should_resolve_on_set(instance):
-                if hasattr(instance, "_config_root"):  # pragma: nocover
+                if not hasattr(instance, "_config_root") or instance._config_root is None:
                     raise CfgReferenceError(
                         "Can't autoresolve references without a config root."
                     )
@@ -975,6 +975,7 @@ class ConfigurationReferenceAttribute(ConfigurationAttribute):
             else:
                 try:
                     value = self._cast(instance, key)
+                    value._config_parent = instance
                 except CastError:
                     raise CfgReferenceError(
                         f"{msg} and could not be casted to {self.ref_type}."
@@ -1015,9 +1016,83 @@ class ConfigurationReferenceAttribute(ConfigurationAttribute):
         return val
 
 
+class cfgreflist(cfglist):
+    """
+    cfglist that stores both the list of node references and their resolved values.
+    """
+
+    def __init__(self, *a, **k):
+        super().__init__(*a, **k)
+        self._reflist = []
+
+    def append(self, item):
+        self.insert(-1, item)
+        return self[-1]
+
+    def insert(self, index, item):
+        self._reflist.insert(index, item)
+        self._postset((item,))
+        self._reindex(index)
+
+    def pop(self, index=-1):
+        self._reflist.pop(index)
+        ex_item = builtins.list.pop(self, index)
+        if (
+            hasattr(self, "_config_parent")
+            and ex_item._config_parent == self._config_parent
+        ):
+            _unset_nodes(ex_item)
+        self._reindex(index)
+        return ex_item
+
+    def clear(self):
+        self._reflist.clear()
+        for node in self:
+            if (
+                hasattr(self, "_config_parent")
+                and node._config_parent == self._config_parent
+            ):
+                _unset_nodes(node)
+        builtins.list.clear(self)
+
+    def sort(self, **kwargs):
+        super().sort(**kwargs)
+        self._reflist = [self._reflist[i] for i in [ref._config_key for ref in self]]
+        self._reindex(0)
+
+    def reverse(self):
+        self._reflist.reverse()
+        builtins.list.reverse(self)
+        self._reindex(0)
+
+    def extend(self, items):
+        self._reflist.extend(items)
+        self._postset(items)
+
+    def __setitem__(self, index, item):
+        self._reflist[index] = item
+        if isinstance(index, int):
+            ex_items = [self[index]]
+            items = [item]
+            reindex_from = None
+        else:
+            ex_items = self[index]
+            reindex_from = index.indices(len(self))[0]
+            items = item
+        for ex_item in ex_items:
+            if (
+                hasattr(self, "_config_parent")
+                and ex_item._config_parent == self._config_parent
+            ):
+                _unset_nodes(ex_item)
+        self._postset(items)
+        if reindex_from is not None:
+            self._reindex(reindex_from)
+
+
 class ConfigurationReferenceListAttribute(ConfigurationReferenceAttribute):
     def __set__(self, instance, value, key=None):
-        _cfglist = cfglist()
+        _cfglist = cfgreflist()
         _cfglist._config_parent = instance
         _cfglist._config_attr = self
         _cfglist._elem_type = self.ref_type
@@ -1025,20 +1100,20 @@ class ConfigurationReferenceListAttribute(ConfigurationReferenceAttribute):
         _setattr(instance, self.attr_name, _cfglist)
         self.flag_dirty(instance)
         if value is None:
-            setattr(instance, self.get_ref_key(), [])
+            setattr(instance, self.get_ref_key(), _cfglist._reflist)
             return
         try:
-            remote_keys = builtins.list(iter(value))
+            _cfglist._reflist = builtins.list(iter(value))
         except TypeError:
             raise CfgReferenceError(
                 f"Reference list '{value}' of "
                 f"{self.get_node_name(instance)} is not iterable."
             ) from None
         # Store the referring values to the references key.
-        setattr(instance, self.get_ref_key(), remote_keys)
+        setattr(instance, self.get_ref_key(), _cfglist._reflist)
         if self.should_resolve_on_set(instance):
             remote = self.ref_lambda(instance._config_root, instance)
-            refs = self.resolve_reference_list(instance, remote, remote_keys)
+            refs = self.resolve_reference_list(instance, remote, _cfglist._reflist)
             _setattr(instance, self.attr_name, refs)
 
     def __get__(self, instance, owner):
@@ -1061,10 +1136,9 @@ class ConfigurationReferenceListAttribute(ConfigurationReferenceAttribute):
 
     def resolve_reference_list(self, instance, remote, remote_keys):
         refs = getattr(instance, self.attr_name)
-        # Do not use cfglist.clear as it might delete
-        # the referenced node scaffold attribute
+        # Do not use cfglist.clear as it will also delete the list of refs
         builtins.list.clear(refs)
-        for remote_key in remote_keys:
+        for i, remote_key in enumerate(remote_keys):
             if not self.is_reference_value(remote_key):
                 reference = self.resolve_reference(instance, remote, remote_key)
             else:
@@ -1074,6 +1148,7 @@ class ConfigurationReferenceListAttribute(ConfigurationReferenceAttribute):
                 if self.populate:
                     self.populate_reference(instance, reference)
             # the item is already resolved so we just append it.
+            reference._config_index = i
             builtins.list.append(refs, reference)
         return refs
 

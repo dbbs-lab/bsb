@@ -95,7 +95,7 @@ class PlacementStrategy(abc.ABC, HasDependencies):
             if selector_error:
                 # Starting from Python 3.11, even though we raise from None, the original
                 # EmptySelectionError somehow still gets pickled and contains unpicklable
-                # elements. So we work around by raising here, outside of the exception
+                # elements. So we work around by raising here, outside the exception
                 # context.
                 raise DistributorError(
                     "Morphology distribution couldn't find any"

@@ -661,7 +661,7 @@ class AllenStructure(NrrdVoxels, classmap_entry="allen"):
         # use allen ccfv3 annotation volume
         if self.mask_only and self.mask_source is None:
             self.mask_source = self._dl_mask()
-        super()._validate()
+        return super()._validate()
 
     def _validate_mask_condition(self):
         # We override the `NrrdVoxels`' `_validate_mask_condition` and use this

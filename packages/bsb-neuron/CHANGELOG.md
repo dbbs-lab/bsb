@@ -1,3 +1,13 @@
+## 6.0.7 (2025-10-06)
+
+### 🩹 Fixes
+
+- `insert_transmitter` unique under NEURON 9 ([#177](https://github.com/dbbs-lab/bsb/pull/177))
+
+### ❤️ Thank You
+
+- Robin De Schepper
+
 ## 6.0.6 (2025-08-26)
 
 This was a version bump only for bsb-neuron to align it with other projects, there were no code changes.

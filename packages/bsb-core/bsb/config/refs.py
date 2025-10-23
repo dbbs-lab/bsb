@@ -33,7 +33,7 @@ class Reference(abc.ABC):  # noqa: B024
         """
         Get the parent node of the configuration node ``here``.
         If ``to`` is provided, will search ``here``'s ascendants
-        until onw matches ``to``'s type.
+        until one matches ``to``'s type.
 
         :param here: starting node
         :param to: type of the ascendant to find

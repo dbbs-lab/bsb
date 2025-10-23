@@ -931,7 +931,7 @@ class ConfigurationReferenceAttribute(ConfigurationAttribute):
         else:
             setattr(instance, self.get_ref_key(), value)
             if self.should_resolve_on_set(instance):
-                if not hasattr(instance, "_config_root") or instance._config_root is None:
+                if getattr(instance, "_config_root", None) is None:
                     raise CfgReferenceError(
                         "Can't autoresolve references without a config root."
                     )
@@ -1033,8 +1033,8 @@ class cfgreflist(cfglist):
     cfglist that stores both the list of node references and their resolved values.
     """
 
-    def __init__(self, *a, **k):
-        super().__init__(*a, **k)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self._reflist = []
 
     def append(self, item):

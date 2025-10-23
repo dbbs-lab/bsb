@@ -435,6 +435,9 @@ class TestConfigRef(unittest.TestCase):
     def test_setting_type(self):
         with self.assertRaises(AttributeError):
             _ref = config.ref(lambda root, here: here, required=True, type=int)
+        # This line should not raise any error.
+        ref = config.ref(lambda root, here: here, required=True, ref_type=int)
+        self.assertEqual(ref.ref_type, int)
 
 
 @config.root

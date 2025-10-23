@@ -81,7 +81,14 @@ class FileReference(Reference):
 
 class VoxelDatasetReference(Reference):
     def __call__(self, root, here):
-        return {k: v for k, v in root.files.items() if isinstance(v, self.type)}
+        return {
+            k: root.files[k]
+            for k in root.files
+            if isinstance(
+                root.files[k],
+                self.type,
+            )
+        }
 
     @property
     def type(self):

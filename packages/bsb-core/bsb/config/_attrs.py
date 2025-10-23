@@ -1125,8 +1125,7 @@ class ConfigurationReferenceListAttribute(ConfigurationReferenceAttribute):
         # Store the referring values to the references key.
         setattr(instance, self.get_ref_key(), _cfglist._reflist)
         if self.should_resolve_on_set(instance):
-            remote = self.ref_lambda(instance._config_root, instance)
-            refs = self.resolve_reference_list(instance, remote, _cfglist._reflist)
+            refs = self.resolve_reference_list(instance)
             _setattr(instance, self.attr_name, refs)
 
     def __get__(self, instance, owner):
@@ -1142,16 +1141,17 @@ class ConfigurationReferenceListAttribute(ConfigurationReferenceAttribute):
 
     def __ref__(self, instance, root):
         try:
-            remote, remote_keys = self._prepare_self(instance, root)
+            self._prepare_self(instance, root)
         except NoReferenceAttributeSignal:  # pragma: nocover
             return None
-        return self.resolve_reference_list(instance, remote, remote_keys)
+        return self.resolve_reference_list(instance)
 
-    def resolve_reference_list(self, instance, remote, remote_keys):
+    def resolve_reference_list(self, instance):
         refs = getattr(instance, self.attr_name)
+        remote = self.ref_lambda(instance._config_root, instance)
         # Do not use cfglist.clear as it will also delete the list of refs
         builtins.list.clear(refs)
-        for i, remote_key in enumerate(remote_keys):
+        for i, remote_key in enumerate(refs._reflist):
             if not self.is_reference_value(remote_key):
                 reference = self.resolve_reference(instance, remote, remote_key)
             else:

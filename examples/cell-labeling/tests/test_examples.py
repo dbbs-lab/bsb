@@ -25,13 +25,17 @@ class TestCellLabelingExamples(
         )
 
     def test_json_example(self):
-        self.cfg = parse_configuration_file(join(ROOT_FOLDER, "configs", "cell_labeling.json"))
+        self.cfg = parse_configuration_file(
+            join(ROOT_FOLDER, "configs", "cell_labeling.json")
+        )
         self.scaffold = Scaffold(self.cfg, self.storage)
         self.scaffold.compile()
         self._test_scaffold_results()
 
     def test_yaml_example(self):
-        self.cfg = parse_configuration_file(join(ROOT_FOLDER, "configs", "cell_labeling.yaml"))
+        self.cfg = parse_configuration_file(
+            join(ROOT_FOLDER, "configs", "cell_labeling.yaml")
+        )
         self.scaffold = Scaffold(self.cfg, self.storage)
         self.scaffold.compile()
         self._test_scaffold_results()

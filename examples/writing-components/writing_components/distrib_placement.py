@@ -4,7 +4,7 @@ from bsb import PlacementStrategy, config, types
 
 
 @config.node
-class DistributionPlacement(PlacementStrategy):
+class DistributionPlacement(PlacementStrategy, classmap_entry="distrib_placement"):
     """
     Place cells based on a scipy distribution along a specified axis.
     """

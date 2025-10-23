@@ -59,7 +59,9 @@ class TestNeuronExamples(
         self.assertGreater(count_synapses, 10)
 
     def test_json_example(self):
-        self.cfg = parse_configuration_file(join(ROOT_FOLDER, "configs", "guide_neuron.json"))
+        self.cfg = parse_configuration_file(
+            join(ROOT_FOLDER, "configs", "guide_neuron.json")
+        )
         self.scaffold = Scaffold(self.cfg, self.storage)
         self.scaffold.compile()
         self._test_scaffold_results()
@@ -67,7 +69,9 @@ class TestNeuronExamples(
         self._test_simulation_results(results.analogsignals)
 
     def test_yaml_example(self):
-        self.cfg = parse_configuration_file(join(ROOT_FOLDER, "configs", "guide_neuron.yaml"))
+        self.cfg = parse_configuration_file(
+            join(ROOT_FOLDER, "configs", "guide_neuron.yaml")
+        )
         self.scaffold = Scaffold(self.cfg, self.storage)
         self.scaffold.compile()
         self._test_scaffold_results()

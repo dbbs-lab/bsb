@@ -24,7 +24,9 @@ class TestAtlasExamples(
         super().setUp()
 
     def test_json_example(self):
-        self.cfg = parse_configuration_file(join(ROOT_FOLDER, "configs", "allen_structure.json"))
+        self.cfg = parse_configuration_file(
+            join(ROOT_FOLDER, "configs", "allen_structure.json")
+        )
         self.scaffold = Scaffold(self.cfg, self.storage)
         self.scaffold.compile()
         nb_voxels_dec_ccfv3 = 213303

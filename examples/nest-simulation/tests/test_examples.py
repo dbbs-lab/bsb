@@ -55,7 +55,9 @@ class TestNestExamples(
         self.assertEqual(np.max(neuron_ids), 1600 + 1)
 
     def test_json_example(self):
-        self.cfg = parse_configuration_file(join(ROOT_FOLDER, "configs", "guide_nest.json"))
+        self.cfg = parse_configuration_file(
+            join(ROOT_FOLDER, "configs", "guide_nest.json")
+        )
         self.scaffold = Scaffold(self.cfg, self.storage)
         self.scaffold.compile()
         self._test_scaffold_results()
@@ -63,7 +65,9 @@ class TestNestExamples(
         self._test_simulation_results(results.spiketrains)
 
     def test_yaml_example(self):
-        self.cfg = parse_configuration_file(join(ROOT_FOLDER, "configs", "guide_nest.yaml"))
+        self.cfg = parse_configuration_file(
+            join(ROOT_FOLDER, "configs", "guide_nest.yaml")
+        )
         self.scaffold = Scaffold(self.cfg, self.storage)
         self.scaffold.compile()
         self._test_scaffold_results()

@@ -4,7 +4,7 @@ from bsb import ConnectionStrategy, config, types
 
 
 @config.node
-class DistanceConnectivity(ConnectionStrategy):
+class DistanceConnectivity(ConnectionStrategy, classmap_entry="dist_conn"):
     """
     Connect cells based on the distance between their respective somas.
     The algorithm will search for potential targets surrounding the presynaptic cells

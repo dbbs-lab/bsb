@@ -25,13 +25,17 @@ class TestGettingStartedExamples(
         self.assertEqual(len(self.scaffold.get_connectivity_set("A_to_B")), 40 * 1560)
 
     def test_json_example(self):
-        self.cfg = parse_configuration_file(join(ROOT_FOLDER, "configs", "getting_started.json"))
+        self.cfg = parse_configuration_file(
+            join(ROOT_FOLDER, "configs", "getting_started.json")
+        )
         self.scaffold = Scaffold(self.cfg, self.storage)
         self.scaffold.compile()
         self._test_scaffold_results()
 
     def test_yaml_example(self):
-        self.cfg = parse_configuration_file(join(ROOT_FOLDER, "configs", "getting_started.yaml"))
+        self.cfg = parse_configuration_file(
+            join(ROOT_FOLDER, "configs", "getting_started.yaml")
+        )
         self.scaffold = Scaffold(self.cfg, self.storage)
         self.scaffold.compile()
         self._test_scaffold_results()

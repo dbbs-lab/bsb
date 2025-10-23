@@ -29,13 +29,17 @@ class TestIncludeMorphoExamples(
         self.assertGreater(len(self.scaffold.get_connectivity_set("A_to_B")), 1000)
 
     def test_json_example(self):
-        self.cfg = parse_configuration_file(join(ROOT_FOLDER, "configs", "include_morphos.json"))
+        self.cfg = parse_configuration_file(
+            join(ROOT_FOLDER, "configs", "include_morphos.json")
+        )
         self.scaffold = Scaffold(self.cfg, self.storage)
         self.scaffold.compile()
         self._test_scaffold_results()
 
     def test_yaml_example(self):
-        self.cfg = parse_configuration_file(join(ROOT_FOLDER, "configs", "include_morphos.yaml"))
+        self.cfg = parse_configuration_file(
+            join(ROOT_FOLDER, "configs", "include_morphos.yaml")
+        )
         self.scaffold = Scaffold(self.cfg, self.storage)
         self.scaffold.compile()
         self._test_scaffold_results()

@@ -5,7 +5,7 @@ from bsb import AfterPlacementHook, config, refs, types
 
 
 @config.node
-class LabelCellA(AfterPlacementHook):
+class LabelCellA(AfterPlacementHook, classmap_entry="label_cell"):
     """
     Subdivide a cell population into 2 subpopulations based on their
     position along a provided axis

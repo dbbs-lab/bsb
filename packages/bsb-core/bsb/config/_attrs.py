@@ -436,9 +436,13 @@ class ConfigurationAttribute:
         self.key = key
         self.default = default
         self.call_default = call_default
-        self.type = self._set_type(type, key)
         self.unset = unset
         self.hint = hint
+        self._type = self._set_type(type, key)
+
+    @builtins.property
+    def type(self):
+        return self._type
 
     def __set_name__(self, owner, name):
         self.attr_name = name
@@ -898,8 +902,16 @@ class ConfigurationReferenceAttribute(ConfigurationAttribute):
             raise AttributeError(
                 "Reference attributes must set ref_type instead of type."
             )
-        # self.type will be used to cast if necessary
-        super().__init__(**kwargs, type=lambda *a, **k: self.ref_type(*a, **k))
+        super().__init__(**kwargs)
+        # Erase the prematurely set type information from the parent init,
+        # and override it later from the `type` property.
+        self._type = None
+
+    @builtins.property
+    def type(self):
+        if self._type is None:
+            self._type = self._set_type(self.ref_type, self.key)
+        return self._type
 
     @builtins.property
     def ref_type(self):

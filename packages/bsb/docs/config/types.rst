@@ -128,8 +128,8 @@ list of values use the :func:`types.list <bsb:bsb.config.types.list>` syntax ins
 Configuration references
 ========================
 
-Reference attributes are ways that refer to other locations in the configuration.
-Upon resolving the configuration, the referred value will be fetched from
+Reference attributes are ways to refer to other locations in the configuration.
+Upon loading the configuration, the referred value will be fetched from
 the referenced node:
 
 .. code-block:: json
@@ -140,7 +140,7 @@ the referenced node:
   }
 
 Assuming here that ``where`` is a reference attribute, referring to ``locations``,
-Location ``A`` will be retrieved during the `Configuration` building and placed under
+Location ``A`` will be retrieved during the `Configuration` loading and placed under
 ``where``. Once this is done, you can access the configuration attributes normally:
 
 .. code-block:: python
@@ -157,6 +157,9 @@ Reference attributes are defined inside the configuration nodes by passing a
 .. code-block:: python
 
   def my_ref_object(root, here):
+    # This function will be called to find the location of the references
+    # within the configuration. Either from the `root` of the configuration
+    # or from the node containing the ref attribute (`here`)
     return here["locations"]
 
   @config.node
@@ -173,8 +176,9 @@ Reference attributes are defined inside the configuration nodes by passing a
     - ``locations`` is the referenced node or referee
     - ``'very close'`` is the referred value
 
-You can also create a reference list attribute, by providing a list of
-reference keys to the :func:`bsb:bsb.config.reflist` function:
+You can also create a reference list attribute in your node class with the
+:func:`bsb:bsb.config.reflist` function. Then, you should provide a list of
+reference keys in the configuration file:
 
 .. code-block:: json
 
@@ -186,6 +190,9 @@ reference keys to the :func:`bsb:bsb.config.reflist` function:
 .. code-block:: python
 
     def my_ref_object(root, here):
+        # This function will be called to find the location of the references
+        # within the configuration. Either from the `root` of the configuration
+        # or from the node containing the ref attribute (`here`)
         return here["locations"]
 
     @config.node
@@ -196,8 +203,7 @@ reference keys to the :func:`bsb:bsb.config.reflist` function:
 Note that we are using the same Reference object here.
 
 .. warning::
-  Appending elements to reference lists currently does not convert the new value. Also note
-  that reference lists are quite indestructible; setting them to ``None`` just resets them.
+  Note that reference lists are quite indestructible; setting them to ``None`` just resets them.
 
 Many nodes of the BSB Configuration contain reference attributes. For instance,
 a ``placement`` node contains reference list attributes to the ``cell_types`` and ``partitions``.

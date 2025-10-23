@@ -1,7 +1,10 @@
 name: Test examples
 on:
   pull_request:
-    types: [ opened, synchronize, reopened, review_requested ]
+    types: [ opened, reopened ]
+  pull_request_review:
+    types:
+      - submitted
 
 env:
   NEST_VERSION: 3.7
@@ -9,6 +12,10 @@ env:
 
 jobs:
   test_examples:
+    if: |
+      github.event.action == 'opened' ||
+      github.event.action == 'reopened' ||
+      (github.event_name == 'pull_request_review' && github.event.review.state == 'approved')
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.list-examples.outputs.folders }}

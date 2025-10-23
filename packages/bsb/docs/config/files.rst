@@ -6,7 +6,7 @@ A configuration file describes the components of a scaffold model. It contains t
 instructions to place and connect neurons, how to represent the cells and connections as
 models in simulators and what to stimulate and record in simulations.
 
-A standard configuration file is structured like this:
+A standard configuration file begins with the following root attributes:
 
 .. tab-set-code::
 
@@ -167,8 +167,8 @@ them in as many nodes as you wish and they will be stored only once in the `Scaf
 Parsing configuration file
 ##########################
 
-The BSB uses parsers to load Configuration from external files.
-Currently, the BSB supports two different file formats for configuration files:
+The BSB uses parsers to load the configuration from external files.
+Currently, the BSB supports two different file formats for configuration files out-of-the-box:
 - `JSON <https://docs.python.org/3/library/json.html>`_
 - `YAML <https://pyyaml.org/wiki/PyYAMLDocumentation>`_
 

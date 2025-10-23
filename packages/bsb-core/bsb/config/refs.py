@@ -60,11 +60,12 @@ class Reference(abc.ABC):  # noqa: B024
         return isinstance(value, self.type)
 
     @property
-    def type(self):
+    @abc.abstractmethod
+    def type(self):  # pragma: nocover
         """
         Return the type of the reference
         """
-        return None
+        pass
 
 
 class FileReference(Reference):

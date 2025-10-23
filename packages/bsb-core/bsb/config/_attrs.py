@@ -4,6 +4,7 @@ An attrs-inspired class annotation system, but my A stands for amateuristic.
 
 import builtins
 import contextlib
+import inspect
 from functools import wraps
 
 import errr
@@ -944,7 +945,7 @@ class ConfigurationReferenceAttribute(ConfigurationAttribute):
     def is_reference_value(self, value):
         if value is None:
             return True
-        if self.ref_type is not None:
+        if self.ref_type is not None and not inspect.ismethod(self.ref_type):
             return isinstance(value, self.ref_type)
         elif hasattr(self.ref_lambda, "is_ref"):
             return self.ref_lambda.is_ref(value)

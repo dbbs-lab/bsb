@@ -25,6 +25,9 @@ class BothReference(Reference):
     def is_ref(self, value):
         return not isinstance(value, str)
 
+    def type(self):
+        return None
+
 
 @config.node
 class Example:

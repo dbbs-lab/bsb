@@ -58,7 +58,7 @@ config.simulations["basal_activity"].cell_models = dict(
 )
 
 config.simulations["basal_activity"].connection_models = dict(
-    A_to_B=dict(synapse=dict(model="static_synapse", weight=100, delay=1))
+    A_to_B=dict(synapses=[dict(model="static_synapse", weight=100, delay=1)])
 )
 
 config.simulations["basal_activity"].devices = dict(

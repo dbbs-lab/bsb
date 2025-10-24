@@ -45,7 +45,6 @@ class TestModelBuilding(SchematicsFixture, unittest.TestCase):
         syn = cell.insert_synapse("ExpSyn", (0, 0))
         with self.assertRaises(UnknownLocationError):
             cell.insert_synapse("ExpSyn", (-1, 0))
-        syn._pp._interpreter.parallel.gid_clear()
         syn.stimulate(start=0, number=3, interval=10)
         r = cell.sections[0].record()
         r_nosyn = cell_nosyn.sections[0].record()
@@ -54,27 +53,34 @@ class TestModelBuilding(SchematicsFixture, unittest.TestCase):
 
         p.run(100)
 
-        self.assertEqual(list(r), list(r2), "Recording from same loc should be identical")
+        self.assertEqual(
+            list(r), list(r2), "Recording from same loc should be identical"
+        )
         self.assertFalse(min(r) == max(r), "No synaptic currents detected")
         self.assertTrue(min(r_nosyn) == max(r_nosyn), "Synaptic currents detected")
 
     def test_receiver(self):
         cell = neuron_build(self.p75_expsyn)
-        cell.insert_receiver(1, "ExpSyn", (0, 0))
+        cell_transmitter = neuron_build(self.p75_expsyn)
+        cell_transmitter.insert_transmitter(10, (0, 0), source="v")
+        cell.insert_receiver(10, "ExpSyn", (0, 0))
         synapse = cell.get_location((0, 0)).section.synapses[0]
-        self.assertEqual(synapse.gid, 1, "GId should be 1")
+        self.assertEqual(synapse.gid, 10, "GId should be 1")
         synapse.stimulate(start=0, number=3, interval=10)
         r = cell.sections[0].record()
         p.run(100)
         self.assertFalse(min(r) == max(r), "No synaptic currents detected")
         cell2 = neuron_build(self.p75_expsyn)
-        cell2.insert_receiver(1, "ExpSyn", (0, 0), source="i")
+        source_id = cell_transmitter.get_location((0, 0)).section._source_gid
+        print(f"Source: {source_id}")
+        cell2.insert_receiver(source_id, "ExpSyn", (0, 0), source="i")
         synapse2 = cell2.get_location((0, 0)).section.synapses[0]
         self.assertEqual(
             synapse2._pp._interpreter.parallel._transfer_max,
-            1,
-            "transfer_max should be 1",
+            10,
+            "transfer_max should be 10",
         )
+        synapse2._pp._interpreter.parallel.gid_clear()
 
     def test_cable_building(self):
         self.cell010.definition = define_model(

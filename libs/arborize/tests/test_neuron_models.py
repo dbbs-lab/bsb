@@ -45,6 +45,7 @@ class TestModelBuilding(SchematicsFixture, unittest.TestCase):
         syn = cell.insert_synapse("ExpSyn", (0, 0))
         with self.assertRaises(UnknownLocationError):
             cell.insert_synapse("ExpSyn", (-1, 0))
+        syn._pp._interpreter.parallel.gid_clear()
         syn.stimulate(start=0, number=3, interval=10)
         r = cell.sections[0].record()
         r_nosyn = cell_nosyn.sections[0].record()

@@ -61,8 +61,6 @@ class TestModelBuilding(SchematicsFixture, unittest.TestCase):
 
     def test_receiver(self):
         cell = neuron_build(self.p75_expsyn)
-        cell_transmitter = neuron_build(self.p75_expsyn)
-        cell_transmitter.insert_transmitter(10, (0, 0), source="v")
         cell.insert_receiver(10, "ExpSyn", (0, 0))
         synapse = cell.get_location((0, 0)).section.synapses[0]
         self.assertEqual(synapse.gid, 10, "GId should be 1")
@@ -71,9 +69,7 @@ class TestModelBuilding(SchematicsFixture, unittest.TestCase):
         p.run(100)
         self.assertFalse(min(r) == max(r), "No synaptic currents detected")
         cell2 = neuron_build(self.p75_expsyn)
-        source_id = cell_transmitter.get_location((0, 0)).section._source_gid
-        print(f"Source: {source_id}")
-        cell2.insert_receiver(source_id, "ExpSyn", (0, 0), source="i")
+        cell2.insert_receiver(10, "ExpSyn", (0, 0), source="i")
         synapse2 = cell2.get_location((0, 0)).section.synapses[0]
         self.assertEqual(
             synapse2._pp._interpreter.parallel._transfer_max,

@@ -176,6 +176,7 @@ MPI ranks are reporting to different traces. To fix this, wrap all BSB code
 as such:
 
 .. code-block:: python
+
     from bsb.reporting import _telemetry_trace
 
     with _telemetry_trace("My Script", broadcast=True):
@@ -191,7 +192,7 @@ API
   This API is experimental and subject to changes.
 
 
-.. automodule::
+.. automodule:: bsb.reporting
    :members: _telemetry_trace
 
 

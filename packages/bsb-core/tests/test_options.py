@@ -59,10 +59,6 @@ class TestEnvOption(unittest.TestCase):
 
     def test_env_get(self):
         for opt in self.opt.values():
-            # Skipping the verbosity option test as it is set
-            # in CI to limit logs.
-            if isinstance(opt, options.VerbosityOption):
-                continue
             self.assertFalse(type(opt).env.is_set(opt), "No BSB env vars should be set.")
 
     def test_env_set(self):

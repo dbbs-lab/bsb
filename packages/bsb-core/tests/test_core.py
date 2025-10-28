@@ -158,7 +158,6 @@ class TestProfiling(
             found = 0
             for filename in os.listdir():
                 if filename.startswith("bsb_profiling_") and filename.endswith(".pkl"):
-                    print(filename)
                     found += 1
                     os.remove(filename)
             self.assertEqual(

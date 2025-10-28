@@ -56,8 +56,6 @@ jobs:
         uses: astral-sh/setup-uv@v6
 
       - name: Nx Release flow
-        env:
-          NX_DAEMON: false
         run: |
           git config --global user.email "neurocomp_dbbs@unipv.it"
           git config --global user.name "DBBS Laboratory"

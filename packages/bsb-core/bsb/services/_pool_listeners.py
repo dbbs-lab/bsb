@@ -8,6 +8,7 @@ from typing import cast
 from blessed import Terminal
 from dashing import Color, DoubleColumn, HSplit, Text
 
+from ..reporting import report
 from . import MPI
 from .pool import (
     Job,
@@ -31,9 +32,9 @@ class NonTTYTerminalListener(Listener):
     def __call__(self, progress: PoolProgress):
         if progress.reason == PoolProgressReason.JOB_STATUS_CHANGE:
             job = cast(PoolJobUpdateProgress, progress).job
-            print(f"[{datetime.datetime.now()} - BSB] {job.status} {job.name}")
+            report(f"[{datetime.datetime.now()} - BSB] {job.status} {job.name}")
         if progress.reason == PoolProgressReason.MAX_TIMEOUT_PING:
-            print(f"[{datetime.datetime.now()}] Progress ping.")
+            report(f"[{datetime.datetime.now()}] Progress ping.")
 
 
 class TTYTerminalListener(Listener):

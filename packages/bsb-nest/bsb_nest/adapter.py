@@ -8,6 +8,7 @@ from bsb import (
     SimulationData,
     SimulationResult,
     SimulatorAdapter,
+    options,
     report,
     warn,
 )
@@ -163,7 +164,7 @@ class NestAdapter(SimulatorAdapter):
         simdata = self.simdata[simulation]
         iter = simulation.connection_models.values()
         if self.comm.get_rank() == 0:
-            iter = tqdm(iter, desc="", file=sys.stdout)
+            iter = tqdm(iter, desc="", file=sys.stdout, disable=options.verbosity < 2)
         for connection_model in iter:
             with contextlib.suppress(AttributeError):
                 # Only rank 0 should report progress bar

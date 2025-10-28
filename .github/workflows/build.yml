@@ -47,12 +47,10 @@ jobs:
           key: ${{ runner.os }}-${{ matrix.python-version }}-nest
 
       - name: Run unittests
-        env:
-          NX_DAEMON: false
-          BSB_VERBOSITY: 1
         run: |
           npm install rimraf
-
+          echo "BSB_VERBOSITY=1" >> $GITHUB_ENV
+          echo "NX_TUI=false" >> $GITHUB_ENV
           if [ "${{ github.ref }}" == "refs/heads/main" ]; then
             ./nx run-many -t test ;
           else

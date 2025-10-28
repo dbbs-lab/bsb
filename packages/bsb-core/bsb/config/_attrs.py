@@ -978,10 +978,9 @@ class ConfigurationReferenceAttribute(ConfigurationAttribute):
         try:
             value = remote[key]
         except (KeyError, TypeError):
-            msg = remote.get_node_name() if hasattr(remote, "get_node_name") else remote
             msg = (
                 f"Reference '{key}' of {self.get_node_name(instance)} "
-                f"does not exist in {msg}"
+                f"does not exist in {remote.get_node_name()}"
             )
             if self.reference_only:
                 raise CfgReferenceError(msg) from None

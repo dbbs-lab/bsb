@@ -163,7 +163,7 @@ class DebugPoolFlag(
 class QuietFlag(
     BsbOption,
     name="quiet",
-    cli=("dp", "quiet"),
+    cli=("q", "quiet"),
     project=("quiet",),
     env=("BSB_QUIET",),
     script=("quiet",),

@@ -25,6 +25,7 @@ from bsb import (
     DynamicObjectNotFoundError,
     NrrdDependencyNode,
     PackageRequirementWarning,
+    Partition,
     Region,
     RegionGroup,
     RequirementError,
@@ -561,7 +562,8 @@ class TestConfigRefList(unittest.TestCase):
     def test_region_ref(self):
         @config.root
         class X:
-            regions = config.attr(type=dict)
+            regions = config.dict(type=Region)
+            partitions = config.dict(type=Partition)
             list = config.reflist(refs.region_ref)
             ref = config.ref(refs.region_ref)
 

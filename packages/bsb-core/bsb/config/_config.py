@@ -179,7 +179,7 @@ class Configuration:
         # If there are any partitions not part of the topology, add them to a group
         if unmanaged := set(self.partitions.values()) - get_partitions(regions):
             r = scaffold.regions.add(
-                "__unmanaged__", RegionGroup(children=list(unmanaged))
+                "__unmanaged__", RegionGroup(children=[p.name for p in unmanaged])
             )
             regions.append(r)
         scaffold.topology = create_topology(regions, start, end)

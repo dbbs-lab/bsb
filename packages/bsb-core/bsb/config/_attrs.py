@@ -927,7 +927,7 @@ class ConfigurationReferenceAttribute(ConfigurationAttribute):
         return self.ref_key or (self.attr_name + "_reference")
 
     def __set__(self, instance, value, key=None):
-        if self.is_reference_value(value):
+        if value is None:
             _setattr(instance, self.attr_name, value)
         else:
             setattr(instance, self.get_ref_key(), value)
@@ -942,16 +942,6 @@ class ConfigurationReferenceAttribute(ConfigurationAttribute):
                     self.__ref__(instance, instance._config_root),
                 )
 
-    def is_reference_value(self, value):
-        if value is None:
-            return True
-        if self.ref_type is not None and not inspect.ismethod(self.ref_type):
-            return isinstance(value, self.ref_type)
-        elif hasattr(self.ref_lambda, "is_ref"):
-            return self.ref_lambda.is_ref(value)
-        else:
-            return not isinstance(value, str)
-
     def should_resolve_on_set(self, instance):
         return (
             hasattr(instance, "_config_resolve_on_set")
@@ -959,40 +949,43 @@ class ConfigurationReferenceAttribute(ConfigurationAttribute):
         )
 
     def __ref__(self, instance, root):
-        try:
-            remote, remote_key = self._prepare_self(instance, root)
-        except NoReferenceAttributeSignal:
+        self._prepare_self(instance, root)
+        local_attr = self.get_ref_key()
+        if not hasattr(instance, local_attr):
             return None
-        return self.resolve_reference(instance, remote, remote_key)
+        return self.resolve_reference(instance, getattr(instance, local_attr))
 
     def _prepare_self(self, instance, root):
         instance._config_root = root
         instance._config_resolve_on_set = True
-        remote = self.ref_lambda(root, instance)
-        local_attr = self.get_ref_key()
-        if not hasattr(instance, local_attr):
-            raise NoReferenceAttributeSignal()
-        return remote, getattr(instance, local_attr)
 
-    def resolve_reference(self, instance, remote, key):
-        try:
-            value = remote[key]
-        except (KeyError, TypeError):
-            msg = (
-                f"Reference '{key}' of {self.get_node_name(instance)} "
-                f"does not exist in {remote.get_node_name()}"
-            )
-            if self.reference_only:
-                raise CfgReferenceError(msg) from None
-            else:
-                try:
-                    value = self._cast(instance, key)
-                    value._config_parent = instance
-                except CastError:
-                    raise CfgReferenceError(
-                        f"{msg} and could not be casted to {self.ref_type}."
-                    ) from None
-
+    def resolve_reference(self, instance, key):
+        is_value = (
+            isinstance(key, self.ref_type)
+            if self.ref_type is not None and not inspect.ismethod(self.ref_type)
+            else False
+        )
+        if not is_value:
+            remote = self.ref_lambda(instance._config_root, instance)
+            try:
+                value = remote[key]
+            except (KeyError, TypeError):
+                msg = (
+                    f"Reference '{key}' of {self.get_node_name(instance)} "
+                    f"does not exist in {remote.get_node_name()}"
+                )
+                if self.reference_only:
+                    raise CfgReferenceError(msg) from None
+                else:
+                    try:
+                        value = self._cast(instance, key)
+                        value._config_parent = instance
+                    except CastError:
+                        raise CfgReferenceError(
+                            f"{msg} and could not be casted to {self.ref_type}."
+                        ) from None
+        else:
+            value = key
         if self.populate:
             self.populate_reference(instance, value)
         if self.backref:
@@ -1021,11 +1014,17 @@ class ConfigurationReferenceAttribute(ConfigurationAttribute):
         else:
             setattr(reference, self.backref, instance)
 
+    def _get_config_key(self, val, instance):
+        return (
+            val._config_key
+            if val not in self.ref_lambda(instance._config_root, instance)
+            and hasattr(val, "_config_key")
+            else val
+        )
+
     def tree(self, instance):
         val = getattr(instance, self.get_ref_key(), None)
-        if self.is_reference_value(val) and hasattr(val, "_config_key"):
-            val = val._config_key
-        return val
+        return self._get_config_key(val, instance)
 
 
 class cfgreflist(cfglist):
@@ -1147,18 +1146,10 @@ class ConfigurationReferenceListAttribute(ConfigurationReferenceAttribute):
 
     def resolve_reference_list(self, instance):
         refs = getattr(instance, self.attr_name)
-        remote = self.ref_lambda(instance._config_root, instance)
         # Do not use cfglist.clear as it will also delete the list of refs
         builtins.list.clear(refs)
         for i, remote_key in enumerate(refs._reflist):
-            if not self.is_reference_value(remote_key):
-                reference = self.resolve_reference(instance, remote, remote_key)
-            else:
-                reference = remote_key
-                # Usually resolve_reference also populates, but since we have our ref
-                # already we skip it and should call populate_reference ourselves.
-                if self.populate:
-                    self.populate_reference(instance, reference)
+            reference = self.resolve_reference(instance, remote_key)
             # the item is already resolved so we just append it.
             reference._config_index = i
             builtins.list.append(refs, reference)
@@ -1188,11 +1179,8 @@ class ConfigurationReferenceListAttribute(ConfigurationReferenceAttribute):
 
     def tree(self, instance):
         val = getattr(instance, self.get_ref_key(), [])
-        val = [v._config_key if self._tree_should_unreference(v) else v for v in val]
+        val = [self._get_config_key(v, instance) for v in val]
         return val
-
-    def _tree_should_unreference(self, value):
-        return self.is_reference_value(value) and hasattr(value, "_config_key")
 
 
 class ConfigurationAttributeSlot(ConfigurationAttribute):

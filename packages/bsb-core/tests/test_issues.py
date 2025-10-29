@@ -22,9 +22,6 @@ class BothReference(Reference):
         merged.update(root.extensions)
         return merged
 
-    def is_ref(self, value):
-        return not isinstance(value, str)
-
     def type(self):
         return None
 

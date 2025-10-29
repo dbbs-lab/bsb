@@ -48,17 +48,6 @@ class Reference(abc.ABC):  # noqa: B024
                 return None
         return here
 
-    def is_ref(self, value):
-        """
-        Check if the provided value corresponds to
-        the type of the reference
-
-        :param value: value to check
-        :rtype: bool
-        :return: True if the value has the type of the reference
-        """
-        return not isinstance(value, str)
-
     @property
     @abc.abstractmethod
     def type(self):  # pragma: nocover
@@ -78,11 +67,6 @@ class FileReference(Reference):
 
         return FileDependencyNode
 
-    def is_ref(self, value):
-        from ..storage._files import FileDependencyNode
-
-        return isinstance(value, FileDependencyNode)
-
 
 class VoxelDatasetReference(Reference):
     def __call__(self, root, here):
@@ -98,11 +82,6 @@ class VoxelDatasetReference(Reference):
 
         return NrrdDependencyNode
 
-    def is_ref(self, value):
-        from ..storage._files import NrrdDependencyNode
-
-        return isinstance(value, NrrdDependencyNode)
-
 
 class CellTypeReference(Reference):
     def __call__(self, root, here):
@@ -113,11 +92,6 @@ class CellTypeReference(Reference):
         from ..cell_types import CellType
 
         return CellType
-
-    def is_ref(self, value):
-        from ..cell_types import CellType
-
-        return isinstance(value, CellType)
 
 
 class PartitionReference(Reference):
@@ -130,11 +104,6 @@ class PartitionReference(Reference):
 
         return Partition
 
-    def is_ref(self, value):
-        from ..topology import Partition
-
-        return isinstance(value, Partition)
-
 
 class RegionReference(Reference):
     def __call__(self, root, here):
@@ -145,11 +114,6 @@ class RegionReference(Reference):
         from ..topology import Region
 
         return Region
-
-    def is_ref(self, value):
-        from ..topology import Region
-
-        return isinstance(value, Region)
 
 
 class RegionalReference(Reference):
@@ -164,11 +128,6 @@ class RegionalReference(Reference):
 
         return Region | Partition
 
-    def is_ref(self, value):
-        from ..topology import Partition, Region
-
-        return isinstance(value, Region | Partition)
-
 
 class PlacementReference(Reference):
     def __call__(self, root, here):
@@ -180,11 +139,6 @@ class PlacementReference(Reference):
 
         return PlacementStrategy
 
-    def is_ref(self, value):
-        from ..placement import PlacementStrategy
-
-        return isinstance(value, PlacementStrategy)
-
 
 class ConnectivityReference(Reference):
     def __call__(self, root, here):
@@ -195,11 +149,6 @@ class ConnectivityReference(Reference):
         from ..connectivity import ConnectionStrategy
 
         return ConnectionStrategy
-
-    def is_ref(self, value):
-        from ..connectivity import ConnectionStrategy
-
-        return isinstance(value, ConnectionStrategy)
 
 
 class SimCellModelReference(Reference):
@@ -214,11 +163,6 @@ class SimCellModelReference(Reference):
         from ..simulation.cell import CellModel
 
         return CellModel
-
-    def is_ref(self, value):
-        from ..simulation.cell import CellModel
-
-        return isinstance(value, CellModel)
 
 
 file_ref = FileReference()

@@ -77,12 +77,20 @@ The instrumentation will:
 - Send OTLP data to the configured Jaeger instance (or other compatible backends)
 - Automatically instrument the BSB compilation process with minimal overhead
 
-Now on your Jaeger instance you should see "BSB Workflow" appear under the `Service` dropdown. Click `Find Traces`.
+Once the bsb command has completed, on your Jaeger instance, you should see
+"BSB Workflow" appear under the `Service` dropdown. Click `Find Traces`.
 Select a trace from the timeline, and you should see a timeline graph of the process.
 
 .. figure:: /images/jaeger/trace.png
   :figwidth: 500px
   :align: center
+
+.. important::
+    While your BSB process is running, the "BSB Workflow" will start
+    appearing on your Jaeger interface; but remember that only the traces
+    from completed functions are sent to Jaeger. In the above example, you
+    will not see the ``cli`` and ``compile`` function until the reconstruction
+    has been completed.
 
 Collecting telemetry data on HPC
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -99,10 +107,12 @@ Step-by-step guide
 
 1. **Install ngrok**
 
-   Follow the official ngrok installation guide for your platform on **your
-   local machine** (not the HPC). Start a working agent and obtain a public
-   endpoint address (e.g., `0.tcp.ngrok.io:12345`) for the port your local
-   OpenTelemetry collector is listening on.
+   Follow the official
+   `ngrok installation guide <https://ngrok.com/docs/getting-started>`_
+   for your platform on **your local machine** (not the HPC). Start a
+   working agent and obtain a public endpoint address (e.g.,
+   `0.tcp.ngrok.io:12345`) for the port your local OpenTelemetry collector
+   is listening on.
 
    When starting ngrok, forward the OTLP gRPC port (4317) from your local
    machine:
@@ -169,6 +179,12 @@ The workflow through MPI/SLURM is the same, simply prepend the command with
        --exporter_otlp_endpoint http://0.tcp.eu.ngrok.io:12345 \
        --service_name "BSB Workflow" \
        python -m bsb compile --clear
+
+.. important::
+    Remember that only completed BSB functions will appear on the collector
+    interface, which might make it difficult to read the traces while the BSB
+    process is running, especially in multicore. Once the process is completed
+    though, you should see the traces of each core cleanly separated.
 
 Please note this only works for CLI commands (or `python -m bsb`). If
 you're using the BSB via Python with MPI, you might notice that all the

@@ -47,8 +47,10 @@ jobs:
           key: ${{ runner.os }}-${{ matrix.python-version }}-nest
 
       - name: Run unittests
+        timeout-minutes: 60
         env:
           BSB_QUIET: true
+          NX_DAEMON: false  # may prevent GHA to stall for some reason
         run: |
           npm install rimraf
           if [ "${{ github.ref }}" == "refs/heads/main" ]; then

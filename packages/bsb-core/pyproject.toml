@@ -61,6 +61,7 @@ config = "bsb._options:config"
 sim_console_progress= "bsb._options:sim_console_progress"
 profiling = "bsb._options:profiling"
 debug_pool = "bsb._options:debug_pool"
+quiet = "bsb._options:quiet"
 
   [project.scripts]
   bsb = "bsb.cli:handle_cli"

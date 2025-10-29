@@ -1,5 +1,4 @@
 import functools
-import types
 from inspect import signature as _inspect_signature
 
 _reserved_keywords = ["_parent", "_key"]
@@ -40,9 +39,7 @@ def _wrap_reserved(t):
     type_handler = bait["type_handler"]
     # Copy over the metadata of the original function
     type_handler = functools.wraps(t)(type_handler)
-    type_handler.__name__ = (
-        t.__name__ if not isinstance(t, types.UnionType) else t.__args__[0].__name__
-    )
+    type_handler.__name__ = t.__name__
     return type_handler
 
 

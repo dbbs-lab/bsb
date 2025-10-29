@@ -919,9 +919,7 @@ class ConfigurationReferenceAttribute(ConfigurationAttribute):
         def missing_ref_type(*args, **kwargs):
             raise CastError("Reference attribute cannot cast values. Set ref_type.")
 
-        return self._ref_type or getattr(
-            self.ref_lambda, "type", missing_ref_type if not self.reference_only else None
-        )
+        return self._ref_type or getattr(self.ref_lambda, "type", missing_ref_type)
 
     def _get_ref_key(self):
         return self.ref_key or (self.attr_name + "_reference")
@@ -962,7 +960,7 @@ class ConfigurationReferenceAttribute(ConfigurationAttribute):
     def resolve_reference(self, instance, key):
         is_value = (
             isinstance(key, self.ref_type)
-            if self.ref_type is not None and not inspect.ismethod(self.ref_type)
+            if not inspect.isfunction(self.ref_type)
             else False
         )
         if not is_value:

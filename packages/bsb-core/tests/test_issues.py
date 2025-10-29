@@ -1,5 +1,6 @@
 import os
 import unittest
+from types import NoneType
 
 from bsb import (
     CellType,
@@ -22,8 +23,9 @@ class BothReference(Reference):
         merged.update(root.extensions)
         return merged
 
+    @property
     def type(self):
-        return None
+        return NoneType
 
 
 @config.node

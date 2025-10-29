@@ -125,8 +125,9 @@ class RegionalReference(Reference):
     @property
     def type(self):
         from ..topology import Partition, Region
+        from .types import or_
 
-        return Region | Partition
+        return or_(Partition, Region)
 
 
 class PlacementReference(Reference):

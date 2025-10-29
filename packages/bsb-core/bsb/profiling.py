@@ -128,6 +128,11 @@ def _telemetry_trace(name, attributes=None, broadcast=False):
     """
     Starts a new telemetry trace span using the current OpenTelemetry tracer.
     Use it as a context manager.
+
+    :param str name: name of the span to start
+    :param dict attributes: attributes to pass to OpenTelemetry.
+    :param bool broadcast: whether to broadcast telemetry trace.
+    :returns: OpenTelemetry trace span.
     """
     if attributes is None:
         attributes = {}

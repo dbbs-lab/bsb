@@ -47,7 +47,7 @@ To collect and visualize traces, you can use Jaeger. The easiest way to set up J
         -p 5778:5778 \
         cr.jaegertracing.io/jaegertracing/jaeger:2.9.0
 
-Visit http://localhost:16686 and have a look around. Since noone is sending any OpenTelemetry data to Jaeger yet,
+Visit http://localhost:16686 and have a look around. Since no one is sending any OpenTelemetry data to Jaeger yet,
 there won't be much to see yet.
 
 OpenTelemetry Instrumentation
@@ -177,7 +177,7 @@ as such:
 
 .. code-block:: python
 
-    from bsb.reporting import _telemetry_trace
+    from bsb.profiling import _telemetry_trace
 
     with _telemetry_trace("My Script", broadcast=True):
         # Your BSB code here
@@ -192,7 +192,7 @@ API
   This API is experimental and subject to changes.
 
 
-.. automodule:: bsb.reporting
+.. automodule:: bsb.profiling
    :members: _telemetry_trace
 
 

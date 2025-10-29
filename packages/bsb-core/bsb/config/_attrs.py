@@ -923,14 +923,14 @@ class ConfigurationReferenceAttribute(ConfigurationAttribute):
             self.ref_lambda, "type", missing_ref_type if not self.reference_only else None
         )
 
-    def get_ref_key(self):
+    def _get_ref_key(self):
         return self.ref_key or (self.attr_name + "_reference")
 
     def __set__(self, instance, value, key=None):
         if value is None:
             _setattr(instance, self.attr_name, value)
         else:
-            setattr(instance, self.get_ref_key(), value)
+            setattr(instance, self._get_ref_key(), value)
             if self.should_resolve_on_set(instance):
                 if getattr(instance, "_config_root", None) is None:
                     raise CfgReferenceError(
@@ -950,7 +950,7 @@ class ConfigurationReferenceAttribute(ConfigurationAttribute):
 
     def __ref__(self, instance, root):
         self._prepare_self(instance, root)
-        local_attr = self.get_ref_key()
+        local_attr = self._get_ref_key()
         if not hasattr(instance, local_attr):
             return None
         return self.resolve_reference(instance, getattr(instance, local_attr))
@@ -1023,7 +1023,7 @@ class ConfigurationReferenceAttribute(ConfigurationAttribute):
         )
 
     def tree(self, instance):
-        val = getattr(instance, self.get_ref_key(), None)
+        val = getattr(instance, self._get_ref_key(), None)
         return self._get_config_key(val, instance)
 
 
@@ -1111,7 +1111,6 @@ class ConfigurationReferenceListAttribute(ConfigurationReferenceAttribute):
         _setattr(instance, self.attr_name, _cfglist)
         self.flag_dirty(instance)
         if value is None:
-            setattr(instance, self.get_ref_key(), _cfglist._reflist)
             return
         try:
             _cfglist._reflist = builtins.list(iter(value))
@@ -1121,21 +1120,14 @@ class ConfigurationReferenceListAttribute(ConfigurationReferenceAttribute):
                 f"{self.get_node_name(instance)} is not iterable."
             ) from None
         # Store the referring values to the references key.
-        setattr(instance, self.get_ref_key(), _cfglist._reflist)
         if self.should_resolve_on_set(instance):
-            refs = self.resolve_reference_list(instance)
-            _setattr(instance, self.attr_name, refs)
+            self.resolve_reference_list(instance)
 
     def __get__(self, instance, owner):
         if instance is None:
             return self
-        if self.should_resolve_on_set(instance):
-            return super().__get__(instance, owner)
-        else:
-            return getattr(instance, self.get_ref_key())
-
-    def get_ref_key(self):
-        return self.ref_key or (self.attr_name + "_references")
+        result = super().__get__(instance, owner)
+        return result if self.should_resolve_on_set(instance) else result._reflist
 
     def __ref__(self, instance, root):
         try:
@@ -1156,29 +1148,20 @@ class ConfigurationReferenceListAttribute(ConfigurationReferenceAttribute):
         return refs
 
     def __populate__(self, instance, value, unique_list=False):
-        has_refs = hasattr(instance, self.get_ref_key())
         has_pop = hasattr(instance, self.attr_name)
         if has_pop:
             population = getattr(instance, self.attr_name)
-        if has_refs:
-            references = getattr(instance, self.get_ref_key())
-        is_new = (not has_pop or value not in population) and (
-            not has_refs or value not in references
-        )
+            references = population._reflist
+        is_new = (not has_pop or value not in population) and (value not in references)
         should_pop = has_pop and (not unique_list or is_new)
-        should_ref = should_pop or not has_pop
         if should_pop:
             # use list.append as cfglist.append will call resolve_reference
             # creating an infinite loop
             builtins.list.append(population, value)
-        if should_ref:
-            if not has_refs:
-                setattr(instance, self.get_ref_key(), [value])
-            else:
-                references.append(value)
+            references.append(value)
 
     def tree(self, instance):
-        val = getattr(instance, self.get_ref_key(), [])
+        val = getattr(getattr(instance, self.attr_name, None), "_reflist", [])
         val = [self._get_config_key(v, instance) for v in val]
         return val
 

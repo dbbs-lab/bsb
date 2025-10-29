@@ -47,6 +47,8 @@ jobs:
           key: ${{ runner.os }}-${{ matrix.python-version }}-nest
 
       - name: Run unittests
+        env:
+          BSB_QUIET: true
         run: |
           npm install rimraf
           if [ "${{ github.ref }}" == "refs/heads/main" ]; then

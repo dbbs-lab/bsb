@@ -160,6 +160,26 @@ class DebugPoolFlag(
         return False
 
 
+class QuietFlag(
+    BsbOption,
+    name="quiet",
+    cli=("dp", "quiet"),
+    project=("quiet",),
+    env=("BSB_QUIET",),
+    script=("quiet",),
+    flag=True,
+):
+    """
+    Quiet job logs.
+    """
+
+    def setter(self, value):
+        return bool(value)
+
+    def get_default(self):
+        return False
+
+
 def verbosity():
     return VerbosityOption
 
@@ -186,3 +206,7 @@ def profiling():
 
 def debug_pool():
     return DebugPoolFlag
+
+
+def quiet():
+    return QuietFlag

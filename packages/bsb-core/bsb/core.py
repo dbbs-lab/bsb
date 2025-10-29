@@ -9,6 +9,7 @@ import typing
 
 import numpy as np
 
+from . import options
 from ._util import obj_str_insert
 from .config._config import Configuration
 from .connectivity import ConnectionStrategy
@@ -300,7 +301,7 @@ class Scaffold:
         if strategies is None:
             strategies = set(self.placement.values())
         strategies = PlacementStrategy.sort_deps(strategies)
-        with self.create_job_pool(fail_fast=fail_fast) as pool:
+        with self.create_job_pool(fail_fast=fail_fast, quiet=options.quiet) as pool:
             if pool.is_main():
 
                 def scheduler(strategy):
@@ -319,7 +320,7 @@ class Scaffold:
         if strategies is None:
             strategies = set(self.connectivity.values())
         strategies = ConnectionStrategy.sort_deps(strategies)
-        with self.create_job_pool(fail_fast=fail_fast) as pool:
+        with self.create_job_pool(fail_fast=fail_fast, quiet=options.quiet) as pool:
             if pool.is_main():
                 pool.schedule(strategies)
             pool.execute()
@@ -338,7 +339,7 @@ class Scaffold:
         """
         if hooks is None:
             hooks = set(self.after_placement.values())
-        with self.create_job_pool(fail_fast) as pool:
+        with self.create_job_pool(fail_fast, quiet=options.quiet) as pool:
             if pool.is_main():
                 pool.schedule(hooks)
             pool.execute()
@@ -350,7 +351,7 @@ class Scaffold:
         """
         if hooks is None:
             hooks = set(self.after_connectivity.values())
-        with self.create_job_pool(fail_fast) as pool:
+        with self.create_job_pool(fail_fast, quiet=options.quiet) as pool:
             if pool.is_main():
                 pool.schedule(hooks)
             pool.execute()
@@ -450,7 +451,7 @@ class Scaffold:
     def run_pipelines(self, fail_fast=True, pipelines=None):
         if pipelines is None:
             pipelines = self.get_dependency_pipelines()
-        with self.create_job_pool(fail_fast=fail_fast) as pool:
+        with self.create_job_pool(fail_fast=fail_fast, quiet=options.quiet) as pool:
             if pool.is_main():
                 pool.schedule(pipelines)
             pool.execute()

@@ -33,7 +33,9 @@ sudo apt install libgsl-dev -y
 # Checkout NEST version
 cd "$NEST_FOLDER" || exit 1
 git checkout tags/v"$NEST_VERSION"
-mkdir -p build
+rm -rf build
+rm -rf $INSTALLATION_FOLDER
+mkdir build
 cd build || exit 1
 
 cmake .. -Dwith-mpi=ON -DCMAKE_INSTALL_PREFIX=$INSTALLATION_FOLDER

@@ -1,4 +1,4 @@
-import http.client as _http
+import socket
 import threading as _threading
 import unittest as _unittest
 
@@ -9,14 +9,12 @@ _mpi_size = MPI.get_size()
 
 def internet_connection():
     for ip in ("1.1.1.1", "8.8.8.8"):
-        conn = _http.HTTPSConnection(ip, timeout=2)
         try:
-            _http.request("HEAD", "/")
+            s = socket.create_connection((ip, 80), timeout=2)
+            s.close()
             return True
         except Exception:
             pass
-        finally:
-            conn.close()
     else:
         return False
 

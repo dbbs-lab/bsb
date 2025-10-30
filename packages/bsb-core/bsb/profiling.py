@@ -129,9 +129,15 @@ def _telemetry_trace(name, attributes=None, broadcast=False):
     Starts a new telemetry trace span using the current OpenTelemetry tracer.
     Use it as a context manager.
 
+    .. warning::
+        This feature is experimental and subject to change.
+
     :param str name: name of the span to start
     :param dict attributes: attributes to pass to OpenTelemetry.
-    :param bool broadcast: whether to broadcast telemetry trace.
+    :param bool broadcast: Under MPI, the root span must be broadcast for traces
+      across ranks to be grouped under the same span. This is usually done by the
+      BSB CLI, but you must do this yourself in scripts.
+      See :ref:`BSB OpenTelemetry spans under MPI <otel_broadcast>`.
     :returns: OpenTelemetry trace span.
     """
     if attributes is None:

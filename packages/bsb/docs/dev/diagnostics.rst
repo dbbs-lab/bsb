@@ -153,7 +153,7 @@ Step-by-step guide
 
        http://localhost:16686
 
-   You should see traces sent from the HPC processes appearing in real-time.
+   Traces will appear after the BSB workflow has concluded.
 
 Notes
 *****
@@ -191,6 +191,8 @@ you're using the BSB via Python with MPI, you might notice that all the
 MPI ranks are reporting to different traces. To fix this, wrap all BSB code
 as such:
 
+.. _otel_broadcast:
+
 .. code-block:: python
 
     from bsb.profiling import _telemetry_trace
@@ -203,14 +205,7 @@ Now you should see all of the BSB telemetry reported in a single trace again.
 API
 ---
 
-.. important::
-
-  This API is experimental and subject to changes.
-
-
-.. automodule:: bsb.profiling
-   :members: _telemetry_trace
-
+OpenTelemetry spans can be added using :func:`~bsb.profiling._telemetry_trace`.
 
 Profiling
 ---------

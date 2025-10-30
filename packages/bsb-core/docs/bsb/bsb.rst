@@ -83,6 +83,14 @@ bsb.postprocessing module
    :undoc-members:
    :show-inheritance:
 
+bsb.profiling module
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. automodule:: bsb.profiling
+   :members: _telemetry_trace
+   :undoc-members:
+   :show-inheritance:
+
 bsb.reporting module
 ^^^^^^^^^^^^^^^^^^^^
 

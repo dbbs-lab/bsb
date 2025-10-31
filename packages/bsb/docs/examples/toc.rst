@@ -11,3 +11,4 @@ Examples
   plot_morpho
   atlas_placement
   place_distribution
+  nest_repeated_sim

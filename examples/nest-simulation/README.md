@@ -3,7 +3,8 @@
 ## Content
 
 This folder contains the configurations and python files related to 
-[the BSB NEST guide](https://bsb.readthedocs.io/en/latest/getting-started/simulations/guide_nest.html).
+[the BSB NEST guide](https://bsb.readthedocs.io/en/latest/getting-started/simulations/guide_nest.html) 
+and the [repeated simulation example](https://bsb.readthedocs.io/en/latest/examples/nest_repeated_sim.html).
 
 ## Installation 
 
@@ -43,3 +44,9 @@ The python script presented in this tutorial can be launched from the terminal:
 python scripts/analyze_spike_results.py
 ```
 Note that you might need to adapt it to your simulation output files.
+
+You can also run the repeated simulation example from 
+[this tutorial](https://bsb.readthedocs.io/en/latest/examples/nest_repeated_sim.html).
+```bash
+python scripts/repeated_simulations.py
+```

@@ -91,4 +91,9 @@ class TestNestExamples(
         self.assertTrue("raster_plot.png" in files)
         self.assertEqual(len(files), 2)
 
+        import scripts.repeated_simulations  # noqa: F401
+
+        files = os.listdir("simulation-results")
+        self.assertEqual(len(files), 12)
+
         os.remove("network.hdf5")

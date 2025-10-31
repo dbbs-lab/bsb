@@ -62,7 +62,7 @@ Therefore, your simulation block should be structured as follows:
 
     .. literalinclude:: /../../../examples/nest-simulation/scripts/guide_nest.py
         :language: python
-        :lines: 46-53
+        :lines: 46-56
 
 .. note::
 
@@ -107,9 +107,9 @@ Here, we choose one of the simplest NEST models, the
 
     .. code-block:: python
 
-        config.simulations["basal_activity"].cell_models=dict(
-          base_type={"model":"iaf_cond_alpha"},
-          top_type={"model":"iaf_cond_alpha"}
+        config.simulations["basal_activity"].cell_models = dict(
+          base_type={"model": "iaf_cond_alpha"},
+          top_type={"model": "iaf_cond_alpha"}
         )
 
 NEST provides default parameters for each point neuron model, so we do not need to add anything.
@@ -127,7 +127,7 @@ Still, you can modify certain parameters, by setting its :guilabel:`constants` d
 
     .. literalinclude:: /../../../examples/nest-simulation/scripts/guide_nest.py
         :language: python
-        :lines: 55-58
+        :lines: 58-61
 
 Connection Models
 -----------------
@@ -150,7 +150,7 @@ In this example, we assign the ``static_synapse`` model to the connections :guil
 
     .. literalinclude:: /../../../examples/nest-simulation/scripts/guide_nest.py
         :language: python
-        :lines: 60-62
+        :lines: 63-65
 
 For this model, the synapse model needs ``weight`` and ``delay`` parameters that are set to 100 and 1 ms,
 respectively.
@@ -178,7 +178,7 @@ filter elements of your neuron circuit to which you want to link your devices (s
 
     .. literalinclude:: /../../../examples/nest-simulation/scripts/guide_nest.py
         :language: python
-        :lines: 64-82
+        :lines: 67-85
 
 In our example, we add a ``poisson_generator`` that simulates cells spiking at ``20`` Hz.
 These latter "cells" are each connected one ``top_type`` cell and transmit their spike events with a delay
@@ -198,7 +198,7 @@ Final configuration file
 
   .. literalinclude:: /../../../examples/nest-simulation/scripts/guide_nest.py
     :language: python
-    :lines: 46-82
+    :lines: 46-85
 
 
 Running the Simulation

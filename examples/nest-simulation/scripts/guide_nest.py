@@ -43,13 +43,16 @@ config = Configuration.default(
 scaffold = Scaffold(config)
 config = scaffold.configuration
 
-config.simulations["basal_activity"] = dict(
-    simulator="nest",
-    resolution=0.1,
-    duration=5000,
-    cell_models={},
-    connection_models={},
-    devices={},
+config.simulations.add(
+    "basal_activity",
+    dict(
+        simulator="nest",
+        resolution=0.1,
+        duration=5000,
+        cell_models={},
+        connection_models={},
+        devices={},
+    )
 )
 
 config.simulations["basal_activity"].cell_models = dict(

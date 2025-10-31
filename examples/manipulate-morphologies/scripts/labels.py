@@ -3,7 +3,7 @@ import numpy as np
 from bsb import parse_morphology_file
 
 # Import a morphology from a file
-morpho = parse_morphology_file("neuron2.swc")
+morpho = parse_morphology_file("data/neuron_A.swc")
 print(f"My morphology has {len(morpho)} points and {len(morpho.branches)} branches.")
 
 from bsb import Storage

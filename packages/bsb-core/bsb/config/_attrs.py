@@ -1128,10 +1128,7 @@ class ConfigurationReferenceListAttribute(ConfigurationReferenceAttribute):
         return result if self.should_resolve_on_set(instance) else result._reflist
 
     def __ref__(self, instance, root):
-        try:
-            self._prepare_self(instance, root)
-        except NoReferenceAttributeSignal:  # pragma: nocover
-            return None
+        self._prepare_self(instance, root)
         return self.resolve_reference_list(instance)
 
     def resolve_reference_list(self, instance):

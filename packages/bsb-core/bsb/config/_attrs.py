@@ -4,7 +4,7 @@ An attrs-inspired class annotation system, but my A stands for amateuristic.
 
 import builtins
 import contextlib
-import inspect
+from collections.abc import Mapping
 from functools import wraps
 
 import errr
@@ -13,9 +13,10 @@ from ..exceptions import (
     BootError,
     CastError,
     CfgReferenceError,
-    NoReferenceAttributeSignal,
+    ReferenceLambdaError,
     RequirementError,
 )
+from ..reporting import warn
 from ._compile import _wrap_reserved
 from ._hooks import run_hook
 from ._make import (
@@ -341,10 +342,12 @@ def file(**kwargs):
 
 
 def _setattr(instance, name, value):
+    """Canonical way to set a configuration attribute value on a configuration node."""
     instance.__dict__["_" + name] = value
 
 
 def _getattr(instance, name):
+    """Canonical way to get a configuration attribute value from a configuration node."""
     try:
         return instance.__dict__["_" + name]
     except KeyError as e:
@@ -352,7 +355,74 @@ def _getattr(instance, name):
 
 
 def _hasattr(instance, name):
+    """Canonical way to check the presence of a configuration attribute on a configuration node."""
     return "_" + name in instance.__dict__
+
+
+def _hasref(remote, key):
+    """Canonical way to check the presence of a configuration reference in a remote node."""
+    if not hasattr(remote, "__getitem__"):
+        raise ReferenceLambdaError(
+            f"Could check for references in {remote}."
+            " Remote does not implement __getitem__."
+            " Please add a `has_ref` method to your reference lambda."
+        )
+
+    try:
+        _ = remote[key]
+        return True
+    except (KeyError, IndexError, TypeError):
+        # Catch errors stemming from invalid key/index types
+        return False
+
+
+def _getref(remote, key):
+    """Canonical way to retrieve a configuration reference from a remote node."""
+    if not hasattr(remote, "__getitem__"):
+        raise ReferenceLambdaError(
+            f"Could not retrieve reference from {remote}."
+            " Remote does not appear to be subscriptable."
+            " Please add a `get_ref` method to your reference lambda."
+        )
+
+    return remote[key]
+
+
+def _getrefname(remote):
+    """Canonical way to retrieve a the name of a remote node."""
+    try:
+        return remote.get_node_name()
+    except TypeError:
+        raise ReferenceLambdaError(
+            f"Could not retrieve name from {remote}."
+            " Please add a `get_ref_name` method to your reference lambda."
+        )
+
+
+def _hasrefval(remote, value):
+    """Canonical way to check the presence of a referenced value in a remote node."""
+    if hasattr(remote, "values") and callable(remote.values):
+        if not isinstance(remote, Mapping):  # pragma: nocover
+            warn(
+                f"Ambiguous reference container {remote}. Please convert it to a mapping type,"
+                " or implement `has_ref_value` on your reference lambda."
+            )
+        try:
+            return value in remote.values()
+        except Exception:
+            return False
+    elif hasattr(remote, "__contains__"):
+        try:
+            return value in remote
+        except Exception:
+            return False
+    elif hasattr(remote, "_config_attrs"):
+        return value in remote._config_attrs
+    else:
+        raise ReferenceLambdaError(
+            f"Could not determine method to check for values in {remote}."
+            " Please add a `has_ref_value` method to your reference lambda."
+        )
 
 
 def _get_root(obj):
@@ -602,6 +672,10 @@ class cfglist(builtins.list):
         items = self._fromiter(len(self), items)
         super().extend(items)
         self._postset(items)
+
+    def values(self):
+        """This stub helps cfglist behave like a cfgdict when it is used in the reference system"""
+        return self
 
     def __setitem__(self, index, item):
         if isinstance(index, int):
@@ -957,33 +1031,53 @@ class ConfigurationReferenceAttribute(ConfigurationAttribute):
         instance._config_root = root
         instance._config_resolve_on_set = True
 
-    def resolve_reference(self, instance, key):
-        is_value = (
-            isinstance(key, self.ref_type)
-            if not inspect.isfunction(self.ref_type)
-            else False
+    def resolve_reference(self, instance, input_):
+        # Retrieve the remote object in which we will look up references.
+        remote = self.ref_lambda(instance._config_root, instance)
+
+        # Determine the behavior of this reference lambda: how are we supposed
+        # to look up information on the remote object? We fall back to the canonical
+        # methods _hasref, _hasrefval, _getref, and _getrefname.
+        has_ref = getattr(self.ref_lambda, "has_ref", _hasref)
+        has_value = getattr(self.ref_lambda, "has_ref_value", _hasrefval)
+        get_ref = getattr(self.ref_lambda, "get_ref", _getref)
+        get_ref_name = getattr(self.ref_lambda, "get_ref_name", _getrefname)
+
+        # Assemble the common part of the upcoming error message
+        error_msg = (
+            f"Reference '{input_}' of {self.get_node_name(instance)} "
+            f"does not exist in {get_ref_name(remote)}"
         )
-        if not is_value:
-            remote = self.ref_lambda(instance._config_root, instance)
+
+        # What type of input value are we dealing with?
+        if has_ref(remote, input_):
+            # Turned out to be a reference key, which we look up in the remote object.
+            value = get_ref(remote, input_)
+        elif has_value(remote, input_):
+            # Turned out to be one of the values present in the remote object,
+            # so it refers to itself.
+            value = input_
+        elif not self.reference_only:
+            # This reference attribute is not "reference only", i.e., the user is allowed
+            # to pass novel values in and the reference attribute will behave like a normal
+            # configuration attribute and cast the value to the attribute type.
             try:
-                value = remote[key]
-            except (KeyError, TypeError):
-                msg = (
-                    f"Reference '{key}' of {self.get_node_name(instance)} "
-                    f"does not exist in {remote.get_node_name()}"
-                )
-                if self.reference_only:
-                    raise CfgReferenceError(msg) from None
-                else:
-                    try:
-                        value = self._cast(instance, key)
-                        value._config_parent = instance
-                    except CastError:
-                        raise CfgReferenceError(
-                            f"{msg} and could not be casted to {self.ref_type}."
-                        ) from None
+                value = self._cast(instance, input_)
+                value._config_parent = instance
+            except CastError:
+                raise CfgReferenceError(
+                    f"{error_msg} and could not be cast to {self.ref_type}."
+                ) from None
         else:
-            value = key
+            # It's neither a reference nor a value, and we're not allowed to pass novel
+            # values, so we raise an error.
+            raise CfgReferenceError(error_msg)
+
+        # Now that the resolved value has been established, we might need to notify other
+        # pieces of the configuration about the reference;
+        # * `populate` is used to add this reference to a "population" of references
+        #    on the remote object.
+        # * `backref` is used to set the backref attribute on the remote object.
         if self.populate:
             self.populate_reference(instance, value)
         if self.backref:

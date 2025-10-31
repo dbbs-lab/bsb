@@ -27,22 +27,6 @@ classes to define your attribute:
     }
   }
 
-Type validation
-===============
-
-Configuration types convert given configuration values. Values incompatible with the type
-are rejected and the user is warned. The default type is ``str``.
-
-Any callable that takes 1 argument can be used as a type handler. The :mod:`bsb:bsb.config.types`
-module provides extra functionality such as validation of list and dictionaries and even
-more complex combinations of types. Every configuration node itself can be used as a type.
-
-.. warning::
-
-    All of the members of the :mod:`bsb:bsb.config.types` module are factory methods: they need to
-    be **called** in order to produce the type handler. Make sure that you use
-    ``config.attr(type=types.any_())``, as opposed to ``config.attr(type=types.any_)``.
-
 .. _config_dict:
 
 Configuration dictionaries
@@ -140,23 +124,20 @@ the referenced node:
   }
 
 Assuming here that ``where`` is a reference attribute, referring to ``locations``,
-Location ``A`` will be retrieved during the `Configuration` loading and placed under
-``where``. Once this is done, you can access the configuration attributes normally:
+location ``A`` will be retrieved and used as the value for ``where``. You can access
+references like normal configuration attributes:
 
 .. code-block:: python
-
-  >>> print(conf.locations)
-  {'A': 'very close', 'B': 'very far'}
 
   >>> print(conf.where)
   'very close'
 
 Reference attributes are defined inside the configuration nodes by passing a
-:ref:`quick-reference-object` to the :func:`bsb:bsb.config.ref` function.
+:ref:`quick-reference-lambda` to the :func:`bsb:bsb.config.ref` function.
 
 .. code-block:: python
 
-  def my_ref_object(root, here):
+  def my_ref_lambda(root, here):
     # This function will be called to find the location of the references
     # within the configuration. Either from the `root` of the configuration
     # or from the node containing the ref attribute (`here`)
@@ -165,16 +146,22 @@ Reference attributes are defined inside the configuration nodes by passing a
   @config.node
   class Locations:
     locations = config.dict(type=str)
-    where = config.ref(my_ref_object)
+    where = config.ref(my_ref_lambda)
+
+  # Or even shorter, with a true lambda:
+  @config.node
+  class Locations:
+    locations = config.dict(type=str)
+    where = config.ref(lambda root, here: here["locations"])
 
 .. note::
-    Make sure that you understand what each of the Reference term corresponds to.
-    In our example:
+    Make sure that you understand what each of the reference terms correspond to:
 
     - ``where`` is here a reference attribute or referrer
-    - ``my_ref_object`` is a Reference object
-    - ``locations`` is the referenced node or referee
-    - ``'very close'`` is the referred value
+    - ``my_ref_lambda`` is a reference lambda
+    - ``locations`` is the referenced object or referee
+    - ``'A'`` is the reference key
+    - ``'very close'`` is the reference value
 
 You can also create a reference list attribute in your node class with the
 :func:`bsb:bsb.config.reflist` function. Then, you should provide a list of
@@ -189,18 +176,10 @@ reference keys in the configuration file:
 
 .. code-block:: python
 
-    def my_ref_object(root, here):
-        # This function will be called to find the location of the references
-        # within the configuration. Either from the `root` of the configuration
-        # or from the node containing the ref attribute (`here`)
-        return here["locations"]
-
     @config.node
     class Locations:
         locations = config.dict(type=str)
-        where = config.reflist(my_ref_object)
-
-Note that we are using the same Reference object here.
+        where = config.reflist(lambda root, here: here["locations"])
 
 .. warning::
   Note that reference lists are quite indestructible; setting them to ``None`` just resets them.
@@ -208,14 +187,14 @@ Note that we are using the same Reference object here.
 Many nodes of the BSB Configuration contain reference attributes. For instance,
 a ``placement`` node contains reference list attributes to the ``cell_types`` and ``partitions``.
 
-.. _quick-reference-object:
+.. _quick-reference-lambda:
 
-Reference object
-----------------
+Reference lambdas
+-----------------
 
-The minimal implementation of a `Reference` object is a function which returns
-the node containing the referred value starting from the configuration's ``root`` or the
-current node (``here``):
+The minimal implementation of a reference lambda is a function which returns
+the node containing referred values starting from the configuration's
+``root`` node or the current node (``here``):
 
 .. code-block:: python
 
@@ -225,8 +204,9 @@ current node (``here``):
       where = config.ref(lambda root, here: here["locations"])
 
 The BSB also provides the :class:`Reference<bsb:bsb.config.Reference>` class.
-Through this interface, you can additionally define the expected ``type`` of the
-referenced node. For instance, to create a reference to the ``cell_types``:
+Through this interface, you can provide reference lambdas with more advanced behavior:
+
+1. The ``type`` property can be set so that the reference lambda can be used when ``reference_only=False``.
 
 .. code-block:: python
 
@@ -238,7 +218,9 @@ referenced node. For instance, to create a reference to the ``cell_types``:
 
         @property
         def type(self):
-            # This property will be called to check the referred value type.
+            # This function will be called to cast values
+            # when `reference_only=False` and should return a
+            # type handler.
             from bsb import CellType
 
             return CellType
@@ -247,9 +229,38 @@ referenced node. For instance, to create a reference to the ``cell_types``:
     class Locations:
         cell_type = config.ref(CellTypeReference())
 
-.. note::
-    The type of the referred value is actually tested by the function
-    ``is_ref`` of the ``Reference`` class, which calls the property ``type``.
+2. The ``has_ref``, ``has_ref_value``, ``get_ref``, and ``get_ref_name`` methods can be added
+   so that the referenced object returned from ``__call__`` does not need to be a config node,
+   dict, or list, but can be a customized object for advanced referencing:
+
+.. code-block:: python
+
+    class OnlyMinMaxLayerReference(Reference):
+        """
+        References the largest or smallest layer in the model, depending
+        on whether the reference key "max" or "min" was given.
+        """
+        def __call__(self, root, here):
+            # Filter out all the Layers into a set
+            return {p for p in root.partitions if isinstance(p, Layer)}
+
+        def has_ref(self, remote, key):
+            # If there were any layers, we will have a ref
+            return len(remote) and (key == "min" or key == "max")
+
+        def has_ref_value(self, remote, value):
+            # We don't want people to pass in just any Layer, they
+            # have to pass in "min" or "max"
+            return False
+
+        def get_ref(self, remote, key):
+            if key == "min":
+                return min(remote, key=lambda l: l.volume)
+            elif key == "max":
+                return max(remote, key=lambda l: l.volume)
+
+        def get_ref_name(self, remote):
+            return "smallest or largest layer in {root}.partitions"
 
 Referred object casting
 -----------------------
@@ -257,13 +268,14 @@ Referred object casting
 On top of the Reference object, you can pass some parameters to a reference attribute to
 enforce the casting of the referred value:
 
-- ``ref_type``: Expected type of the referred value. If not provided, will try to fetch it
-  from the ``type`` property of the Reference object.
-- ``reference_only``: Boolean flag to prevent the attribute to also be set by casting a
-  provided configuration dictionary. By default, it is set to ``True``.
+- ``ref_type``: A type handler for the reference attribute. Values that can't be found
+  as a reference will be cast to this type. If that fails as well an error is raised.
+- ``reference_only``: Boolean flag that when true disables casting of values, in effect
+  enforcing that every value passed to this attribute must be found as a reference and may
+  not be a new value not found in the referenced object. By default, it is set to ``True``.
 
 With ``reference_only`` set to ``False``, you can provide either a reference or castable
-configuration dictionary:
+value:
 
 .. code-block:: python
 
@@ -411,8 +423,24 @@ the ``unique_list`` parameter to the ``__populate__`` method of the referee attr
     container = config.ref(container_ref, populate="elements", pop_unique=False)
 
 
+Type validation
+===============
+
+Configuration types convert given configuration values. Values incompatible with the type
+are rejected and the user is notified. The default type is ``str``.
+
+Any callable that takes 1 argument can be used as a type handler. The :mod:`bsb:bsb.config.types`
+module provides extra functionality such as validation of list and dictionaries and even
+more complex combinations of types. Every configuration node itself can be used as a type.
+
+.. warning::
+
+    All of the members of the :mod:`bsb:bsb.config.types` module are factory methods: they need to
+    be **called** in order to produce the type handler. Make sure that you use
+    ``config.attr(type=types.any_())``, as opposed to ``config.attr(type=types.any_)``.
+
 Examples
-========
+--------
 
 .. code-block:: python
 
@@ -470,3 +498,85 @@ Examples
     answer = config.attr(type=lambda x: 42)
     # You're either having cake or pie
     cake_or_pie = config.attr(type=lambda x: "cake" if bool(x) else "pie")
+
+Type handlers
+=============
+
+The ``TypeHandler`` interface in the Brain Scaffold Builder (BSB) framework allows specification of advanced
+type‑validation and conversion rules for configuration attributes. It shapes complex type‑handlers that require more
+functionality than a simple function. Type handlers are *callables* with optional extra attributes used by the
+configuration system.
+
+``__call__(self, value)``
+-------------------------
+
+Convert the given configuration value to the desired Python type. Must raise ``TypeError`` (or subclass) when the value
+is invalid.
+
+``__name__(self)``
+------------------
+
+Return a display name for the type‑handler. This name is used in error messages and configuration diagnostics.
+
+``__inv__(self, value)``
+------------------------
+
+Optional method to invert a converted value back to a representation suitable for serialization to configuration files.
+Configuration files should be able to be loaded and saved again without unintentional changes to the content, and this
+method allows complicated type handlers to create a bijective relationship between the serialized and runtime values.
+
+Examples
+--------
+
+A type‑handler that accepts only even integers:
+
+.. code-block:: python
+
+    class EvenIntHandler(TypeHandler):
+      def __call__(self, value):
+          n = int(value)
+          if n % 2 != 0:
+              raise TypeError(f"{value!r} is not an even integer")
+          return n
+
+      def __name__(self):
+          return "even integer"
+
+A type‑handler that converts a colour name to an RGB tuple and supports inversion:
+
+.. code-block:: python
+
+  class ColourHandler(TypeHandler):
+      def __call__(self, value):
+          name = str(value).lower()
+          if name == "red":
+              return (255, 0, 0)
+          if name == "green":
+              return (0, 255, 0)
+          if name == "blue":
+              return (0, 0, 255)
+          raise TypeError(f"{value!r} is not a valid colour")
+
+      def __inv__(self, rgb):
+          if rgb == (255, 0, 0):
+              return "red"
+          if rgb == (0, 255, 0):
+              return "green"
+          if rgb == (0, 0, 255):
+              return "blue"
+          # fallback
+          return None
+
+      def __name__(self):
+          return "colour"
+
+Usage in a config node definition:
+
+.. code-block:: python
+
+  from bsb import config
+
+  @config.node
+  class MyComponent:
+      favourite_colour = config.attr(type=ColourHandler(), required=True)
+      even_count      = config.attr(type=EvenIntHandler(), default=0)

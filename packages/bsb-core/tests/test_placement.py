@@ -2,14 +2,6 @@ import unittest
 from time import sleep
 
 import numpy as np
-from bsb_test import (
-    NetworkFixture,
-    NumpyTestCase,
-    RandomStorageFixture,
-    get_test_config,
-    skip_parallel,
-)
-
 from bsb import (
     MPI,
     BootError,
@@ -28,6 +20,13 @@ from bsb import (
     Voxels,
     VoxelSet,
     WorkflowError,
+)
+from bsb_test import (
+    NetworkFixture,
+    NumpyTestCase,
+    RandomStorageFixture,
+    get_test_config,
+    skip_parallel,
 )
 
 
@@ -61,7 +60,8 @@ class VoxTest(Voxels, classmap_entry="vox_test"):
 
 def single_layer_placement(network, offset=None):
     # fixme: https://github.com/dbbs-lab/bsb-core/issues/812
-    network.topology.children.append(part := Partition(name="dud_layer", thickness=120))
+    network.partitions["dud_layer"] = part = Partition(name="dud_layer", thickness=120)
+    network.topology.children.append(part)
     network.network.origin = offset if offset is not None else [0.0, 0.0, 0.0]
     network.resize()
     dud_cell = CellType(name="cell_w_count", spatial={"count": 40, "radius": 2})
@@ -86,6 +86,7 @@ def single_layer_placement(network, offset=None):
 
 def single_vox_placement(network, voxels):
     network.topology.children.append(voxels)
+    network.partitions["voxels"] = voxels
     network.network.origin = [0.0, 0.0, 0.0]
     network.resize()
     dud_cell = CellType(
@@ -255,9 +256,10 @@ class TestIndicators(
                 name="dud_layer2", origin=[0, 0, 120], dimensions=[200, 200, 80]
             )
         )
+        self.network.partitions["dud_layer2"] = part
         self.network.resize()
         placement = PlacementDud(
-            name="dud",
+            name="dud3",
             strategy="PlacementDud",
             partitions=[part],
             cell_types=[self.network.cell_types["cell_rel_count"]],
@@ -279,6 +281,7 @@ class TestIndicators(
                 name="dud_layer2", origin=[100, 0, 0], dimensions=[100, 200, 100]
             )
         )
+        self.network.partitions["dud_layer2"] = part
         self.network.resize()
         self.network.cell_types["cell_rel_count"].spatial.count_ratio = None
         self.network.cell_types["cell_rel_count"].spatial.local_count_ratio = 2.0
@@ -297,9 +300,8 @@ class TestIndicators(
             )
 
     def test_negative_guess_count(self):
-        self.placement = single_layer_placement(
-            self.network, offset=np.array([-300.0, -300.0, -300.0])
-        )
+        self.network.network.origin = np.array([-300.0, -300.0, -300.0])
+        self.network.resize()
         indicators = self.placement.get_indicators()
         dud_ind = indicators["cell_w_count"]
         bottom_ratio = 1 / 1.2

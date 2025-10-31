@@ -6,14 +6,6 @@ import sys
 import unittest
 
 import numpy as np
-from bsb_test import (
-    RandomStorageFixture,
-    get_data_path,
-    get_test_config,
-    list_test_configs,
-)
-from bsb_test.configs import get_test_config_module
-
 from bsb import (
     CastError,
     CfgReferenceError,
@@ -39,6 +31,13 @@ from bsb import (
 from bsb._package_spec import get_missing_requirement_reason
 from bsb.config import Configuration, _attrs, compose_nodes, types
 from bsb.config.refs import Reference
+from bsb_test import (
+    RandomStorageFixture,
+    get_data_path,
+    get_test_config,
+    list_test_configs,
+)
+from bsb_test.configs import get_test_config_module
 
 
 @config.root
@@ -416,6 +415,12 @@ class TestConfigProperties(unittest.TestCase):
 
 class TestConfigRef(unittest.TestCase):
     def test_referencing(self):
+        # Test that we can refer to another node and its attributes.
+        # Please note that this is not the primary use case of the
+        # referencing system. Most cases are simply not tested, and
+        # this was chosen because it's both simple and covers features
+        # of the system quite well.
+
         @config.node
         class Test:
             name = config.attr(required=True)
@@ -427,9 +432,12 @@ class TestConfigRef(unittest.TestCase):
             test = config.attr(type=Test, required=True)
 
         r = Resolver({"test": {"name": "Johnny", "name_ref": "name", "type_ref": "name"}})
+        # Assert that the reference is resolved to the value
         self.assertEqual(r.test.name_ref, "Johnny")
+        # And that internally we remember the reference key we got it from.
         self.assertEqual(r.test.name_ref_reference, "name")
 
+        # Test that referencing an attribute that doesn't exist raises an error
         with self.assertRaises(CfgReferenceError):
             Resolver({"test": {"name": "Johnny", "name_ref": "nname"}})
 

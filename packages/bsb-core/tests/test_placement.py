@@ -2,6 +2,14 @@ import unittest
 from time import sleep
 
 import numpy as np
+from bsb_test import (
+    NetworkFixture,
+    NumpyTestCase,
+    RandomStorageFixture,
+    get_test_config,
+    skip_parallel,
+)
+
 from bsb import (
     MPI,
     BootError,
@@ -20,13 +28,6 @@ from bsb import (
     Voxels,
     VoxelSet,
     WorkflowError,
-)
-from bsb_test import (
-    NetworkFixture,
-    NumpyTestCase,
-    RandomStorageFixture,
-    get_test_config,
-    skip_parallel,
 )
 
 

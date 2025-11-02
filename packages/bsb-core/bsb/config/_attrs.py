@@ -347,7 +347,9 @@ def _setattr(instance, name, value):
 
 
 def _getattr(instance, name):
-    """Canonical way to get a configuration attribute value from a configuration node."""
+    """
+    Canonical way to get a configuration attribute value from a configuration node.
+    """
     try:
         return instance.__dict__["_" + name]
     except KeyError as e:
@@ -355,12 +357,17 @@ def _getattr(instance, name):
 
 
 def _hasattr(instance, name):
-    """Canonical way to check the presence of a configuration attribute on a configuration node."""
+    """
+    Canonical way to check the presence of a configuration attribute
+    on a configuration node.
+    """
     return "_" + name in instance.__dict__
 
 
 def _hasref(remote, key):
-    """Canonical way to check the presence of a configuration reference in a remote node."""
+    """
+    Canonical way to check the presence of a configuration reference in a remote node.
+    """
     if not hasattr(remote, "__getitem__"):
         raise ReferenceLambdaError(
             f"Could check for references in {remote}."
@@ -396,7 +403,7 @@ def _getrefname(remote):
         raise ReferenceLambdaError(
             f"Could not retrieve name from {remote}."
             " Please add a `get_ref_name` method to your reference lambda."
-        )
+        ) from None
 
 
 def _hasrefval(remote, value):
@@ -404,8 +411,8 @@ def _hasrefval(remote, value):
     if hasattr(remote, "values") and callable(remote.values):
         if not isinstance(remote, Mapping):  # pragma: nocover
             warn(
-                f"Ambiguous reference container {remote}. Please convert it to a mapping type,"
-                " or implement `has_ref_value` on your reference lambda."
+                f"Ambiguous reference container {remote}. Please convert it to a mapping"
+                " type, or implement `has_ref_value` on your reference lambda."
             )
         try:
             return value in remote.values()
@@ -674,7 +681,10 @@ class cfglist(builtins.list):
         self._postset(items)
 
     def values(self):
-        """This stub helps cfglist behave like a cfgdict when it is used in the reference system"""
+        """
+        This stub helps cfglist behave like a cfgdict
+        when it is used in the reference system
+        """
         return self
 
     def __setitem__(self, index, item):
@@ -1059,8 +1069,8 @@ class ConfigurationReferenceAttribute(ConfigurationAttribute):
             value = input_
         elif not self.reference_only:
             # This reference attribute is not "reference only", i.e., the user is allowed
-            # to pass novel values in and the reference attribute will behave like a normal
-            # configuration attribute and cast the value to the attribute type.
+            # to pass novel values in and the reference attribute will behave like a
+            # normal configuration attribute and cast the value to the attribute type.
             try:
                 value = self._cast(instance, input_)
                 value._config_parent = instance

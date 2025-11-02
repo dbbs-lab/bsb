@@ -6,6 +6,14 @@ import sys
 import unittest
 
 import numpy as np
+from bsb_test import (
+    RandomStorageFixture,
+    get_data_path,
+    get_test_config,
+    list_test_configs,
+)
+from bsb_test.configs import get_test_config_module
+
 from bsb import (
     CastError,
     CfgReferenceError,
@@ -31,13 +39,6 @@ from bsb import (
 from bsb._package_spec import get_missing_requirement_reason
 from bsb.config import Configuration, _attrs, compose_nodes, types
 from bsb.config.refs import Reference
-from bsb_test import (
-    RandomStorageFixture,
-    get_data_path,
-    get_test_config,
-    list_test_configs,
-)
-from bsb_test.configs import get_test_config_module
 
 
 @config.root

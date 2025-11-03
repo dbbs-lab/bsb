@@ -152,6 +152,7 @@ class TestProfiling(
         bsb.profiling.get_active_session().flush(stats=False)
 
         world = MPI.COMM_WORLD
+        world.Barrier()
         if not world.Get_rank():
             found = 0
             for filename in os.listdir():

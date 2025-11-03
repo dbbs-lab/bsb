@@ -76,16 +76,16 @@ tree = {
             },
             "connection_models": {
                 "excitatory_to_excitatory": {
-                    "synapse": {"weight": 20.68015524367846, "delay": 1.5}
+                    "synapses": [{"weight": 20.68015524367846, "delay": 1.5}]
                 },
                 "excitatory_to_inhibitory": {
-                    "synapse": {"weight": 20.68015524367846, "delay": 1.5}
+                    "synapses": [{"weight": 20.68015524367846, "delay": 1.5}]
                 },
                 "inhibitory_to_excitatory": {
-                    "synapse": {"weight": -103.4007762183923, "delay": 1.5}
+                    "synapses": [{"weight": -103.4007762183923, "delay": 1.5}]
                 },
                 "inhibitory_to_inhibitory": {
-                    "synapse": {"weight": -103.4007762183923, "delay": 1.5}
+                    "synapses": [{"weight": -103.4007762183923, "delay": 1.5}]
                 },
             },
             "devices": {

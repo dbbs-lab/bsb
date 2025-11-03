@@ -316,7 +316,6 @@ class ChunkedCollection(ChunkedProperty):
 
     @handles_handles("r", lambda args: args[0].loader._engine)
     def load_all(self, handle=HANDLED, **kwargs):
-        print("?", self)
         return {
             key: super(type(self), self).load(key=key, handle=handle, **kwargs)
             for key in self.keys()

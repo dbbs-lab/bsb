@@ -49,7 +49,7 @@ class Schematic:
         self._definition: ModelDefinition = ModelDefinition()
         self.cables: list[CableBranch] = []
         self.roots: list[UnitBranch] = []
-        self._named = 0
+        self._next_id = 0
 
     def __iter__(self) -> typing.Iterator["UnitBranch"]:
         """
@@ -100,14 +100,17 @@ class Schematic:
         else:
             self._definition = value
 
+    def set_next_id(self, id: int):
+        self._next_id = id - 1
+
     def create_name(self):
         """
         Generate the next unique name for an instance of this model.
         """
         if not self._frozen:
             raise FrozenError("Schematic must be finished before naming instances of it.")
-        self._named += 1
-        return f"{self._name}_{self._named}"
+        self._next_id += 1
+        return f"{self._name}_{self._next_id}"
 
     def create_location(
         self, location: tuple[int, int], coords, radii, labels, endpoint=None

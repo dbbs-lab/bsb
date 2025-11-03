@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import itertools
 import typing
 
 from .. import config
@@ -83,6 +84,13 @@ class Simulation:
             model: self.scaffold.get_connectivity_set(model.name)
             for model in sorted(self.connection_models.values())
         }
+
+    def get_components(self):
+        return itertools.chain(
+            self.cell_models.values(),
+            self.connection_models.values(),
+            self.devices.values(),
+        )
 
 
 __all__ = ["ProgressEvent", "Simulation"]

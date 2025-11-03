@@ -99,6 +99,7 @@ class ArborizedModel(NeuronCell, classmap_entry="arborize"):
 
         self.model.use_defaults = True
         schematic = bsb_schematic(morpho, self.model)
+        schematic.set_next_id(id)
         return neuron_build(schematic)
 
 

@@ -53,9 +53,30 @@ class TestModelBuilding(SchematicsFixture, unittest.TestCase):
 
         p.run(100)
 
-        self.assertEqual(list(r), list(r2), "Recording from same loc should be identical")
+        self.assertEqual(
+            list(r), list(r2), "Recording from same loc should be identical"
+        )
         self.assertFalse(min(r) == max(r), "No synaptic currents detected")
         self.assertTrue(min(r_nosyn) == max(r_nosyn), "Synaptic currents detected")
+
+    def test_receiver(self):
+        cell = neuron_build(self.p75_expsyn)
+        cell.insert_receiver(10, "ExpSyn", (0, 0))
+        synapse = cell.get_location((0, 0)).section.synapses[0]
+        self.assertEqual(synapse.gid, 10, "GId should be 1")
+        synapse.stimulate(start=0, number=3, interval=10)
+        r = cell.sections[0].record()
+        p.run(100)
+        self.assertFalse(min(r) == max(r), "No synaptic currents detected")
+        cell2 = neuron_build(self.p75_expsyn)
+        cell2.insert_receiver(10, "ExpSyn", (0, 0), source="i")
+        synapse2 = cell2.get_location((0, 0)).section.synapses[0]
+        self.assertEqual(
+            synapse2._pp._interpreter.parallel._transfer_max,
+            10,
+            "transfer_max should be 10",
+        )
+        synapse2._pp._interpreter.parallel.gid_clear()
 
     def test_cable_building(self):
         self.cell010.definition = define_model(

@@ -1,3 +1,13 @@
+## 6.0.7 (2025-10-06)
+
+### 🩹 Fixes
+
+- click default value test for None values ([077e582](https://github.com/dbbs-lab/bsb/commit/077e582))
+
+### ❤️ Thank You
+
+- drodarie
+
 ## 6.0.6 (2025-08-26)
 
 This was a version bump only for nmodl-glia to align it with other projects, there were no code changes.

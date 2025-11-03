@@ -133,7 +133,6 @@ if typing.TYPE_CHECKING:
   import bsb.voxels
 
 AdapterError: type["bsb.exceptions.AdapterError"]
-AdapterProgress: type["bsb.simulation.adapter.AdapterProgress"]
 AfterConnectivityHook: type["bsb.postprocessing.AfterConnectivityHook"]
 AfterPlacementHook: type["bsb.postprocessing.AfterPlacementHook"]
 AllToAll: type["bsb.connectivity.general.AllToAll"]
@@ -229,6 +228,7 @@ FileStore: type["bsb.storage.interfaces.FileStore"]
 FixedIndegree: type["bsb.connectivity.general.FixedIndegree"]
 FixedOutdegree: type["bsb.connectivity.general.FixedOutdegree"]
 FixedPositions: type["bsb.placement.strategy.FixedPositions"]
+FixedStepProgressController: type["bsb.simulation.adapter.FixedStepProgressController"]
 FractionFilter: type["bsb.simulation.targetting.FractionFilter"]
 GatewayError: type["bsb.exceptions.GatewayError"]
 GeneratedMorphology: type["bsb.storage.interfaces.GeneratedMorphology"]

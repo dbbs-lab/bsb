@@ -113,7 +113,7 @@ class NeuronModel:
         if source is None:
             return p.ParallelCon(gid, synapse, **kwargs)
         else:
-            spp = synapse._point_process
+            spp = synapse._pp
             p.parallel.target_var(spp, getattr(spp, "_ref_" + source), gid)
 
     def insert_transmitter(

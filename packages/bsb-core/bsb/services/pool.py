@@ -40,6 +40,7 @@ API and subject to sudden change in the future.
 import abc
 import concurrent.futures
 import contextlib
+import contextvars
 import functools
 import logging
 import pickle
@@ -373,11 +374,15 @@ class Job(abc.ABC):
         still running.
         """
         if self._thread is None:
+            ctx = contextvars.copy_context()
 
             def target():
                 try:
-                    # Execute the static handler
-                    result = self.execute(self._pool.owner, self._args, self._kwargs)
+                    # Execute the static handler inside the main thread context.
+                    # Context propagation is required for OpenTelemetry.
+                    result = ctx.run(
+                        self.execute, self._pool.owner, self._args, self._kwargs
+                    )
                 except Exception as e:
                     self._future.set_exception(e)
                 else:

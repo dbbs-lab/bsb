@@ -16,6 +16,7 @@ from ..exceptions import (
     ReferenceLambdaError,
     RequirementError,
 )
+from ..profiling import _instrument_node
 from ..reporting import warn
 from ._compile import _wrap_reserved
 from ._hooks import run_hook
@@ -78,6 +79,7 @@ def node(node_cls, root=False, dynamic=False, pluggable=False):
     make_tree(node_cls)
     make_dictable(node_cls)
     make_copyable(node_cls)
+    _instrument_node(node_cls)
 
     return node_cls
 

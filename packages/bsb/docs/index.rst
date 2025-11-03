@@ -140,6 +140,7 @@ Content
   dev/documentation
   dev/services
   dev/projects
+  dev/diagnostics
   dev/plugins
   dev/hooks
   dev/reference

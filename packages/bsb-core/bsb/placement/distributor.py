@@ -8,7 +8,6 @@ from scipy.spatial.transform import Rotation
 from .. import config
 from ..exceptions import EmptySelectionError
 from ..morphologies import MorphologySet, RotationSet
-from ..profiling import node_meter
 from ..topology.partition import Partition
 from ..voxels import voxel_rotation_of
 from .indicator import PlacementIndications
@@ -22,11 +21,6 @@ class DistributionContext:
 
 @config.dynamic(attr_name="strategy", required=True)
 class Distributor(abc.ABC):
-    def __init_subclass__(cls, **kwargs):
-        super(cls, cls).__init_subclass__(**kwargs)
-        # Decorate subclasses to measure performance
-        node_meter("distribute")(cls)
-
     @abc.abstractmethod
     def distribute(self, positions, context):  # pragma: nocover
         """
@@ -124,11 +118,6 @@ class MorphologyGenerator(MorphologyDistributor, classmap_entry=None):
     """
 
     may_be_empty = config.attr(type=bool, default=True)
-
-    def __init_subclass__(cls, **kwargs):
-        super(cls, cls).__init_subclass__(**kwargs)
-        # Decorate subclasses to measure performance
-        node_meter("generate")(cls)
 
     def distribute(self, positions, morphologies, context):  # pragma: nocover
         pass

@@ -1,9 +1,11 @@
 import builtins
 import inspect
+import json
 import sys
 
 from .._contexts import get_cli_context, reset_cli_context
 from ..exceptions import CommandError, DryrunError
+from ..profiling import _telemetry_trace
 from .commands import load_root_command
 
 
@@ -28,7 +30,20 @@ def handle_command(command, dryrun=False, exit=False):
         for action in namespace.internal_action_list or ():
             action(namespace)
     if not dryrun or _can_dryrun(namespace.handler, namespace):
-        namespace.handler(namespace, dryrun=dryrun)
+        with _telemetry_trace(
+            "cli",
+            attributes={
+                "bsb.cli_command": command,
+                "bsb.context": json.dumps(
+                    {
+                        opt.name: str(opt.get())
+                        for opt in namespace._context.options.values()
+                    }
+                ),
+            },
+            broadcast=True,
+        ):
+            namespace.handler(namespace, dryrun=dryrun)
     else:  # pragma: nocover
         raise DryrunError(f"`{namespace.handler.__name__}` doesn't support dryruns.")
     return context

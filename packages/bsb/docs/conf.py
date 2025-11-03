@@ -74,6 +74,14 @@ intersphinx_mapping = {
     **_project.intersphinx,
 }
 
+# Ignore these, they come from a backport, and we don't link to them.
+nitpick_ignore = [
+    ("py:class", "exceptiongroup._exceptions._ExceptionT_co"),
+    ("py:class", "exceptiongroup.ExceptionGroup"),
+    ("py:class", "_ExceptionT_co"),
+    ("py:class", "_ExceptionGroupSelf"),
+]
+
 for key, value in intersphinx_mapping.items():
     print(key, value)
 

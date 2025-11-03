@@ -21,7 +21,6 @@ from .exceptions import (
     RedoError,
 )
 from .placement import PlacementStrategy
-from .profiling import meter
 from .reporting import report
 from .services import JobPool
 from .services._pool_listeners import NonTTYTerminalListener, TTYTerminalListener
@@ -45,7 +44,6 @@ if typing.TYPE_CHECKING:
     from .topology import Partition, Region
 
 
-@meter()
 def from_storage(root, comm=None):
     """
     Load :class:`bsb.core.Scaffold` from a storage object.
@@ -290,7 +288,6 @@ class Scaffold:
             )
         )
 
-    @meter()
     def run_placement(self, strategies=None, fail_fast=True, pipelines=True):
         """
         Run placement strategies.
@@ -309,7 +306,6 @@ class Scaffold:
                 pool.schedule(strategies, scheduler)
             pool.execute()
 
-    @meter()
     def run_connectivity(self, strategies=None, fail_fast=True, pipelines=True):
         """
         Run connection strategies.
@@ -324,14 +320,12 @@ class Scaffold:
                 pool.schedule(strategies)
             pool.execute()
 
-    @meter()
     def run_placement_strategy(self, strategy):
         """
         Run a single placement strategy.
         """
         self.run_placement([strategy])
 
-    @meter()
     def run_after_placement(self, hooks=None, fail_fast=None, pipelines=True):
         """
         Run after placement hooks.
@@ -343,7 +337,6 @@ class Scaffold:
                 pool.schedule(hooks)
             pool.execute()
 
-    @meter()
     def run_after_connectivity(self, hooks=None, fail_fast=None, pipelines=True):
         """
         Run after placement hooks.
@@ -355,7 +348,6 @@ class Scaffold:
                 pool.schedule(hooks)
             pool.execute()
 
-    @meter()
     def compile(
         self,
         skip_placement=False,
@@ -446,7 +438,6 @@ class Scaffold:
             self.storage._preexisted = True
             del self._workflow
 
-    @meter()
     def run_pipelines(self, fail_fast=True, pipelines=None):
         if pipelines is None:
             pipelines = self.get_dependency_pipelines()
@@ -455,7 +446,6 @@ class Scaffold:
                 pool.schedule(pipelines)
             pool.execute()
 
-    @meter()
     def run_simulation(self, simulation_name: str):
         """
         Run a simulation starting from the default single-instance adapter.

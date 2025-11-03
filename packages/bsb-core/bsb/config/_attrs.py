@@ -15,6 +15,7 @@ from ..exceptions import (
     NoReferenceAttributeSignal,
     RequirementError,
 )
+from ..profiling import _instrument_node
 from ._compile import _wrap_reserved
 from ._hooks import run_hook
 from ._make import (
@@ -76,6 +77,7 @@ def node(node_cls, root=False, dynamic=False, pluggable=False):
     make_tree(node_cls)
     make_dictable(node_cls)
     make_copyable(node_cls)
+    _instrument_node(node_cls)
 
     return node_cls
 

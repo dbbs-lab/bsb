@@ -29,7 +29,8 @@ dependencies = [
   "dashing-next~=0.1",
   "shortuuid~=1.0",
   "quantities~=0.15.0",
-  "exceptiongroup>=1.2.0"
+  "exceptiongroup>=1.2.0",
+  "opentelemetry-api~=1.0"
 ]
 
   [[project.authors]]
@@ -82,7 +83,13 @@ docs = [
   "bsb-yaml~=6.0",
   "sphinxext-bsb~=6.0"
 ]
-dev = [ "pre-commit~=3.5", "ruff>=0.8.2", "snakeviz~=2.1" ]
+dev = [
+  "pre-commit~=3.5",
+  "ruff>=0.8.2",
+  "snakeviz~=2.1",
+  "opentelemetry-distro",
+  "opentelemetry-exporter-otlp"
+]
 
 [tool.uv]
 default-groups = [ "dev", "docs", "test" ]

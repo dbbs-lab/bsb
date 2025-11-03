@@ -260,7 +260,6 @@ LayoutError: type["bsb.exceptions.LayoutError"]
 LocationTargetting: type["bsb.simulation.targetting.LocationTargetting"]
 MPI: type["bsb.services.MPI"]
 MPILock: type["bsb.services.MPILock"]
-Meter: type["bsb.profiling.Meter"]
 MissingActiveConfigError: type["bsb.exceptions.MissingActiveConfigError"]
 MissingMorphologyError: type["bsb.exceptions.MissingMorphologyError"]
 MissingSourceError: type["bsb.exceptions.MissingSourceError"]
@@ -423,8 +422,6 @@ is_partition: "bsb.topology.is_partition"
 is_region: "bsb.topology.is_region"
 load_root_command: "bsb.cli.commands.load_root_command"
 make_config_diagram: "bsb.config.make_config_diagram"
-meter: "bsb.profiling.meter"
-node_meter: "bsb.profiling.node_meter"
 on_main: "bsb.storage.decorators.on_main"
 on_main_until: "bsb.storage.decorators.on_main_until"
 open_storage: "bsb.storage.open_storage"

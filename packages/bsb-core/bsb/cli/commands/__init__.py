@@ -10,6 +10,7 @@ BSB.
 import argparse
 
 from ...exceptions import CommandError
+from ...profiling import _instrument_command
 from ...reporting import report
 
 
@@ -58,6 +59,7 @@ class BsbCommand:
             if parent is None:
                 parent = RootCommand
             parent._subcommands.append(cls)
+            _instrument_command(cls)
 
 
 class BaseCommand(BsbCommand, abstract=True):

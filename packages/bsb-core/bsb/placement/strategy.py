@@ -10,7 +10,6 @@ from ..config import refs, types
 from ..config._attrs import cfgdict
 from ..exceptions import DistributorError, EmptySelectionError
 from ..mixins import HasDependencies
-from ..profiling import node_meter
 from ..reporting import warn
 from ..storage._chunks import Chunk
 from ..voxels import VoxelSet
@@ -23,7 +22,7 @@ if typing.TYPE_CHECKING:
     from ..topology.partition import Partition
 
 
-@config.dynamic(attr_name="strategy", required=True)
+@config.dynamic(attr_name="strategy", required=True, auto_classmap=True)
 class PlacementStrategy(abc.ABC, HasDependencies):
     """
     Quintessential interface of the placement module.
@@ -42,11 +41,6 @@ class PlacementStrategy(abc.ABC, HasDependencies):
         type=DistributorsNode, default=dict, call_default=True
     )
     indicator_class = PlacementIndicator
-
-    def __init_subclass__(cls, **kwargs):
-        super(cls, cls).__init_subclass__(**kwargs)
-        # Decorate subclasses to measure performance
-        node_meter("place")(cls)
 
     def __hash__(self):
         return id(self)

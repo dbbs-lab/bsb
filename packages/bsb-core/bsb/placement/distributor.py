@@ -10,7 +10,6 @@ from .._util import rotation_matrix_from_vectors
 from ..config.types import ndarray
 from ..exceptions import EmptySelectionError
 from ..morphologies import MorphologySet, RotationSet
-from ..profiling import node_meter
 from ..storage._files import NrrdDependencyNode
 from ..topology.partition import Partition
 from .indicator import PlacementIndications
@@ -24,11 +23,6 @@ class DistributionContext:
 
 @config.dynamic(attr_name="strategy", required=True)
 class Distributor(abc.ABC):
-    def __init_subclass__(cls, **kwargs):
-        super(cls, cls).__init_subclass__(**kwargs)
-        # Decorate subclasses to measure performance
-        node_meter("distribute")(cls)
-
     @abc.abstractmethod
     def distribute(self, positions, context):
         """
@@ -126,11 +120,6 @@ class MorphologyGenerator(MorphologyDistributor, classmap_entry=None):
     """
 
     may_be_empty = config.attr(type=bool, default=True)
-
-    def __init_subclass__(cls, **kwargs):
-        super(cls, cls).__init_subclass__(**kwargs)
-        # Decorate subclasses to measure performance
-        node_meter("generate")(cls)
 
     def distribute(self, positions, morphologies, context):
         pass

@@ -80,6 +80,13 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 templates_path = ["_templates"]
 todo_include_todos = True
 
+# Ignore these, they come from a backport, and we don't link to them.
+nitpick_ignore = [
+    ("py:class", "exceptiongroup._exceptions._ExceptionT_co"),
+    ("py:class", "exceptiongroup.ExceptionGroup"),
+    ("py:class", "_ExceptionT_co"),
+    ("py:class", "_ExceptionGroupSelf"),
+]
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output

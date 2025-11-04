@@ -502,10 +502,10 @@ Examples
 Type handlers
 =============
 
-The ``TypeHandler`` interface in the Brain Scaffold Builder (BSB) framework allows specification of advanced
-type‑validation and conversion rules for configuration attributes. It shapes complex type‑handlers that require more
-functionality than a simple function. Type handlers are *callables* with optional extra attributes used by the
-configuration system.
+The :class:`TypeHandler<bsb:bsb.config.types.TypeHandler>` interface in the Brain Scaffold Builder (BSB) framework
+allows specification of advanced type‑validation and conversion rules for configuration attributes.
+It shapes complex type‑handlers that require more functionality than a simple function.
+Type handlers are *callables* with optional extra attributes used by the configuration system.
 
 ``__call__(self, value)``
 -------------------------
@@ -532,6 +532,8 @@ A type‑handler that accepts only even integers:
 
 .. code-block:: python
 
+    from bsb import TypeHandler
+
     class EvenIntHandler(TypeHandler):
       def __call__(self, value):
           n = int(value)
@@ -545,6 +547,8 @@ A type‑handler that accepts only even integers:
 A type‑handler that converts a colour name to an RGB tuple and supports inversion:
 
 .. code-block:: python
+
+  from bsb import TypeHandler
 
   class ColourHandler(TypeHandler):
       def __call__(self, value):

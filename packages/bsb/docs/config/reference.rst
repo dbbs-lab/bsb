@@ -138,8 +138,9 @@ Placement
 * :guilabel:`partitions`:
   List of partitions to place the cell types in. Each strategy has their own way of
   dealing with partitions, but most will try to voxelize them (using
-  :meth:`bsb:bsb.topology.partition.Partition.chunk_to_voxels`), and combine the voxelsets of
-  each partition. When using multiple partitions, you can save memory if all partitions
+  :meth:`chunk_to_voxels<bsb:bsb.topology.partition.Partition.chunk_to_voxels>`),
+  and combine the voxelsets of each partition.
+  When using multiple partitions, you can save memory if all partitions
   voxelize into regular same-size voxelsets.
 
 * :guilabel:`overrides`:

@@ -24,7 +24,7 @@ dependencies = [
   "requests~=2.30",
   "urllib3~=2.0",
   "appdirs~=1.4",
-  "neo[nixio]",
+  "neo[nixio]~=0.13",
   "tqdm~=4.50",
   "dashing-next~=0.1",
   "shortuuid~=1.0",
@@ -88,8 +88,8 @@ dev = [
   "pre-commit~=3.5",
   "ruff>=0.8.2",
   "snakeviz~=2.1",
-  "opentelemetry-distro",
-  "opentelemetry-exporter-otlp"
+  "opentelemetry-distro>=0.59b0",
+  "opentelemetry-exporter-otlp~=1.38",
 ]
 
 [tool.uv]

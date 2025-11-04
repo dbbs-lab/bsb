@@ -22,10 +22,12 @@ class PlacementIndications:
     count_ratio: float = config.attr(type=float)
     local_count_ratio: float = config.attr(type=float)
     density_ratio: float = config.attr(type=float)
-    relative_to: "CellType" = config.ref(refs.cell_type_ref)
+    relative_to: "CellType" = config.ref(refs.cell_type_ref, hint=None)
     count: int = config.attr(type=int)
     geometry: dict = config.dict(type=types.any_())
-    morphologies: cfglist[MorphologySelector] = config.list(type=MorphologySelector)
+    morphologies: cfglist[MorphologySelector] = config.list(
+        type=MorphologySelector, hint=[]
+    )
     density_key: str = config.attr(type=str)
 
 

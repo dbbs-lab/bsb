@@ -1,6 +1,6 @@
 import unittest
 
-from bsb_test import RandomStorageFixture, skip_parallel, skipIfOffline
+from bsb_test import RandomStorageFixture, skip_parallel
 
 from bsb import (
     MPI,
@@ -11,7 +11,6 @@ from bsb import (
     MissingMorphologyError,
     Morphology,
     NameSelector,
-    NeuroMorphoScheme,
     Scaffold,
     StoredMorphology,
 )
@@ -76,9 +75,6 @@ class TestSelectors(RandomStorageFixture, unittest.TestCase, engine_name="hdf5")
         ws = NameSelector(names=["*"])
         self.assertEqual(len(all), sum(map(ws.pick, all)), "wildcard should select all")
 
-    # For some reason, under parallel conditions, likely due to the `morphologies.save`,
-    # we deadlock.
-    @skip_parallel
     def test_cell_type_shorthand(self):
         ct = CellType(spatial=dict(morphologies=[{"names": "*"}]))
         cfg = Configuration.default(cell_types={"ct": ct})
@@ -89,7 +85,6 @@ class TestSelectors(RandomStorageFixture, unittest.TestCase, engine_name="hdf5")
         with self.assertRaises(MissingMorphologyError):
             self.assertEqual(0, len(ct.get_morphologies()), "should select 0 morpho")
 
-    @skipIfOffline(scheme=NeuroMorphoScheme())
     def test_nm_selector(self):
         name = "H17-03-013-11-08-04_692297214_m"
         ct = CellType(
@@ -108,7 +103,7 @@ class TestSelectors(RandomStorageFixture, unittest.TestCase, engine_name="hdf5")
         m = s.morphologies.select(*ct.spatial.morphologies)[0]
         self.assertEqual(name, m.get_meta()["neuron_name"], "meta not stored")
 
-    @skipIfOffline(scheme=NeuroMorphoScheme())
+    @skip_parallel
     def test_nm_selector_wrong_name(self):
         ct = CellType(
             spatial=dict(

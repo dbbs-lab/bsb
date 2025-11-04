@@ -7,7 +7,7 @@ requires-python = ">=3.10,<4"
 dependencies = [
     "bsb~=6.0",
     "bsb-neuron~=6.0",
-    "dbbs-catalogue @ git+https://github.com/dbbs-lab/catalogue.git@fix/bump",
+    "dbbs-catalogue~=6.0",
 ]
 
 [dependency-groups]

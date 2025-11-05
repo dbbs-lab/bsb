@@ -463,7 +463,7 @@ class NrrdVoxels(Voxels, classmap_entry="nrrd"):
             np.transpose(mask),
             self.voxel_size,
             data=voxel_data,
-            data_keys=self.sources,
+            data_keys=self.sources._reflist,
         )
 
     def _validate(self):

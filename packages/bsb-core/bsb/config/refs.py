@@ -71,9 +71,12 @@ class FileReference(Reference):
 class VoxelDatasetReference(Reference):
     def __call__(self, root, here):
         result = root.files.copy()
+        to_remove = []
         for k in iter(result):
             if not isinstance(result[k], self.type):
-                del result[k]
+                to_remove.append(k)
+        for k in to_remove:
+            del result[k]
         return result
 
     @property

@@ -19,7 +19,7 @@ class AfterPlacementHook(abc.ABC):
         pool.queue(static_function, (self.name,), submitter=self)
 
     @abc.abstractmethod
-    def postprocess(self):
+    def postprocess(self):  # pragma: nocover
         pass
 
 
@@ -34,7 +34,7 @@ class AfterConnectivityHook(abc.ABC):
         pool.queue(static_function, (self.name,), submitter=self)
 
     @abc.abstractmethod
-    def postprocess(self):
+    def postprocess(self):  # pragma: nocover
         pass
 
 

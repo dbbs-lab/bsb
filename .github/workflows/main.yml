@@ -57,7 +57,7 @@ jobs:
 
       - name: Nx Release flow
         env:
-          NX_DAEMON: false
+          NX_DAEMON: false  # may prevent GHA to stall for some reason
         run: |
           git config --global user.email "neurocomp_dbbs@unipv.it"
           git config --global user.name "DBBS Laboratory"

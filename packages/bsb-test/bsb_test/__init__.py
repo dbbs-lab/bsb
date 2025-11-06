@@ -176,6 +176,48 @@ class MorphologiesFixture:
         super().setUp()
 
 
+class DictTestCase:
+    def assertDictEqual(self, tested: dict, expected: dict):
+        """
+        Override the unittest.TestCase.assertDictEqual
+        to deal with values with numpy arrays or deep dictionaries
+        """
+        self.assertIsInstance(tested, dict, "First argument is not a dictionary")
+        self.assertIsInstance(expected, dict, "Second argument is not a dictionary")
+        to_compare = [("/", tested, expected)]
+        while to_compare:
+            root, src, tgt = to_compare.pop(0)
+            self.assertEqual(len(src), len(tgt))
+            for k, v in src.items():
+                self.assertTrue(
+                    k in tgt,
+                    msg=(
+                        f"Key {root + str(k)} is present in source dict "
+                        "but not in target dict"
+                    ),
+                )
+                if isinstance(v, dict):
+                    self.assertTrue(isinstance(tgt[k], dict))
+                    to_compare.append((root + str(k) + "/", v, tgt[k]))
+                elif isinstance(v, list | _np.ndarray):
+                    self.assertTrue(
+                        _np.all(_np.array(v) == _np.array(tgt[k])),
+                        msg=(
+                            "Values of source and target dict for "
+                            f"{root + str(k)} do not match"
+                        ),
+                    )
+                else:
+                    self.assertEqual(
+                        v,
+                        tgt[k],
+                        msg=(
+                            "Values of source and target dict for "
+                            f"{root + str(k)} do not match"
+                        ),
+                    )
+
+
 class NumpyTestCase:
     def assertClose(self, a, b, msg="", /, **kwargs):
         if msg:

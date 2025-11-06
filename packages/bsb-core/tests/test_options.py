@@ -8,6 +8,7 @@ import unittest
 import toml
 
 from bsb import OptionError, ReadOnlyOptionError, options
+from bsb._options import QuietFlag
 from bsb.cli import handle_command
 from bsb.option import _pyproject_content, _pyproject_path
 
@@ -59,7 +60,11 @@ class TestEnvOption(unittest.TestCase):
 
     def test_env_get(self):
         for opt in self.opt.values():
-            self.assertFalse(type(opt).env.is_set(opt), "No BSB env vars should be set.")
+            if not isinstance(opt, QuietFlag):
+                self.assertFalse(
+                    type(opt).env.is_set(opt),
+                    "No BSB env vars should be set.",
+                )
 
     def test_env_set(self):
         v_opt = self.opt["verbosity"]

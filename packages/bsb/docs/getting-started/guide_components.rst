@@ -64,7 +64,7 @@ Note that this strategy leverages the ``@config.node``
 `python decorator <https://pythonbasics.org/decorators/>`_.
 The :doc:`configuration node decorator</config/nodes>` allows you to pass the parameters
 defined in the configuration file to the class. It will also handle the
-:doc:`type testing </config/types>` of your configuration attributes (e.g., make sure your
+:doc:`type testing </config/attributes>` of your configuration attributes (e.g., make sure your
 ``radius`` parameter is a positive float number). We will see in the following sections how
 to create your class configuration attributes.
 

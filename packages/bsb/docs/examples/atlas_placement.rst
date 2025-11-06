@@ -33,7 +33,7 @@ density of ``0.003/μm^3``:
   :lines: 38-42,44-47
 
 If however, we have data of the cell densities available for a new cell type ``my_other_cell``,
-we can link our ``declive`` partition to it, by loading it as a :guilabel:`source` file:
+we can link our ``declive`` partition to it, by loading it as a :guilabel:`sources` file:
 
 
 .. literalinclude:: /../../../examples/atlas-modeling/configs/allen_structure.json
@@ -41,7 +41,7 @@ we can link our ``declive`` partition to it, by loading it as a :guilabel:`sourc
   :lines: 16-23
   :emphasize-lines: 4-5
 
-The :guilabel:`source` file will be loaded, and the values at the coordinates of the
+The :guilabel:`sources` file(s) will be loaded, and the values at the coordinates of the
 voxels that make up our partition are associated as a column of data. We use the
 :guilabel:`data_keys` to specify a name for the data column, so that in other places we
 can refer to it by name.

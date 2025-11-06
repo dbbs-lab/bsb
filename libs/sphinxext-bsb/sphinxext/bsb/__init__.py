@@ -157,6 +157,7 @@ class AutoconfigDirective(SphinxDirective):
         type_ = self.get_attr_type(attr)
 
         # If the attribute is a node type, we have to guess recursively.
+        is_public_untree = False
         if attr.is_node_type():
             # Node types that come from private modules shouldn't be promoted,
             # so instead we make use of the dictionary notation. Or, this autoconfig
@@ -167,13 +168,18 @@ class AutoconfigDirective(SphinxDirective):
                 untree = self.private_untree(type_)
             else:
                 untree = self.public_untree(type_)
+                is_public_untree = True
             value = self.guess_example(type_, deeper - 1)
         else:
             untree = self.argument_untree
             value = self.guess_example_value(attr)
         # Configuration lists and dicts should be packed into a list/dict
         if isinstance(attr, ConfigurationListAttribute):
-            untree = self.list_untree(untree)
+            untree = (
+                self.list_untree(untree)
+                if not is_public_untree
+                else self.list_untree_public(untree)
+            )
         elif isinstance(attr, ConfigurationDictAttribute):
             untree = self.dict_untree(untree)
         return untree, value
@@ -209,6 +215,8 @@ class AutoconfigDirective(SphinxDirective):
                     example = {}
                 elif example == "true":
                     example = True
+                elif isinstance(attr, ConfigurationListAttribute):
+                    example = [example] if example else []
         # Some values need to be cast back to a tree-form, so we create a shim
         # for the attribute descriptor to use as an instance.
         shim = type("AttrShim", (), {})()
@@ -325,10 +333,28 @@ class AutoconfigDirective(SphinxDirective):
             if value is ...:
                 return [f"{key}=[", "],"]
             lines = inner_untree(key, value)
-            lines[0] = lines[0].split("=")[0] + "=["
-            lines.insert(1, "  {")
-            lines[2:] = ["  " + line for line in lines[2:]]
-            lines.append("],")
+            # If lines come from private_untree
+            # perform additional line editing
+            if len(lines) > 1:
+                lines[0] = lines[0].split("=")[0] + "=["
+                lines.insert(1, "  {")
+                lines[2:] = ["  " + line for line in lines[2:]]
+                lines.append("],")
+            return lines
+
+        untree.list_repack = True
+        return untree
+
+    def list_untree_public(self, inner_untree):
+        def untree(key, value):
+            if value is ...:
+                return [f"{key}=[", "],"]
+            lines = inner_untree(key, value)
+            split_ = lines[0].split("=")
+            lines[0] = split_[0] + "=["
+            lines.insert(1, split_[1])
+            lines[1:] = ["  " + line for line in lines[1:]]
+            lines.append("]")
             return lines
 
         untree.list_repack = True

@@ -58,7 +58,7 @@ abstract class that requires you to implement the
 Note that this strategy leverages the ``@config.node`` `python decorator`.
 The :doc:`configuration node decorator</config/nodes>` allows you to pass the parameters
 defined in the configuration file to the class. It will also handle the
-:doc:`type testing </config/types>` of your configuration attributes (e.g., make sure your
+:doc:`type testing </config/attributes>` of your configuration attributes (e.g., make sure your
 ``axis`` parameter is a positive integer). We will see in the following sections how
 to create your class configuration attributes.
 

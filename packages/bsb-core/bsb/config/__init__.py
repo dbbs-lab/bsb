@@ -48,6 +48,7 @@ from ._make import (
     walk_nodes,
 )
 from .parsers import get_configuration_parser, get_configuration_parser_classes
+from .refs import Reference
 
 if typing.TYPE_CHECKING:
     from ._config import Configuration
@@ -248,6 +249,7 @@ __all__ = [
     "Configuration",
     "ConfigurationAttribute",
     "Distribution",
+    "Reference",
     "after",
     "attr",
     "before",

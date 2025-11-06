@@ -49,31 +49,42 @@ based on a single density value. Let's imagine now that you want to describe the
 distribution of the cell type spatial density for each voxel within your partition.
 This can be achieved with the :ref:`NrrdVoxels <voxel-partition>` partition.
 
-To do so, you should first attach your NRRD volumetric density file(s) to the partition with either
-the :guilabel:`source` or :guilabel:`sources` blocks.
-Then, label the file(s) with the :guilabel:`keys` list block and refer to the :guilabel:`keys`
-in the :guilabel:`cell_types` with :guilabel:`density_key`:
+To do so, you should first attach your NRRD volumetric density file(s) to the partition with
+the :guilabel:`sources` block. ``NrrdVoxels`` partition files can either be directly declared
+inside the node or be a reference to the :guilabel:`files` block of the `Configuration`
+(see :ref:`cfg_files`).
+Then in the :guilabel:`cell_types`, refer to the file(s) in :guilabel:`sources` with
+:guilabel:`density_key`:
 
 .. tab-set-code::
 
     .. code-block:: json
 
       {
+        "files": {
+            "first_file": {
+                "type": "nrrd",
+                "file": "first_cell_type_density.nrrd"
+            },
+            "second_file": {
+                "type": "nrrd",
+                "file": "second_cell_type_density.nrrd"
+            }
+        },
         "partitions": {
           "declive": {
             "type": "nrrd",
-            "sources": ["first_cell_type_density.nrrd",
-                        "second_cell_type_density.nrrd"],
-            "keys": ["first_cell_type_density",
-                     "second_cell_type_density"]
-            "voxel_size": 25,
+            "sources": {
+                "first_key": "first_file",
+                "second_key": "second_file"
+            }
           }
         }
         "cell_types": {
           "first_cell_type": {
             "spatial": {
               "radius": 10.0,
-              "density_key": "first_cell_type_density"
+              "density_key": "first_key"
             },
             "plotting": {
               "display_name": "First Cell Type",
@@ -84,7 +95,7 @@ in the :guilabel:`cell_types` with :guilabel:`density_key`:
           "second_cell_type": {
             "spatial": {
               "radius": 5.0,
-              "density_key": "second_cell_type_density"
+              "density_key": "second_key"
             },
             "plotting": {
               "display_name": "Second Cell Type",
@@ -98,31 +109,39 @@ in the :guilabel:`cell_types` with :guilabel:`density_key`:
     .. code-block:: python
 
 
+        config.files.add(
+            "first_file",
+            type="nrrd",
+            file="first_cell_type_density.nrrd",
+        )
+        config.files.add(
+            "second_file",
+            type="nrrd",
+            file="second_cell_type_density.nrrd",
+        )
         config.partitions.add(
             "declive",
             type="nrrd",
-            sources= ["first_cell_type_density.nrrd",
-                        "second_cell_type_density.nrrd"],
-            keys= ["first_cell_type_density",
-                 "second_cell_type_density"],
-            voxel_size=25,
-
+            sources= {
+                "first_key": "first_file",
+                "second_key": "second_file",
+            },
         )
 
         config.cell_types.add(
             "first_cell_type",
-            spatial=dict(radius=10, density_key="first_cell_type_density")
+            spatial=dict(radius=10, density_key="first_key")
             plotting=dict(display_name="First Cell Type", color="pink",opacity="1.0")
         )
         config.cell_types.add(
             "second_cell_type",
-            spatial=dict(radius=10, density_key="second_cell_type_density")
+            spatial=dict(radius=10, density_key="second_key")
             plotting=dict(display_name="First Cell Type", color="#0000FF",opacity="0.5")
         )
 
 The NRRD files should contain voxel based volumetric density in unit of cells / voxel volume,
-where the voxel volume is in cubic unit of :guilabel:`voxel_size`.
-i.e., if :guilabel:`voxel_size` is in µm then the density file is in cells/µm^3.
+where the voxel volume is in cubic unit of circuit partition dimensions.
+i.e., if the circuit dimensions are in µm then the density file is in cells/µm^3.
 This implementation corresponds to an atlas-based reconstruction and you can find an example of
 a BSB configuration using the Allen Atlas in :doc:`this section </examples/atlas_placement>` .
 

@@ -4,6 +4,7 @@ An attrs-inspired class annotation system, but my A stands for amateuristic.
 
 import builtins
 import contextlib
+from collections.abc import Mapping
 from functools import wraps
 
 import errr
@@ -12,9 +13,11 @@ from ..exceptions import (
     BootError,
     CastError,
     CfgReferenceError,
-    NoReferenceAttributeSignal,
+    ReferenceLambdaError,
     RequirementError,
 )
+from ..profiling import _instrument_node
+from ..reporting import warn
 from ._compile import _wrap_reserved
 from ._hooks import run_hook
 from ._make import (
@@ -76,6 +79,7 @@ def node(node_cls, root=False, dynamic=False, pluggable=False):
     make_tree(node_cls)
     make_dictable(node_cls)
     make_copyable(node_cls)
+    _instrument_node(node_cls)
 
     return node_cls
 
@@ -340,10 +344,14 @@ def file(**kwargs):
 
 
 def _setattr(instance, name, value):
+    """Canonical way to set a configuration attribute value on a configuration node."""
     instance.__dict__["_" + name] = value
 
 
 def _getattr(instance, name):
+    """
+    Canonical way to get a configuration attribute value from a configuration node.
+    """
     try:
         return instance.__dict__["_" + name]
     except KeyError as e:
@@ -351,7 +359,79 @@ def _getattr(instance, name):
 
 
 def _hasattr(instance, name):
+    """
+    Canonical way to check the presence of a configuration attribute
+    on a configuration node.
+    """
     return "_" + name in instance.__dict__
+
+
+def _hasref(remote, key):
+    """
+    Canonical way to check the presence of a configuration reference in a remote node.
+    """
+    if not hasattr(remote, "__getitem__"):
+        raise ReferenceLambdaError(
+            f"Could check for references in {remote}."
+            " Remote does not implement __getitem__."
+            " Please add a `has_ref` method to your reference lambda."
+        )
+
+    try:
+        _ = remote[key]
+        return True
+    except (KeyError, IndexError, TypeError):
+        # Catch errors stemming from invalid key/index types
+        return False
+
+
+def _getref(remote, key):
+    """Canonical way to retrieve a configuration reference from a remote node."""
+    if not hasattr(remote, "__getitem__"):
+        raise ReferenceLambdaError(
+            f"Could not retrieve reference from {remote}."
+            " Remote does not appear to be subscriptable."
+            " Please add a `get_ref` method to your reference lambda."
+        )
+
+    return remote[key]
+
+
+def _getrefname(remote):
+    """Canonical way to retrieve a the name of a remote node."""
+    try:
+        return remote.get_node_name()
+    except TypeError:
+        raise ReferenceLambdaError(
+            f"Could not retrieve name from {remote}."
+            " Please add a `get_ref_name` method to your reference lambda."
+        ) from None
+
+
+def _hasrefval(remote, value):
+    """Canonical way to check the presence of a referenced value in a remote node."""
+    if hasattr(remote, "values") and callable(remote.values):
+        if not isinstance(remote, Mapping):  # pragma: nocover
+            warn(
+                f"Ambiguous reference container {remote}. Please convert it to a mapping"
+                " type, or implement `has_ref_value` on your reference lambda."
+            )
+        try:
+            return value in remote.values()
+        except Exception:
+            return False
+    elif hasattr(remote, "__contains__"):
+        try:
+            return value in remote
+        except Exception:
+            return False
+    elif hasattr(remote, "_config_attrs"):
+        return value in remote._config_attrs
+    else:
+        raise ReferenceLambdaError(
+            f"Could not determine method to check for values in {remote}."
+            " Please add a `has_ref_value` method to your reference lambda."
+        )
 
 
 def _get_root(obj):
@@ -436,9 +516,13 @@ class ConfigurationAttribute:
         self.key = key
         self.default = default
         self.call_default = call_default
-        self.type = self._set_type(type, key)
         self.unset = unset
         self.hint = hint
+        self._type = self._set_type(type, key)
+
+    @builtins.property
+    def type(self):
+        return self._type
 
     def __set_name__(self, owner, name):
         self.attr_name = name
@@ -451,15 +535,9 @@ class ConfigurationAttribute:
     def fset(self, instance, value):
         return _setattr(instance, self.attr_name, value)
 
-    def __set__(self, instance, value):
-        if _hasattr(instance, self.attr_name):
-            ex_value = _getattr(instance, self.attr_name)
-            _unset_nodes(ex_value)
-        if value is None:
-            # Don't try to cast None to a value of the attribute type.
-            return self.fset(instance, None)
+    def _cast(self, instance, value):
         try:
-            value = self.type(value, _parent=instance, _key=self.attr_name)
+            return self.type(value, _parent=instance, _key=self.attr_name)
         except ValueError:
             # This value error should only arise when users are manually setting
             # attributes in an already bootstrapped config tree.
@@ -477,6 +555,15 @@ class ConfigurationAttribute:
                 instance,
                 self.attr_name,
             ) from e
+
+    def __set__(self, instance, value):
+        if _hasattr(instance, self.attr_name):
+            ex_value = _getattr(instance, self.attr_name)
+            _unset_nodes(ex_value)
+        if value is None:
+            # Don't try to cast None to a value of the attribute type.
+            return self.fset(instance, None)
+        value = self._cast(instance, value)
         self.flag_dirty(instance)
         # The value was cast to its intended type and the new value can be set.
         self.fset(instance, value)
@@ -595,6 +682,13 @@ class cfglist(builtins.list):
         super().extend(items)
         self._postset(items)
 
+    def values(self):
+        """
+        This stub helps cfglist behave like a cfgdict
+        when it is used in the reference system
+        """
+        return self
+
     def __setitem__(self, index, item):
         if isinstance(index, int):
             ex_items = [self[index]]
@@ -646,7 +740,8 @@ class cfglist(builtins.list):
     def _postset(self, items):
         root = _strict_root(self)
         if root is not None:
-            _resolve_references(root)
+            for _ in items:
+                _resolve_references(root)
         if _is_booted(root):
             for item in items:
                 _boot_nodes(item, root.scaffold)
@@ -885,29 +980,49 @@ class ConfigurationReferenceAttribute(ConfigurationAttribute):
         populate=None,
         backref=None,
         pop_unique=True,
+        reference_only=True,
         **kwargs,
     ):
         self.ref_lambda = reference
         self.ref_key = key
-        self.ref_type = ref_type
+        self._ref_type = ref_type
         self.populate = populate
         self.backref = backref
         self.pop_unique = pop_unique
+        self.reference_only = reference_only
         # No need to cast to any types: the reference we fetch will already have been cast
-        if "type" in kwargs:  # pragma: nocover
-            del kwargs["type"]
+        if "type" in kwargs:
+            raise AttributeError(
+                "Reference attributes must set ref_type instead of type."
+            )
         super().__init__(**kwargs)
+        # Erase the prematurely set type information from the parent init,
+        # and override it later from the `type` property.
+        self._type = None
 
-    def get_ref_key(self):
+    @builtins.property
+    def type(self):
+        if self._type is None:
+            self._type = self._set_type(self.ref_type, self.key)
+        return self._type
+
+    @builtins.property
+    def ref_type(self):
+        def missing_ref_type(*args, **kwargs):
+            raise CastError("Reference attribute cannot cast values. Set ref_type.")
+
+        return self._ref_type or getattr(self.ref_lambda, "type", missing_ref_type)
+
+    def _get_ref_key(self):
         return self.ref_key or (self.attr_name + "_reference")
 
     def __set__(self, instance, value, key=None):
-        if self.is_reference_value(value):
+        if value is None:
             _setattr(instance, self.attr_name, value)
         else:
-            setattr(instance, self.get_ref_key(), value)
+            setattr(instance, self._get_ref_key(), value)
             if self.should_resolve_on_set(instance):
-                if hasattr(instance, "_config_root"):  # pragma: nocover
+                if getattr(instance, "_config_root", None) is None:
                     raise CfgReferenceError(
                         "Can't autoresolve references without a config root."
                     )
@@ -917,16 +1032,6 @@ class ConfigurationReferenceAttribute(ConfigurationAttribute):
                     self.__ref__(instance, instance._config_root),
                 )
 
-    def is_reference_value(self, value):
-        if value is None:
-            return True
-        if self.ref_type is not None:
-            return isinstance(value, self.ref_type)
-        elif hasattr(self.ref_lambda, "is_ref"):
-            return self.ref_lambda.is_ref(value)
-        else:
-            return not isinstance(value, str)
-
     def should_resolve_on_set(self, instance):
         return (
             hasattr(instance, "_config_resolve_on_set")
@@ -934,28 +1039,63 @@ class ConfigurationReferenceAttribute(ConfigurationAttribute):
         )
 
     def __ref__(self, instance, root):
-        try:
-            remote, remote_key = self._prepare_self(instance, root)
-        except NoReferenceAttributeSignal:
+        self._prepare_self(instance, root)
+        local_attr = self._get_ref_key()
+        if not hasattr(instance, local_attr):
             return None
-        return self.resolve_reference(instance, remote, remote_key)
+        return self.resolve_reference(instance, getattr(instance, local_attr))
 
     def _prepare_self(self, instance, root):
         instance._config_root = root
         instance._config_resolve_on_set = True
-        remote = self.ref_lambda(root, instance)
-        local_attr = self.get_ref_key()
-        if not hasattr(instance, local_attr):
-            raise NoReferenceAttributeSignal()
-        return remote, getattr(instance, local_attr)
 
-    def resolve_reference(self, instance, remote, key):
-        if key not in remote:
-            raise CfgReferenceError(
-                f"Reference '{key}' of {self.get_node_name(instance)} "
-                f"does not exist in {remote.get_node_name()}"
-            )
-        value = remote[key]
+    def resolve_reference(self, instance, input_):
+        # Retrieve the remote object in which we will look up references.
+        remote = self.ref_lambda(instance._config_root, instance)
+
+        # Determine the behavior of this reference lambda: how are we supposed
+        # to look up information on the remote object? We fall back to the canonical
+        # methods _hasref, _hasrefval, _getref, and _getrefname.
+        has_ref = getattr(self.ref_lambda, "has_ref", _hasref)
+        has_value = getattr(self.ref_lambda, "has_ref_value", _hasrefval)
+        get_ref = getattr(self.ref_lambda, "get_ref", _getref)
+        get_ref_name = getattr(self.ref_lambda, "get_ref_name", _getrefname)
+
+        # Assemble the common part of the upcoming error message
+        error_msg = (
+            f"Reference '{input_}' of {self.get_node_name(instance)} "
+            f"does not exist in {get_ref_name(remote)}"
+        )
+
+        # What type of input value are we dealing with?
+        if has_ref(remote, input_):
+            # Turned out to be a reference key, which we look up in the remote object.
+            value = get_ref(remote, input_)
+        elif has_value(remote, input_):
+            # Turned out to be one of the values present in the remote object,
+            # so it refers to itself.
+            value = input_
+        elif not self.reference_only:
+            # This reference attribute is not "reference only", i.e., the user is allowed
+            # to pass novel values in and the reference attribute will behave like a
+            # normal configuration attribute and cast the value to the attribute type.
+            try:
+                value = self._cast(instance, input_)
+                value._config_parent = instance
+            except CastError:
+                raise CfgReferenceError(
+                    f"{error_msg} and could not be cast to {self.ref_type}."
+                ) from None
+        else:
+            # It's neither a reference nor a value, and we're not allowed to pass novel
+            # values, so we raise an error.
+            raise CfgReferenceError(error_msg)
+
+        # Now that the resolved value has been established, we might need to notify other
+        # pieces of the configuration about the reference;
+        # * `populate` is used to add this reference to a "population" of references
+        #    on the remote object.
+        # * `backref` is used to set the backref attribute on the remote object.
         if self.populate:
             self.populate_reference(instance, value)
         if self.backref:
@@ -984,92 +1124,153 @@ class ConfigurationReferenceAttribute(ConfigurationAttribute):
         else:
             setattr(reference, self.backref, instance)
 
+    def _get_config_key(self, val, instance):
+        return (
+            val._config_key
+            if val not in self.ref_lambda(instance._config_root, instance)
+            and hasattr(val, "_config_key")
+            else val
+        )
+
     def tree(self, instance):
-        val = getattr(instance, self.get_ref_key(), None)
-        if self.is_reference_value(val) and hasattr(val, "_config_key"):
-            val = val._config_key
-        return val
+        val = getattr(instance, self._get_ref_key(), None)
+        return self._get_config_key(val, instance)
+
+
+class cfgreflist(cfglist):
+    """
+    cfglist that stores both the list of node references and their resolved values.
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._reflist = []
+
+    def append(self, item):
+        self.insert(-1, item)
+        return self[-1]
+
+    def insert(self, index, item):
+        self._reflist.insert(index, item)
+        self._postset((item,))
+        self._reindex(index)
+
+    def pop(self, index=-1):
+        self._reflist.pop(index)
+        ex_item = builtins.list.pop(self, index)
+        if (
+            hasattr(self, "_config_parent")
+            and ex_item._config_parent == self._config_parent
+        ):
+            _unset_nodes(ex_item)
+        self._reindex(index)
+        return ex_item
+
+    def clear(self):
+        self._reflist.clear()
+        for node in self:
+            if (
+                hasattr(self, "_config_parent")
+                and node._config_parent == self._config_parent
+            ):
+                _unset_nodes(node)
+        builtins.list.clear(self)
+
+    def sort(self, **kwargs):
+        super().sort(**kwargs)
+        self._reflist = [self._reflist[i] for i in [ref._config_key for ref in self]]
+        self._reindex(0)
+
+    def reverse(self):
+        self._reflist.reverse()
+        builtins.list.reverse(self)
+        self._reindex(0)
+
+    def extend(self, items):
+        self._reflist.extend(items)
+        self._postset(items)
+
+    def __setitem__(self, index, item):
+        self._reflist[index] = item
+        if isinstance(index, int):
+            ex_items = [self[index]]
+            items = [item]
+            reindex_from = None
+        else:
+            ex_items = self[index]
+            reindex_from = index.indices(len(self))[0]
+            items = item
+        for ex_item in ex_items:
+            if (
+                hasattr(self, "_config_parent")
+                and ex_item._config_parent == self._config_parent
+            ):
+                _unset_nodes(ex_item)
+        self._postset(items)
+        if reindex_from is not None:
+            self._reindex(reindex_from)
 
 
 class ConfigurationReferenceListAttribute(ConfigurationReferenceAttribute):
     def __set__(self, instance, value, key=None):
+        _cfglist = cfgreflist()
+        _cfglist._config_parent = instance
+        _cfglist._config_attr = self
+        _cfglist._elem_type = self.ref_type
+        _cfglist.extend(builtins.list())
+        _setattr(instance, self.attr_name, _cfglist)
+        self.flag_dirty(instance)
         if value is None:
-            setattr(instance, self.get_ref_key(), [])
-            _setattr(instance, self.attr_name, [])
             return
         try:
-            remote_keys = builtins.list(iter(value))
+            _cfglist._reflist = builtins.list(iter(value))
         except TypeError:
             raise CfgReferenceError(
                 f"Reference list '{value}' of "
                 f"{self.get_node_name(instance)} is not iterable."
             ) from None
         # Store the referring values to the references key.
-        setattr(instance, self.get_ref_key(), remote_keys)
         if self.should_resolve_on_set(instance):
-            remote = self.ref_lambda(instance._config_root, instance)
-            refs = self.resolve_reference_list(instance, remote, remote_keys)
-            _setattr(instance, self.attr_name, refs)
+            self.resolve_reference_list(instance)
 
     def __get__(self, instance, owner):
         if instance is None:
             return self
-        if self.should_resolve_on_set(instance):
-            return super().__get__(instance, owner)
-        else:
-            return getattr(instance, self.get_ref_key())
-
-    def get_ref_key(self):
-        return self.ref_key or (self.attr_name + "_references")
+        result = super().__get__(instance, owner)
+        return result if self.should_resolve_on_set(instance) else result._reflist
 
     def __ref__(self, instance, root):
-        try:
-            remote, remote_keys = self._prepare_self(instance, root)
-        except NoReferenceAttributeSignal:  # pragma: nocover
-            return None
-        return self.resolve_reference_list(instance, remote, remote_keys)
+        self._prepare_self(instance, root)
+        return self.resolve_reference_list(instance)
 
-    def resolve_reference_list(self, instance, remote, remote_keys):
-        refs = []
-        for remote_key in remote_keys:
-            if not self.is_reference_value(remote_key):
-                reference = self.resolve_reference(instance, remote, remote_key)
-            else:
-                reference = remote_key
-                # Usually resolve_reference also populates, but since we have our ref
-                # already we skip it and should call populate_reference ourselves.
-                if self.populate:
-                    self.populate_reference(instance, reference)
-            refs.append(reference)
+    def resolve_reference_list(self, instance):
+        refs = getattr(instance, self.attr_name)
+        # Do not use cfglist.clear as it will also delete the list of refs
+        builtins.list.clear(refs)
+        for i, remote_key in enumerate(refs._reflist):
+            reference = self.resolve_reference(instance, remote_key)
+            # the item is already resolved so we just append it.
+            reference._config_index = i
+            builtins.list.append(refs, reference)
         return refs
 
     def __populate__(self, instance, value, unique_list=False):
-        has_refs = hasattr(instance, self.get_ref_key())
         has_pop = hasattr(instance, self.attr_name)
         if has_pop:
             population = getattr(instance, self.attr_name)
-        if has_refs:
-            references = getattr(instance, self.get_ref_key())
-        is_new = (not has_pop or value not in population) and (
-            not has_refs or value not in references
-        )
+            references = population._reflist
+        is_new = (not has_pop or value not in population) and (value not in references)
         should_pop = has_pop and (not unique_list or is_new)
-        should_ref = should_pop or not has_pop
         if should_pop:
-            population.append(value)
-        if should_ref:
-            if not has_refs:
-                setattr(instance, self.get_ref_key(), [value])
-            else:
-                references.append(value)
+            # use list.append as cfglist.append will call resolve_reference
+            # creating an infinite loop
+            builtins.list.append(population, value)
+            references.append(value)
 
     def tree(self, instance):
-        val = getattr(instance, self.get_ref_key(), [])
-        val = [v._config_key if self._tree_should_unreference(v) else v for v in val]
+        val = getattr(getattr(instance, self.attr_name, None), "_reflist", [])
+        val = [self._get_config_key(v, instance) for v in val]
         return val
-
-    def _tree_should_unreference(self, value):
-        return self.is_reference_value(value) and hasattr(value, "_config_key")
 
 
 class ConfigurationAttributeSlot(ConfigurationAttribute):

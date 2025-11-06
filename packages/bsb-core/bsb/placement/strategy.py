@@ -10,7 +10,6 @@ from ..config import refs, types
 from ..config._attrs import cfgdict
 from ..exceptions import DistributorError, EmptySelectionError
 from ..mixins import HasDependencies
-from ..profiling import node_meter
 from ..reporting import warn
 from ..storage._chunks import Chunk
 from ..voxels import VoxelSet
@@ -23,7 +22,7 @@ if typing.TYPE_CHECKING:
     from ..topology.partition import Partition
 
 
-@config.dynamic(attr_name="strategy", required=True)
+@config.dynamic(attr_name="strategy", required=True, auto_classmap=True)
 class PlacementStrategy(abc.ABC, HasDependencies):
     """
     Quintessential interface of the placement module.
@@ -42,11 +41,6 @@ class PlacementStrategy(abc.ABC, HasDependencies):
         type=DistributorsNode, default=dict, call_default=True
     )
     indicator_class = PlacementIndicator
-
-    def __init_subclass__(cls, **kwargs):
-        super(cls, cls).__init_subclass__(**kwargs)
-        # Decorate subclasses to measure performance
-        node_meter("place")(cls)
 
     def __hash__(self):
         return id(self)
@@ -68,7 +62,7 @@ class PlacementStrategy(abc.ABC, HasDependencies):
         return f"'{config_name}', placing {ct_names}{part_str}"
 
     @abc.abstractmethod
-    def place(self, chunk, indicators):
+    def place(self, chunk, indicators):  # pragma: nocover
         """
         Central method of each placement strategy. Given a chunk, should fill that chunk
         with cells by calling the scaffold's (available as ``self.scaffold``)
@@ -95,7 +89,7 @@ class PlacementStrategy(abc.ABC, HasDependencies):
             if selector_error:
                 # Starting from Python 3.11, even though we raise from None, the original
                 # EmptySelectionError somehow still gets pickled and contains unpicklable
-                # elements. So we work around by raising here, outside of the exception
+                # elements. So we work around by raising here, outside the exception
                 # context.
                 raise DistributorError(
                     "Morphology distribution couldn't find any"

@@ -16,7 +16,7 @@ dependencies = [
   "packaging~=24.0",
   "errr~=1.2",
   "numpy~=1.21",
-  "neuron-nightly==9.0a1.dev1485; sys_platform != 'win32'"
+  "NEURON>=9.0; sys_platform != 'win32'",
 ]
 
   [[project.authors]]
@@ -61,7 +61,10 @@ branch = true
 source = [ "nrn_patch" ]
 
 [tool.coverage.report]
-exclude_lines = [ "if TYPE_CHECKING:" ]
+exclude_lines = [
+  "if typing.TYPE_CHECKING:",
+  "pragma: nocover"
+]
 show_missing = true
 
 [tool.ruff]

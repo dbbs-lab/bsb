@@ -110,6 +110,16 @@ List of options
 
   * *env*: ``BSB_FOOTGUN_MODE``
 
+* ``quiet``: Quiet the progress report prints during the reconstruction phases.
+
+  * *script*: ``quiet``
+
+  * *cli*: ``q``, ``quiet``
+
+  * *project*: quiet.
+
+  * *env*: ``BSB_QUIET``
+
 * ``version``: Tells you the BSB version. **readonly**
 
   * *script*: ``version``
@@ -140,6 +150,27 @@ List of options
   * *project*: ``sim_console_progress``
 
   * *env*: ``BSB_SIM_PROGRESS``
+
+* ``profiling``: Enables the profiling of the BSB function calls during runtime.
+
+  * *script*: ``profiling``
+
+  * *cli*: ``pr``, ``profiling``
+
+  * *project*: profiling.
+
+  * *env*: ``BSB_PROFILING``
+
+* ``debug_pool``: Set the BSB logging system in debug mode during reconstruction.
+
+
+  * *script*: ``debug_pool``
+
+  * *cli*: ``db``, ``debug_pool``
+
+  * *project*: debug_pool.
+
+  * *env*: ``BSB_DEBUG_POOL``
 
 .. _project_settings:
 

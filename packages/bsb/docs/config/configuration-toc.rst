@@ -8,5 +8,5 @@ Configuration
 
    files
    nodes
-   types
+   attributes
    reference

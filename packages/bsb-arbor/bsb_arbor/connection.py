@@ -1,6 +1,6 @@
 import arbor
 import tqdm
-from bsb import ConnectionModel, config
+from bsb import ConnectionModel, config, options
 
 
 class Receiver:
@@ -53,7 +53,9 @@ class ArborConnection(ConnectionModel):
             gj_on_gid.setdefault(conn.from_id, []).append(conn)
 
     def create_connections_on(self, conns_on_gid, conns, pop_pre, pop_post):
-        for pre_loc, post_loc in tqdm.tqdm(conns, total=len(conns), desc=self.name):
+        for pre_loc, post_loc in tqdm.tqdm(
+            conns, total=len(conns), desc=self.name, disable=options.verbosity < 2
+        ):
             conns_on_gid[post_loc[0] + pop_post.offset].append(
                 Receiver(self, pre_loc[0] + pop_pre.offset, pre_loc[1:], post_loc[1:])
             )

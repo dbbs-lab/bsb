@@ -22,10 +22,12 @@ class PlacementIndications:
     count_ratio: float = config.attr(type=float)
     local_count_ratio: float = config.attr(type=float)
     density_ratio: float = config.attr(type=float)
-    relative_to: "CellType" = config.ref(refs.cell_type_ref)
+    relative_to: "CellType" = config.ref(refs.cell_type_ref, hint=None)
     count: int = config.attr(type=int)
     geometry: dict = config.dict(type=types.any_())
-    morphologies: cfglist[MorphologySelector] = config.list(type=MorphologySelector)
+    morphologies: cfglist[MorphologySelector] = config.list(
+        type=MorphologySelector, hint=[]
+    )
     density_key: str = config.attr(type=str)
 
 
@@ -74,7 +76,7 @@ class PlacementIndicator:
     def guess(self, chunk=None, voxels=None):
         """
         Estimate the count of cell to place based on the cell_type's PlacementIndications.
-        Float estimates are converted to int using an acceptance- rejection method.
+        Float estimates are converted to int using an acceptance-rejection method.
 
         :param chunk: if provided, will estimate the number of cell within the Chunk.
         :type chunk: bsb.storage._chunks.Chunk
@@ -153,7 +155,17 @@ class PlacementIndicator:
                 )
         if density_key is not None:
             if voxels is None:
-                raise PlacementError("Can't guess voxel density without a voxelset.")
+                estimate = 0
+                for p in self.partitions:
+                    try:
+                        estimate += np.sum(
+                            self._estim_for_voxels(p.to_voxels(), density_key)
+                        )
+                    except IndexError as _:
+                        raise PlacementError(
+                            f"Partition {p} voxelset does not have "
+                            f"the density key {density_key}"
+                        ) from None
             elif density_key in voxels.data_keys:
                 estimate = self._estim_for_voxels(voxels, density_key)
             else:

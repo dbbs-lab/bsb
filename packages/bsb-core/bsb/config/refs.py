@@ -11,12 +11,34 @@ node as arguments, and returns another node in the configuration object::
 More advanced usage of references will include custom reference errors.
 """
 
+import abc
 
-class Reference:  # pragma: nocover
+
+class Reference(abc.ABC):  # noqa: B024
+    """
+    Interface to create reference to pass to `bsb.config.ref`
+    or `bsb.config.reflist`
+    """
+
     def __call__(self, root, here):
+        """
+        Function to retrieve the location of the reference
+
+        :param root: root of the configuration object
+        :param here: current node in the configuration object
+        """
         return here
 
     def up(self, here, to=None):
+        """
+        Get the parent node of the configuration node ``here``.
+        If ``to`` is provided, will search ``here``'s ascendants
+        until one matches ``to``'s type.
+
+        :param here: starting node
+        :param to: type of the ascendant to find
+        :return: The first matching parent node of ``here``
+        """
         if to is None:
             return here._config_parent
         while not isinstance(here, to):
@@ -26,45 +48,75 @@ class Reference:  # pragma: nocover
                 return None
         return here
 
+    @property
+    @abc.abstractmethod
+    def type(self):  # pragma: nocover
+        """
+        Return the type of the reference
+        """
+        pass
+
+
+class FileReference(Reference):
+    def __call__(self, root, here):
+        return root.files
+
+    @property
+    def type(self):
+        from ..storage._files import FileDependencyNode
+
+        return FileDependencyNode
+
+
+class VoxelDatasetReference(Reference):
+    def __call__(self, root, here):
+        result = root.files.copy()
+        to_remove = []
+        for k in iter(result):
+            if not isinstance(result[k], self.type):
+                to_remove.append(k)
+        for k in to_remove:
+            del result[k]
+        return result
+
+    @property
+    def type(self):
+        from ..storage._files import NrrdDependencyNode
+
+        return NrrdDependencyNode
+
 
 class CellTypeReference(Reference):
     def __call__(self, root, here):
         return root.cell_types
 
-    def is_ref(self, value):
+    @property
+    def type(self):
         from ..cell_types import CellType
 
-        return isinstance(value, CellType)
-
-
-class ConnectionTypeReference(Reference):
-    def __call__(self, root, here):
-        return root.connectivity
-
-    def is_ref(self, value):
-        from ..connectivity import ConnectionStrategy
-
-        return isinstance(value, ConnectionStrategy)
+        return CellType
 
 
 class PartitionReference(Reference):
     def __call__(self, root, here):
         return root.partitions
 
-    def is_ref(self, value):
+    @property
+    def type(self):
         from ..topology import Partition
 
-        return isinstance(value, Partition)
+        return Partition
 
 
 class RegionReference(Reference):
     def __call__(self, root, here):
         return root.regions
 
-    def is_ref(self, value):
+    @property
+    def type(self):
         from ..topology import Region
 
-        return isinstance(value, Region)
+        return Region
 
 
 class RegionalReference(Reference):
@@ -73,30 +125,34 @@ class RegionalReference(Reference):
         merged.update(root.partitions)
         return merged
 
-    def is_ref(self, value):
+    @property
+    def type(self):
         from ..topology import Partition, Region
+        from .types import or_
 
-        return isinstance(value, Region | Partition)
+        return or_(Partition, Region)
 
 
 class PlacementReference(Reference):
     def __call__(self, root, here):
         return root.placement
 
-    def is_ref(self, value):
+    @property
+    def type(self):
         from ..placement import PlacementStrategy
 
-        return isinstance(value, PlacementStrategy)
+        return PlacementStrategy
 
 
 class ConnectivityReference(Reference):
     def __call__(self, root, here):
         return root.connectivity
 
-    def is_ref(self, value):
+    @property
+    def type(self):
         from ..connectivity import ConnectionStrategy
 
-        return isinstance(value, ConnectionStrategy)
+        return ConnectionStrategy
 
 
 class SimCellModelReference(Reference):
@@ -106,14 +162,16 @@ class SimCellModelReference(Reference):
         sim = self.up(here, Simulation)
         return sim.cell_models
 
-    def is_ref(self, value):
+    @property
+    def type(self):
         from ..simulation.cell import CellModel
 
-        return isinstance(value, CellModel)
+        return CellModel
 
 
+file_ref = FileReference()
+vox_dset_ref = VoxelDatasetReference()
 cell_type_ref = CellTypeReference()
-conn_type_ref = ConnectionTypeReference()
 partition_ref = PartitionReference()
 placement_ref = PlacementReference()
 connectivity_ref = ConnectivityReference()
@@ -123,8 +181,9 @@ sim_cell_model_ref = SimCellModelReference()
 
 __all__ = [
     "Reference",
+    "file_ref",
+    "vox_dset_ref",
     "cell_type_ref",
-    "conn_type_ref",
     "partition_ref",
     "placement_ref",
     "connectivity_ref",

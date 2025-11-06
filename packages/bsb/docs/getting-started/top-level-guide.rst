@@ -81,12 +81,13 @@ Configuration
 =============
 
 The ``Configuration`` object is organized as a hierarchical tree.
-From the root, the main blocks branch off, consisting of nine main components:
+From the root, the main blocks branch off, consisting of ten main components:
 
 * :guilabel:`network`
 * :guilabel:`storage`
 * :guilabel:`regions`
 * :guilabel:`partitions`
+* :guilabel:`files`
 * :guilabel:`morphologies`
 * :guilabel:`cell_types`
 * :guilabel:`placement`

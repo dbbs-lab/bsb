@@ -42,7 +42,7 @@ class ImportPlacement(NotParallel, PlacementStrategy, abc.ABC, classmap_entry=No
         self.parse_source(indicators)
 
     @abc.abstractmethod
-    def parse_source(self, indicators):
+    def parse_source(self, indicators):  # pragma: nocover
         pass
 
 

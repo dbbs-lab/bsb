@@ -10,14 +10,19 @@
     "z": 11400,
     "chunk_size": 250
   },
+  "files": {
+    "my_cell_density": {
+      "type": "nrrd",
+      "file": "data/my_cell_density.nrrd"
+    }
+  },
   "regions": {
     "brain": {"children": ["declive"]}
   },
   "partitions": {
     "declive": {
       "type": "allen",
-      "source": "data/my_cell_density.nrrd",
-      "keys": ["my_cell_density"],
+      "sources": ["my_cell_density"],
       "struct_name": "DEC"
     }
   },

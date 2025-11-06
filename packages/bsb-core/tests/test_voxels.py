@@ -1,15 +1,41 @@
+import os
 import random
 import unittest
 from itertools import chain as _ic
 from itertools import count as _ico
 
-import bsb_test
+import nrrd
 import numpy as np
+import voxcell
+from bsb_test import (
+    DictTestCase,
+    NetworkFixture,
+    NumpyTestCase,
+    RandomStorageFixture,
+    get_data_path,
+)
 
-from bsb import Branch, Chunk, EmptyVoxelSetError, Morphology, VoxelData, VoxelSet
+from bsb import (
+    MPI,
+    Branch,
+    Chunk,
+    Configuration,
+    EmptyVoxelSetError,
+    Morphology,
+    VoxelData,
+    VoxelSet,
+)
+from bsb.voxels import (
+    crosses_voxel,
+    is_within,
+    voxel_data_of,
+    voxel_orient,
+    voxel_rotation_of,
+)
+from tests.test_topology import skip_test_allen_api
 
 
-class TestVoxelSet(bsb_test.NumpyTestCase, unittest.TestCase):
+class TestVoxelSet(NumpyTestCase, unittest.TestCase):
     def setUp(self):
         vs = VoxelSet
         self.regulars = [
@@ -559,3 +585,138 @@ class TestVoxelData(unittest.TestCase):
 
     def test_getitem(self):
         VoxelData(np.array([1]), keys=["alpha"])[0]
+
+
+@unittest.skipIf(
+    skip_test_allen_api(),
+    "Allen API is down",
+)
+class TestNrrdDependencyNode(
+    RandomStorageFixture,
+    NetworkFixture,
+    NumpyTestCase,
+    DictTestCase,
+    unittest.TestCase,
+    engine_name="hdf5",
+):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        if MPI.get_rank() == 0:
+            dataset, h = nrrd.read(get_data_path("orientations", "toy_annotations.nrrd"))
+            h["sizes"][2] -= 1
+            dataset = dataset[:, :, :-1]
+            nrrd.write(
+                get_data_path("orientations", "bad_dataset.nrrd"), dataset, header=h
+            )
+        MPI.barrier()
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+        MPI.barrier()
+        if MPI.get_rank() == 0:
+            os.remove(get_data_path("orientations", "bad_dataset.nrrd"))
+
+    def setUp(self):
+        self.default_vector = np.array([0.0, -1.0, 0.0])
+        self.cfg = Configuration.default(
+            files={
+                "orientations": {
+                    "type": "nrrd",
+                    "file": get_data_path("orientations", "toy_orientations.nrrd"),
+                },
+                # second dataset to check different shapes but similar volume
+                "annotations": {
+                    "type": "nrrd",
+                    "file": get_data_path("orientations", "toy_annotations.nrrd"),
+                },
+                "other_resolution": {
+                    "type": "nrrd",
+                    "file": get_data_path("orientations", "toy_annotations.nrrd"),
+                    "voxel_size": 22,
+                },
+                "bad_dataset": {
+                    "type": "nrrd",
+                    "file": get_data_path("orientations", "bad_dataset.nrrd"),
+                },
+            },
+        )
+        super().setUp()
+        self.network.compile(clear=True)
+        self.annotations = self.network.configuration.files["annotations"]
+        self.resolution = 25.0
+        self.shape = np.array([10, 8, 8])
+        self.orientations = self.network.configuration.files["orientations"]
+
+    def test_getters(self):
+        self.assertAll(self.annotations.default_vector == self.default_vector)
+        self.assertEqual(self.annotations.voxel_size, self.resolution)
+        expected = {
+            "type": "int32",
+            "dimension": 3,
+            "space dimension": 3,
+            "sizes": self.shape,
+            "space directions": np.eye(3) * self.resolution,
+            "endian": "little",
+            "encoding": "gzip",
+            "space origin": np.array([0.0, 0.0, 0.0]),
+        }
+
+        self.assertDictEqual(expected, dict(self.annotations.get_header()))
+        self.assertIsInstance(self.annotations.load_object(), voxcell.VoxelData)
+
+    def test_positions_to_voxels(self):
+        position = np.array(
+            [5 * self.resolution - 0.01, 5 * self.resolution, (5 + 0.5) * self.resolution]
+        )
+        position2 = np.array([5, 5, 5])
+        predicted = np.array([4, 5, 5])
+        self.assertAll(predicted == self.annotations.voxel_of(position))
+        annotations = self.annotations.load_object().raw
+        self.assertTrue(is_within((self.shape - 1)[np.newaxis, ...], annotations))
+        self.assertFalse(is_within(self.shape[np.newaxis, ...], annotations))
+        self.assertFalse(is_within(np.array([[0, 0, -1]]), annotations))
+
+        self.assertTrue(crosses_voxel(predicted, position2))
+        self.assertFalse(crosses_voxel(position2, position2))
+
+    def test_voxel_orientation(self):
+        orientations = self.orientations.load_object().raw
+        self.assertAll(
+            np.isclose(
+                [-1, 0, 0],
+                voxel_data_of(np.array([[2, 2, 1]]), orientations),
+                atol=2e-1,
+            )
+        )
+        with self.assertRaises(ValueError):
+            voxel_data_of(np.array([[9, 7, 8]]), orientations)
+        self.assertAll(
+            voxel_data_of(np.array([[2, 2, 1]]), orientations)
+            == voxel_orient(orientations, np.array([[2, 2, 1]]))
+        )
+        with self.assertRaises(ValueError):
+            voxel_orient(orientations, np.array([[0, 0, 0]]))
+
+    def test_voxel_rotation(self):
+        orientations = self.orientations.load_object().raw
+        tested_voxel = np.array([2, 2, 1])
+        point = tested_voxel * self.resolution
+        voxel = self.orientations.voxel_of(point)
+        self.assertAll(tested_voxel == voxel)
+        rotation = voxel_rotation_of(orientations, voxel).as_euler("xyz", degrees=True)
+        self.assertAll(np.isclose([0, 0, 90], rotation, atol=10))
+
+    def test_compatibility(self):
+        self.assertTrue(self.annotations.is_compatible(self.orientations))
+        self.assertFalse(
+            self.annotations.is_compatible(
+                self.network.configuration.files["bad_dataset"]
+            )
+        )
+        self.assertFalse(
+            self.annotations.is_compatible(
+                self.network.configuration.files["other_resolution"]
+            )
+        )

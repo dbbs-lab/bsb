@@ -1,7 +1,6 @@
 import typing
 from collections import deque
 from collections.abc import Iterable
-from typing import Optional
 
 import errr
 
@@ -280,7 +279,7 @@ class Point:
 
 class Branch:
     points: list[Point]
-    parent: Optional["Branch"]
+    parent: typing.Optional["Branch"]
     children: list["Branch"]
 
     def __init__(self):
@@ -290,7 +289,7 @@ class Branch:
 
 
 class CableBranch(Branch):
-    parent: Optional["CableBranch"]
+    parent: typing.Optional["CableBranch"]
     children: list["CableBranch"]
 
     def append(self, loc, coords, radius, labels):
@@ -314,7 +313,7 @@ class CableBranch(Branch):
 
 
 class UnitBranch(Branch):
-    parent: Optional["UnitBranch"]
+    parent: typing.Optional["UnitBranch"]
     children: list["UnitBranch"]
     labels: list[str]
     definition: CableType

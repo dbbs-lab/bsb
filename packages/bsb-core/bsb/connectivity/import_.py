@@ -39,7 +39,7 @@ class ImportConnectivity(NotParallel, ConnectionStrategy, abc.ABC, classmap_entr
         self.parse_source(pre, post)
 
     @abc.abstractmethod
-    def parse_source(self, pre, post):
+    def parse_source(self, pre, post):  # pragma: nocover
         pass
 
 

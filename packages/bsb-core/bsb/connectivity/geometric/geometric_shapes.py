@@ -280,7 +280,7 @@ class GeometricShape(abc.ABC):
         self.mbb_min, self.mbb_max = self.find_mbb()
 
     @abc.abstractmethod
-    def find_mbb(self):  # pragma: no cover
+    def find_mbb(self):  # pragma: nocover
         """
         Compute the minimum bounding box surrounding the shape.
         """
@@ -298,7 +298,7 @@ class GeometricShape(abc.ABC):
         return inside_mbox(points, self.mbb_min, self.mbb_max)
 
     @abc.abstractmethod
-    def get_volume(self):  # pragma: no cover
+    def get_volume(self):  # pragma: nocover
         """
         Get the volume of the geometric shape.
 
@@ -308,7 +308,7 @@ class GeometricShape(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def translate(self, t_vector: np.ndarray[float]):  # pragma: no cover
+    def translate(self, t_vector: np.ndarray[float]):  # pragma: nocover
         """
         Translate the geometric shape by the vector t_vector.
 
@@ -317,7 +317,7 @@ class GeometricShape(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def rotate(self, r_versor: np.ndarray[float], angle: float):  # pragma: no cover
+    def rotate(self, r_versor: np.ndarray[float], angle: float):  # pragma: nocover
         """
         Rotate all the shapes around r_versor, which is a versor passing through the
         origin, by the specified angle.
@@ -329,7 +329,7 @@ class GeometricShape(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def generate_point_cloud(self, npoints: int):  # pragma: no cover
+    def generate_point_cloud(self, npoints: int):  # pragma: nocover
         """
         Generate a point cloud made by npoints points.
 
@@ -342,7 +342,7 @@ class GeometricShape(abc.ABC):
     @abc.abstractmethod
     def check_inside(
         self, points: np.ndarray[float]
-    ) -> np.ndarray[bool]:  # pragma: no cover
+    ) -> np.ndarray[bool]:  # pragma: nocover
         """
         Check if the points given in input are inside the geometric shape.
 
@@ -354,7 +354,7 @@ class GeometricShape(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def wireframe_points(self, nb_points_1=30, nb_points_2=30):  # pragma: no cover
+    def wireframe_points(self, nb_points_1=30, nb_points_2=30):  # pragma: nocover
         """
         Generate a wireframe to plot the geometric shape. If a sampling of points is
         needed (e.g. for sphere), the wireframe is based on a grid of shape (nb_points_1,
@@ -1004,7 +1004,7 @@ class Sphere(GeometricShape, classmap_entry="sphere"):
         self.mbb_min += t_vector
         self.mbb_max += t_vector
 
-    def rotate(self, r_versor: np.ndarray[float], angle: float):  # pragma: no cover
+    def rotate(self, r_versor: np.ndarray[float], angle: float):  # pragma: nocover
         # It's a sphere, it's invariant under rotation!
         pass
 

@@ -4,7 +4,7 @@ import sys
 import nest
 import numpy as np
 import psutil
-from bsb import ConfigurationError, ConnectionModel, compose_nodes, config, types
+from bsb import ConfigurationError, ConnectionModel, compose_nodes, config, options, types
 from tqdm import tqdm
 
 from .distributions import nest_parameter
@@ -153,7 +153,12 @@ class NestConnection(compose_nodes(NestConnectionSettings, ConnectionModel)):
         def block_iter():
             iter = locals
             if comm.get_rank() == 0:
-                iter = tqdm(iter, desc="hyperblocks", file=sys.stdout)
+                iter = tqdm(
+                    iter,
+                    desc="hyperblocks",
+                    file=sys.stdout,
+                    disable=options.verbosity < 2,
+                )
             for local in iter:
                 inner_iter = cs.load_connections().as_globals().from_(local)
                 if comm.get_rank() == 0:
@@ -172,7 +177,9 @@ class NestConnection(compose_nodes(NestConnectionSettings, ConnectionModel)):
     def local_iterator(self, cs, comm):
         iter = cs.get_local_chunks("out")
         if comm.get_rank() == 0:
-            iter = tqdm(iter, desc="hyperblocks", file=sys.stdout)
+            iter = tqdm(
+                iter, desc="hyperblocks", file=sys.stdout, disable=options.verbosity < 2
+            )
         yield from (
             cs.load_connections().as_globals().from_(local).all() for local in iter
         )

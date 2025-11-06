@@ -76,7 +76,7 @@
       "options": {
         "commands": [
           "npx -y rimraf _build/iso-html/",
-          "uv run sphinx-build -b html . _build/iso-html"
+          "uv run sphinx-build -v -b html . _build/iso-html"
         ],
         "parallel": false,
         "cwd": "{projectRoot}/docs/"

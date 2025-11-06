@@ -6,12 +6,10 @@ import numpy as np
 from scipy.spatial.transform import Rotation
 
 from .. import config
-from .._util import rotation_matrix_from_vectors
-from ..config.types import ndarray
 from ..exceptions import EmptySelectionError
 from ..morphologies import MorphologySet, RotationSet
-from ..storage._files import NrrdDependencyNode
 from ..topology.partition import Partition
+from ..voxels import voxel_rotation_of
 from .indicator import PlacementIndications
 
 
@@ -24,7 +22,7 @@ class DistributionContext:
 @config.dynamic(attr_name="strategy", required=True)
 class Distributor(abc.ABC):
     @abc.abstractmethod
-    def distribute(self, positions, context):
+    def distribute(self, positions, context):  # pragma: nocover
         """
         Is called to distribute cell properties.
 
@@ -45,7 +43,7 @@ class MorphologyDistributor(Distributor):
     may_be_empty = config.attr(type=bool, default=False)
 
     @abc.abstractmethod
-    def distribute(self, positions, morphologies, context):
+    def distribute(self, positions, morphologies, context):  # pragma: nocover
         """
         Is called to distribute cell morphologies and optionally rotations.
 
@@ -121,11 +119,11 @@ class MorphologyGenerator(MorphologyDistributor, classmap_entry=None):
 
     may_be_empty = config.attr(type=bool, default=True)
 
-    def distribute(self, positions, morphologies, context):
+    def distribute(self, positions, morphologies, context):  # pragma: nocover
         pass
 
     @abc.abstractmethod
-    def generate(self, positions, morphologies, context):
+    def generate(self, positions, morphologies, context):  # pragma: nocover
         pass
 
 
@@ -136,7 +134,7 @@ class RotationDistributor(Distributor):
     """
 
     @abc.abstractmethod
-    def distribute(self, positions, context):
+    def distribute(self, positions, context):  # pragma: nocover
         pass
 
 
@@ -165,34 +163,14 @@ class RandomRotations(RotationDistributor, classmap_entry="random"):
 
 @config.node
 class VolumetricRotations(RotationDistributor, classmap_entry="orientation_field"):
-    orientation_path = config.attr(required=True, type=NrrdDependencyNode)
+    orientation_path = config.ref(
+        config.refs.vox_dset_ref, required=True, reference_only=False
+    )
     """
     Path to the nrrd file containing the volumetric orientation field.
 
-    It provides a rotation for each voxel considered. Its shape should be (3, L, W, D)
+    It provides a rotation for each voxel considered. Its shape should be (L, W, D, 3)
     where L, W and D are the sizes of the field.
-    """
-    orientation_resolution = config.attr(required=False, default=25.0, type=float)
-    """
-    Voxel size resolution of the orientation field.
-    """
-    default_vector = config.attr(
-        required=False,
-        default=lambda: np.array([0.0, -1.0, 0.0]),
-        call_default=True,
-        type=ndarray(),
-    )
-    """
-    Default orientation vector of each position.
-    """
-    space_origin = config.attr(
-        required=False,
-        default=lambda: np.array([0.0, 0.0, 0.0]),
-        call_default=True,
-        type=ndarray(),
-    )
-    """
-    Origin point for the orientation field.
     """
 
     def distribute(self, positions, context):
@@ -211,43 +189,21 @@ class VolumetricRotations(RotationDistributor, classmap_entry="orientation_field
         :rtype: RotationSet
         """
 
-        orientation_field = self.orientation_path.load_object()
-        voxel_pos = np.asarray(
-            np.floor((positions - self.space_origin) / self.orientation_resolution),
-            dtype=int,
-        )
-
-        # filter for positions inside the orientation field.
-        filter_inside = (
-            np.all(voxel_pos >= 0, axis=1)
-            * (voxel_pos[:, 0] < orientation_field.shape[1])
-            * (voxel_pos[:, 1] < orientation_field.shape[2])
-            * (voxel_pos[:, 2] < orientation_field.shape[3])
-        )
-
+        orientation_field = self.orientation_path.load_object().raw
+        voxel_pos = self.orientation_path.voxel_of(positions)
         # By default, positions outside the field should not rotate.
-        # So their target orientation vector will be set to the default_vector,
-        # from which the rotation is processed.
-        orientations = np.full((positions.shape[0], 3), self.default_vector, dtype=float)
-        # Expected orientation_field shape is (3, L, W, D) where L, W and D are the sizes
-        # of the field. Here we want to filter on the space dimensions,
-        # so we move the axes.
-        if filter_inside.any():
-            orientations[filter_inside] = np.moveaxis(orientation_field, 0, -1)[
-                voxel_pos[filter_inside, 0],
-                voxel_pos[filter_inside, 1],
-                voxel_pos[filter_inside, 2],
-            ]
-            orientations[
-                np.isnan(orientations).any(axis=1) + ~orientations.any(axis=1)
-            ] = self.default_vector
-
-        return RotationSet(
-            Rotation.from_matrix(
-                rotation_matrix_from_vectors(self.default_vector, v)
-            ).as_euler("xyz", degrees=True)
-            for v in orientations
-        )
+        rotations = []
+        for voxel in voxel_pos:
+            try:
+                rotation = voxel_rotation_of(
+                    orientation_field,
+                    voxel,
+                    self.orientation_path.default_vector,
+                )
+            except ValueError:
+                rotation = Rotation.from_matrix(np.eye(3))
+            rotations.append(rotation.as_euler("xyz", degrees=True))
+        return RotationSet(rotations)
 
 
 @config.node

@@ -37,4 +37,4 @@ jobs:
           ./nx affected -t lint --base=$NX_BASE --head=HEAD
         env:
           UV_PYTHON: 3.12
-          NX_DAEMON: false
+          NX_DAEMON: false  # may prevent GHA to stall for some reason

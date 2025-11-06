@@ -39,7 +39,7 @@ Configuration
 -------------
 
 The Configuration of a Scaffold is available as ``scaffold.configuration``.
-Its root components such as ``cell_types``, ``placement`` and others are
+All its root components such as ``cell_types``, ``placement`` are
 also directly available in the Scaffold object, so you can avoid some
 needless typing and repetition.
 

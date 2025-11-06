@@ -62,7 +62,7 @@ class PlacementStrategy(abc.ABC, HasDependencies):
         return f"'{config_name}', placing {ct_names}{part_str}"
 
     @abc.abstractmethod
-    def place(self, chunk, indicators):
+    def place(self, chunk, indicators):  # pragma: nocover
         """
         Central method of each placement strategy. Given a chunk, should fill that chunk
         with cells by calling the scaffold's (available as ``self.scaffold``)
@@ -89,7 +89,7 @@ class PlacementStrategy(abc.ABC, HasDependencies):
             if selector_error:
                 # Starting from Python 3.11, even though we raise from None, the original
                 # EmptySelectionError somehow still gets pickled and contains unpicklable
-                # elements. So we work around by raising here, outside of the exception
+                # elements. So we work around by raising here, outside the exception
                 # context.
                 raise DistributorError(
                     "Morphology distribution couldn't find any"

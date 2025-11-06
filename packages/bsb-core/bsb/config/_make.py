@@ -681,7 +681,8 @@ def _resolve_references(root, start=None, /):
         for node, attr in walk_node_attributes(root):
             if hasattr(attr, "__ref__"):
                 ref = attr.__ref__(node, root)
-                _setattr(node, attr.attr_name, ref)
+                if ref is not None or getattr(node, attr.attr_name, None) is None:
+                    _setattr(node, attr.attr_name, ref)
 
 
 class WalkIterDescriptor:

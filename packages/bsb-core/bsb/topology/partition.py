@@ -3,16 +3,15 @@ Module for the Partition configuration nodes and its dependencies.
 """
 
 import abc
-import collections
 import functools
 import json
 import typing
 
-import nrrd
 import numpy as np
+from voxcell import RegionMap
 
 from .. import config
-from ..config import types
+from ..config import refs, types
 from ..exceptions import (
     AllenApiError,
     ConfigurationError,
@@ -112,6 +111,9 @@ class Partition(abc.ABC):
     def to_voxels(self):
         """
         Voxelize the partition's occupation.
+
+        :returns: VoxelSet of the Partition sources.
+        :rtype: bsb.voxels.VoxelSet
         """
 
         chunk_size = self.scaffold.network.chunk_size
@@ -192,6 +194,9 @@ class Rhomboid(Partition, classmap_entry="rhomboid"):
     Boolean flag to authorize the translation of the partition.
     """
     orientation: list[float] = config.attr(type=types.list(type=float, size=3))
+    """
+    Vector describing the 3D orientation of the partition.
+    """
     can_rotate: bool = config.attr(type=bool, default=True)
     """
     Boolean flag to authorize the rotation of the partition.
@@ -327,13 +332,9 @@ class Voxels(Partition, abc.ABC, classmap_entry=None):
     Partition based on a set of voxels.
     """
 
-    @abc.abstractmethod
-    def get_voxelset(self):
-        pass
-
     @functools.cached_property
     def voxelset(self):
-        return self.get_voxelset()
+        return self.to_voxels()
 
     def to_chunks(self, chunk_size):
         return self.voxelset.snap_to_grid(chunk_size, unique=True)
@@ -375,50 +376,25 @@ class NrrdVoxels(Voxels, classmap_entry="nrrd"):
     """
     Voxel partition whose voxelset is loaded from an NRRD file.
 
-    By default it includes all the nonzero voxels in the file, but other masking
+    By default, it includes all the nonzero voxels in the file, but other masking
     conditions can be specified. Additionally, data can be associated to each voxel by
     inclusion of (multiple) source NRRD files.
     """
 
-    source: NrrdDependencyNode = config.attr(
-        type=NrrdDependencyNode,
-        required=types.mut_excl("source", "sources", required=False),
-    )
-    """
-    Path to the NRRD file containing volumetric data to associate with the partition.
-
-    If source is set, then sources should not be set.
-    """
-    sources: NrrdDependencyNode = config.list(
-        type=NrrdDependencyNode,
-        required=types.mut_excl("source", "sources", required=False),
-    )
-    """
-    List of paths to NRRD files containing volumetric data to associate with the
-    Partition.
-
-    If sources is set, then source should not be set.
-    """
-    mask_value: int = config.attr(type=int)
-    """
-    Integer value to filter in mask_source (if it is set, otherwise sources/source) to
-    create a mask of the voxel set(s) used as input.
-    """
-    mask_source: NrrdDependencyNode = config.attr(type=NrrdDependencyNode)
+    mask_source: NrrdDependencyNode = config.ref(refs.vox_dset_ref, reference_only=False)
     """
     Path to the NRRD file containing the volumetric annotation data of the Partition.
     """
-    mask_only: bool = config.attr(type=bool, default=False)
+    mask_value: int = config.attr(type=int)
     """
-    Flag to indicate no voxel data needs to be stored.
+    Integer value to filter in mask_source (if it is set, otherwise sources) to
+    create a mask of the voxel set(s) used as input.
     """
-    voxel_size: int = config.attr(type=int, required=True)
+    sources: list[NrrdDependencyNode] = config.reflist(
+        refs.vox_dset_ref, reference_only=False
+    )
     """
-    Size of each voxel.
-    """
-    keys: list[str] = config.attr(type=types.list(str))
-    """
-    List of names to assign to each source of the Partition.
+    List of paths to NRRD files containing volumetric data to associate to the Partition.
     """
     sparse: bool = config.attr(type=bool, default=True)
     """
@@ -435,6 +411,18 @@ class NrrdVoxels(Voxels, classmap_entry="nrrd"):
     sources sizes should be greater than mask sizes.
     """
 
+    @config.property(type=bool)
+    def mask_only(self):
+        """Flag to indicate no voxel data needs to be stored"""
+        return len(self.sources) == 0
+
+    @property
+    def voxel_size(self):
+        """Size of each voxel."""
+        if getattr(self, "_mask_src", None) is None:
+            self._validate()
+        return self._mask_src[0].voxel_size
+
     def get_mask(self):
         """
         Get the mask to apply on the sources' data of the partition.
@@ -449,7 +437,7 @@ class NrrdVoxels(Voxels, classmap_entry="nrrd"):
             # Use integer (sparse) indexing
             mask = [np.empty((0,), dtype=int) for i in range(3)]
             for mask_src in self._mask_src:
-                mask_data = mask_src.get_data()
+                mask_data = mask_src.get_data().raw
                 new_mask = np.nonzero(self._mask_cond(mask_data))
                 for i, mask_vector in enumerate(new_mask):
                     mask[i] = np.concatenate((mask[i], mask_vector))
@@ -458,30 +446,24 @@ class NrrdVoxels(Voxels, classmap_entry="nrrd"):
         else:
             # Use boolean (dense) indexing
             for mask_src in self._mask_src:
-                mask_data = mask_src.get_data()
+                mask_data = mask_src.get_data().raw
                 mask = mask | self._mask_cond(mask_data)
             mask = np.nonzero(mask)
         return mask
 
-    def get_voxelset(self):
-        """
-        Creates a VoxelSet of the sources of the Partition that matches its mask.
-
-        :returns: VoxelSet of the Partition sources.
-        """
-
+    def to_voxels(self):
         mask = self.get_mask()
         voxel_data = None
         if not self.mask_only:
             voxel_data = np.empty((len(mask[0]), len(self._src)))
             for i, source in enumerate(self._src):
-                voxel_data[:, i] = source.get_data()[mask]
+                voxel_data[:, i] = source.get_data().raw[mask]
 
         return VoxelSet(
             np.transpose(mask),
             self.voxel_size,
             data=voxel_data,
-            data_keys=self.keys,
+            data_keys=self.sources._reflist,
         )
 
     def _validate(self):
@@ -491,10 +473,7 @@ class NrrdVoxels(Voxels, classmap_entry="nrrd"):
         return shape
 
     def _validate_sources(self):
-        if self.source is not None:
-            self._src = [self.source]
-        else:
-            self._src = self.sources.copy()
+        self._src = self.sources.copy()
         if self.mask_source is not None:
             self._mask_src = [self.mask_source]
         else:
@@ -520,6 +499,12 @@ class NrrdVoxels(Voxels, classmap_entry="nrrd"):
             src_shape = np.minimum.reduce([*source_sizes.values()])
         first = _repeat_first()
         # Check for any size mismatch
+        resolutions = [s.voxel_size for s in all_headers]
+        if any(size != first(size) for size in resolutions):
+            raise ConfigurationError(
+                f"NRRD resolution mismatch in `{self.get_node_name()}`: {resolutions}"
+            )
+        first = _repeat_first()
         if self.strict and any(size != first(size) for size in all_sizes.values()):
             raise ConfigurationError(
                 f"NRRD file size mismatch in `{self.get_node_name()}`: {all_sizes}"
@@ -546,7 +531,8 @@ class AllenStructure(NrrdVoxels, classmap_entry="allen"):
     """
 
     struct_id: int = config.attr(
-        type=int, required=types.mut_excl("struct_id", "struct_name", required=False)
+        type=types.int(min=1),  # ids are positive and 0 is the outside of the brain
+        required=types.mut_excl("struct_id", "struct_name", required=False),
     )
     """
     Id of the region to filter within the annotation volume according to the AMBRH.
@@ -565,40 +551,14 @@ class AllenStructure(NrrdVoxels, classmap_entry="allen"):
     If struct_name is set, then struct_id should not be set.
     """
 
-    @config.property(type=int)
-    def voxel_size(self):
-        """
-        Size of each voxel.
-        """
-        return self._voxel_size if self._voxel_size is not None else 25
-
-    @voxel_size.setter
-    def voxel_size(self, value):
-        self._voxel_size = value
-
-    @config.property(type=bool)
-    def mask_only(self):
-        return self.source is None and len(self.sources) == 0
-
-    @config.property(type=str)
+    @classmethod
     @functools.cache
-    def mask_source(self):
-        if hasattr(self, "_annotations_file"):
-            return self._annotations_file
-        else:
-            node = NrrdDependencyNode()
-            node._file = _cached_file(
-                "https://download.alleninstitute.org/informatics-archive/current-release/mouse_ccf/annotation/ccf_2017/annotation_25.nrrd",
-            )
-            return node
-
-    @mask_source.setter
-    def mask_source(self, value):
-        self._mask_source = value
-        if value is not None:
-            self._annotations_file = NrrdDependencyNode(file=value)
-        elif hasattr(self, "_annotations_file"):
-            delattr(self, "_annotations_file")
+    def _dl_mask(cls):
+        node = NrrdDependencyNode()
+        node._file = _cached_file(
+            "https://download.alleninstitute.org/informatics-archive/current-release/mouse_ccf/annotation/ccf_2017/annotation_25.nrrd",
+        )
+        return node
 
     @classmethod
     @functools.cache
@@ -608,13 +568,29 @@ class AllenStructure(NrrdVoxels, classmap_entry="allen"):
         ).get_content()[0]
         try:
             return json.loads(content)["msg"]
-        except json.decoder.JSONDecodeError as json_error:
+        except json.decoder.JSONDecodeError as json_error:  # pragma: nocover
             raise AllenApiError(
                 "Could not parse the Allen mouse brain region hierarchy, "
                 "most likely because the Allen API website is down. \n"
                 "Here is the content retrieved: \n"
                 f"{content}"
             ) from json_error
+
+    @functools.cached_property
+    def region_map(self):
+        """
+        Return RegionMap instance to manipulate the Allen brain region hierarchy.
+        :rtype: voxcell.region_map.RegionMap
+        """
+        return RegionMap.from_dict(AllenStructure._dl_structure_ontology()[0])
+
+    @functools.cached_property
+    def annotations(self):
+        """
+        Return VoxelData instance of the Allen annotations.
+        :rtype: voxcell.voxel_data.VoxelData
+        """
+        return self.mask_source.load_object()
 
     @classmethod
     def get_structure_mask_condition(cls, find):
@@ -637,14 +613,15 @@ class AllenStructure(NrrdVoxels, classmap_entry="allen"):
     @classmethod
     def get_structure_mask(cls, find):
         """
-        Returns the mask data delineated by the Allen structure.
+        Returns the mask data delineated by the Allen mouse brain
+        region.
 
         :param find: Acronym, Name or ID of the Allen structure.
         :type find: str | int
         :returns: A boolean of the mask filtered based on the Allen structure.
         :rtype: Callable[numpy.ndarray]
         """
-        mask_data, _ = nrrd.read(cls._dl_mask())
+        mask_data = cls._dl_mask().load_object().raw
         return cls.get_structure_mask_condition(find)(mask_data)
 
     @classmethod
@@ -656,75 +633,35 @@ class AllenStructure(NrrdVoxels, classmap_entry="allen"):
         :type find: str | int
         :returns: Set of IDs
         :rtype: numpy.ndarray
-        """
-        struct = cls.find_structure(find)
-        values = set()
-
-        def flatmask(item):
-            values.add(item["id"])
-
-        cls._visit_structure([struct], flatmask)
-        return np.array([*values], dtype=int)
-
-    @classmethod
-    def find_structure(cls, id):
-        """
-        Find an Allen structure by name, acronym or ID.
-
-        :param id: Query for the name, acronym or ID of the Allen structure.
-        :type id: str | int | float
-        :returns: Allen structure node of the Allen ontology tree.
-        :rtype: dict
         :raises: NodeNotFoundError
         """
-        if isinstance(id, str):
-
-            def treat(s):
-                return s.strip().lower()
-
-            name = treat(id)
-
-            def find(x):
-                return treat(x["name"]) == name or treat(x["acronym"]) == name
-        elif isinstance(id, (int | float)):
-            id = int(id)
-
-            def find(x):
-                return x["id"] == id
+        region_map = cls().region_map
+        if isinstance(find, str):
+            id_roi = list(
+                region_map.find(
+                    find, attr="name", ignore_case=True, with_descendants=True
+                )
+            )
+            if len(id_roi) == 0:
+                id_roi = list(
+                    region_map.find(
+                        find, attr="acronym", ignore_case=True, with_descendants=True
+                    )
+                )
+        elif isinstance(find, int | float):
+            id_roi = list(region_map.find(int(find), attr="id", with_descendants=True))
         else:
-            raise TypeError(f"Argument must be a string or a number. {type(id)} given.")
-        try:
-            return cls._find_structure(find)
-        except NodeNotFoundError:
-            raise NodeNotFoundError(f"Could not find structure '{id}'") from None
-
-    @classmethod
-    def _find_structure(cls, find):
-        result = None
-
-        def visitor(item):
-            nonlocal result
-            if find(item):
-                result = item
-                return True
-
-        tree = cls._dl_structure_ontology()
-        cls._visit_structure(tree, visitor)
-        if result is None:
+            raise TypeError(f"Argument must be a string or a number. {type(find)} given.")
+        if len(id_roi) == 0:
             raise NodeNotFoundError("Could not find a node that satisfies constraints.")
-        return result
+        return np.array(id_roi)
 
-    @classmethod
-    def _visit_structure(cls, tree, visitor):
-        deck = collections.deque(tree)
-        while True:
-            try:
-                item = deck.popleft()
-            except IndexError:
-                break
-            if visitor(item):
-                break
-            deck.extend(item["children"])
+    def _validate(self):
+        # If neither sources nor mask_source were provided,
+        # use allen ccfv3 annotation volume
+        if self.mask_only and self.mask_source is None:
+            self.mask_source = self._dl_mask()
+        return super()._validate()
 
     def _validate_mask_condition(self):
         # We override the `NrrdVoxels`' `_validate_mask_condition` and use this
@@ -732,13 +669,6 @@ class AllenStructure(NrrdVoxels, classmap_entry="allen"):
         # has an id that is part of the structure.
         id = self.struct_id if self.struct_id is not None else self.struct_name
         self._mask_cond = self.get_structure_mask_condition(id)
-
-
-def _safe_hread(s):
-    try:
-        return nrrd.read_header(s)
-    except StopIteration:
-        raise OSError(f"Empty NRRD file '{s}' could not be read.") from None
 
 
 def _repeat_first():

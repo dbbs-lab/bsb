@@ -24,7 +24,7 @@ class MorphologyParser:
     branch_cls: type = config.attr(type=types.class_(), default="bsb.morphologies.Branch")
 
     @abc.abstractmethod
-    def parse(self, file: FileDependency | str) -> Morphology:
+    def parse(self, file: FileDependency | str) -> Morphology:  # pragma: nocover
         """
         Parse the morphology.
         """

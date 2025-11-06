@@ -362,7 +362,7 @@ class Job(abc.ABC):
 
     @staticmethod
     @abc.abstractmethod
-    def execute(job_owner, args, kwargs):
+    def execute(job_owner, args, kwargs):  # pragma: nocover
         """
         Job handler.
         """

@@ -14,8 +14,8 @@ We start by defining the basics: a region, an ``allen`` partition and a cell typ
 
 .. literalinclude:: ../../../examples/atlas/allen_structure.json
   :language: json
-  :lines: 12-17,20-26,28-31
-  :emphasize-lines: 6
+  :lines: 13-18,20-29,36
+  :emphasize-lines: 6-7
 
 Here, the :guilabel:`mask_source` is not set so BSB will automatically download the 2017 version of
 the CCFv3 mouse brain annotation atlas volume from the Allen Institute website.
@@ -30,32 +30,32 @@ density of ``0.003/μm^3``:
 
 .. literalinclude:: ../../../examples/atlas/allen_structure.json
   :language: json
-  :lines: 32-38
+  :lines: 37-41,43-46
 
-If however, we have data of the cell densities available, we can link our ``declive``
-partition to it, by loading it as a :guilabel:`source` file:
+If however, we have data of the cell densities available for a new cell type ``my_other_cell``,
+we can link our ``declive`` partition to it, by loading it as a :guilabel:`sources` file:
 
 
 .. literalinclude:: ../../../examples/atlas/allen_structure.json
   :language: json
-  :lines: 15-22
-  :emphasize-lines: 4-5
+  :lines: 16-22
+  :emphasize-lines: 4
 
-The :guilabel:`source` file will be loaded, and the values at the coordinates of the
+The :guilabel:`sources` file(s) will be loaded, and the values at the coordinates of the
 voxels that make up our partition are associated as a column of data. We use the
 :guilabel:`data_keys` to specify a name for the data column, so that in other places we
 can refer to it by name.
 
-We need to select which data column we want to use for the density of ``my_cell``, since
+We need to select which data column we want to use for the density of ``my_other_cell``, since
 we might need to load multiple densities for multiple cell types, or orientations, or
 other data. We can do this by specifying a :guilabel:`density_key`:
 
 
 .. literalinclude:: ../../../examples/atlas/allen_structure.json
   :language: json
-  :lines: 23-27,29-31
+  :lines: 23,30-36
   :emphasize-lines: 5
 
-That's it! If we compile the network, ``my_cell`` will be placed into ``declive`` with
+That's it! If we compile the network, ``my_other_cell`` will be placed into ``declive`` with
 different densities in each voxel, according to the values provided in
 ``my_cell_density.nrrd``.

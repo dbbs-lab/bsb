@@ -52,6 +52,7 @@ dev = [
   "gitpython>=3.1.44",
   "smmap>=5.0.2"
 ]
+parallel = ["bsb-core[parallel]"]
 docs = [
   "furo~=2024.0",
   "sphinxemoji~=0.3",

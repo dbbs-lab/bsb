@@ -9,7 +9,7 @@ For the sake of this example, we suppose that you are using the reconstruction f
 Poisson generator.
 
 You could copy paste all these simulations in your configuration file or use the
-:ref:`import mechanism <json_import>`, but this is a tedious task and prone to error.
+:ref:`import mechanism <cfg_file_import>`, but this is a tedious task and prone to error.
 
 Instead, you can load your simulation configuration from your Scaffold object and modify it on the fly:
 

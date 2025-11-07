@@ -5,7 +5,7 @@ description = "BSB Neuron simulation examples"
 readme = "README.md"
 requires-python = ">=3.10,<4"
 dependencies = [
-    "bsb~=6.0",
+    "bsb[parallel]~=6.0",  # parallel is required see issue #188
     "bsb-neuron~=6.0",
     "dbbs-catalogue~=6.0",
 ]

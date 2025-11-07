@@ -1,61 +1,78 @@
-Mouse brain atlas based placement
-=================================
+Mouse brain atlas placement
+===========================
 
-The BSB supports integration with cell atlases. All that's required is to implement a
+The BSB supports integration with atlases. All that's required is to implement a
 :class:`~bsb.topology.partition.Voxels` partition so that the atlas data can be converted
-from the atlas raster format, into a framework object. The framework has
+from the atlas raster format, into a framework object. The framework has the
 :ref:`allen-atlas-integration` out of the box, and this example will use the
-:class:`~bsb.topology.partition.AllenStructure`.
+:class:`~bsb.topology.partition.AllenStructure` partition to showcase its usages.
 
-After loading shapes from the atlas, we will use a local data file to assign density
-values to each voxel, and place cells accordingly.
+After loading the brain region shapes from the atlas, we will use a local data file
+to assign density values to each voxel, and place cells accordingly.
 
-We start by defining the basics: a region, an ``allen`` partition and a cell type:
+Topology
+--------
+
+We start by defining the topology: a region, and an ``allen`` partition:
 
 .. literalinclude:: /../../../examples/atlas-modeling/configs/allen_structure.json
   :language: json
-  :lines: 13-18,21-30,37
+  :lines: 20-25,29-30
   :emphasize-lines: 6-7
 
-Here, the :guilabel:`mask_source` is not set so BSB will automatically download the 2017 version of
-the CCFv3 mouse brain annotation atlas volume from the Allen Institute website.
-Use :guilabel:`mask_source` to provide your own nrrd annotation volume.
+BSB will here download the 2017 version of the CCFv3 mouse brain annotation atlas volume
+from the Allen Institute website to define the shape of the partition.
+Use :guilabel:`mask_source` to provide your own nrrd annotation volume file.
 
 The :guilabel:`struct_name` refers to the Allen mouse brain region acronym or name.
 You can also replace that with :guilabel:`struct_id`, if you are using the numeric identifiers.
-You can find the ids, acronyms and names in the Allen Brain Atlas brain region hierarchy file.
+You can find the ids, acronyms and names in the
+`Allen Brain Atlas brain region hierarchy file <https://api.brain-map.org/api/v2/structure_graph_download/1.json>`_.
 
-If we now place our ``my_cell`` in the ``declive``, it will be placed with a fixed
+
+Cell types
+----------
+
+We now add a cell population ``my_cell`` in the ``declive``, it will be placed with a fixed
 density of ``0.003/μm^3``:
 
 .. literalinclude:: /../../../examples/atlas-modeling/configs/allen_structure.json
   :language: json
-  :lines: 38-42,44-47
+  :lines: 32-38,45-50,52-55
 
-If however, we have data of the cell densities available for a new cell type ``my_other_cell``,
-we can link our ``declive`` partition to it, by loading it as a :guilabel:`sources` file:
+Cell Density files
+------------------
 
-
-.. literalinclude:: /../../../examples/atlas-modeling/configs/allen_structure.json
-  :language: json
-  :lines: 16-23
-  :emphasize-lines: 4-5
-
-The :guilabel:`sources` file(s) will be loaded, and the values at the coordinates of the
-voxels that make up our partition are associated as a column of data. We use the
-:guilabel:`data_keys` to specify a name for the data column, so that in other places we
-can refer to it by name.
-
-We need to select which data column we want to use for the density of ``my_other_cell``, since
-we might need to load multiple densities for multiple cell types, or orientations, or
-other data. We can do this by specifying a :guilabel:`density_key`:
-
+Now in case we know the cell densities distribution inside the ``declive``, we can store it
+inside a nrrd file and link it to the partition and cell population.
+Here, we add a ``my_cell_density.nrrd`` file to the ``declive`` partition using the
+:guilabel:`sources` attribute and finally to a cell population ``my_other_cell`` using the
+:guilabel:`density_key` attribute:
 
 .. literalinclude:: /../../../examples/atlas-modeling/configs/allen_structure.json
   :language: json
-  :lines: 24,31-37
-  :emphasize-lines: 5
+  :lines: 23-26,15-18,28-32,39-49,51-55
+  :emphasize-lines: 4,7,17
 
-That's it! If we compile the network, ``my_other_cell`` will be placed into ``declive`` with
-different densities in each voxel, according to the values provided in
-``data/my_cell_density.nrrd``.
+The :guilabel:`sources` file(s) will be loaded during the placement, and the values at the
+coordinates of the voxels that make up our partition will be used to compute the number of
+cells.
+
+Finally, let us imagine we need to define 2 partitions, corresponding to 2 regions of the mouse
+brain and place our two cell populations in both, then the simplest solution would be to declare
+our density file in each partition. However, this solution will add the file to the ``Storage``
+twice.
+
+Hence, we **strongly** recommend you to declare any file that might be reused at different steps
+of the reconstruction in the ``files`` root component (see also :ref:`this section <cfg_files>`).
+
+.. literalinclude:: /../../../examples/atlas-modeling/configs/allen_structure.json
+  :language: json
+  :lines: 13-19,23-32,39-45
+  :emphasize-lines: 1-2,12,21
+
+Final configuration file
+------------------------
+
+.. literalinclude:: /../../../examples/atlas-modeling/configs/allen_structure.json
+  :language: json

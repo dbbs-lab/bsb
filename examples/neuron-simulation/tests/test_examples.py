@@ -51,8 +51,9 @@ class TestNeuronExamples(
             if signal.name == "synapses_rec":
                 count_synapses += 1
             self.assertEqual(signal.t_start, 0)
-            self.assertEqual(signal.t_stop, 5000)
-            self.assertEqual(len(signal.magnitude), 5000 / 0.1)
+            # simulation should last 100 ms + 1 dt
+            self.assertEqual(signal.t_stop, 0.100025)  # in s
+            self.assertEqual(len(signal.magnitude), 100 / 0.025+1)
 
         # we should get some results for each recording type
         self.assertGreater(count_neurons, 5)

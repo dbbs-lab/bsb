@@ -54,6 +54,9 @@ Here, we add a ``my_cell_density.nrrd`` file to the ``declive`` partition using 
   :lines: 23-26,15-18,28-32,39-49,51-55
   :emphasize-lines: 4,7,17
 
+Note that here the reference to the file ``data/my_cell_density.nrrd`` in ``my_other_cell``
+is the name of the file without the extension (similar to the morphologies).
+
 The :guilabel:`sources` file(s) will be loaded during the placement, and the values at the
 coordinates of the voxels that make up our partition will be used to compute the number of
 cells.

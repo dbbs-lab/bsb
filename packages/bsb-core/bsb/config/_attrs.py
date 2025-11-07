@@ -4,6 +4,7 @@ An attrs-inspired class annotation system, but my A stands for amateuristic.
 
 import builtins
 import contextlib
+import typing
 from collections.abc import Mapping
 from functools import wraps
 
@@ -1127,8 +1128,11 @@ class ConfigurationReferenceAttribute(ConfigurationAttribute):
     def _get_config_key(self, val, instance):
         return (
             val._config_key
-            if val not in self.ref_lambda(instance._config_root, instance)
-            and hasattr(val, "_config_key")
+            if (
+                isinstance(val, typing.Hashable)
+                and val not in self.ref_lambda(instance._config_root, instance)
+                and hasattr(val, "_config_key")
+            )
             else val
         )
 

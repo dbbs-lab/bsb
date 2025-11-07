@@ -49,3 +49,5 @@ jobs:
           ./nx run examples:test
         env:
           UV_PYTHON: 3.12
+          BSB_QUIET: true
+          NX_DAEMON: false  # may prevent GHA to stall for some reason

@@ -118,7 +118,6 @@ config.simulations["neuronsim"].devices = dict(
 
 scaffold = Scaffold(config)
 scaffold.compile(clear=True)
-scaffold.storage.store_active_config(config)
 
 # create the simulation results folder
 root = pathlib.Path("simulation-results")

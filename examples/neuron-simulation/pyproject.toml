@@ -8,6 +8,7 @@ dependencies = [
     "bsb~=6.0",
     "bsb-neuron[parallel]~=6.0",  # parallel is required see issue #188
     "dbbs-catalogue~=6.0",
+    "matplotlib>=3.10.6",
 ]
 
 [dependency-groups]

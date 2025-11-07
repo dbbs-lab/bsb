@@ -53,7 +53,7 @@ class TestNeuronExamples(
             self.assertEqual(signal.t_start, 0)
             # simulation should last 100 ms + 1 dt
             self.assertEqual(signal.t_stop, 0.100025)  # in s
-            self.assertEqual(len(signal.magnitude), 100 / 0.025+1)
+            self.assertEqual(len(signal.magnitude), 100 / 0.025 + 1)
 
         # we should get some results for each recording type
         self.assertGreater(count_neurons, 5)
@@ -95,6 +95,8 @@ class TestNeuronExamples(
         files = os.listdir("simulation-results")  # two pngs 1 nio file
         self.assertEqual(len(files), 3)
         self.assertTrue(any([re.search("^vrecorder_[0-9]+\.png$", f) for f in files]))
-        self.assertTrue(any([re.search("^synapses_rec_[0-9]+_.+\.png$", f) for f in files]))
+        self.assertTrue(
+            any([re.search("^synapses_rec_[0-9]+_.+\.png$", f) for f in files])
+        )
 
         os.remove("my_network.hdf5")

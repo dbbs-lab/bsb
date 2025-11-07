@@ -53,9 +53,7 @@ class TestModelBuilding(SchematicsFixture, unittest.TestCase):
 
         p.run(100)
 
-        self.assertEqual(
-            list(r), list(r2), "Recording from same loc should be identical"
-        )
+        self.assertEqual(list(r), list(r2), "Recording from same loc should be identical")
         self.assertFalse(min(r) == max(r), "No synaptic currents detected")
         self.assertTrue(min(r_nosyn) == max(r_nosyn), "Synaptic currents detected")
 

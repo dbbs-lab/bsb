@@ -402,6 +402,8 @@ class Scaffold:
                 p_strats, c_strats = self._redo_chain(p_strats, c_strats, skip, force)
             # else:
             #   append mode is luckily simpler, just don't clear anything :)
+        # We update the configuration saved to make sure it corresponds
+        self.storage.store_active_config(self.configuration)
 
         phases = ["pipelines"]
         if not skip_placement:

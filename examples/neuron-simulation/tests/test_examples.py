@@ -95,6 +95,6 @@ class TestNeuronExamples(
         files = os.listdir("simulation-results")  # two pngs 1 nio file
         self.assertEqual(len(files), 3)
         self.assertTrue(any([re.search("^vrecorder_[0-9]+\.png$", f) for f in files]))
-        self.assertTrue(any([re.search("^synapses_rec_[0-9]+\.png$", f) for f in files]))
+        self.assertTrue(any([re.search("^synapses_rec_[0-9]+_.+\.png$", f) for f in files]))
 
         os.remove("my_network.hdf5")

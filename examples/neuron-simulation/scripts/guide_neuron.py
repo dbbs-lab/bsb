@@ -37,7 +37,7 @@ config.cell_types.add(
     spatial=dict(
         radius=4,
         density=5e-6,
-        morphologies=["StellateCell"],
+        morphologies=[{"names": ["StellateCell"]}],
     ),
 )
 
@@ -59,8 +59,8 @@ config.connectivity.add(
 config.simulations.add(
     "neuronsim",
     simulator="neuron",
-    resolution=0.025,
     duration=100,
+    resolution=0.025,
     temperature=32,
     cell_models={},
     connection_models={},
@@ -88,10 +88,8 @@ config.simulations["neuronsim"].devices = dict(
         device="spike_generator",
         start=9,
         number=1,
-        interval=0,
-        noise=0,
-        delay=1,
         weight=0.01,
+        delay=1,
         targetting={"strategy": "by_id", "ids": {"stellate_cell": [0]}},
         locations={"strategy": "branch", "labels": ["dendrites"]},
         synapses=["AMPA", "NMDA"],
@@ -107,7 +105,7 @@ config.simulations["neuronsim"].devices = dict(
     ),
     synapses_rec=dict(
         device="synapse_recorder",
-        synapse_types=["AMPA", "NMDA"],
+        synapse_types=["AMPA", "NMDA", "GABA"],
         targetting={
             "strategy": "sphere",
             "radius": 100,
@@ -120,6 +118,7 @@ config.simulations["neuronsim"].devices = dict(
 
 scaffold = Scaffold(config)
 scaffold.compile(clear=True)
+scaffold.storage.store_active_config(config)
 
 # create the simulation results folder
 root = pathlib.Path("simulation-results")

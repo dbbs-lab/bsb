@@ -27,7 +27,9 @@ jobs:
       - name: Install apt dependencies
         run: |
           sudo apt update
-          sudo apt install libhdf5-dev
+          # Install `libopenmpi` for MPI, `libhdf5` for `morphio`,
+          # `libgsl` and `libreadline` for NEST
+          sudo apt install openmpi-bin libopenmpi-dev libhdf5-dev libreadline-dev libgsl-dev
 
       - name: Install nodejs
         run: |

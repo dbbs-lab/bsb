@@ -11,6 +11,7 @@ from collections import defaultdict
 from importlib.metadata import EntryPoint
 from pathlib import Path
 
+import certifi
 import numpy as _np
 import requests
 from bsb import (
@@ -283,8 +284,8 @@ def skipIfOffline(url=None, scheme: UrlScheme = None):
         raise ValueError("Couldn't establish base URL to ping for health check.") from err
     try:
         with session_ctx as session:
-            res = session.get(url, timeout=20)
-            offline = res.status_code != 200 or "Service Interruption Notice"
+            res = session.get(url, timeout=20, verify=certifi.where())
+            offline = res.status_code != 200
     except Exception:
         offline = True
     return unittest.skipIf(offline, err_msg)

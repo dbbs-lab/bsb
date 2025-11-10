@@ -31,7 +31,7 @@ from .simulation import get_simulation_adapter
 from .storage import Storage, open_storage
 from .storage._chunks import Chunk
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     from .cell_types import CellType
     from .config._config import NetworkNode as Network
     from .postprocessing import AfterConnectivityHook, AfterPlacementHook

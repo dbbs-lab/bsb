@@ -4,7 +4,7 @@ from collections.abc import Sequence
 from .core import _is_sequence, transform, transform_record
 from .error_handler import CatchRecord, catch_hoc_error
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     from .interpreter import PythonHocInterpreter
 
 

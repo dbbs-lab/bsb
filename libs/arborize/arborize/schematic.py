@@ -8,7 +8,7 @@ from ._util import get_location_name
 from .definitions import CableType, ModelDefinition
 from .exceptions import ConstructionError, FrozenError, ModelDefinitionError
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     from .parameter import Parameter
 
 Location = tuple[int, int]

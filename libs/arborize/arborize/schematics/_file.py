@@ -9,7 +9,7 @@ from morphio import Morphology, SomaType
 
 from ..schematic import Schematic
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     from ..definitions import Definition
 
 

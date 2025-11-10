@@ -4,7 +4,7 @@ from typing import Union
 from .exceptions import NotConnectableError
 from .version import get_neuron_version
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     import neuron.hoc
 
 

@@ -18,7 +18,7 @@ from ..reporting import report
 from ..storage._chunks import Chunk
 from .strategy import PlacementStrategy
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     from ..cell_types import CellType
     from ..storage._files import FileDependencyNode
     from ..topology.partition import Partition

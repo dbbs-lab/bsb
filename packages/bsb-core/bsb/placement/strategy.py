@@ -16,7 +16,7 @@ from ..voxels import VoxelSet
 from .distributor import DistributorsNode
 from .indicator import PlacementIndications, PlacementIndicator
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     from ..cell_types import CellType
     from ..core import Scaffold
     from ..topology.partition import Partition

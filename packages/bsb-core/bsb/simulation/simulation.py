@@ -11,7 +11,7 @@ from .cell import CellModel
 from .connection import ConnectionModel
 from .device import DeviceModel
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     from ..cell_types import CellType
     from ..connectivity.strategy import ConnectionStrategy
     from ..core import Scaffold

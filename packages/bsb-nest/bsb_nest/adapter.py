@@ -17,7 +17,7 @@ from tqdm import tqdm
 
 from .exceptions import KernelWarning, NestConnectError, NestModelError, NestModuleError
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     from .simulation import NestSimulation
 
 

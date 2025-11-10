@@ -15,7 +15,7 @@ from ..config._attrs import cfglist
 from ..exceptions import MissingMorphologyError, SelectorError
 from .parsers import parse_morphology_file
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     from ..core import Scaffold
 
 
@@ -112,11 +112,11 @@ class NeuroMorphoSelector(NameSelector, classmap_entry="from_neuromorpho"):
                 # Certificate issues with neuromorpho --> verify=False
                 try:
                     res = requests.get(cls._url + cls._meta + ",".join(names), timeout=20)
-                except requests.exceptions.Timeout:
+                except requests.exceptions.Timeout:  # pragma: nocover
                     raise SelectorError("NeuroMorpho API request timed out.") from None
                 if res.status_code == 404:
                     raise SelectorError(f"'{names[0]}' is not a valid NeuroMorpho name.")
-                elif res.status_code != 200:
+                elif res.status_code != 200:  # pragma: nocover
                     raise SelectorError("NeuroMorpho API error: " + res.message)
                 metas = {n: None for n in names}
                 for meta in res.json()["_embedded"]["neuronResources"]:

@@ -3,7 +3,7 @@ import typing
 
 from .data import schematics
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     from arborize.schematic import Schematic
 
 

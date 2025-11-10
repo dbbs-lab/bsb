@@ -50,7 +50,7 @@ from ._make import (
 from .parsers import get_configuration_parser, get_configuration_parser_classes
 from .refs import Reference
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     from ._config import Configuration
 
 

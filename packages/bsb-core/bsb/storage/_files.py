@@ -28,7 +28,7 @@ from ..config._attrs import cfglist
 from ..morphologies.parsers import MorphologyParser
 from ..reporting import warn
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     from ..core import Scaffold
     from ..morphologies import Morphology
     from ..storage.interfaces import FileStore

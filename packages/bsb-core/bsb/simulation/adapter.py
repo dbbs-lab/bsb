@@ -11,7 +11,7 @@ from bsb import AttributeMissingError, SimulationResult, options
 
 from ..services.mpi import MPIService
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     from ..storage import PlacementSet
     from .cell import CellModel
     from .simulation import Simulation

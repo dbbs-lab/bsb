@@ -14,7 +14,7 @@ from ..._encoding import EncodedLabels
 from ...config import types
 from .. import Morphology
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     from ...storage._files import FileDependency
 
 

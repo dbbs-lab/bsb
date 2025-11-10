@@ -8,7 +8,7 @@ from numpy.random import default_rng
 from .. import config
 from ..config import refs, types
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     from ..cell_types import CellType
     from .cell import CellModel
 

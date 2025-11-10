@@ -280,13 +280,13 @@ def skipIfOffline(url=None, scheme: UrlScheme = None):
         session_ctx = requests.Session()
     try:
         url = url or scheme.get_base_url()
-    except NotImplementedError as err:
+    except NotImplementedError as err:  # pragma: nocover
         raise ValueError("Couldn't establish base URL to ping for health check.") from err
     try:
         with session_ctx as session:
             res = session.get(url, timeout=20, verify=certifi.where())
             offline = res.status_code != 200
-    except Exception:
+    except Exception:  # pragma: nocover
         offline = True
     return unittest.skipIf(offline, err_msg)
 
@@ -294,10 +294,10 @@ def skipIfOffline(url=None, scheme: UrlScheme = None):
 def skip_test_allen_api():
     try:
         AllenStructure._dl_structure_ontology()
-    except AllenApiError:
+    except AllenApiError:  # pragma: nocover
         return True
-    except Exception:
-        pass
+    except Exception:  # pragma: nocover
+        return True
     return False
 
 

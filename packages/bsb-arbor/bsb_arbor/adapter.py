@@ -16,7 +16,7 @@ from bsb import (
     warn,
 )
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     from .simulation import ArborSimulation
 
 

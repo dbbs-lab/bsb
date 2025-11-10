@@ -6,7 +6,7 @@ import appdirs
 
 from ._files import FileDependency
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     from .interfaces import Storage
 
 _bsb_dirs = appdirs.AppDirs("bsb")

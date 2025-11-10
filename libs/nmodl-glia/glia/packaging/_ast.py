@@ -14,7 +14,7 @@ import black
 from ..assets import Mod, Package, SupportedDialect
 from ..exceptions import ModSourceError, PackageApiError, PackageFileError
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     from neuron.nmodl import NmodlDriver
 
 

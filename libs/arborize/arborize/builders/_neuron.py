@@ -10,7 +10,7 @@ from ..constraints import Constraint
 from ..definitions import CableProperties, Ion, Mechanism, MechId, mechdict
 from ..exceptions import TransmitterError, UnknownLocationError, UnknownSynapseError
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     from glia._glia import MechAccessor
     from patch.objects import PointProcess, Section, Segment
 

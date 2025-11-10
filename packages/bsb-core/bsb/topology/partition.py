@@ -26,7 +26,7 @@ from ..storage._util import _cached_file
 from ..voxels import VoxelSet
 from ._layout import Layout, RhomboidData
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     from ..core import Scaffold
 
 

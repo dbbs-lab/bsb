@@ -15,7 +15,8 @@
   ],
   "release": {
     "projects": [
-      "*"
+      "packages/*",
+      "libs/*"
     ],
     "changelog": {
       "projectChangelogs": true,

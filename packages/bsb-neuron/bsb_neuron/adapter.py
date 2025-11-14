@@ -4,7 +4,6 @@ import itertools
 import numpy as np
 from bsb import (
     AdapterError,
-    AdapterProgress,
     Chunk,
     DatasetNotFoundError,
     SimulationData,
@@ -39,6 +38,9 @@ class NeuronResult(SimulationResult):
             segment.analogsignals.append(
                 AnalogSignal(list(v), sampling_period=p.dt * ms, **annotations)
             )
+            # Free the memory
+            if v.size():
+                v.remove(0, v.size() - 1)
 
         self.create_recorder(flush)
 
@@ -102,7 +104,8 @@ class NeuronAdapter(SimulatorAdapter):
             report("Creating transmitters", level=2)
             self.create_connections(simulation)
             report("Creating devices", level=2)
-            self.create_devices(simulation)
+            self.implement_components(simulation)
+            self.load_controllers(simulation)
             return self.simdata[simulation]
         except:
             del self.simdata[simulation]
@@ -136,20 +139,17 @@ class NeuronAdapter(SimulatorAdapter):
             pc = self.engine.ParallelContext()
             pc.set_maxstep(10)
             self.engine.finitialize(self.initial)
-            duration = max(sim.duration for sim in simulations)
-            progress = AdapterProgress(duration)
-            for _oi, i in progress.steps(step=1):
-                pc.psolve(i)
-                tick = progress.tick(i)
-                for listener in self._progress_listeners:
-                    listener(simulations, tick)
-            progress.complete()
+            self._duration = max(sim.duration for sim in simulations)
+
+            for t, checkpoint_controllers in self.get_next_checkpoint():
+                pc.psolve(t)
+                self.execute_checkpoints(checkpoint_controllers)
+
             report("Finished simulation.", level=2)
         finally:
             results = [self.simdata[sim].result for sim in simulations]
             for sim in simulations:
                 del self.simdata[sim]
-
         return results
 
     def create_neurons(self, simulation):
@@ -174,11 +174,6 @@ class NeuronAdapter(SimulatorAdapter):
                 simdata.connections[conn_model] = conn_model.create_connections(
                     simulation, simdata, cs
                 )
-
-    def create_devices(self, simulation):
-        simdata = self.simdata[simulation]
-        for device_model in simulation.devices.values():
-            device_model.implement(self, simulation, simdata)
 
     def _allocate_transmitters(self, simulation):
         simdata = self.simdata[simulation]

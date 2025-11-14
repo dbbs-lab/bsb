@@ -24,7 +24,7 @@ class ArborDevice(DeviceModel):
     def register_probe_id(self, gid, tag):
         self._probe_ids.append((gid, tag))
 
-    def prepare_samples(self, simdata, comm):
+    def implement(self, adapter, simulation, simdata):
         self._handles = [
             self.sample(simdata.arbor_sim, probe_id) for probe_id in self._probe_ids
         ]
@@ -42,9 +42,9 @@ class ArborDevice(DeviceModel):
         return dict(zip(attrs, (getattr(self, attr) for attr in attrs), strict=False))
 
     @abc.abstractmethod
-    def implement_probes(self, simdata, target):
+    def implement_probes(self, simdata, target):  # pragma: nocover
         pass
 
     @abc.abstractmethod
-    def implement_generators(self, simdata, target):
+    def implement_generators(self, simdata, target):  # pragma: nocover
         pass

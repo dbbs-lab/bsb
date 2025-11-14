@@ -17,7 +17,9 @@ import urllib.request as _ur
 
 import certifi as _cert
 import nrrd as _nrrd
+import numpy as np
 import requests as _rq
+from voxcell import VoxelData
 
 from .. import config
 from .._util import obj_str_insert
@@ -26,7 +28,7 @@ from ..config._attrs import cfglist
 from ..morphologies.parsers import MorphologyParser
 from ..reporting import warn
 
-if _tp.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     from ..core import Scaffold
     from ..morphologies import Morphology
     from ..storage.interfaces import FileStore
@@ -367,7 +369,13 @@ def _get_scheme(scheme: str) -> FileScheme:
         raise KeyError(f"{scheme} is not a known file scheme.") from None
 
 
-@config.node
+@config.dynamic(
+    attr_name="type",
+    required=False,
+    default="file",
+    classmap_entry="file",
+    auto_classmap=True,
+)
 class FileDependencyNode:
     scaffold: Scaffold
     file: FileDependency = config.attr(type=FileDependency)
@@ -404,7 +412,7 @@ class FileDependencyNode:
 
 
 @config.node
-class CodeDependencyNode(FileDependencyNode):
+class CodeDependencyNode(FileDependencyNode, classmap_entry="code"):
     """
     Allow the loading of external code during network loading.
     """
@@ -463,15 +471,15 @@ class CodeDependencyNode(FileDependencyNode):
             sys.path = list(reversed(tmp))
 
 
-class OperationCallable(typing.Protocol):
-    def __call__(self, obj: object, **kwargs: typing.Any) -> object:
+class OperationCallable(_tp.Protocol):
+    def __call__(self, obj: object, **kwargs: _tp.Any) -> object:
         pass
 
 
 @config.node
 class Operation:
     func: OperationCallable = config.attr(type=types.function_())
-    parameters: dict[typing.Any] = config.catch_all(type=types.any_())
+    parameters: dict[_tp.Any] = config.catch_all(type=types.any_())
 
     def __init__(self, value=None, /, **kwargs):
         if value is not None:
@@ -489,10 +497,27 @@ class FilePipelineMixin:
 
 
 @config.node
-class NrrdDependencyNode(FilePipelineMixin, FileDependencyNode):
+class NrrdDependencyNode(FilePipelineMixin, FileDependencyNode, classmap_entry="nrrd"):
     """
     Configuration dependency node to load NRRD files.
     """
+
+    default_vector = config.attr(
+        required=False,
+        default=lambda: np.array([0.0, -1.0, 0.0]),
+        call_default=True,
+        type=types.ndarray(),
+    )
+    """Default orientation vector of each position."""
+
+    @config.property(type=int)
+    def voxel_size(self):
+        """Size of each voxel."""
+        return self._voxel_size if self._voxel_size is not None else 25
+
+    @voxel_size.setter
+    def voxel_size(self, value):
+        self._voxel_size = value
 
     def get_header(self):
         with self.file.provide_locally() as (path, encoding):
@@ -500,10 +525,39 @@ class NrrdDependencyNode(FilePipelineMixin, FileDependencyNode):
 
     def get_data(self):
         with self.file.provide_locally() as (path, encoding):
-            return _nrrd.read(path)[0]
+            return VoxelData.load_nrrd(path)
 
     def load_object(self):
         return self.pipe(self.get_data())
+
+    def voxel_of(self, point):
+        """
+        Convert a 3D float position into a voxel based coordinate.
+
+        :param numpy.ndarray point: floating point
+        :return: 3D voxel coordinate
+        :rtype: numpy.ndarray
+        """
+        return np.asarray(
+            np.floor(point / self.voxel_size),
+            dtype=int,
+        )
+
+    def is_compatible(self, other_nrrd: NrrdDependencyNode):
+        """
+        Check if the current nrrd file is compatible with the provided one.
+
+        :param NrrdDependencyNode other_nrrd: other file to compare against
+        :returns: True if the two datasets are registered in the same coordinate framework
+            and if their voxel size is the same.
+        :rtype: bool
+        """
+        if other_nrrd.voxel_size != self.voxel_size:
+            return False
+        return np.all(
+            np.array(other_nrrd.load_object().raw.shape[:3])
+            == np.array(self.load_object().raw.shape)
+        )
 
 
 class MorphologyOperationCallable(OperationCallable):
@@ -511,7 +565,9 @@ class MorphologyOperationCallable(OperationCallable):
     Hello.
     """
 
-    def __call__(self, obj: Morphology, **kwargs: typing.Any) -> Morphology:
+    def __call__(
+        self, obj: Morphology, **kwargs: _tp.Any
+    ) -> Morphology:  # pragma: nocover
         pass
 
 
@@ -523,7 +579,9 @@ class MorphologyOperation(Operation):
 
 
 @config.node
-class MorphologyDependencyNode(FilePipelineMixin, FileDependencyNode):
+class MorphologyDependencyNode(
+    FilePipelineMixin, FileDependencyNode, classmap_entry="morphology"
+):
     """
     Configuration dependency node to load morphology files.
 

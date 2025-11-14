@@ -2,7 +2,6 @@ import dataclasses
 import random
 import typing
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING
 
 import errr
 
@@ -11,7 +10,7 @@ from ..constraints import Constraint
 from ..definitions import CableProperties, Ion, Mechanism, MechId, mechdict
 from ..exceptions import TransmitterError, UnknownLocationError, UnknownSynapseError
 
-if TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     from glia._glia import MechAccessor
     from patch.objects import PointProcess, Section, Segment
 
@@ -114,7 +113,7 @@ class NeuronModel:
         if source is None:
             return p.ParallelCon(gid, synapse, **kwargs)
         else:
-            spp = synapse._point_process
+            spp = synapse._pp
             p.parallel.target_var(spp, getattr(spp, "_ref_" + source), gid)
 
     def insert_transmitter(

@@ -4,7 +4,6 @@ Contains builtin commands.
 
 import contextlib
 import itertools
-import os
 import pathlib
 from uuid import uuid4
 
@@ -169,10 +168,10 @@ class BsbCompile(BaseCommand, name="compile"):
             "skip": Skip(),
             "only": Only(),
             "config": ConfigOption(positional=True),
-            "no_placement": SkipPlacement(),
-            "no_after_placement": SkipAfterPlacement(),
-            "no_connectivity": SkipConnectivity(),
-            "no_after_connectivity": SkipAfterConnectivity(),
+            "skip_placement": SkipPlacement(),
+            "skip_after_placement": SkipAfterPlacement(),
+            "skip_connectivity": SkipConnectivity(),
+            "skip_after_connectivity": SkipAfterConnectivity(),
             "append": Append(),
             "redo": Redo(),
             "clear": Clear(),
@@ -212,11 +211,11 @@ class BsbSimulate(BaseCommand, name="simulate"):
                 if name not in network.simulations and name == sim_name:
                     network.simulations[sim_name] = sim
         root = pathlib.Path(getattr(context.arguments, "output_folder", "./"))
-        if not root.is_dir() or not os.access(root, os.W_OK):
+        try:
+            root.mkdir(exist_ok=context.arguments.exists)
+        except FileExistsError:
             return report(
-                f"Output provided '{root.absolute()}' "
-                + "is not an existing directory with write access.",
-                level=0,
+                f"Could not create '{root.absolute()}', directory exists.", level=0
             )
         try:
             result = network.run_simulation(sim_name)
@@ -237,6 +236,11 @@ class BsbSimulate(BaseCommand, name="simulate"):
         parser.add_argument("network")
         parser.add_argument("simulation")
         parser.add_argument("-o", "--output-folder")
+        parser.add_argument(
+            "--exists",
+            action="store_true",
+            help="Indicates whether the folder structure already exists.",
+        )
 
 
 class CacheCommand(BaseCommand, name="cache"):  # pragma: nocover

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import itertools
 import typing
 
 from .. import config
@@ -10,7 +11,7 @@ from .cell import CellModel
 from .connection import ConnectionModel
 from .device import DeviceModel
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     from ..cell_types import CellType
     from ..connectivity.strategy import ConnectionStrategy
     from ..core import Scaffold
@@ -83,6 +84,13 @@ class Simulation:
             model: self.scaffold.get_connectivity_set(model.name)
             for model in sorted(self.connection_models.values())
         }
+
+    def get_components(self):
+        return itertools.chain(
+            self.cell_models.values(),
+            self.connection_models.values(),
+            self.devices.values(),
+        )
 
 
 __all__ = ["ProgressEvent", "Simulation"]

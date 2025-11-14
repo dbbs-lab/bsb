@@ -7,6 +7,7 @@ from numpy.random import default_rng
 from ... import config
 from ..._util import ichain
 from ...config import types
+from ...reporting import warn
 from ..strategy import ConnectionStrategy
 from .shared import Intersectional
 
@@ -65,6 +66,29 @@ class VoxelIntersection(Intersectional, ConnectionStrategy):
             else:
                 target_mset = target_morpho(target_set)
                 cand_mset = cand_morpho(cand_set)
+            warn_message = (
+                f"{self.name}: No point matching label filters for morphologies: "
+            )
+            nb_points = np.array([len(m) for m in cand_mset])
+            if not np.all(nb_points):
+                u_empty = np.unique(cand_mset.get_indices()[nb_points == 0])
+                hemitype_text = (
+                    "postsynaptic" if self.favor_cache == "pre" else "presynaptic"
+                )
+                warn(
+                    f"{warn_message}{np.array(cand_mset.names)[u_empty]}, "
+                    f"assigned to {hemitype_text} cell: {cand_set.cell_type.name}."
+                )
+            nb_points = np.array([len(m) for m in target_mset])
+            if not np.all(nb_points):
+                u_empty = np.unique(target_mset.get_indices()[nb_points == 0])
+                hemitype_text = (
+                    "presynaptic" if self.favor_cache == "pre" else "postsynaptic"
+                )
+                warn(
+                    f"{warn_message}{np.array(target_mset.names)[u_empty]}, "
+                    f"assigned to {hemitype_text} cell: {target_set.cell_type.name}."
+                )
             self._match_voxel_intersection(
                 match_itr, target_set, cand_set, target_mset, cand_mset
             )

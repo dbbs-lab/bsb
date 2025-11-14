@@ -14,10 +14,11 @@ from .. import config
 from ..config import refs
 from ..exceptions import ConfigurationError
 from ..mixins import NotParallel
+from ..reporting import report
 from ..storage._chunks import Chunk
 from .strategy import PlacementStrategy
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     from ..cell_types import CellType
     from ..storage._files import FileDependencyNode
     from ..topology.partition import Partition
@@ -41,7 +42,7 @@ class ImportPlacement(NotParallel, PlacementStrategy, abc.ABC, classmap_entry=No
         self.parse_source(indicators)
 
     @abc.abstractmethod
-    def parse_source(self, indicators):
+    def parse_source(self, indicators):  # pragma: nocover
         pass
 
 
@@ -92,7 +93,7 @@ class CsvImportPlacement(ImportPlacement):
                     est_memsize = (len(others) + 3) * i * 8
                     av_mem = psutil.virtual_memory().available
                     if est_memsize > av_mem / 10:
-                        print(
+                        report(
                             "FLUSHING, AVAILABLE MEM:",
                         )
                         self._flush(indicators)

@@ -12,11 +12,10 @@ from .._util import ichain, obj_str_insert
 from ..config import refs, types
 from ..exceptions import ConnectivityError
 from ..mixins import HasDependencies
-from ..profiling import node_meter
 from ..reporting import warn
 from ..storage._chunks import Chunk
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     from ..cell_types import CellType
     from ..core import Scaffold
     from ..morphologies import MorphologySet
@@ -32,7 +31,9 @@ class Hemitype:
 
     scaffold: Scaffold
 
-    cell_types: list[CellType] = config.reflist(refs.cell_type_ref, required=True)
+    cell_types: list[CellType] = config.reflist(
+        refs.cell_type_ref, required=True, hint=[]
+    )
     """
     List of cell types to use in connection.
     """
@@ -49,6 +50,7 @@ class Hemitype:
         required=False,
         call_default=False,
         default=(lambda ps: ps.load_morphologies()),
+        hint=None,
     )
     """
     Function to load the morphologies (MorphologySet) from a PlacementSet.
@@ -122,7 +124,7 @@ class HemitypeCollection:
         ]
 
 
-@config.dynamic(attr_name="strategy", required=True)
+@config.dynamic(attr_name="strategy", required=True, auto_classmap=True)
 class ConnectionStrategy(abc.ABC, HasDependencies):
     scaffold: Scaffold
     name: str = config.attr(key=True)
@@ -159,11 +161,6 @@ class ConnectionStrategy(abc.ABC, HasDependencies):
     cell type pairs are stored.
     """
 
-    def __init_subclass__(cls, **kwargs):
-        super(cls, cls).__init_subclass__(**kwargs)
-        # Decorate subclasses to measure performance
-        node_meter("connect")(cls)
-
     def __hash__(self):
         return id(self)
 
@@ -180,7 +177,7 @@ class ConnectionStrategy(abc.ABC, HasDependencies):
         return f"'{self.name}', connecting {pre} to {post}"
 
     @abc.abstractmethod
-    def connect(self, presyn_collection, postsyn_collection):
+    def connect(self, presyn_collection, postsyn_collection):  # pragma: nocover
         """
         Central method of each connection strategy. Given a pair of ``HemitypeCollection``
         (one for each connection side), should connect cell population using the

@@ -1,5 +1,6 @@
 import os
 import unittest
+from types import NoneType
 
 from bsb import (
     CellType,
@@ -22,8 +23,9 @@ class BothReference(Reference):
         merged.update(root.extensions)
         return merged
 
-    def is_ref(self, value):
-        return not isinstance(value, str)
+    @property
+    def type(self):
+        return NoneType
 
 
 @config.node

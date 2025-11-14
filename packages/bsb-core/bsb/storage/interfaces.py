@@ -10,7 +10,7 @@ from .._util import immutable, obj_str_insert
 from ..trees import BoxTree
 from ._chunks import Chunk
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     from ..cell_types import CellType
 
 
@@ -102,7 +102,7 @@ class Engine(Interface):
 
     @property
     @abc.abstractmethod
-    def versions(self):
+    def versions(self):  # pragma: nocover
         """
         Must return a dictionary containing the version of the engine package, and bsb
         package, used to last write to this storage object.
@@ -111,7 +111,7 @@ class Engine(Interface):
 
     @property
     @abc.abstractmethod
-    def root_slug(self):
+    def root_slug(self):  # pragma: nocover
         """
         Must return a pathlike unique identifier for the root of the storage object.
         """
@@ -119,7 +119,7 @@ class Engine(Interface):
 
     @staticmethod
     @abc.abstractmethod
-    def recognizes(root, comm):
+    def recognizes(root, comm):  # pragma: nocover
         """
         Must return whether the given root argument is recognized as a valid storage
         object.
@@ -141,56 +141,56 @@ class Engine(Interface):
             return False
 
     @abc.abstractmethod
-    def exists(self):
+    def exists(self):  # pragma: nocover
         """
         Must check existence of the storage object.
         """
         pass
 
     @abc.abstractmethod
-    def create(self):
+    def create(self):  # pragma: nocover
         """
         :guilabel:`collective` Must create the storage engine.
         """
         pass
 
     @abc.abstractmethod
-    def move(self, new_root):
+    def move(self, new_root):  # pragma: nocover
         """
         :guilabel:`collective` Must move the storage object to the new root.
         """
         pass
 
     @abc.abstractmethod
-    def copy(self, new_root):
+    def copy(self, new_root):  # pragma: nocover
         """
         :guilabel:`collective` Must copy the storage object to the new root.
         """
         pass
 
     @abc.abstractmethod
-    def remove(self):
+    def remove(self):  # pragma: nocover
         """
         :guilabel:`collective` Must remove the storage object.
         """
         pass
 
     @abc.abstractmethod
-    def clear_placement(self):
+    def clear_placement(self):  # pragma: nocover
         """
         :guilabel:`collective` Must clear existing placement data.
         """
         pass
 
     @abc.abstractmethod
-    def clear_connectivity(self):
+    def clear_connectivity(self):  # pragma: nocover
         """
         :guilabel:`collective` Must clear existing connectivity data.
         """
         pass
 
     @abc.abstractmethod
-    def get_chunk_stats(self):
+    def get_chunk_stats(self):  # pragma: nocover
         """
         :guilabel:`readonly` Must return a dictionary with all chunk statistics.
         """
@@ -231,7 +231,7 @@ class FileStore(Interface, engine_key="files"):
     """
 
     @abc.abstractmethod
-    def all(self):
+    def all(self):  # pragma: nocover
         """
         Return all ids and associated metadata in the file store.
         """
@@ -259,7 +259,7 @@ class FileStore(Interface, engine_key="files"):
         pass
 
     @abc.abstractmethod
-    def load(self, id):
+    def load(self, id):  # pragma: nocover
         """
         Load the content of an object in the file store.
 
@@ -272,7 +272,7 @@ class FileStore(Interface, engine_key="files"):
         pass
 
     @abc.abstractmethod
-    def remove(self, id):
+    def remove(self, id):  # pragma: nocover
         """
         Remove the content of an object in the file store.
 
@@ -283,7 +283,7 @@ class FileStore(Interface, engine_key="files"):
         pass
 
     @abc.abstractmethod
-    def store_active_config(self, config):
+    def store_active_config(self, config):  # pragma: nocover
         """
         Store configuration in the file store and mark it as the active configuration of
         the stored network.
@@ -296,7 +296,7 @@ class FileStore(Interface, engine_key="files"):
         pass
 
     @abc.abstractmethod
-    def load_active_config(self):
+    def load_active_config(self):  # pragma: nocover
         """
         Load the active configuration stored in the file store.
 
@@ -307,21 +307,21 @@ class FileStore(Interface, engine_key="files"):
         pass
 
     @abc.abstractmethod
-    def has(self, id):
+    def has(self, id):  # pragma: nocover
         """
         Must return whether the file store has a file with the given id.
         """
         pass
 
     @abc.abstractmethod
-    def get_mtime(self, id):
+    def get_mtime(self, id):  # pragma: nocover
         """
         Must return the last modified timestamp of file with the given id.
         """
         pass
 
     @abc.abstractmethod
-    def get_encoding(self, id):
+    def get_encoding(self, id):  # pragma: nocover
         """
         Must return the encoding of the file with the given id, or None if it is
         unspecified binary data.
@@ -329,7 +329,7 @@ class FileStore(Interface, engine_key="files"):
         pass
 
     @abc.abstractmethod
-    def get_meta(self, id) -> typing.Mapping[str, typing.Any]:
+    def get_meta(self, id) -> typing.Mapping[str, typing.Any]:  # pragma: nocover
         """
         Must return the metadata of the given id.
         """
@@ -388,7 +388,7 @@ class PlacementSet(Interface):
         self._morphology_labels = None
 
     @abc.abstractmethod
-    def __len__(self):
+    def __len__(self):  # pragma: nocover
         pass
 
     @obj_str_insert
@@ -426,7 +426,7 @@ class PlacementSet(Interface):
 
     @classmethod
     @abc.abstractmethod
-    def create(cls, engine, cell_type):
+    def create(cls, engine, cell_type):  # pragma: nocover
         """
         Create a placement set.
 
@@ -441,7 +441,7 @@ class PlacementSet(Interface):
 
     @staticmethod
     @abc.abstractmethod
-    def exists(engine, cell_type):
+    def exists(engine, cell_type):  # pragma: nocover
         """
         Check existence of a placement set.
 
@@ -475,7 +475,7 @@ class PlacementSet(Interface):
         return cls(engine, cell_type)
 
     @abc.abstractmethod
-    def clear(self, chunks=None):
+    def clear(self, chunks=None):  # pragma: nocover
         """
         Clear (some chunks of) the placement set.
 
@@ -485,7 +485,7 @@ class PlacementSet(Interface):
         pass
 
     @abc.abstractmethod
-    def get_all_chunks(self):
+    def get_all_chunks(self):  # pragma: nocover
         """
         Get all the chunks that exist in the placement set.
 
@@ -495,11 +495,11 @@ class PlacementSet(Interface):
         pass
 
     @abc.abstractmethod
-    def load_ids(self):
+    def load_ids(self):  # pragma: nocover
         pass
 
     @abc.abstractmethod
-    def load_positions(self):
+    def load_positions(self):  # pragma: nocover
         """
         Return a dataset of cell positions.
 
@@ -509,7 +509,7 @@ class PlacementSet(Interface):
         pass
 
     @abc.abstractmethod
-    def load_rotations(self):
+    def load_rotations(self):  # pragma: nocover
         """
         Load the rotation data of the placement set.
 
@@ -519,7 +519,7 @@ class PlacementSet(Interface):
         pass
 
     @abc.abstractmethod
-    def load_morphologies(self, allow_empty=False):
+    def load_morphologies(self, allow_empty=False):  # pragma: nocover
         """
         Return a :class:`~.morphologies.MorphologySet` associated to the cells. Raises an
         error if there is no morphology data, unless `allow_empty=True`.
@@ -532,7 +532,7 @@ class PlacementSet(Interface):
         pass
 
     @abc.abstractmethod
-    def load_additional(self, key=None):
+    def load_additional(self, key=None):  # pragma: nocover
         pass
 
     def count_morphologies(self):
@@ -542,7 +542,7 @@ class PlacementSet(Interface):
         return self.load_morphologies(allow_empty=True).count_morphologies()
 
     @abc.abstractmethod
-    def __iter__(self):
+    def __iter__(self):  # pragma: nocover
         pass
 
     @abc.abstractmethod
@@ -554,7 +554,7 @@ class PlacementSet(Interface):
         rotations=None,
         additional=None,
         count=None,
-    ):
+    ):  # pragma: nocover
         """
         Append data to the placement set. If any of ``positions``, ``morphologies``, or
         ``rotations`` is given, the arguments to its left must also be given (e.g. passing
@@ -578,7 +578,7 @@ class PlacementSet(Interface):
         pass
 
     @abc.abstractmethod
-    def append_additional(self, name, chunk, data):
+    def append_additional(self, name, chunk, data):  # pragma: nocover
         """
         Append arbitrary user data to the placement set. The length of the data must match
         that of the placement set, and must be storable by the engine.
@@ -592,11 +592,11 @@ class PlacementSet(Interface):
         pass
 
     @abc.abstractmethod
-    def chunk_context(self, chunks):
+    def chunk_context(self, chunks):  # pragma: nocover
         pass
 
     @abc.abstractmethod
-    def set_chunk_filter(self, chunks):
+    def set_chunk_filter(self, chunks):  # pragma: nocover
         """
         Should limit the scope of the placement set to the given chunks.
 
@@ -606,7 +606,7 @@ class PlacementSet(Interface):
         pass
 
     @abc.abstractmethod
-    def set_label_filter(self, labels):
+    def set_label_filter(self, labels):  # pragma: nocover
         """
         Should limit the scope of the placement set to the given labels.
 
@@ -616,7 +616,7 @@ class PlacementSet(Interface):
         pass
 
     @abc.abstractmethod
-    def set_morphology_label_filter(self, morphology_labels):
+    def set_morphology_label_filter(self, morphology_labels):  # pragma: nocover
         """
         Should limit the scope of the placement set to the given sub-cellular labels. The
         morphologies returned by
@@ -630,7 +630,7 @@ class PlacementSet(Interface):
         pass
 
     @abc.abstractmethod
-    def label(self, labels, cells):
+    def label(self, labels, cells):  # pragma: nocover
         """
         Should label the cells with given labels.
 
@@ -642,7 +642,7 @@ class PlacementSet(Interface):
         pass
 
     @abc.abstractmethod
-    def get_unique_labels(self):
+    def get_unique_labels(self):  # pragma: nocover
         """
         Should return the unique labels assigned to the cells.
 
@@ -652,7 +652,7 @@ class PlacementSet(Interface):
         pass
 
     @abc.abstractmethod
-    def get_labelled(self, labels=None):
+    def get_labelled(self, labels=None):  # pragma: nocover
         """
         Should return the ids of the cells labelled with given labels. If labels are not
         provided, will filter non labelled cells.
@@ -664,7 +664,7 @@ class PlacementSet(Interface):
         pass
 
     @abc.abstractmethod
-    def get_label_mask(self, labels=None):
+    def get_label_mask(self, labels=None):  # pragma: nocover
         """
         Should return a mask that fits the placement set for the cells with given labels.
         If labels are not provided, will filter non labelled cells.
@@ -675,7 +675,7 @@ class PlacementSet(Interface):
         pass
 
     @abc.abstractmethod
-    def get_chunk_stats(self):
+    def get_chunk_stats(self):  # pragma: nocover
         """
         Should return how many cells were placed in each chunk.
         """
@@ -753,7 +753,7 @@ class PlacementSet(Interface):
 
 class MorphologyRepository(Interface, engine_key="morphologies"):
     @abc.abstractmethod
-    def all(self):
+    def all(self):  # pragma: nocover
         """
         Fetch all the stored morphologies.
 
@@ -763,7 +763,7 @@ class MorphologyRepository(Interface, engine_key="morphologies"):
         pass
 
     @abc.abstractmethod
-    def select(self, *selectors):
+    def select(self, *selectors):  # pragma: nocover
         """
         Select stored morphologies.
 
@@ -775,7 +775,7 @@ class MorphologyRepository(Interface, engine_key="morphologies"):
         pass
 
     @abc.abstractmethod
-    def save(self, name, morphology, overwrite=False):
+    def save(self, name, morphology, overwrite=False):  # pragma: nocover
         """
         Store a morphology.
 
@@ -792,7 +792,7 @@ class MorphologyRepository(Interface, engine_key="morphologies"):
         pass
 
     @abc.abstractmethod
-    def has(self, name):
+    def has(self, name):  # pragma: nocover
         """
         Check whether a morphology under the given name exists.
 
@@ -807,7 +807,7 @@ class MorphologyRepository(Interface, engine_key="morphologies"):
         return self.has(item)
 
     @abc.abstractmethod
-    def preload(self, name):
+    def preload(self, name):  # pragma: nocover
         """
         Load a stored morphology as a morphology loader.
 
@@ -819,7 +819,7 @@ class MorphologyRepository(Interface, engine_key="morphologies"):
         pass
 
     @abc.abstractmethod
-    def load(self, name):
+    def load(self, name):  # pragma: nocover
         """
         Load a stored morphology as a constructed morphology object.
 
@@ -831,7 +831,7 @@ class MorphologyRepository(Interface, engine_key="morphologies"):
         pass
 
     @abc.abstractmethod
-    def get_meta(self, name):
+    def get_meta(self, name):  # pragma: nocover
         """
         Get the metadata of a stored morphology.
 
@@ -843,7 +843,7 @@ class MorphologyRepository(Interface, engine_key="morphologies"):
         pass
 
     @abc.abstractmethod
-    def get_all_meta(self):
+    def get_all_meta(self):  # pragma: nocover
         """
         Get the metadata of all stored morphologies.
 
@@ -853,7 +853,7 @@ class MorphologyRepository(Interface, engine_key="morphologies"):
         pass
 
     @abc.abstractmethod
-    def set_all_meta(self, all_meta):
+    def set_all_meta(self, all_meta):  # pragma: nocover
         """
         Set the metadata of all stored morphologies.
 
@@ -863,7 +863,7 @@ class MorphologyRepository(Interface, engine_key="morphologies"):
         pass
 
     @abc.abstractmethod
-    def update_all_meta(self, meta):
+    def update_all_meta(self, meta):  # pragma: nocover
         """
         Update the metadata of stored morphologies with the provided key values.
 
@@ -906,12 +906,12 @@ class ConnectivitySet(Interface):
     post_type: "CellType"
 
     @abc.abstractmethod
-    def __len__(self):
+    def __len__(self):  # pragma: nocover
         pass
 
     @classmethod
     @abc.abstractmethod
-    def create(cls, engine, tag):
+    def create(cls, engine, tag):  # pragma: nocover
         """
         Must create the placement set.
         """
@@ -924,7 +924,7 @@ class ConnectivitySet(Interface):
 
     @staticmethod
     @abc.abstractmethod
-    def exists(engine, tag):
+    def exists(engine, tag):  # pragma: nocover
         """
         Must check the existence of the connectivity set.
         """
@@ -940,7 +940,7 @@ class ConnectivitySet(Interface):
             self.create(engine, tag)
 
     @abc.abstractmethod
-    def clear(self, chunks=None):
+    def clear(self, chunks=None):  # pragma: nocover
         """
         Must clear (some chunks of) the placement set.
         """
@@ -948,7 +948,7 @@ class ConnectivitySet(Interface):
 
     @classmethod
     @abc.abstractmethod
-    def get_tags(cls, engine):
+    def get_tags(cls, engine):  # pragma: nocover
         """
         Must return the tags of all existing connectivity sets.
 
@@ -957,7 +957,7 @@ class ConnectivitySet(Interface):
         pass
 
     @abc.abstractmethod
-    def connect(self, pre_set, post_set, src_locs, dest_locs):
+    def connect(self, pre_set, post_set, src_locs, dest_locs):  # pragma: nocover
         """
         Must connect the ``src_locs`` to the ``dest_locs``, interpreting the cell ids
         (first column of the locs) as the cell rank in the placement set.
@@ -965,7 +965,7 @@ class ConnectivitySet(Interface):
         pass
 
     @abc.abstractmethod
-    def chunk_connect(self, src_chunk, dst_chunk, src_locs, dst_locs):
+    def chunk_connect(self, src_chunk, dst_chunk, src_locs, dst_locs):  # pragma: nocover
         """
         Must connect the ``src_locs`` to the ``dest_locs``, interpreting the cell ids
         (first column of the locs) as the cell rank in the chunk.
@@ -973,7 +973,7 @@ class ConnectivitySet(Interface):
         pass
 
     @abc.abstractmethod
-    def get_local_chunks(self, direction):
+    def get_local_chunks(self, direction):  # pragma: nocover
         """
         Must list all the local chunks that contain data in the given ``direction``
         (``"inc"`` or ``"out"``).
@@ -981,7 +981,7 @@ class ConnectivitySet(Interface):
         pass
 
     @abc.abstractmethod
-    def get_global_chunks(self, direction, local_):
+    def get_global_chunks(self, direction, local_):  # pragma: nocover
         """
         Must list all the global chunks that contain data coming from a ``local`` chunk in
         the given ``direction``
@@ -989,7 +989,9 @@ class ConnectivitySet(Interface):
         pass
 
     @abc.abstractmethod
-    def nested_iter_connections(self, direction=None, local_=None, global_=None):
+    def nested_iter_connections(
+        self, direction=None, local_=None, global_=None
+    ):  # pragma: nocover
         """
         Must iterate over the connectivity data, leaving room for the end-user to set up
         nested for loops:
@@ -1007,7 +1009,9 @@ class ConnectivitySet(Interface):
         pass
 
     @abc.abstractmethod
-    def flat_iter_connections(self, direction=None, local_=None, global_=None):
+    def flat_iter_connections(
+        self, direction=None, local_=None, global_=None
+    ):  # pragma: nocover
         """
         Must iterate over the connectivity data, yielding the direction, local chunk,
         global chunk, and data:
@@ -1023,7 +1027,7 @@ class ConnectivitySet(Interface):
         pass
 
     @abc.abstractmethod
-    def load_block_connections(self, direction, local_, global_):
+    def load_block_connections(self, direction, local_, global_):  # pragma: nocover
         """
         Must load the connections from ``direction`` perspective between ``local_`` and
         ``global_``.
@@ -1034,7 +1038,7 @@ class ConnectivitySet(Interface):
         pass
 
     @abc.abstractmethod
-    def load_local_connections(self, direction, local_):
+    def load_local_connections(self, direction, local_):  # pragma: nocover
         """
         Must load all the connections from ``direction`` perspective in ``local_``.
 

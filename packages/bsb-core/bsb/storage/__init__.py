@@ -20,7 +20,7 @@ from .. import plugins
 from ..exceptions import UnknownStorageEngineError
 from ..services.mpi import MPIService
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     from .interfaces import (
         ConnectivitySet,
         FileStore,

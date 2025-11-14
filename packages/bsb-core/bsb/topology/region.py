@@ -14,7 +14,7 @@ from ..config import refs, types
 from ..reporting import warn
 from ._layout import Layout
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     from ..core import Scaffold
     from .partition import Partition
 

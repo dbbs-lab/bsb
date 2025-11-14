@@ -10,7 +10,7 @@ from arborize.builders._arbor import get_decor, get_label_dict, hash_labelset
 # This import only works when tests are executed from root dir.
 from tests._shared import SchematicsFixture
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     from arborize.schematic import Point
 
 

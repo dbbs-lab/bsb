@@ -42,3 +42,49 @@ FAQ
         from bsb import Scaffold
 
         # rest of your code here.
+
+.. dropdown:: When do I need to recompile my Scaffold?
+    :animate: fade-in-slide-down
+
+    .. rubric:: Context
+
+    I have created a configuration and ``compiled`` it which produced a scaffold storage
+    file. Now, I have made modification to my configuration file and I want to update the
+    storage file. Is it necessary to recompile entirely my network?
+
+    .. rubric:: Explanation
+
+    The BSB's reconstruction phase is separated from the simulation. So if you want to
+    make modifications to the ``simulations`` section of the BSB then you only need to
+    run the reconfigure command to update the stored configuration file:
+
+    .. code-block:: bash
+
+        bsb reconfigure network.hdf5 network_configuration.json
+
+    If otherwise you have changed part of the configuration related to a specific step
+    in the reconstruction pipeline, you can use the ``--redo`` with the ``--only``, or
+    ``--skip`` flags:
+
+    .. code-block:: bash
+
+        bsb compile --redo --skip-placement # Redo all reconstruction steps except placement
+        bsb compile --redo --only=stratA,stratB # Redo only stratA and stratB strategies
+                                                # and all strategies that depends on it.
+        bsb compile --redo --skip=stratA # Redo all configuration except stratA
+
+    If you have added a new strategy or you want to duplicate its results,
+    you can instead use ``append``:
+
+    .. code-block:: bash
+
+        bsb compile --append --only=stratA # Run only stratA and its dependencies.
+                                           # Append the results to the ones already generated
+
+    You can see all the ``compile`` flags options in :ref:`bsb_compile`.
+    If you modified the topology of the Scaffold, since most of the reconstruction
+    pipeline depends on it, you should recompile your whole network:
+
+    .. code-block:: bash
+
+        bsb compile --redo

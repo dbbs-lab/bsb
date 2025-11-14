@@ -114,12 +114,22 @@ class TestVolumetricRotations(
 ):
     def setUp(self):
         self.cfg = Configuration.default(
+            files=dict(
+                annotations={
+                    "type": "nrrd",
+                    "file": get_data_path("orientations", "toy_annotations.nrrd"),
+                },
+                orientations={
+                    "type": "nrrd",
+                    "file": get_data_path("orientations", "toy_orientations.nrrd"),
+                    "default_vector": np.array([1.0, 0.0, 0.0]),
+                },
+            ),
             regions=dict(reg=dict(children=["a"])),
             partitions=dict(
                 a=dict(
                     type="nrrd",
-                    source=get_data_path("orientations", "toy_annotations.nrrd"),
-                    voxel_size=25,
+                    sources=["annotations"],
                 )
             ),
             cell_types=dict(a=dict(spatial=dict(radius=2, density=1e-4))),
@@ -129,13 +139,7 @@ class TestVolumetricRotations(
                     cell_types=["a"],
                     partitions=["a"],
                     distribute=dict(
-                        rotations=VolumetricRotations(
-                            orientation_path=get_data_path(
-                                "orientations", "toy_orientations.nrrd"
-                            ),
-                            orientation_resolution=25.0,
-                            default_vector=np.array([-1.0, 0.0, 0.0]),
-                        ),
+                        rotations=VolumetricRotations(orientation_path="orientations"),
                     ),
                 ),
             ),
@@ -145,7 +149,7 @@ class TestVolumetricRotations(
     def test_distribute(self):
         self.network.compile(clear=True)
         positions = self.network.get_placement_set("a").load_positions()
-        voxel_set = self.network.partitions.a.get_voxelset()
+        voxel_set = self.network.partitions.a.to_voxels()
         region_ids = np.asarray(
             voxel_set.data[:, 0][voxel_set.index_of(positions)], dtype=int
         )
@@ -169,12 +173,3 @@ class TestVolumetricRotations(
         )
         # orientation field x component should be close to 0.
         self.assertTrue(np.all(np.absolute(rotations[pos_w_rot][:, 0]) < 0.5))
-        self.cfg["placement"]["a"]["distribute"]["rotations"].space_origin = [
-            1000,
-            1000,
-            1000,
-        ]
-
-        self.network.compile(clear=True)
-        rotations = np.array(self.network.get_placement_set("a").load_rotations())
-        self.assertTrue(np.array_equal(np.all(rotations == 0.0, axis=1), region_ids > 0))

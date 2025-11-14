@@ -10,8 +10,8 @@ Run your first NEURON simulation
 In this tutorial, we present how to configure a NEURON simulation for a multi-compartment
 neuron network.
 
-Install requirements
-====================
+Pre-requirements
+================
 
 `NEURON <https://www.neuron.yale.edu/neuron/>`_ is one of the supported simulators of the
 BSB. As for the other simulator, its adapter code is stored in a separate repository:
@@ -29,36 +29,54 @@ We will also need some model files for NEURON which you can obtain and link to b
 
     pip install dbbs-catalogue
 
+Create a ``data`` folder in your project folder and save inside:
+
+- A custom stellate cell morphology :download:`here </../../../examples/neuron-simulation/data/StellateCell.swc>` as ``StellateCell.swc``.
+- The Stellate model available :download:`here </../../../examples/neuron-simulation/data/Stellate.py>` as ``Stellate.py``.
+
+
 BSB reconstruction for this tutorial
-====================================
+------------------------------------
 
 For this example, we will build a network consisting of a single ``layer`` of
 ``stellate_cells`` connected through axon-dendrite overlap, using the strategy
 :doc:`VoxelIntersection </connectivity/connection-strategies>`.
-The morphology of a custom stellate cell is provided
-:download:`here </getting-started/data/StellateCell.swc>`.
-Please save this file in your project folder as ``StellateCell.swc``.
 
 The network configuration should be as follows:
 
 .. tab-set-code::
 
-    .. literalinclude:: /getting-started/configs/guide-neuron.json
+    .. literalinclude:: /../../../examples/neuron-simulation/configs/guide_neuron.json
       :language: json
-      :lines: 1-68
+      :lines: 1-69
 
-    .. literalinclude:: /../examples/tutorials/neuron-simulation.py
+    .. literalinclude:: /../../../examples/neuron-simulation/configs/guide_neuron.yaml
+      :language: yaml
+      :lines: 1-62
+
+    .. literalinclude:: /../../../examples/neuron-simulation/scripts/guide_neuron.py
       :language: python
-      :lines: 1-54
+      :lines: 1-57
 
 Copy the configuration in you favorite format and put it in the project folder
-as ``neuron-simulation.json`` or  as ``neuron-simulation.py``
+as ``neuron-simulation.[YOUR EXTENSION]``
+
+At this stage, your project folder should contain these files:
+
+| .
+| ├── data
+| │    ├── StellateCell.swc
+| │    └── Stellate.py
+| ├── pyproject.toml
+| └── neuron-simulation.yaml  # or .json or .py
 
 Then, the configuration should be compiled:
 
 .. code-block:: bash
 
     bsb compile --verbosity 3 neuron-simulation.json
+    # or
+    bsb compile --verbosity 3 neuron-simulation.yaml
     # or
     python neuron-simulation.py
 
@@ -80,13 +98,17 @@ milliseconds) and the :guilabel:`temperature` (celsius unit).
 
 .. tab-set-code::
 
-    .. literalinclude:: /getting-started/configs/guide-neuron.json
+    .. literalinclude:: /../../../examples/neuron-simulation/configs/guide_neuron.json
       :language: json
-      :lines: 69-74
+      :lines: 70-75
 
-    .. literalinclude:: /../examples/tutorials/neuron-simulation.py
+    .. literalinclude:: /../../../examples/neuron-simulation/configs/guide_neuron.yaml
+      :language: yaml
+      :lines: 63-68
+
+    .. literalinclude:: /../../../examples/neuron-simulation/scripts/guide_neuron.py
       :language: python
-      :lines: 56-61
+      :lines: 59-68
 
 Cell Models
 -----------
@@ -96,9 +118,8 @@ to define the cell's behavior.
 
 In short, these models encapsulate all the specifications for ion channels and synapses
 covering all compartments of the neuron. Discussing NEURON model characteristics is
-beyond the scope of this guide; therefore, a ready-to-use Stellate model is provided
-:download:`here </../examples/tutorials/Stellate.py>`. Save it as a ``Stellate.py``
-file in your project folder and review its contents.
+beyond the scope of this guide; therefore, we will leverage the ``data/Stellate.py``
+NEURON model provided before. Please review its contents.
 
 Within the model file, you will find a model definition called
 :guilabel:`definitionStellate`, which includes all the customized parameters. This is
@@ -108,13 +129,17 @@ the ion channel mechanisms are in the attribute :guilabel:`cable_types`.
 
 .. tab-set-code::
 
-    .. literalinclude:: /getting-started/configs/guide-neuron.json
+    .. literalinclude:: /../../../examples/neuron-simulation/configs/guide_neuron.json
       :language: json
-      :lines: 75-80
+      :lines: 76-81
 
-    .. literalinclude:: /../examples/tutorials/neuron-simulation.py
+    .. literalinclude:: /../../../examples/neuron-simulation/configs/guide_neuron.yaml
+      :language: yaml
+      :lines: 69-72
+
+    .. literalinclude:: /../../../examples/neuron-simulation/scripts/guide_neuron.py
       :language: python
-      :lines: 63-65
+      :lines: 70-72
 
 Connection Models
 -----------------
@@ -130,13 +155,17 @@ model file: :guilabel:`GABA`.
 
 .. tab-set-code::
 
-    .. literalinclude:: /getting-started/configs/guide-neuron.json
+    .. literalinclude:: /../../../examples/neuron-simulation/configs/guide_neuron.json
       :language: json
-      :lines: 81-86
+      :lines: 82-87
 
-    .. literalinclude:: /../examples/tutorials/neuron-simulation.py
+    .. literalinclude:: /../../../examples/neuron-simulation/configs/guide_neuron.yaml
+      :language: yaml
+      :lines: 73-78
+
+    .. literalinclude:: /../../../examples/neuron-simulation/scripts/guide_neuron.py
       :language: python
-      :lines: 66-76
+      :lines: 74-84
 
 To each synapse is assigned a :guilabel:`weight` of 0.001 and a :guilabel:`delay` (ms) of 1.
 
@@ -154,13 +183,17 @@ devices (see the targetting section on :doc:`this page </simulation/intro>` for 
 
 .. tab-set-code::
 
-    .. literalinclude:: /getting-started/configs/guide-neuron.json
+    .. literalinclude:: /../../../examples/neuron-simulation/configs/guide_neuron.json
       :language: json
-      :lines: 87-127
+      :lines: 88-128
 
-    .. literalinclude:: /../examples/tutorials/neuron-simulation.py
+    .. literalinclude:: /../../../examples/neuron-simulation/configs/guide_neuron.yaml
+      :language: yaml
+      :lines: 79-127
+
+    .. literalinclude:: /../../../examples/neuron-simulation/scripts/guide_neuron.py
       :language: python
-      :lines: 77-110
+      :lines: 86-119
 
 In this example, a :guilabel:`spike_generator` is used to produce ``1`` spike (attribute
 :guilabel:`number`) at ``9`` ms and send it to the cell with ID ``0`` (using the
@@ -180,12 +213,15 @@ Final configuration file
 
 .. tab-set-code::
 
-
-  .. literalinclude:: /getting-started/configs/guide-neuron.json
+  .. literalinclude:: /../../../examples/neuron-simulation/configs/guide_neuron.json
     :language: json
 
-  .. literalinclude:: /../examples/tutorials/neuron-simulation.py
+  .. literalinclude:: /../../../examples/neuron-simulation/configs/guide_neuron.yaml
+    :language: yaml
+
+  .. literalinclude:: /../../../examples/neuron-simulation/scripts/guide_neuron.py
     :language: python
+    :lines: 3-122
 
 Running the Simulation
 ----------------------
@@ -202,17 +238,13 @@ So, you need to update your file, using either the ``reconfigure`` command or th
   .. code-block:: bash
 
     bsb reconfigure my_network.hdf5 neuron-simulation.json
+    # or
+    bsb reconfigure my_network.hdf5 neuron-simulation.yaml
 
   .. code-block:: python
 
     storage = scaffold.storage
     storage.store_active_config(config)
-
-Once this is done, create a folder in which to store your simulation results:
-
-.. code-block:: bash
-
-    mkdir simulation-results
 
 You can now run your simulation:
 
@@ -224,11 +256,16 @@ You can now run your simulation:
 
   .. code-block:: python
 
+        import pathlib
         from bsb import from_storage
 
         scaffold = from_storage("my_network.hdf5")
+        # create the simulation results folder
+        root = pathlib.Path("simulation-results")
+        root.mkdir()
+        # run the simulation and save the results
         result = scaffold.run_simulation("neuronsim")
-        result.write("simulation-results/neuronsimulation.nio", "ow")
+        result.write(root / "neuronsimulation.nio", "ow")
 
 The results of the simulation will be stored in the ``"simulation-results"`` folder.
 

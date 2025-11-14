@@ -4,7 +4,7 @@ from collections.abc import Sequence
 from .core import _is_sequence, transform, transform_record
 from .error_handler import CatchRecord, catch_hoc_error
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     from .interpreter import PythonHocInterpreter
 
 
@@ -239,7 +239,7 @@ class Section(PythonHocObject, Connectable, WrapsPointers):
 
     def __call__(self, x, ephemeral=False, *args, **kwargs):
         v = super().__call__(x, *args, **kwargs)
-        if type(v).__name__ != "Segment":  # pragma: no cover
+        if type(v).__name__ != "Segment":  # pragma: nocover
             raise TypeError("Section call did not return a Segment.")
         seg = Segment(self._interpreter, v, self)
         if not ephemeral:
@@ -252,7 +252,7 @@ class Section(PythonHocObject, Connectable, WrapsPointers):
     def __iter__(self, *args, **kwargs):
         iter = super().__iter__(*args, **kwargs)
         for v in iter:
-            if type(v).__name__ != "Segment":  # pragma: no cover
+            if type(v).__name__ != "Segment":  # pragma: nocover
                 raise TypeError("Section iteration did not return a Segment.")
             yield Segment(self._interpreter, v, self)
 

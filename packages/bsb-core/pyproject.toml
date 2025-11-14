@@ -18,18 +18,19 @@ dependencies = [
   "errr~=1.2",
   "rtree~=1.0",
   "psutil~=5.8",
-  "pynrrd~=1.0",
+  "voxcell~=3.1",
   "morphio~=3.3",
   "toml~=0.10.0",
   "requests~=2.30",
   "urllib3~=2.0",
   "appdirs~=1.4",
-  "neo[nixio]",
+  "neo[nixio]~=0.13",
   "tqdm~=4.50",
   "dashing-next~=0.1",
   "shortuuid~=1.0",
   "quantities~=0.15.0",
-  "exceptiongroup>=1.2.0"
+  "exceptiongroup>=1.2.0",
+  "opentelemetry-api~=1.0"
 ]
 
   [[project.authors]]
@@ -58,8 +59,10 @@ verbosity = "bsb._options:verbosity"
 sudo = "bsb._options:sudo"
 version = "bsb._options:version"
 config = "bsb._options:config"
+sim_console_progress= "bsb._options:sim_console_progress"
 profiling = "bsb._options:profiling"
 debug_pool = "bsb._options:debug_pool"
+quiet = "bsb._options:quiet"
 
   [project.scripts]
   bsb = "bsb.cli:handle_cli"
@@ -81,7 +84,13 @@ docs = [
   "bsb-yaml~=6.0",
   "sphinxext-bsb~=6.0"
 ]
-dev = [ "pre-commit~=3.5", "ruff>=0.8.2", "snakeviz~=2.1" ]
+dev = [
+  "pre-commit~=3.5",
+  "ruff>=0.8.2",
+  "snakeviz~=2.1",
+  "opentelemetry-distro>=0.59b0",
+  "opentelemetry-exporter-otlp~=1.38",
+]
 
 [tool.uv]
 default-groups = [ "dev", "docs", "test" ]
@@ -118,7 +127,10 @@ branch = true
 source = [ "bsb" ]
 
 [tool.coverage.report]
-exclude_lines = [ "if TYPE_CHECKING:" ]
+exclude_lines = [
+  "if typing.TYPE_CHECKING:",
+  "pragma: nocover"
+]
 show_missing = true
 
 [tool.ruff]

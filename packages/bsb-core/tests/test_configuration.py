@@ -25,6 +25,8 @@ from bsb import (
     DynamicObjectNotFoundError,
     NrrdDependencyNode,
     PackageRequirementWarning,
+    Partition,
+    Region,
     RegionGroup,
     RequirementError,
     Scaffold,
@@ -32,6 +34,7 @@ from bsb import (
     UnresolvedClassCastError,
     config,
     from_storage,
+    refs,
 )
 from bsb._package_spec import get_missing_requirement_reason
 from bsb.config import Configuration, _attrs, compose_nodes, types
@@ -413,10 +416,16 @@ class TestConfigProperties(unittest.TestCase):
 
 class TestConfigRef(unittest.TestCase):
     def test_referencing(self):
+        # Test that we can refer to another node and its attributes.
+        # Please note that this is not the primary use case of the
+        # referencing system. Most cases are simply not tested, and
+        # this was chosen because it's both simple and covers features
+        # of the system quite well.
+
         @config.node
         class Test:
             name = config.attr(required=True)
-            name_ref = config.ref(lambda root, here: here, required=True, type=int)
+            name_ref = config.ref(lambda root, here: here, required=True)
             type_ref = config.ref(lambda root, here: here, ref_type=str)
 
         @config.root
@@ -424,11 +433,21 @@ class TestConfigRef(unittest.TestCase):
             test = config.attr(type=Test, required=True)
 
         r = Resolver({"test": {"name": "Johnny", "name_ref": "name", "type_ref": "name"}})
+        # Assert that the reference is resolved to the value
         self.assertEqual(r.test.name_ref, "Johnny")
+        # And that internally we remember the reference key we got it from.
         self.assertEqual(r.test.name_ref_reference, "name")
 
+        # Test that referencing an attribute that doesn't exist raises an error
         with self.assertRaises(CfgReferenceError):
             Resolver({"test": {"name": "Johnny", "name_ref": "nname"}})
+
+    def test_setting_type(self):
+        with self.assertRaises(AttributeError):
+            _ref = config.ref(lambda root, here: here, required=True, type=int)
+        # This line should not raise any error.
+        ref = config.ref(lambda root, here: here, required=True, ref_type=int)
+        self.assertEqual(ref.ref_type, int)
 
 
 @config.root
@@ -457,8 +476,9 @@ class TestConfigRefList(unittest.TestCase):
             def __call__(self, root, here):
                 return self.up(here)
 
-            def is_ref(self, value):
-                return isinstance(value, Node)
+            @property
+            def type(self):
+                return Node
 
         class NodeMixin:
             children = config.reflist(NodeReference())
@@ -479,13 +499,98 @@ class TestConfigRefList(unittest.TestCase):
             "Mixin reference should be resolved",
         )
 
+    def test_soft_ref(self):
+        node = NrrdDependencyNode(get_data_path("orientations", "toy_annotations.nrrd"))
+        cfg = Configuration.default(
+            files={
+                "annotations": {
+                    "type": "nrrd",
+                    "file": get_data_path("orientations", "toy_annotations.nrrd"),
+                }
+            },
+            partitions=dict(
+                a=dict(
+                    type="nrrd",
+                    mask_source={
+                        "type": "nrrd",
+                        "file": get_data_path("orientations", "toy_annotations.nrrd"),
+                    },
+                    sources=[
+                        {
+                            "type": "nrrd",
+                            "file": get_data_path("orientations", "toy_annotations.nrrd"),
+                        },  # one value to cast
+                        "annotations",  # one reference
+                        node,  # one value already casted
+                    ],
+                    mask_value=10690,
+                )
+            ),
+        )
+        part = cfg.partitions.a
+        self.assertIsNotNone(part.mask_source)
+        source = part.mask_source.load_object().raw
+        self.assertTrue(
+            np.all(
+                (source == part.sources[0].load_object().raw)
+                * (source == part.sources[1].load_object().raw)
+                * (source == part.sources[2].load_object().raw)
+            ),
+            "All datasets in reflist should have been resolved.",
+        )
+        # You should be able to override an elem of the array with a ref.
+        part.sources[0] = "annotations"
+        self.assertTrue(
+            np.all(
+                (source == part.sources[0].load_object().raw)
+                * (source == part.sources[1].load_object().raw)
+            ),
+            "Direct declaration should be allowed for reference list attributes.",
+        )
+        src = part.sources.pop(1)
+        self.assertEqual(len(part.sources), 2)
+        self.assertTrue(
+            hasattr(src, "_config_parent") and src._config_parent == cfg.files
+        )
+        self.assertEqual(src, cfg.files["annotations"])
+        # You should be able to add an elem of the array with a value.
+        part.sources.append(node)
+        self.assertEqual(len(part.sources), 3)
+        self.assertTrue(
+            np.all(
+                (source == part.sources[0].load_object().raw)
+                * (source == part.sources[1].load_object().raw)
+                * (source == part.sources[2].load_object().raw)
+            ),
+            "Direct declaration should be allowed for soft references attributes.",
+        )
+        src = part.sources.pop()
+        self.assertEqual(len(part.sources), 2)
+        self.assertTrue(hasattr(src, "_config_parent") and src._config_parent is None)
 
-class HasRefsReference:
+    def test_region_ref(self):
+        @config.root
+        class X:
+            regions = config.dict(type=Region)
+            partitions = config.dict(type=Partition)
+            list = config.reflist(refs.region_ref)
+            ref = config.ref(refs.region_ref)
+
+        x = X(regions={"a": Region(children=[])}, list=[])
+        x.list.append("a")
+        x.ref = "a"
+        x._config_root = None
+        with self.assertRaises(CfgReferenceError):
+            x.ref = "a"
+
+
+class HasRefsReference(Reference):
     def __call__(self, r, h):
         return r
 
-    def is_ref(self, value):
-        return isinstance(value, HasRefs)
+    @property
+    def type(self):
+        return HasRefs
 
 
 @config.node
@@ -1201,7 +1306,7 @@ class TestTypes(unittest.TestCase):
         b = Test(
             c=get_data_path("orientations", "toy_annotations.nrrd"), _parent=TestRoot()
         )
-        tested = b.c.load_object()
+        tested = b.c.load_object().raw
         self.assertEqual(type(tested), np.ndarray)
         self.assertEqual(tested.shape, (10, 8, 8))
         self.assertEqual(tested.dtype, np.int32)

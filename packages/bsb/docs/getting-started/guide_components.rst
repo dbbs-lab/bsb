@@ -13,10 +13,10 @@ component for a new :doc:`Connection strategy </connectivity/connection-strategi
 We will start from the following configuration file (corresponds to the first network file
 from the getting started tutorial):
 
-.. literalinclude:: /getting-started/configs/getting-started.json
+.. literalinclude:: /../../../examples/getting-started/configs/getting_started.json
     :language: json
 
-Let's save this new configuration in our project folder under the name ``config_connectome.json``
+Let's save this new configuration in our project folder under the name ``config_connectome.json``.
 
 Description of the strategy to implement
 ----------------------------------------
@@ -64,7 +64,7 @@ Note that this strategy leverages the ``@config.node``
 `python decorator <https://pythonbasics.org/decorators/>`_.
 The :doc:`configuration node decorator</config/nodes>` allows you to pass the parameters
 defined in the configuration file to the class. It will also handle the
-:doc:`type testing </config/types>` of your configuration attributes (e.g., make sure your
+:doc:`type testing </config/attributes>` of your configuration attributes (e.g., make sure your
 ``radius`` parameter is a positive float number). We will see in the following sections how
 to create your class configuration attributes.
 
@@ -196,7 +196,7 @@ Because we are not using morphologies here the second and third indexes should b
 
 You have done it! Congrats! Your final `connectome.py` should look like this:
 
-.. literalinclude:: /../examples/tutorials/dist_connection.py
+.. literalinclude:: /../../../examples/writing-components/writing_components/dist_connection.py
     :language: python
 
 .. tip::

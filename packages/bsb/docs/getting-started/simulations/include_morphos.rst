@@ -19,8 +19,8 @@ from remote sources, like NeuroMorpho, using the BSB.
 
 | But first, we need actual morphology files.
 | Download your 2 favorite morphologies from `NeuroMorpho <https://neuromorpho.org/>`_
-  in the swc file format and save them as ``neuron_A.swc`` and ``neuron2.swc`` in your
-  project folder.
+  in the swc file format and save them as ``neuron_A.swc`` and ``neuron2.swc`` in a
+  ``data`` folder inside your project folder.
 
 
 Using local files
@@ -32,19 +32,19 @@ morphology to the scaffold:
 
 .. tab-set-code::
 
-  .. literalinclude:: ../configs/include_morphos.yaml
+  .. literalinclude:: /../../../examples/include-morphologies/configs/include_morphos.yaml
     :language: yaml
     :lines: 9-10
 
   .. code-block:: json
 
-       "morphologies": ["neuron_A.swc"]
+       "morphologies": ["data/neuron_A.swc"]
 
   .. code-block:: python
 
-    config.morphologies = ["neuron_A.swc"]
+    config.morphologies = ["data/neuron_A.swc"]
 
-In this case, a morphology is created from ``neuron_A.swc`` and given the name ``"neuron_A"``.
+In this case, a morphology is created from ``data/neuron_A.swc`` and given the name ``"neuron_A"``.
 By default the name assigned to the morphology is the file name without its extension (here ``.swc``).
 
 Next, we need to associate this morphology to one cell type, here the ``base_type``, by
@@ -52,17 +52,17 @@ referencing it by name in :guilabel:`cell_types.base_type.spatial.morphologies`:
 
 .. tab-set-code::
 
-  .. literalinclude:: ../configs/include_morphos.yaml
+  .. literalinclude:: /../../../examples/include-morphologies/configs/include_morphos.yaml
     :language: yaml
-    :lines: 28-34
+    :lines: 26-32
     :emphasize-lines: 6-7
 
-  .. literalinclude:: ../configs/include_morphos.json
+  .. literalinclude:: /../../../examples/include-morphologies/configs/include_morphos.json
     :language: json
     :lines: 35-42
     :emphasize-lines: 6
 
-  .. literalinclude:: /../examples/tutorials/include_morphos.py
+  .. literalinclude:: /../../../examples/include-morphologies/scripts/include_morphos.py
     :language: python
     :lines: 27-34
     :emphasize-lines: 6
@@ -77,17 +77,17 @@ containing the attributes :guilabel:`name` and :guilabel:`file`:
 
 .. tab-set-code::
 
-  .. literalinclude:: ../configs/include_morphos.yaml
+  .. literalinclude:: /../../../examples/include-morphologies/configs/include_morphos.yaml
     :language: yaml
     :lines: 9-12
     :emphasize-lines: 3-4
 
-  .. literalinclude:: ../configs/include_morphos.json
+  .. literalinclude:: /../../../examples/include-morphologies/configs/include_morphos.json
     :language: json
     :lines: 12-17
     :emphasize-lines: 3-6
 
-  .. literalinclude:: /../examples/tutorials/include_morphos.py
+  .. literalinclude:: /../../../examples/include-morphologies/scripts/include_morphos.py
     :language: python
     :lines: 22-25
     :emphasize-lines: 3
@@ -107,7 +107,7 @@ Here is an example what that would look like:
   .. code-block:: yaml
 
     morphologies:
-      - file: my_neuron.swc
+      - file: data/my_neuron.swc
         pipeline:
           - center
           - my_module.add_axon
@@ -118,7 +118,7 @@ Here is an example what that would look like:
 
     "morphologies": [
       {
-        "file": "my_neuron.swc",
+        "file": "data/my_neuron.swc",
         "pipeline": [
           "center",
           "my_module.add_axon",
@@ -134,7 +134,7 @@ Here is an example what that would look like:
 
     config.morphologies = [
       dict(
-        file= "my_neuron.swc",
+        file= "data/my_neuron.swc",
         pipeline=[
           "center",
           "my_module.add_axon",
@@ -166,36 +166,69 @@ connection strategies such as :doc:`VoxelIntersection </connectivity/connection-
 
 .. tab-set-code::
 
-  .. literalinclude:: ../configs/include_morphos.yaml
+  .. literalinclude:: /../../../examples/include-morphologies/configs/include_morphos.yaml
     :language: yaml
-    :lines: 55-63
+    :lines: 52-60
 
-  .. literalinclude:: ../configs/include_morphos.json
+  .. literalinclude:: /../../../examples/include-morphologies/configs/include_morphos.json
     :language: json
     :lines: 65-75
 
-  .. literalinclude:: /../examples/tutorials/include_morphos.py
+  .. literalinclude:: /../../../examples/include-morphologies/scripts/include_morphos.py
     :language: python
     :lines: 59-64
 
 Note also that with Voxel Intersection,
 you can specify which parts of the morphologies should create contacts (e.g, dendrites and axons):
 
-.. code-block:: json
+.. tab-set-code::
+
+  .. code-block:: yaml
+
+    connectivity:
+      A_to_B:
+        strategy: bsb.connectivity.VoxelIntersection
+        presynaptic:
+          cell_types:
+          - base_type
+          morphology_labels:
+          - axon
+        postsynaptic:
+          cell_types:
+          - top_type
+          morphology_labels:
+          - dendrites
+
+  .. code-block:: json
 
     "connectivity": {
-    "A_to_B": {
-      "strategy": "bsb.connectivity.VoxelIntersection",
-      "presynaptic": {
-        "cell_types": ["base_type"],
-        "morphology_labels": ["axon"]
-      },
-      "postsynaptic": {
+      "A_to_B": {
+        "strategy": "bsb.connectivity.VoxelIntersection",
+        "presynaptic": {
+          "cell_types": ["base_type"],
+          "morphology_labels": ["axon"]
+        },
+        "postsynaptic": {
           "cell_types": ["top_type"],
           "morphology_labels": ["dendrites"]
+        }
       }
     }
-  }
+
+  .. code-block:: python
+
+    config.connectivity.add(
+        "A_to_B",
+        strategy="bsb.connectivity.VoxelIntersection",
+        presynaptic=dict(
+            cell_types=["base_type"],
+            morphology_labels=["axon"],
+        ),
+        postsynaptic=dict(
+            cell_types=["top_type"],
+            morphology_labels=["dendrites"],
+        ),
+    )
 
 This happens thanks to the labels that are attached to your morphology points.
 
@@ -207,13 +240,13 @@ Final configuration file
 
 .. tab-set-code::
 
-  .. literalinclude:: ../configs/include_morphos.yaml
+  .. literalinclude:: /../../../examples/include-morphologies/configs/include_morphos.yaml
     :language: yaml
 
-  .. literalinclude:: ../configs/include_morphos.json
+  .. literalinclude:: /../../../examples/include-morphologies/configs/include_morphos.json
     :language: json
 
-  .. literalinclude:: /../examples/tutorials/include_morphos.py
+  .. literalinclude:: /../../../examples/include-morphologies/scripts/include_morphos.py
     :language: python
 
 What is next?

@@ -11,6 +11,7 @@ from ..postprocessing import AfterConnectivityHook, AfterPlacementHook
 from ..simulation.simulation import Simulation
 from ..storage._files import (
     CodeDependencyNode,
+    FileDependencyNode,
     MorphologyDependencyNode,
     MorphologyPipelineNode,
 )
@@ -19,7 +20,7 @@ from ..topology import Partition, Region, RegionGroup, create_topology, get_part
 from . import types
 from ._attrs import _boot_nodes, cfgdict, cfglist
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     import packaging.requirements
 
     from ..core import Scaffold
@@ -79,6 +80,13 @@ class Configuration:
     )
     """
     Morphology files and processing pipelines.
+    """
+    files: cfgdict[str, FileDependencyNode] = config.dict(
+        type=FileDependencyNode,
+        required=False,
+    )
+    """
+    Files to attach to the network.
     """
     storage: StorageNode = config.attr(
         type=StorageNode,

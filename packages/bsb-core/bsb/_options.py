@@ -92,6 +92,25 @@ class ConfigOption(
         return "network_configuration.json"
 
 
+class SimulationProgress(
+    BsbOption,
+    name="sim_console_progress",
+    cli=("scp", "sim_console_progress"),
+    project=("sim_console_progress",),
+    script=("sim_console_progress",),
+    env=("BSB_SIM_PROGRESS",),
+):
+    """
+    Activate reports during simulations, set the time steps of the report.
+    """
+
+    def setter(self, value):
+        return float(value)
+
+    def getter(self, value):
+        return float(value)
+
+
 class ProfilingOption(
     BsbOption,
     name="profiling",
@@ -141,6 +160,26 @@ class DebugPoolFlag(
         return False
 
 
+class QuietFlag(
+    BsbOption,
+    name="quiet",
+    cli=("q", "quiet"),
+    project=("quiet",),
+    env=("BSB_QUIET",),
+    script=("quiet",),
+    flag=True,
+):
+    """
+    Quiet job logs.
+    """
+
+    def setter(self, value):
+        return bool(value)
+
+    def get_default(self):
+        return False
+
+
 def verbosity():
     return VerbosityOption
 
@@ -157,9 +196,17 @@ def config():
     return ConfigOption
 
 
+def sim_console_progress():
+    return SimulationProgress
+
+
 def profiling():
     return ProfilingOption
 
 
 def debug_pool():
     return DebugPoolFlag
+
+
+def quiet():
+    return QuietFlag

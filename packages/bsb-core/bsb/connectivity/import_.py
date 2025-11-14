@@ -15,7 +15,7 @@ from ..mixins import NotParallel
 from ..storage.interfaces import PlacementSet
 from .strategy import ConnectionStrategy
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     from ..cell_types import CellType
     from ..storage._files import FileDependencyNode
     from ..topology.partition import Partition
@@ -39,7 +39,7 @@ class ImportConnectivity(NotParallel, ConnectionStrategy, abc.ABC, classmap_entr
         self.parse_source(pre, post)
 
     @abc.abstractmethod
-    def parse_source(self, pre, post):
+    def parse_source(self, pre, post):  # pragma: nocover
         pass
 
 

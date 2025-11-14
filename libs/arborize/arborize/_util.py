@@ -1,11 +1,11 @@
 import dataclasses
+import typing
 from collections.abc import Iterable
-from typing import TYPE_CHECKING
 
 import numpy as np
 import numpy.typing as npt
 
-if TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     from schematic import Point
 
 

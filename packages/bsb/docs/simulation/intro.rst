@@ -47,10 +47,8 @@ When using the CLI, the framework sets up a "hands off" simulation workflow:
 * Run the simulation
 * Collect all the output
 
-When you use the library, you can set up more complex workflows, such as parameter sweeps:
-
-.. literalinclude:: ../../examples/simulation/parameter_sweep.py
-  :language: python
+When you use the library, you can set up more complex workflows, such as
+:doc:`parameter sweeps </examples/nest_repeated_sim>`
 
 .. rubric:: Parallel simulations
 
@@ -262,3 +260,8 @@ which can be accessed through the :guilabel:`annotations` attribute:
   Unlike the spike train case, the :guilabel:`analogsignals` attribute contains a separate ``AnalogSignal``
   object for each target of the device.
 
+Advanced Features
+=================
+There are other features of the simulation block that can be explored:
+
+* :doc:`Controllers </simulation/simulation-controllers>`

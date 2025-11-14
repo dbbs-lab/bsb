@@ -10,7 +10,7 @@ There are several tools that you can use to visualize morphologies. Among them, 
 
 Here is a small code snippet showing how you can extract and display points of the morphology in 3D:
 
-.. literalinclude:: /../examples/plotting/plotting_with_branch_colors.py
+.. literalinclude:: /../../../examples/include-morphologies/scripts/plotting_with_branch_colors.py
     :language: python
     :lines: 2-
 

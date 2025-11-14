@@ -30,9 +30,8 @@ _t(
             CastConfigurationError=_e(),
             IndicatorError=_e(),
             RequirementError=_e("node", "attr"),
-            CfgReferenceError=_e(
-                NoReferenceAttributeSignal=_e(),
-            ),
+            CfgReferenceError=_e(),
+            ReferenceLambdaError=_e(),
             UnknownConfigAttrError=_e("attributes"),
         ),
         CompilationError=_e(
@@ -209,7 +208,6 @@ __all__ = [
     "MorphologyError",
     "MorphologyRepositoryError",
     "MorphologyWarning",
-    "NoReferenceAttributeSignal",
     "NodeNotFoundError",
     "NoneReferenceError",
     "OptionError",
@@ -224,6 +222,7 @@ __all__ = [
     "PluginError",
     "ReadOnlyOptionError",
     "RedoError",
+    "ReferenceLambdaError",
     "ReificationError",
     "RequirementError",
     "ScaffoldError",

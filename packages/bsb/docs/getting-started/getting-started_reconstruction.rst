@@ -108,11 +108,15 @@ including its size along the three dimensions :guilabel:`x`, :guilabel:`y`, :gui
 
 .. tab-set-code::
 
-  .. literalinclude:: configs/getting-started.json
+  .. literalinclude:: /../../../examples/getting-started/configs/getting_started.json
     :language: json
     :lines: 7-11
 
-  .. literalinclude:: /../examples/tutorials/getting_started.py
+  .. literalinclude:: /../../../examples/getting-started/configs/getting_started.yaml
+    :language: yaml
+    :lines: 5-8
+
+  .. literalinclude:: /../../../examples/getting-started/scripts/getting_started.py
     :language: python
     :lines: 7-9
 
@@ -130,11 +134,15 @@ To get started, we will add a second layer ``top_layer``, and a region ``brain_r
 
 .. tab-set-code::
 
-  .. literalinclude:: configs/getting-started.json
+  .. literalinclude:: /../../../examples/getting-started/configs/getting_started.json
     :language: json
     :lines: 12-27
 
-  .. literalinclude:: /../examples/tutorials/getting_started.py
+  .. literalinclude:: /../../../examples/getting-started/configs/getting_started.yaml
+    :language: yaml
+    :lines: 9-21
+
+  .. literalinclude:: /../../../examples/getting-started/scripts/getting_started.py
     :language: python
     :lines: 11-20
 
@@ -165,11 +173,15 @@ time we want to a place 40 of these cells and their soma :guilabel:`radius` of `
 
 .. tab-set-code::
 
-  .. literalinclude:: configs/getting-started.json
+  .. literalinclude:: /../../../examples/getting-started/configs/getting_started.json
     :language: json
     :lines: 28-41
 
-  .. literalinclude:: /../examples/tutorials/getting_started.py
+  .. literalinclude:: /../../../examples/getting-started/configs/getting_started.yaml
+    :language: yaml
+    :lines: 22-30
+
+  .. literalinclude:: /../../../examples/getting-started/scripts/getting_started.py
     :language: python
     :lines: 22-29
 
@@ -187,11 +199,15 @@ Now that we have defined our new ``top_type``, we should place it in our ``top_l
 
 .. tab-set-code::
 
-  .. literalinclude:: configs/getting-started.json
+  .. literalinclude:: /../../../examples/getting-started/configs/getting_started.json
     :language: json
     :lines: 42-53
 
-  .. literalinclude:: /../examples/tutorials/getting_started.py
+  .. literalinclude:: /../../../examples/getting-started/configs/getting_started.yaml
+    :language: yaml
+    :lines: 31-43
+
+  .. literalinclude:: /../../../examples/getting-started/scripts/getting_started.py
     :language: python
     :lines: 31-42
 
@@ -240,11 +256,15 @@ Here, we are going to connect all ``base_type`` cells to all ``top_type`` cells.
 
 .. tab-set-code::
 
-  .. literalinclude:: configs/getting-started.json
+  .. literalinclude:: /../../../examples/getting-started/configs/getting_started.json
     :language: json
     :lines: 54-65
 
-  .. literalinclude:: /../examples/tutorials/getting_started.py
+  .. literalinclude:: /../../../examples/getting-started/configs/getting_started.yaml
+    :language: yaml
+    :lines: 44-52
+
+  .. literalinclude:: /../../../examples/getting-started/scripts/getting_started.py
     :language: python
     :lines: 44-49
 
@@ -269,10 +289,13 @@ Final configuration file
 
 .. tab-set-code::
 
-  .. literalinclude:: configs/getting-started.json
+  .. literalinclude:: /../../../examples/getting-started/configs/getting_started.json
     :language: json
 
-  .. literalinclude:: /../examples/tutorials/getting_started.py
+  .. literalinclude:: /../../../examples/getting-started/configs/getting_started.yaml
+    :language: yaml
+
+  .. literalinclude:: /../../../examples/getting-started/scripts/getting_started.py
     :language: python
 
 What is next?

@@ -1,7 +1,7 @@
 import typing
 import weakref
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     from .assets import Mod
 
 

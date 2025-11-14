@@ -6,7 +6,7 @@ from ..config._attrs import cfglist
 from .component import SimulationComponent
 from .parameter import Parameter
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     from ..cell_types import CellType
 
 

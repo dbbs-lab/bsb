@@ -164,11 +164,22 @@ def compile_class(cls):
 
 
 def _replace_closure_cells(method, old, new):
+    if old is new:
+        return
     cl = getattr(method, "__closure__", None) or []
     for cell in cl:
         if cell.cell_contents is old:
             cell.cell_contents = new
         elif inspect.isfunction(cell.cell_contents):
+            # WARNING: If you end up with an infinitely recursive call here, you probably
+            # have a decorator factory somewhere that stores references to node class
+            # methods in a closure. I haven't figured out completely why it leads to
+            # infinite recursion. The solution is to split the factory into 2 pieces so
+            # that instead of a closure, the reference to the node class method can be
+            # stored as a function call argument. Split the factory into an outer function
+            # that retrieves the node class method and passes it to an inner function that
+            # produces the decorator and calls the original function. See
+            # `bsb.reporting._instrument_node` for an example of this.
             _replace_closure_cells(cell.cell_contents, old, new)
 
 
@@ -661,16 +672,15 @@ def walk_node_values(start_node):
         yield node, attr.attr_name, attr.__get__(node, node.__class__)
 
 
-def _resolve_references(root, start=None, /):
+def _resolve_references(root):
     from ._attrs import _setattr
 
-    if start is None:
-        start = root
     if root._config_isfinished:
         for node, attr in walk_node_attributes(root):
             if hasattr(attr, "__ref__"):
                 ref = attr.__ref__(node, root)
-                _setattr(node, attr.attr_name, ref)
+                if ref is not None or getattr(node, attr.attr_name, None) is None:
+                    _setattr(node, attr.attr_name, ref)
 
 
 class WalkIterDescriptor:

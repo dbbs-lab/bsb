@@ -11,9 +11,12 @@ from collections import defaultdict
 from importlib.metadata import EntryPoint
 from pathlib import Path
 
+import certifi
 import numpy as _np
 import requests
 from bsb import (
+    AllenApiError,
+    AllenStructure,
     Chunk,
     Configuration,
     Scaffold,
@@ -174,6 +177,48 @@ class MorphologiesFixture:
         super().setUp()
 
 
+class DictTestCase:
+    def assertDictEqual(self, tested: dict, expected: dict):
+        """
+        Override the unittest.TestCase.assertDictEqual
+        to deal with values with numpy arrays or deep dictionaries
+        """
+        self.assertIsInstance(tested, dict, "First argument is not a dictionary")
+        self.assertIsInstance(expected, dict, "Second argument is not a dictionary")
+        to_compare = [("/", tested, expected)]
+        while to_compare:
+            root, src, tgt = to_compare.pop(0)
+            self.assertEqual(len(src), len(tgt))
+            for k, v in src.items():
+                self.assertTrue(
+                    k in tgt,
+                    msg=(
+                        f"Key {root + str(k)} is present in source dict "
+                        "but not in target dict"
+                    ),
+                )
+                if isinstance(v, dict):
+                    self.assertTrue(isinstance(tgt[k], dict))
+                    to_compare.append((root + str(k) + "/", v, tgt[k]))
+                elif isinstance(v, list | _np.ndarray):
+                    self.assertTrue(
+                        _np.all(_np.array(v) == _np.array(tgt[k])),
+                        msg=(
+                            "Values of source and target dict for "
+                            f"{root + str(k)} do not match"
+                        ),
+                    )
+                else:
+                    self.assertEqual(
+                        v,
+                        tgt[k],
+                        msg=(
+                            "Values of source and target dict for "
+                            f"{root + str(k)} do not match"
+                        ),
+                    )
+
+
 class NumpyTestCase:
     def assertClose(self, a, b, msg="", /, **kwargs):
         if msg:
@@ -235,15 +280,25 @@ def skipIfOffline(url=None, scheme: UrlScheme = None):
         session_ctx = requests.Session()
     try:
         url = url or scheme.get_base_url()
-    except NotImplementedError as err:
+    except NotImplementedError as err:  # pragma: nocover
         raise ValueError("Couldn't establish base URL to ping for health check.") from err
     try:
         with session_ctx as session:
-            res = session.get(url)
-            offline = res.status_code != 200 or "Service Interruption Notice"
-    except Exception:
+            res = session.get(url, timeout=20, verify=certifi.where())
+            offline = res.status_code != 200
+    except Exception:  # pragma: nocover
         offline = True
     return unittest.skipIf(offline, err_msg)
+
+
+def skip_test_allen_api():
+    try:
+        AllenStructure._dl_structure_ontology()
+    except AllenApiError:  # pragma: nocover
+        return True
+    except Exception:  # pragma: nocover
+        return True
+    return False
 
 
 class SpoofedEntryPoint(EntryPoint):
@@ -320,6 +375,7 @@ __all__ = [
     "get_morphology_path",
     "get_all_morphology_paths",
     "skipIfOffline",
+    "skip_test_allen_api",
     "SpoofedEntryPoint",
     "plugin_context",
     "spoof_plugin",

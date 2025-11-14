@@ -25,21 +25,20 @@ Network configurations can contain a :guilabel:`morphologies` key to define
 the morphologies that should be processed and assigned to cells. See
 :doc:`/getting-started/simulations/include_morphos` for a guide on the possibilities.
 Morphologies can be stored in a network in the
-:class:`bsb:bsb.storage.interfaces.MorphologyRepository`.
+:class:`MorphologyRepository<bsb:bsb.storage.interfaces.MorphologyRepository>`.
 
 
 Parsing morphologies
 ====================
 
-A morphology file can be parsed with :func:`bsb:bsb.morphologies.parsers.parse_morphology_file`,
+A morphology file can be parsed with
+:func:`parse_morphology_file <bsb:bsb.morphologies.parsers.parse_morphology_file>`,
 if you already have the content of a file you can pass that directly into
-:func:`bsb:bsb.morphologies.parsers.parse_morphology_content`:
+:func:`parse_morphology_content <bsb:bsb.morphologies.parsers.parse_morphology_content>`:
 
-.. code-block:: python
-
-  from bsb import parse_morphology_file
-
-  morpho = parse_morphology_file("./my_file.swc")
+.. literalinclude:: /../../../examples/manipulate-morphologies/scripts/labels.py
+  :lines: 3-6
+  :language: python
 
 .. important::
 
@@ -55,20 +54,21 @@ morphologies. To support these diverse approaches the framework provides configu
 
   morpho = parse_morphology_file("./my_file.swc", parser="morphio", flags=["no_duplicates"])
 
-Once we have our :class:`bsb:bsb.morphologies.Morphology` object we can save it in
-:class:`bsb:bsb.storage.Storage`; storages and networks have a ``morphologies`` attribute that
-links to a :class:`bsb:bsb.storage.interfaces.MorphologyRepository` that can save and load
-morphologies:
+Once we have our :class:`Morphology <bsb:bsb.morphologies.Morphology>` object we can save
+it in :class:`Storage <bsb:bsb.storage.Storage>`; storages and networks have a
+``morphologies`` attribute that links to a
+:class:`MorphologyRepository <bsb:bsb.storage.interfaces.MorphologyRepository>` that can
+save and load morphologies:
 
-.. literalinclude:: ../../examples/morphologies/import.py
-  :lines: 8-11
+.. literalinclude:: /../../../examples/manipulate-morphologies/scripts/labels.py
+  :lines: 9-13
   :language: python
 
 Constructing morphologies
 =========================
 
 Create your branches, attach them in a parent-child relationship, and provide the roots to
-the :class:`bsb:bsb.morphologies.Morphology` constructor:
+the :class:`Morphology <bsb:bsb.morphologies.Morphology>` constructor:
 
 .. code-block:: python
 
@@ -77,21 +77,21 @@ the :class:`bsb:bsb.morphologies.Morphology` constructor:
 
   root = Branch(
     # XYZ
-    np.array([
+    points=np.array([
       [0, 1, 2],
       [0, 1, 2],
       [0, 1, 2],
     ]),
-    # radius
-    np.array([1, 1, 1]),
+    # radii
+    radii=np.array([1, 1, 1]),
   )
   child_branch = Branch(
-    np.array([
+    points=np.array([
       [2, 3, 4],
       [2, 3, 4],
       [2, 3, 4],
     ]),
-    np.array([1, 1, 1]),
+    radii=np.array([1, 1, 1]),
   )
   root.attach_child(child_branch)
   m = Morphology([root])
@@ -103,21 +103,21 @@ Morphologies and branches contain spatial data in the ``points`` and ``radii`` a
 Points can be individually labelled with arbitrary strings, and additional properties for
 each point can be assigned to morphologies/branches:
 
-.. literalinclude:: ../../examples/morphologies/usage.py
-  :lines: 1-6
+.. literalinclude:: /../../../examples/manipulate-morphologies/scripts/labels.py
+  :lines: 1,14-19
   :language: python
 
 Once loaded we can do :ref:`transformations <transform>`, label or assign properties on the
 morphology:
 
-.. literalinclude:: ../../examples/morphologies/usage.py
-  :lines: 8-17
+.. literalinclude:: /../../../examples/manipulate-morphologies/scripts/labels.py
+  :lines: 21-30
   :language: python
 
 Once you are done with the morphology you can save it again:
 
-.. literalinclude:: ../../examples/morphologies/usage.py
-  :lines: 19
+.. literalinclude:: /../../../examples/manipulate-morphologies/scripts/labels.py
+  :lines: 32
   :language: python
 
 .. note::
@@ -134,24 +134,27 @@ Branches or points can be labelled, and pieces of the morphology can be selected
 label. Labels are also useful targets to insert biophysical mechanisms into parts of the
 cell later on in simulation.
 
-.. literalinclude:: ../../examples/morphologies/labels.py
+.. literalinclude:: /../../../examples/manipulate-morphologies/scripts/labels.py
+  :lines: 1, 14-19, 34-43
+  :language: python
 
 .. rubric:: Properties
 
 Branches and morphologies can be given additional properties. The basic properties are
 ``x``, ``y``, ``z``, ``radii`` and ``labels``. You can pass additional properties to the
-``properties`` argument of the :class:`bsb:bsb.morphologies.Branch` constructor. They will be
-automatically joined on the morphology.
+``properties`` argument of the :class:`Branch <bsb:bsb.morphologies.Branch>` constructor.
+They will be automatically joined on the morphology.
 
 .. _transform:
 
 Subtree transformations
 =======================
 
-A subtree is a (sub)set of a morphology defined by a set of *roots* and all of its
-downstream branches (i.e. the branches *emanating* from a set of roots). A subtree with
-roots equal to the roots of the morphology is equal to the entire morphology, and all
-transformations valid on a subtree are also valid morphology transformations.
+A :class:`Subtree <bsb:bsb.morphologies.SubTree>` is a (sub)set of a morphology defined
+by a set of *roots* and all of its downstream branches (i.e. the branches *emanating*
+from a set of roots). A subtree with roots equal to the roots of the morphology is equal
+to the entire morphology, and all transformations valid on a subtree are also valid
+morphology transformations.
 
 Creating subtrees
 -----------------
@@ -170,9 +173,9 @@ Subtrees can be selected using label(s) on the morphology.
 
 .. code-block:: python
 
-  axon = morfo.subtree("axon")
+  axon = morpho.subtree("axon")
   # Multiple labels can be given
-  hybrid = morfo.subtree("proximal", "distal")
+  hybrid = morpho.subtree("proximal", "distal")
 
 .. warning::
 
@@ -194,7 +197,7 @@ well:
 
 .. code-block:: python
 
-  tuft = morfo.subtree("dendritic_piece")
+  tuft = morpho.subtree("dendritic_piece")
 
 Translation
 -----------
@@ -206,8 +209,8 @@ Translation
 Centering
 ---------
 
-Subtrees may :meth:`bsb:bsb.morphologies.SubTree.center` themselves so that the point ``(0, 0,
-0)`` becomes the geometric mean of the roots.
+Subtrees may :meth:`center <bsb:bsb.morphologies.SubTree.center>` themselves so
+that the point ``(0, 0, 0)`` becomes the geometric mean of the roots.
 
 .. figure:: /images/m_trans/center.png
   :figclass: only-light
@@ -374,9 +377,10 @@ Morphology preloading
 Reading the morphology data from the repository takes time. Usually morphologies are
 passed around in the framework as :class:`StoredMorphologies
 <bsb:bsb.storage.interfaces.StoredMorphology>`. These objects have a
-:meth:`bsb:bsb.storage.interfaces.StoredMorphology.load` method to load the
-:class:`bsb:bsb.morphologies.Morphology` object from storage and a
-:meth:`bsb:bsb.storage.interfaces.StoredMorphology.get_meta` method to return the metadata.
+:meth:`load <bsb:bsb.storage.interfaces.StoredMorphology.load>` method to load the
+:class:`Morphology <bsb:bsb.morphologies.Morphology>` object from storage and a
+:meth:`get_meta <bsb:bsb.storage.interfaces.StoredMorphology.get_meta>` method to
+return the metadata.
 
 .. _morphology_selector:
 
@@ -403,14 +407,15 @@ can select morphologies ``by_name`` or ``from_neuromorpho``:
     ]
 
 If you want to make your own selector, you should implement the
-:meth:`bsb:bsb.morphologies.selector.MorphologySelector.validate` and
-:meth:`bsb:bsb.morphologies.selector.MorphologySelector.pick` methods.
+:meth:`validate <bsb:bsb.morphologies.selector.MorphologySelector.validate>` and
+:meth:`pick <bsb:bsb.morphologies.selector.MorphologySelector.pick>` methods.
 
 ``validate`` can be used to assert that all the required morphologies and metadata are
 present, while ``pick`` needs to return ``True``/``False`` to include a morphology in the
-selection. Both methods are handed :class:`bsb:bsb.storage.interfaces.StoredMorphology` objects.
-Only :meth:`bsb:bsb.storage.interfaces.StoredMorphology.load` morphologies if it is impossible
-to determine the outcome from the metadata alone.
+selection. Both methods are handed
+:class:`StoredMorphology <bsb:bsb.storage.interfaces.StoredMorphology>` objects.
+Only :meth:`load <bsb:bsb.storage.interfaces.StoredMorphology.load>` morphologies if it is
+impossible to determine the outcome from the metadata alone.
 
 The following example creates a morphology selector selects morphologies based on the
 presence of a user defined metadata ``"size"``:
@@ -461,33 +466,36 @@ Morphology metadata
 
 Currently unspecified, up to the Storage and MorphologyRepository support to return a
 dictionary of available metadata from
-:meth:`bsb:bsb.storage.interfaces.MorphologyRepository.get_meta`.
+:meth:`get_meta <bsb:bsb.storage.interfaces.MorphologyRepository.get_meta>`.
 
 .. _MorphologyDistributors:
 
 Morphology distributors
 -----------------------
 
-A :class:`bsb:bsb.placement.distributor.MorphologyDistributor` is a special type of
-:class:`bsb:bsb.placement.distributor.Distributor` that is called after positions have been
-generated by a :class:`bsb:bsb.placement.strategy.PlacementStrategy` to assign morphologies, and
-optionally rotations. The :meth:`bsb:bsb.placement.distributor.MorphologyDistributor.distribute`
+A :class:`MorphologyDistributor <bsb:bsb.placement.distributor.MorphologyDistributor>` is
+a special type of :class:`Distributor <bsb:bsb.placement.distributor.Distributor>` that
+is called after positions have been generated by a
+:class:`PlacementStrategy <bsb:bsb.placement.strategy.PlacementStrategy>` to assign
+morphologies, and optionally rotations.
+
+The :meth:`distribute <bsb:bsb.placement.distributor.MorphologyDistributor.distribute>`
 method is called with the partitions, the indicators for the cell type and the positions;
-the method has to return a :class:`bsb:bsb.morphologies.MorphologySet` or a tuple together with
-a :class:`bsb:bsb.morphologies.RotationSet`.
+the method has to return a :class:`MorphologySet <bsb:bsb.morphologies.MorphologySet>` or
+a tuple together with a :class:`RotationSet <bsb:bsb.morphologies.RotationSet>`.
 
 .. warning::
 
     The rotations returned by a morphology distributor may be overruled when a
-    :class:`bsb:bsb.placement.distributor.RotationDistributor` is defined for the same placement
-    block.
+    :class:`RotationDistributor <bsb:bsb.placement.distributor.RotationDistributor>` is
+    defined for the same placement block.
 
 Distributor configuration
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Each :guilabel:`placement` block may contain a
-:class:`bsb:bsb.placement.distributor.DistributorsNode`, which can specify the morphology and/or
-rotation distributors, and any other property distributor:
+:class:`DistributorsNode <bsb:bsb.placement.distributor.DistributorsNode>`, which can
+specify the morphology and/or rotation distributors, and any other property distributor:
 
 .. tab-set-code::
 
@@ -524,7 +532,8 @@ you've been given, so that it can be stored as an additional property on the cel
 
 The morphology distributors have a slightly different interface, and receive an additional
 ``morphologies`` argument: ``distribute(positions, morphologies, context)``. The
-morphologies are a list of :class:`bsb:bsb.storage.interfaces.StoredMorphology`, that the user
+morphologies are a list of
+:class:`StoredMorphology <bsb:bsb.storage.interfaces.StoredMorphology>`, that the user
 has configured to use for the cell type under consideration and that the distributor
 should consider the input, or template morphologies for the operation.
 
@@ -535,7 +544,8 @@ putting a ``0`` on the n-th index means that cell N will be assigned morphology 
 morphology, and returning any other values would be an error.
 
 If you need to break out of the morphologies that were handed to you, morphology
-distributors are also allowed to return their own :class:`bsb:bsb.morphologies.MorphologySet`.
+distributors are also allowed to return their own
+:class:`MorphologySet <bsb:bsb.morphologies.MorphologySet>`.
 Since you are free to pass any list of morphology loaders to create a morphology set, you
 can put and assign any morphology you like.
 
@@ -564,7 +574,7 @@ can put and assign any morphology you like.
 
 Finally, each morphology distributor is allowed to return an additional argument to assign
 rotations to each cell as well. The return value must be a
-:class:`bsb:bsb.morphologies.RotationSet`.
+:class:`RotationSet <bsb:bsb.morphologies.RotationSet>`.
 
 .. warning::
 
@@ -574,7 +584,7 @@ rotations to each cell as well. The return value must be a
 The following example creates a distributor that selects smaller morphologies the closer
 the position is to the top of the partition:
 
-.. literalinclude:: /../examples/distributors/space_aware_morphology_distributor.py
+.. literalinclude:: /../../../examples/manipulate-morphologies/manipulate_morphologies/space_aware_morphology_distributor.py
   :language: python
 
 
@@ -610,13 +620,13 @@ Morphology generators
 
 Continuing on the morphology distributor, one can also make a specialized generator of
 morphologies. The generator takes the same arguments as a distributor, but returns a list
-of :class:`bsb:bsb.morphologies.Morphology` objects, and the morphology indices to make use of
-them. It can also return rotations as a 3rd return value.
+of :class:`Morphology <bsb:bsb.morphologies.Morphology>` objects, and the morphology
+indices to make use of them. It can also return rotations as a 3rd return value.
 
 This example is a morphology generator that generates a simple stick that drops down to
 the origin for each position:
 
-.. literalinclude:: /../examples/distributors/morphology_generator.py
+.. literalinclude:: /../../../examples/manipulate-morphologies/manipulate_morphologies/morphology_generator.py
   :language: python
 
 Then, after installing your generator as a plugin, you can use ``touchdown``:
@@ -652,7 +662,8 @@ MorphologySets
 to placed cells. They consist of a list of :class:`StoredMorphologies
 <bsb:bsb.storage.interfaces.StoredMorphology>`, a vector of indices referring to these stored
 morphologies and a vector of rotations. You can use
-:meth:`bsb:bsb.morphologies.MorphologySet.iter_morphologies` to iterate over each morphology.
+:meth:`iter_morphologies <bsb:bsb.morphologies.MorphologySet.iter_morphologies>` to iterate over
+each morphology.
 
 .. code-block:: python
 
@@ -663,10 +674,3 @@ morphologies and a vector of rotations. You can use
   cache = morphology_set.iter_morphologies(cache=True)
   for pos, morpho, rot in zip(positions, cache, rotations):
     morpho.rotate(rot)
-
-Reference
-=========
-
-.. automodule:: bsb.morphologies
-  :members:
-  :no-index:

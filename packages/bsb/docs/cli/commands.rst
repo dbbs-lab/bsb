@@ -116,8 +116,16 @@ Run a simulation from a compiled network architecture.
 
 .. rubric:: Flags
 
-* ``-o``, ``--output-folder``: Output the simulation results to an existing folder.
-  If omitted, the current folder is used.
+* ``-o``, ``--output-folder``: Output folder for the simulation results. The BSB will
+  create it if it does not exists. If omitted, the current folder is used.
+* ``exists``: With this flag, it is not an error for the ``output-folder`` to exist.
+
+* ``-v``, ``--verbosity``: Defines the verbosity level: 0 is completely silent, 1 is default,
+  2 is verbose, 3 is progress and 4 is debug.
+
+* ``--scp``, ``sim_console_progress``: Set the interval (in milliseconds, simulation time) for reporting simulation progress.
+  For example, use ``--scp 100`` to report progress every 100 ms.
+  If you omit this flag, the simulation will run without reporting progress.
 
 
 .. _bsb_cache:

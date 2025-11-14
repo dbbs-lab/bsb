@@ -14,7 +14,7 @@ from ..._encoding import EncodedLabels
 from ...config import types
 from .. import Morphology
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     from ...storage._files import FileDependency
 
 
@@ -24,7 +24,7 @@ class MorphologyParser:
     branch_cls: type = config.attr(type=types.class_(), default="bsb.morphologies.Branch")
 
     @abc.abstractmethod
-    def parse(self, file: FileDependency | str) -> Morphology:
+    def parse(self, file: FileDependency | str) -> Morphology:  # pragma: nocover
         """
         Parse the morphology.
         """

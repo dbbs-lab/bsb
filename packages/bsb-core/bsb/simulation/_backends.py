@@ -3,7 +3,7 @@ import typing
 
 from .. import plugins
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     from . import SimulationBackendPlugin
     from .adapter import SimulatorAdapter
     from .simulation import Simulation

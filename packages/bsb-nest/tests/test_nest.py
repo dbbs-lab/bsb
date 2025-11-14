@@ -11,13 +11,15 @@ from bsb_test import NumpyTestCase, RandomStorageFixture, get_test_config
 from nest.lib.hl_api_exceptions import NESTErrors
 from scipy.optimize import curve_fit
 
+from bsb_nest import NestAdapter
+
 
 def _conf_single_cell():
     return Configuration(
         {
             "name": "test",
             "storage": {"engine": "hdf5"},
-            "network": {"x": 1, "y": 1, "z": 1},
+            "network": {"x": 100, "y": 100, "z": 100},
             "partitions": {"B": {"type": "layer", "thickness": 1}},
             "cell_types": {"A": {"spatial": {"radius": 1, "count": 1}}},
             "placement": {
@@ -29,6 +31,44 @@ def _conf_single_cell():
                 }
             },
             "connectivity": {},
+            "after_connectivity": {},
+            "simulations": {},
+        }
+    )
+
+
+def _conf_two_cells():
+    return Configuration(
+        {
+            "name": "test",
+            "storage": {"engine": "hdf5"},
+            "network": {"x": 1, "y": 1, "z": 1},
+            "partitions": {"B": {"type": "layer", "thickness": 1}},
+            "cell_types": {
+                "A": {"spatial": {"radius": 1, "count": 1}},
+                "C": {"spatial": {"radius": 1, "count": 1}},
+            },
+            "placement": {
+                "placement_A": {
+                    "strategy": "bsb.placement.strategy.FixedPositions",
+                    "cell_types": ["A"],
+                    "partitions": ["B"],
+                    "positions": [[1, 1, 1]],
+                },
+                "placement_C": {
+                    "strategy": "bsb.placement.strategy.FixedPositions",
+                    "cell_types": ["C"],
+                    "partitions": ["B"],
+                    "positions": [[0, 0, 0]],
+                },
+            },
+            "connectivity": {
+                "C_to_A": {
+                    "strategy": "bsb.connectivity.AllToAll",
+                    "presynaptic": {"cell_types": ["C"]},
+                    "postsynaptic": {"cell_types": ["A"]},
+                }
+            },
             "after_connectivity": {},
             "simulations": {},
         }
@@ -679,3 +719,263 @@ class TestNest(
         }
         with self.assertRaises(ConfigurationError):
             Scaffold(cfg, self.storage)
+
+    def test_multisyn(self):
+        duration = 100
+        resolution = 0.1
+        cfg = _conf_single_cell()
+        cfg.cell_types.add("C", {"spatial": {"radius": 1, "count": 1}})
+        cfg.placement.add(
+            "placement_C",
+            {
+                "strategy": "bsb.placement.strategy.FixedPositions",
+                "cell_types": ["C"],
+                "partitions": ["B"],
+                "positions": [[0, 0, 0]],
+            },
+        )
+        cfg.connectivity.add(
+            "C_to_A",
+            {
+                "strategy": "bsb.connectivity.AllToAll",
+                "presynaptic": {"cell_types": ["C"]},
+                "postsynaptic": {"cell_types": ["A"]},
+            },
+        )
+        cfg.simulations = {
+            "test": {
+                "simulator": "nest",
+                "duration": duration,
+                "resolution": resolution,
+                "seed": 1234,
+                "cell_models": {
+                    "A": {
+                        "model": "iaf_cond_alpha",
+                        "constants": {
+                            "V_reset": -70,  # V_m, E_L and V_reset are the same
+                        },
+                    },
+                    "C": {"model": "parrot_neuron"},
+                },
+                "connection_models": {
+                    "C_to_A": {
+                        "synapses": [
+                            {"weight": -20.25, "delay": 1},
+                            {"weight": -60.25, "delay": 30},
+                        ],
+                    }
+                },
+                "devices": {
+                    "pg": {
+                        "device": "poisson_generator",
+                        "rate": 10.0,  # should produce one spike
+                        "targetting": {
+                            "strategy": "cell_model",
+                            "cell_models": ["C"],
+                        },
+                        "weight": 20.0,
+                        "delay": resolution,
+                    },
+                    "record_C_spikes": {
+                        "device": "spike_recorder",
+                        "delay": resolution,
+                        "targetting": {
+                            "strategy": "cell_model",
+                            "cell_models": ["C"],
+                        },
+                    },
+                    "voltmeter_A": {
+                        "device": "multimeter",
+                        "delay": resolution,
+                        "properties": ["V_m"],
+                        "units": ["mV"],
+                        "targetting": {
+                            "strategy": "cell_model",
+                            "cell_models": ["A"],
+                        },
+                    },
+                },
+            }
+        }
+        netw = Scaffold(cfg, self.storage)
+        netw.compile()
+        results = netw.run_simulation("test")
+
+        # get spike time of first spike of C
+        spike_times_bsb = results.spiketrains[1]
+        self.assertEqual("record_C_spikes", spike_times_bsb.annotations["device"])
+        membrane_potentials = results.analogsignals[0].magnitude[:, 0]
+        time_effect_first_syn = int((spike_times_bsb.magnitude[0] + 1) / resolution)
+        time_effect_sec_syn = int((spike_times_bsb.magnitude[0] + 30) / resolution)
+        self.assertClose(membrane_potentials[time_effect_first_syn - 1], -70.0, atol=1e-5)
+        # both synapses of A have an inhibitory effect. They are separated by 2 ms
+        # Check impact of the first synapse
+        self.assertLess(membrane_potentials[time_effect_first_syn], -70.0)
+        # second synapse arrives after the peak of the postsynaptic receptor,
+        # so its effect should hyperpolarize A's membrane potential
+        # Check impact of the second synapse
+        self.assertLess(
+            membrane_potentials[time_effect_sec_syn - 2],
+            membrane_potentials[time_effect_sec_syn - 1],
+        )
+        self.assertLess(
+            membrane_potentials[time_effect_sec_syn],
+            membrane_potentials[time_effect_sec_syn - 1],
+        )
+
+    def test_unknown_synapse(self):
+        duration = 100
+        resolution = 0.1
+        cfg = _conf_two_cells()
+        with self.assertRaises(CastError):
+            cfg.simulations = {
+                "test": {
+                    "simulator": "nest",
+                    "duration": duration,
+                    "resolution": resolution,
+                    "seed": 1234,
+                    "cell_models": {
+                        "A": {"model": "iaf_cond_alpha"},
+                        "C": {"model": "parrot_neuron"},
+                    },
+                    "connection_models": {
+                        "C_to_A": {
+                            "synapses": [
+                                {"model": "blabla", "weight": -20.25, "delay": 1},
+                            ],
+                        }
+                    },
+                    "devices": {},
+                }
+            }
+
+    def test_gap_junctions_syn(self):
+        duration = 100
+        resolution = 0.1
+        cfg = _conf_two_cells()
+        cfg.simulations = {
+            "test": {
+                "simulator": "nest",
+                "duration": duration,
+                "resolution": resolution,
+                "seed": 1234,
+                "cell_models": {
+                    "A": {"model": "hh_psc_alpha_gap"},
+                    "C": {"model": "hh_psc_alpha_gap"},
+                },
+                "connection_models": {
+                    "C_to_A": {
+                        "synapses": [
+                            {"model": "gap_junction", "weight": -20.25},
+                        ],
+                    }
+                },
+                "devices": {},
+            }
+        }
+        scaffold = Scaffold(cfg, self.storage)
+        scaffold.compile()
+        scaffold.run_simulation("test")
+
+    def test_error_gap_junctions_syn(self):
+        duration = 100
+        resolution = 0.1
+        cfg = _conf_two_cells()
+        with self.assertRaises(ConfigurationError):
+            cfg.simulations = {
+                "test": {
+                    "simulator": "nest",
+                    "duration": duration,
+                    "resolution": resolution,
+                    "seed": 1234,
+                    "cell_models": {
+                        "A": {"model": "hh_psc_alpha_gap"},
+                        "C": {"model": "hh_psc_alpha_gap"},
+                    },
+                    "connection_models": {
+                        "C_to_A": {
+                            "synapses": [
+                                {"weight": -20.25},
+                            ],
+                        }
+                    },
+                    "devices": {},
+                }
+            }
+
+    def test_multisyn_collocation(self):
+        cfg = _conf_single_cell()
+        cfg.cell_types.add("C", {"spatial": {"radius": 1, "count": 30}})
+        cfg.placement.add(
+            "placement_C",
+            {
+                "strategy": "bsb.placement.RandomPlacement",
+                "cell_types": ["C"],
+                "partitions": ["B"],
+            },
+        )
+        cfg.connectivity.add(
+            "C_to_A",
+            {
+                "strategy": "bsb.connectivity.AllToAll",
+                "presynaptic": {"cell_types": ["C"]},
+                "postsynaptic": {"cell_types": ["A"]},
+            },
+        )
+        cfg.simulations = {
+            "test": {
+                "simulator": "nest",
+                "duration": 100,
+                "resolution": 0.1,
+                "seed": 1234,
+                "cell_models": {
+                    "A": {
+                        "model": "iaf_cond_alpha",
+                        "constants": {
+                            "V_reset": -70,  # V_m, E_L and V_reset are the same
+                        },
+                    },
+                    "C": {"model": "parrot_neuron"},
+                },
+                "connection_models": {
+                    "C_to_A": {
+                        "rule": "pairwise_bernoulli",  # random connection rule
+                        "p": 0.6,
+                        "synapses": [
+                            {"weight": 30, "delay": 1.0, "model": "static_synapse"},
+                            {"weight": 30, "delay": 1.0, "model": "stdp_synapse"},
+                        ],
+                    }
+                },
+                "devices": {},
+            }
+        }
+        scaffold = Scaffold(cfg, self.storage)
+        scaffold.compile()
+        adapter = NestAdapter()
+        adapter.reset_kernel()
+        adapter.prepare(scaffold.simulations["test"])
+        conn_data = np.array(
+            [
+                (
+                    conn.source,
+                    conn.target,
+                    1
+                    if conn.synapse_model == "static_synapse"
+                    else 2
+                    if conn.synapse_model == "stdp_synapse"
+                    else 0,
+                )
+                for conn in nest.GetConnections()
+            ]
+        )
+        u, c = np.unique(conn_data[:, 2], return_counts=True)
+        self.assertAll(np.array([1, 2]) == u, "synapses should be either static or stdp")
+        self.assertEqual(
+            c[0], c[1], "there should be as many static and stdp connections"
+        )
+        self.assertAll(
+            conn_data[:, :2][conn_data[:, 2] == 1]
+            == conn_data[:, :2][conn_data[:, 2] == 2],
+            "the cell pairs should be the same for static and stdp synapses",
+        )

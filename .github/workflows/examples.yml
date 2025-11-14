@@ -9,6 +9,7 @@ on:
 env:
   NEST_VERSION: 3.7
   NEST_FOLDER: ${{ github.workspace }}/.nx/installation/nest
+  NX_DAEMON: false  # may prevent GHA to stall for some reason
 
 jobs:
   test_examples:
@@ -17,10 +18,8 @@ jobs:
       github.event.action == 'reopened' ||
       (github.event_name == 'pull_request_review' && github.event.review.state == 'approved')
     runs-on: ubuntu-latest
-    outputs:
-      matrix: ${{ steps.list-examples.outputs.folders }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -32,13 +31,10 @@ jobs:
           sudo apt install openmpi-bin libopenmpi-dev libhdf5-dev libreadline-dev libgsl-dev
 
       - name: Install nodejs
-        run: |
-          curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
-          \. "$HOME/.nvm/nvm.sh"
-          nvm install --lts
+        uses: actions/setup-node@v6
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v7
 
       - name: Cache NEST
         uses: actions/cache@v4
@@ -52,4 +48,3 @@ jobs:
         env:
           UV_PYTHON: 3.12
           BSB_QUIET: true
-          NX_DAEMON: false  # may prevent GHA to stall for some reason

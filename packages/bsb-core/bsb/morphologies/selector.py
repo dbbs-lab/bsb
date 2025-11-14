@@ -111,7 +111,9 @@ class NeuroMorphoSelector(NameSelector, classmap_entry="from_neuromorpho"):
             with ThreadPoolExecutor() as executor:
                 # Certificate issues with neuromorpho --> verify=False
                 try:
-                    res = requests.get(cls._url + cls._meta + ",".join(names), timeout=20)
+                    res = requests.get(
+                        cls._url + cls._meta + ",".join(names), verify=False, timeout=20
+                    )
                 except requests.exceptions.Timeout:  # pragma: nocover
                     raise SelectorError("NeuroMorpho API request timed out.") from None
                 if res.status_code == 404:
@@ -131,7 +133,7 @@ class NeuroMorphoSelector(NameSelector, classmap_entry="from_neuromorpho"):
                 swc_urls = {n: cls._swc_url(metas[n]["archive"], n) for n in names}
 
                 def req(n):
-                    return requests.get(swc_urls[n], timeout=20)
+                    return requests.get(swc_urls[n], verify=False, timeout=20)
 
                 def sub(n):
                     return executor.submit(req, n), n

@@ -12,6 +12,14 @@ if [ -f "$INSTALLATION_FOLDER/bin/nest_vars.sh" ]; then
   . "$INSTALLATION_FOLDER/bin/nest_vars.sh"
 fi
 
+# Lock check and installation to prevent concurrent file edition
+LOCK_FILE="/tmp/file.lock"
+# Remove lock file on exit
+trap 'rm -f "$LOCK_FILE"' EXIT
+# Wait to be able to create file
+while [ -f "$LOCK_FILE" ]; do sleep 1; done
+touch "$LOCK_FILE"
+
 # Check if NEST has been already installed
 if [ "$(which nest)" != "" ];  then
   INSTALLED_VERSION=$(echo $(nest --version) | grep -o -E 'version [0-9.]+' | sed 's/version //')

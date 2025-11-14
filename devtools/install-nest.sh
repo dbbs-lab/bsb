@@ -13,7 +13,7 @@ if [ -f "$INSTALLATION_FOLDER/bin/nest_vars.sh" ]; then
 fi
 
 # Lock check and installation to prevent concurrent file edition
-LOCK_FILE="/tmp/file.lock"
+LOCK_FILE="/tmp/bsb-nest.lock"
 # Remove lock file on exit
 trap 'rm -f "$LOCK_FILE"' EXIT
 # Wait to be able to create file
@@ -46,3 +46,4 @@ cd build || exit 1
 cmake .. -Dwith-mpi=ON -DCMAKE_INSTALL_PREFIX=$INSTALLATION_FOLDER
 
 make install
+exit 0;

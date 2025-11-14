@@ -5,7 +5,7 @@ import typing
 import h5py
 import numpy as np
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     from . import HDF5Engine
 
 # Semantic marker for things that get injected

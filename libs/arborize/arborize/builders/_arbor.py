@@ -4,7 +4,7 @@ from collections import defaultdict
 from itertools import tee
 from math import isnan
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     import arbor
 
     from .. import CableType

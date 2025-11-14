@@ -10,7 +10,7 @@ Distribution-based Placement Strategy
 We will start from the following configuration file (corresponds to the first network file
 from the getting started tutorial):
 
-.. literalinclude:: /getting-started/configs/getting-started.json
+.. literalinclude:: /../../../examples/getting-started/configs/getting_started.json
     :language: json
 
 Let's save this new configuration in our project folder under the name ``config_placement.json``
@@ -141,7 +141,7 @@ Then, we extract the number of cells to place within the total Partition, using
 the :meth:`guess <bsb:bsb.placement.indicator.PlacementIndicator.guess>` function.
 For that, we will convert the partition into a list of voxels.
 
-.. literalinclude:: /../examples/tutorials/distrib_placement.py
+.. literalinclude:: /../../../examples/writing-components/writing_components/distrib_placement.py
     :language: python
     :lines: 54-62
 
@@ -154,7 +154,7 @@ To do so, we need to define the interval occupied by the chunk within the partit
 We will leverage the lowest and highest coordinates of the chunk and partition with
 respectively the attributes ``ldc`` and ``mdc``.
 
-.. literalinclude:: /../examples/tutorials/distrib_placement.py
+.. literalinclude:: /../../../examples/writing-components/writing_components/distrib_placement.py
     :language: python
     :lines: 63-68
 
@@ -164,7 +164,7 @@ along the chosen axis.
 We also need to take into account the case where the direction is negative. In this case, we should
 invert the interval. E.g., if the ``bounds`` is [0.2, 0.3] then the inverted interval is [0.7, 0.8].
 
-.. literalinclude:: /../examples/tutorials/distrib_placement.py
+.. literalinclude:: /../../../examples/writing-components/writing_components/distrib_placement.py
     :language: python
     :lines: 68-73
 
@@ -175,13 +175,13 @@ We will create a separate function for this called ``draw_interval``.
 Additionally, we also need to take into account the two other dimensions. We will compute the
 ratio of area occupied by the chunk along the two other directions:
 
-.. literalinclude:: /../examples/tutorials/distrib_placement.py
+.. literalinclude:: /../../../examples/writing-components/writing_components/distrib_placement.py
     :language: python
     :lines: 75-82
 
 So, your final place function should look like this
 
-.. literalinclude:: /../examples/tutorials/distrib_placement.py
+.. literalinclude:: /../../../examples/writing-components/writing_components/distrib_placement.py
     :language: python
     :lines: 54-89
 
@@ -193,27 +193,27 @@ boundaries.
 We will retrieve the interval of definition of the distribution and within boundaries of our
 provided ratio interval.
 
-.. literalinclude:: /../examples/tutorials/distrib_placement.py
+.. literalinclude:: /../../../examples/writing-components/writing_components/distrib_placement.py
     :language: python
     :lines: 34-41
 
 From the distribution, we can retrieve the probability for a drawn random value be lesser than
 the upper bound and the probability for it to be greater than the lower bound.
 
-.. literalinclude:: /../examples/tutorials/distrib_placement.py
+.. literalinclude:: /../../../examples/writing-components/writing_components/distrib_placement.py
     :language: python
     :lines: 42-45
 
 Finally, we apply the acceptance-rejection algorithm to see how much of the cells to place in
 the partition should be placed in the chunk:
 
-.. literalinclude:: /../examples/tutorials/distrib_placement.py
+.. literalinclude:: /../../../examples/writing-components/writing_components/distrib_placement.py
     :language: python
     :lines: 46-52
 
 We are done with the Placement! Here is how the full strategy looks like:
 
-.. literalinclude:: /../examples/tutorials/distrib_placement.py
+.. literalinclude:: /../../../examples/writing-components/writing_components/distrib_placement.py
     :language: python
 
 Enjoy

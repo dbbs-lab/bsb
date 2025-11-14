@@ -5,7 +5,7 @@ from collections.abc import Iterable
 import numpy as np
 import numpy.typing as npt
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     from schematic import Point
 
 

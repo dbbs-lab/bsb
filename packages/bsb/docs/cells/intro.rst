@@ -143,7 +143,7 @@ The NRRD files should contain voxel based volumetric density in unit of cells / 
 where the voxel volume is in cubic unit of circuit partition dimensions.
 i.e., if the circuit dimensions are in µm then the density file is in cells/µm^3.
 This implementation corresponds to an atlas-based reconstruction and you can find an example of
-a BSB configuration using the Allen Atlas in :doc:`this section </examples/atlas/atlas_placement>` .
+a BSB configuration using the Allen Atlas in :doc:`this section </examples/atlas_placement>` .
 
 .. rubric:: Specifying morphologies
 

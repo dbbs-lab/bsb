@@ -1,17 +1,18 @@
 import unittest
 
-from bsb_test import RandomStorageFixture, skip_nointernet, skip_parallel
+from bsb_test import RandomStorageFixture, skip_parallel, skipIfOffline
 
 from bsb import (
     MPI,
+    BootError,
     Branch,
     CellType,
     Configuration,
     MissingMorphologyError,
     Morphology,
     NameSelector,
+    NeuroMorphoScheme,
     Scaffold,
-    SelectorError,
     StoredMorphology,
 )
 
@@ -75,9 +76,6 @@ class TestSelectors(RandomStorageFixture, unittest.TestCase, engine_name="hdf5")
         ws = NameSelector(names=["*"])
         self.assertEqual(len(all), sum(map(ws.pick, all)), "wildcard should select all")
 
-    # For some reason, under parallel conditions, likely due to the `morphologies.save`,
-    # we deadlock.
-    @skip_parallel
     def test_cell_type_shorthand(self):
         ct = CellType(spatial=dict(morphologies=[{"names": "*"}]))
         cfg = Configuration.default(cell_types={"ct": ct})
@@ -88,7 +86,7 @@ class TestSelectors(RandomStorageFixture, unittest.TestCase, engine_name="hdf5")
         with self.assertRaises(MissingMorphologyError):
             self.assertEqual(0, len(ct.get_morphologies()), "should select 0 morpho")
 
-    @skip_nointernet
+    @skipIfOffline(scheme=NeuroMorphoScheme())
     def test_nm_selector(self):
         name = "H17-03-013-11-08-04_692297214_m"
         ct = CellType(
@@ -107,7 +105,8 @@ class TestSelectors(RandomStorageFixture, unittest.TestCase, engine_name="hdf5")
         m = s.morphologies.select(*ct.spatial.morphologies)[0]
         self.assertEqual(name, m.get_meta()["neuron_name"], "meta not stored")
 
-    @skip_nointernet
+    @skip_parallel  # https://github.com/dbbs-lab/bsb/issues/187
+    @skipIfOffline(scheme=NeuroMorphoScheme())
     def test_nm_selector_wrong_name(self):
         ct = CellType(
             spatial=dict(
@@ -121,7 +120,7 @@ class TestSelectors(RandomStorageFixture, unittest.TestCase, engine_name="hdf5")
         )
         cfg = Configuration.default(cell_types={"ct": ct})
         Scaffold(cfg, self.storage)
-        with self.assertRaises(SelectorError, msg="doesnt exist, should error"):
+        with self.assertRaises(BootError, msg="doesnt exist, should error"):
             err = None
             try:
                 ct.spatial.morphologies[0] = {
@@ -133,14 +132,14 @@ class TestSelectors(RandomStorageFixture, unittest.TestCase, engine_name="hdf5")
             err = MPI.bcast(err, root=0)
             if err:
                 raise err
-        with self.assertRaises(SelectorError, msg="doesnt exist, should error"):
+        with self.assertRaises(BootError, msg="doesnt exist, should error"):
             err = None
             try:
                 ct.spatial.morphologies[0] = {
                     "select": "from_neuromorpho",
                     "names": ["H17-03-092297214_m"],
                 }
-            except SelectorError as e:
+            except BootError as e:
                 err = e
             err = MPI.bcast(err, root=0)
             if err:

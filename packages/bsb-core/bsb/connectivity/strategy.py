@@ -15,7 +15,7 @@ from ..mixins import HasDependencies
 from ..reporting import warn
 from ..storage._chunks import Chunk
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     from ..cell_types import CellType
     from ..core import Scaffold
     from ..morphologies import MorphologySet

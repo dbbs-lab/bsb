@@ -15,7 +15,7 @@ from ..mixins import NotParallel
 from ..storage.interfaces import PlacementSet
 from .strategy import ConnectionStrategy
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     from ..cell_types import CellType
     from ..storage._files import FileDependencyNode
     from ..topology.partition import Partition

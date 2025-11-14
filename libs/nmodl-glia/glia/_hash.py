@@ -3,7 +3,7 @@ import hashlib
 import typing
 from pathlib import Path
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     from .assets import Package
 
 

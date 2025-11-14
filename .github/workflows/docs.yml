@@ -2,11 +2,14 @@ name: Documentation
 
 on: [workflow_call]
 
+env:
+  NX_DAEMON: false  # may prevent GHA to stall for some reason
+
 jobs:
   check-documentation:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -19,13 +22,10 @@ jobs:
           sudo apt install libhdf5-dev
 
       - name: Install nodejs
-        run: |
-          curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
-          \. "$HOME/.nvm/nvm.sh"
-          nvm install --lts
+        uses: actions/setup-node@v6
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v7
 
       - run: |
           # There is flake on `npx cross-env`, pre-install it a couple times to prevent that.
@@ -42,4 +42,3 @@ jobs:
           ./nx affected -t docs --base=$NX_BASE --head=HEAD
         env:
           UV_PYTHON: 3.12
-          NX_DAEMON: false  # may prevent GHA to stall for some reason

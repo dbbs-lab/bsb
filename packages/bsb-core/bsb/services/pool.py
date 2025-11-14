@@ -64,7 +64,7 @@ from ..exceptions import (
 )
 from ._util import ErrorModule, MockModule
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     from mpipool import MPIExecutor
 
 

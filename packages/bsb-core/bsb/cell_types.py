@@ -9,7 +9,7 @@ from ._util import obj_str_insert
 from .config import types
 from .placement.indicator import PlacementIndications
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     from .core import Scaffold
 
 

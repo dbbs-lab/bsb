@@ -176,3 +176,5 @@ node_modules
 # bsb
 *.hdf5
 *.pkl
+*.nio
+*.swc

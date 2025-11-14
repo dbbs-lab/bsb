@@ -56,7 +56,7 @@ def public_annotations():
         annotations.append(f"{api}: {annotation}")
 
     lines = [
-        "if typing.TYPE_CHECKING:",
+        "if typing.TYPE_CHECKING:  # pragma: nocover",
         *sorted(f"  import bsb.{module}" for module in {*get_public_api_map().values()}),
         "",
         *sorted(annotations),

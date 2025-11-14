@@ -11,9 +11,12 @@ from collections import defaultdict
 from importlib.metadata import EntryPoint
 from pathlib import Path
 
+import certifi
 import numpy as _np
 import requests
 from bsb import (
+    AllenApiError,
+    AllenStructure,
     Chunk,
     Configuration,
     Scaffold,
@@ -277,15 +280,25 @@ def skipIfOffline(url=None, scheme: UrlScheme = None):
         session_ctx = requests.Session()
     try:
         url = url or scheme.get_base_url()
-    except NotImplementedError as err:
+    except NotImplementedError as err:  # pragma: nocover
         raise ValueError("Couldn't establish base URL to ping for health check.") from err
     try:
         with session_ctx as session:
-            res = session.get(url)
-            offline = res.status_code != 200 or "Service Interruption Notice"
-    except Exception:
+            res = session.get(url, timeout=20, verify=certifi.where())
+            offline = res.status_code != 200
+    except Exception:  # pragma: nocover
         offline = True
     return unittest.skipIf(offline, err_msg)
+
+
+def skip_test_allen_api():
+    try:
+        AllenStructure._dl_structure_ontology()
+    except AllenApiError:  # pragma: nocover
+        return True
+    except Exception:  # pragma: nocover
+        return True
+    return False
 
 
 class SpoofedEntryPoint(EntryPoint):
@@ -362,6 +375,7 @@ __all__ = [
     "get_morphology_path",
     "get_all_morphology_paths",
     "skipIfOffline",
+    "skip_test_allen_api",
     "SpoofedEntryPoint",
     "plugin_context",
     "spoof_plugin",

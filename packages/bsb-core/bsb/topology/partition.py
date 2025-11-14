@@ -6,6 +6,7 @@ import abc
 import functools
 import json
 import typing
+from pathlib import Path
 
 import numpy as np
 from voxcell import RegionMap
@@ -14,6 +15,7 @@ from .. import config
 from ..config import refs, types
 from ..exceptions import (
     AllenApiError,
+    CfgReferenceError,
     ConfigurationError,
     LayoutError,
     NodeNotFoundError,
@@ -24,7 +26,7 @@ from ..storage._util import _cached_file
 from ..voxels import VoxelSet
 from ._layout import Layout, RhomboidData
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     from ..core import Scaffold
 
 
@@ -451,6 +453,24 @@ class NrrdVoxels(Voxels, classmap_entry="nrrd"):
             mask = np.nonzero(mask)
         return mask
 
+    def _get_source_ref_key(self, ref):
+        # Check `sources` nrrd ref to retrieve the name they will be referred to
+        # during placement
+
+        # if ref is a string ref to files
+        if isinstance(ref, str):
+            return ref
+        # if ref is a dict to cast, we take the stem of the file
+        elif isinstance(ref["file"], str):
+            return Path(ref["file"]).stem
+        # if ref is already cast, we take the stem of the file
+        elif isinstance(ref, NrrdDependencyNode):
+            return Path(ref.file.uri).stem
+        else:  # pragma: nocover
+            raise CfgReferenceError(
+                f"Unexpected reference type for source: {ref} in partition: {self.name}"
+            )
+
     def to_voxels(self):
         mask = self.get_mask()
         voxel_data = None
@@ -459,11 +479,13 @@ class NrrdVoxels(Voxels, classmap_entry="nrrd"):
             for i, source in enumerate(self._src):
                 voxel_data[:, i] = source.get_data().raw[mask]
 
+        data_keys = [self._get_source_ref_key(ref) for ref in self.sources._reflist]
+
         return VoxelSet(
             np.transpose(mask),
             self.voxel_size,
             data=voxel_data,
-            data_keys=self.sources._reflist,
+            data_keys=data_keys,
         )
 
     def _validate(self):
@@ -659,7 +681,7 @@ class AllenStructure(NrrdVoxels, classmap_entry="allen"):
     def _validate(self):
         # If neither sources nor mask_source were provided,
         # use allen ccfv3 annotation volume
-        if self.mask_only and self.mask_source is None:
+        if self.mask_source is None:
             self.mask_source = self._dl_mask()
         return super()._validate()
 

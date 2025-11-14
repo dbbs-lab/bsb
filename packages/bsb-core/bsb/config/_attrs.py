@@ -4,6 +4,7 @@ An attrs-inspired class annotation system, but my A stands for amateuristic.
 
 import builtins
 import contextlib
+import typing
 from collections.abc import Mapping
 from functools import wraps
 
@@ -740,8 +741,8 @@ class cfglist(builtins.list):
     def _postset(self, items):
         root = _strict_root(self)
         if root is not None:
-            for item in items:
-                _resolve_references(root, item)
+            for _ in items:
+                _resolve_references(root)
         if _is_booted(root):
             for item in items:
                 _boot_nodes(item, root.scaffold)
@@ -757,7 +758,7 @@ class ConfigurationListAttribute(ConfigurationAttribute):
         self.size = size
 
     def __set__(self, instance, value, _key=None):
-        _setattr(instance, self.attr_name, self.fill(value, _parent=instance))
+        self.fill(value, _parent=instance, _attr_name=self.attr_name)
         self.flag_dirty(instance)
 
     def __populate__(self, instance, value, unique_list=False):
@@ -765,13 +766,15 @@ class ConfigurationListAttribute(ConfigurationAttribute):
         if not unique_list or value not in cfglist:
             builtins.list.append(cfglist, value)
 
-    def fill(self, value, _parent, _key=None):
+    def fill(self, value, _parent, _key=None, _attr_name=None):
         _cfglist = cfglist()
         _cfglist._config_parent = _parent
         _cfglist._config_attr = self
         _cfglist._elem_type = self.child_type
         if isinstance(value, builtins.dict):
             raise CastError(f"Dictionary `{value}` given where list is expected.")
+        if _attr_name is not None:
+            _setattr(_parent, _attr_name, _cfglist)
         _cfglist.extend(value or builtins.list())
         if self.size is not None and len(_cfglist) != self.size:
             raise CastError(
@@ -838,7 +841,7 @@ class cfgdict(builtins.dict):
             super().__setitem__(key, value)
             root = _strict_root(value)
             if root is not None:
-                _resolve_references(root, value)
+                _resolve_references(root)
             if _is_booted(root):
                 _boot_nodes(value, root.scaffold)
 
@@ -923,18 +926,22 @@ class ConfigurationDictAttribute(ConfigurationAttribute):
         super().__init__(*args, **kwargs)
 
     def __set__(self, instance, value, _key=None):
-        _setattr(
-            instance,
-            self.attr_name,
-            self.fill(value, _parent=instance, _key=_key or self.attr_name),
+        self.fill(
+            value,
+            _parent=instance,
+            _key=_key or self.attr_name,
+            _attr_name=self.attr_name,
         )
+        self.flag_dirty(instance)
 
-    def fill(self, value, _parent, _key=None):
+    def fill(self, value, _parent, _key=None, _attr_name=None):
         _cfgdict = cfgdict()
         _cfgdict._config_parent = _parent
         _cfgdict._config_key = _key
         _cfgdict._config_attr = self
         _cfgdict._elem_type = self.child_type
+        if _attr_name is not None:
+            _setattr(_parent, _attr_name, _cfgdict)
         _cfgdict.update(value or builtins.dict())
         return _cfgdict
 
@@ -1121,8 +1128,11 @@ class ConfigurationReferenceAttribute(ConfigurationAttribute):
     def _get_config_key(self, val, instance):
         return (
             val._config_key
-            if val not in self.ref_lambda(instance._config_root, instance)
-            and hasattr(val, "_config_key")
+            if (
+                isinstance(val, typing.Hashable)
+                and val not in self.ref_lambda(instance._config_root, instance)
+                and hasattr(val, "_config_key")
+            )
             else val
         )
 

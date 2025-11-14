@@ -20,7 +20,7 @@ from ..topology import Partition, Region, RegionGroup, create_topology, get_part
 from . import types
 from ._attrs import _boot_nodes, cfgdict, cfglist
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     import packaging.requirements
 
     from ..core import Scaffold

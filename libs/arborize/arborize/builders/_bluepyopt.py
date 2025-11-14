@@ -6,7 +6,7 @@ from collections import defaultdict
 from ..constraints import Constraint, ConstraintsDefinition
 from ._neuron import neuron_build
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     from ..schematic import Schematic
 
 

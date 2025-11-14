@@ -10,7 +10,7 @@ from .._util import immutable, obj_str_insert
 from ..trees import BoxTree
 from ._chunks import Chunk
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     from ..cell_types import CellType
 
 

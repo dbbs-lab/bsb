@@ -3,16 +3,21 @@ import unittest
 
 import nrrd
 import numpy as np
-from bsb_test import NumpyTestCase, RandomStorageFixture, get_data_path
+from bsb_test import (
+    NumpyTestCase,
+    RandomStorageFixture,
+    get_data_path,
+    skip_test_allen_api,
+)
 
 from bsb import (
     MPI,
-    AllenApiError,
     AllenStructure,
     Configuration,
     ConfigurationError,
     LayoutError,
     NodeNotFoundError,
+    NrrdDependencyNode,
     Scaffold,
     topology,
 )
@@ -80,16 +85,6 @@ class TestTopology(unittest.TestCase):
         )
 
 
-def skip_test_allen_api():
-    try:
-        AllenStructure._dl_structure_ontology()
-    except AllenApiError:
-        return True
-    except Exception:
-        pass
-    return False
-
-
 class TestStack(
     RandomStorageFixture, NumpyTestCase, unittest.TestCase, engine_name="hdf5"
 ):
@@ -147,13 +142,20 @@ class TestStack(
         )
 
 
-class TestNrrdVoxels(unittest.TestCase):
+class TestNrrdVoxels(RandomStorageFixture, unittest.TestCase, engine_name="hdf5"):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
         if MPI.get_rank() == 0:
             dataset, h = nrrd.read(get_data_path("orientations", "toy_annotations.nrrd"))
             copy_h = h.copy()
+            dens = np.zeros(dataset.shape)
+            dens[dataset == 10690] = 1 / 25**3  # one cell per voxel
+            nrrd.write(
+                get_data_path("orientations", "density_file.nrrd"),
+                dens,
+                header=copy_h,
+            )
             copy_h["sizes"] = h["sizes"][:-1]
             nrrd.write(
                 get_data_path("orientations", "bad_dimensions.nrrd"),
@@ -175,6 +177,7 @@ class TestNrrdVoxels(unittest.TestCase):
         if MPI.get_rank() == 0:
             os.remove(get_data_path("orientations", "bad_dimensions.nrrd"))
             os.remove(get_data_path("orientations", "bad_dataset.nrrd"))
+            os.remove(get_data_path("orientations", "density_file.nrrd"))
 
     def test_bad_dimensions(self):
         cfg = Configuration.default(
@@ -323,6 +326,48 @@ class TestNrrdVoxels(unittest.TestCase):
         part = cfg.partitions.a
         vs = part.voxelset
         self.assertEqual(24, len(vs), "Region has that many voxels")
+
+    def test_placement_source_uncasted(self):
+        # if the referred element in sources is an uncasted elem
+        # use the file stem like for the morphologies
+        cfg = Configuration.default(
+            partitions={
+                "declive": {
+                    "type": "allen",
+                    "mask_source": {
+                        "type": "nrrd",
+                        "file": get_data_path("orientations", "toy_annotations.nrrd"),
+                    },
+                    "sources": [
+                        {
+                            "type": "nrrd",
+                            "file": get_data_path("orientations", "density_file.nrrd"),
+                        }
+                    ],
+                    "struct_name": "FL",
+                },
+            },
+            cell_types={
+                "my_other_cell": {
+                    "spatial": {"radius": 2.5, "density_key": "density_file"}
+                }
+            },
+            placement={
+                "example_placement": {
+                    "strategy": "bsb.placement.RandomPlacement",
+                    "cell_types": ["my_other_cell"],
+                    "partitions": ["declive"],
+                }
+            },
+        )
+        scaffold = Scaffold(cfg, self.storage)
+        # should run without problem
+        scaffold.compile()
+        # same test with a casted node
+        cfg.partitions["declive"].sources = [
+            NrrdDependencyNode(get_data_path("orientations", "density_file.nrrd"))
+        ]
+        scaffold.compile(clear=True)
 
 
 @unittest.skipIf(

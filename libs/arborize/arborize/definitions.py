@@ -6,7 +6,7 @@ from abc import abstractmethod
 from ._util import Assert, Copy, Iterable, MechId, MechIdTuple, Merge
 from .exceptions import ModelDefinitionError
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     from .parameter import Parameter
 
 

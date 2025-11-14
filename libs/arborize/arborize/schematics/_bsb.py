@@ -3,7 +3,7 @@ import typing
 
 from ..schematic import Schematic
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     import bsb.morphologies
 
     from ..definitions import Definition

@@ -47,10 +47,8 @@ When using the CLI, the framework sets up a "hands off" simulation workflow:
 * Run the simulation
 * Collect all the output
 
-When you use the library, you can set up more complex workflows, such as parameter sweeps:
-
-.. literalinclude:: ../../examples/simulation/parameter_sweep.py
-  :language: python
+When you use the library, you can set up more complex workflows, such as
+:doc:`parameter sweeps </examples/nest_repeated_sim>`
 
 .. rubric:: Parallel simulations
 

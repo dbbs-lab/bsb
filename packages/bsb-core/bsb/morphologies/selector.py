@@ -1,6 +1,5 @@
 import abc
 import concurrent
-import contextlib
 import re
 import tempfile
 import typing
@@ -14,9 +13,9 @@ from .. import config
 from ..config import types
 from ..config._attrs import cfglist
 from ..exceptions import MissingMorphologyError, SelectorError
-from . import Morphology
+from .parsers import parse_morphology_file
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     from ..core import Scaffold
 
 
@@ -83,7 +82,7 @@ class NameSelector(MorphologySelector, classmap_entry="by_name"):
 
 @config.node
 class NeuroMorphoSelector(NameSelector, classmap_entry="from_neuromorpho"):
-    _url = "http://cng.gmu.edu:8080/neuroMorpho/"  # "https://neuromorpho.org/"
+    _url = "https://neuromorpho.org/"
     _meta = "api/neuron/select?q=neuron_name:"
     _files = "dableFiles/"
 
@@ -107,22 +106,19 @@ class NeuroMorphoSelector(NameSelector, classmap_entry="from_neuromorpho"):
 
     @classmethod
     def _scrape_nm(cls, names):
-        # Weak DH key on neuromorpho.org
-        # https://stackoverflow.com/questions/38015537/python-requests-exceptions-sslerror-dh-key-too-small
-        requests.packages.urllib3.util.ssl_.DEFAULT_CIPHERS += ":HIGH:!DH:!aNULL"
-        # Pass if no pyopenssl support used / needed / available
-        with contextlib.suppress(AttributeError):
-            requests.packages.urllib3.contrib.pyopenssl.util.ssl_.DEFAULT_CIPHERS += (
-                ":HIGH:!DH:!aNULL"
-            )
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             with ThreadPoolExecutor() as executor:
                 # Certificate issues with neuromorpho --> verify=False
-                res = requests.get(cls._url + cls._meta + ",".join(names), verify=False)
+                try:
+                    res = requests.get(
+                        cls._url + cls._meta + ",".join(names), verify=False, timeout=20
+                    )
+                except requests.exceptions.Timeout:  # pragma: nocover
+                    raise SelectorError("NeuroMorpho API request timed out.") from None
                 if res.status_code == 404:
                     raise SelectorError(f"'{names[0]}' is not a valid NeuroMorpho name.")
-                elif res.status_code != 200:
+                elif res.status_code != 200:  # pragma: nocover
                     raise SelectorError("NeuroMorpho API error: " + res.message)
                 metas = {n: None for n in names}
                 for meta in res.json()["_embedded"]["neuronResources"]:
@@ -137,7 +133,7 @@ class NeuroMorphoSelector(NameSelector, classmap_entry="from_neuromorpho"):
                 swc_urls = {n: cls._swc_url(metas[n]["archive"], n) for n in names}
 
                 def req(n):
-                    return requests.get(swc_urls[n], verify=False)
+                    return requests.get(swc_urls[n], verify=False, timeout=20)
 
                 def sub(n):
                     return executor.submit(req, n), n
@@ -150,7 +146,8 @@ class NeuroMorphoSelector(NameSelector, classmap_entry="from_neuromorpho"):
                         path = tempdir + f"/{name}.swc"
                         with open(path, "w") as f:
                             f.write(future.result().text)
-                        morphos[name] = Morphology.from_swc(path, meta=metas[name])
+                        morphos[name] = parse_morphology_file(path)
+                        morphos[name].meta = metas[name]
                 missing = [name for name, m in morphos.items() if m is None]
                 if missing:  # pragma: nocover
                     raise SelectorError(

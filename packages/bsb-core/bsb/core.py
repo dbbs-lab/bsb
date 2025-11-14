@@ -31,7 +31,7 @@ from .simulation import get_simulation_adapter
 from .storage import Storage, open_storage
 from .storage._chunks import Chunk
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     from .cell_types import CellType
     from .config._config import NetworkNode as Network
     from .postprocessing import AfterConnectivityHook, AfterPlacementHook
@@ -402,6 +402,8 @@ class Scaffold:
                 p_strats, c_strats = self._redo_chain(p_strats, c_strats, skip, force)
             # else:
             #   append mode is luckily simpler, just don't clear anything :)
+        # We update the configuration saved to make sure it corresponds
+        self.storage.store_active_config(self.configuration)
 
         phases = ["pipelines"]
         if not skip_placement:

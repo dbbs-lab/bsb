@@ -1,0 +1,35 @@
+[project]
+name = "neuron-simulation"
+version = "1.0.0"
+description = "BSB Neuron simulation examples"
+readme = "README.md"
+requires-python = ">=3.10,<4"
+dependencies = [
+    "bsb~=6.0",
+    "bsb-neuron[parallel]~=6.0",  # parallel is required see issue #188
+    "dbbs-catalogue~=6.0",
+    "matplotlib>=3.10.6",
+]
+
+[dependency-groups]
+test = [
+    "bsb-test~=6.0",
+]
+
+[tool.uv]
+default-groups = [ "test" ]
+
+[tool.uv.sources.bsb]
+path = "../../packages/bsb"
+editable = true
+
+[tool.uv.sources.bsb-neuron]
+path = "../../packages/bsb-neuron"
+editable = true
+
+[tool.uv.sources.bsb-test]
+path = "../../packages/bsb-test"
+editable = true
+
+[tools.bsb]
+config = "configs/guide_neuron.yaml"

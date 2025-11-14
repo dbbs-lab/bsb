@@ -11,10 +11,6 @@ from ._fs import get_cache_path, read_cache, update_cache
 from ._hash import get_package_hash, get_package_mods_hash
 from .exceptions import BuildCatalogueError, PackageFileError
 
-if typing.TYPE_CHECKING:
-    pass
-
-
 SupportedDialect = typing.Literal["arbor"] | typing.Literal["neuron"]
 
 

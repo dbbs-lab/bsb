@@ -1,0 +1,66 @@
+{
+  "name": "examples",
+  "$schema": "../.nx/installation/node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "examples",
+  "targets": {
+    "lock": {
+      "executor": "@nxlv/python:lock",
+      "options": {
+        "update": false
+      }
+    },
+    "sync": {
+      "executor": "@nxlv/python:sync",
+      "options": {}
+    },
+    "build": {
+      "executor": "@nxlv/python:build",
+      "outputs": [
+        "{projectRoot}/dist"
+      ],
+      "options": {
+        "outputPath": "{projectRoot}/dist",
+        "publish": true,
+        "lockedVersions": false,
+        "bundleLocalDependencies": false
+      },
+      "cache": true
+    },
+    "lint": {
+      "executor": "@nxlv/python:ruff-check",
+      "outputs": [],
+      "options": {
+        "lintFilePatterns": [
+          "*/tests"
+        ]
+      },
+      "cache": true
+    },
+    "format": {
+      "executor": "@nxlv/python:ruff-format",
+      "outputs": [],
+      "options": {
+        "filePatterns": [
+          "*/tests"
+        ]
+      },
+      "cache": true
+    },
+    "test": {
+      "executor": "@nxlv/python:run-commands",
+      "outputs": [],
+      "options": {
+        "command": "uv run bash ../devtools/test_examples.sh",
+        "cwd": "{projectRoot}"
+      },
+      "cache": true
+    }
+  },
+  "tags": [],
+  "release": {
+    "version": {
+      "generator": "@nxlv/python:release-version"
+    }
+  }
+}

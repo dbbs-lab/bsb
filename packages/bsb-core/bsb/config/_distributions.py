@@ -8,7 +8,7 @@ from .. import config
 from ..exceptions import DistributionCastError
 from . import types
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     from ..core import Scaffold
 
 # Scan the scipy distributions module for all distribution names. Ignore `_gen` which are

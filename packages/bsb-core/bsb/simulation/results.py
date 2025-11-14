@@ -4,7 +4,7 @@ import typing
 
 from ..reporting import warn
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     import neo
 
 

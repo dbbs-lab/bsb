@@ -8,7 +8,7 @@ from ..exceptions import ConnectivityError
 from ..mixins import InvertedRoI
 from .strategy import ConnectionStrategy
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     from ..config import Distribution
 
 

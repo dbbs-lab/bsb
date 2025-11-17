@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "arborize"
-version = "6.0.7"
+version = "7.0.0"
 readme = "README.md"
 requires-python = ">=3.10,<4"
 dynamic = [ "description" ]
@@ -73,10 +73,7 @@ branch = true
 source = [ "arborize" ]
 
 [tool.coverage.report]
-exclude_lines = [
-  "if typing.TYPE_CHECKING:",
-  "pragma: nocover"
-]
+exclude_lines = [ "if typing.TYPE_CHECKING:", "pragma: nocover" ]
 show_missing = true
 
 [tool.ruff]

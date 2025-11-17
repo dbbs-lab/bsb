@@ -32,7 +32,9 @@ class PoissonGenerator(NestDevice, classmap_entry="poisson_generator"):
                 SpikeTrain(
                     sr.events["times"],
                     units="ms",
-                    array_annotations={"senders": sr.events["senders"]},
+                    array_annotations={
+                        "senders": sr.events["senders"] - nodes.tolist()[0]
+                    },
                     t_stop=simulation.duration,
                     device=self.name,
                     pop_size=len(nodes),

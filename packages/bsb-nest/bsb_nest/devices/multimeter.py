@@ -41,6 +41,7 @@ class Multimeter(NestDevice, classmap_entry="multimeter"):
 
         def recorder(segment):
             senders = device.events["senders"]
+            first_id = nodes.tolist()[0]
             for sender in np.unique(senders):
                 sender_filter = senders == sender
                 for prop, unit in zip(self.properties, self.units, strict=False):
@@ -51,7 +52,7 @@ class Multimeter(NestDevice, classmap_entry="multimeter"):
                             sampling_period=self.simulation.resolution * pq.ms,
                             name=self.name,
                             cell_type=inv_targets[sender],
-                            cell_id=sender,
+                            cell_id=sender - first_id,
                             prop_recorded=prop,
                         )
                     )

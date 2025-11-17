@@ -281,11 +281,11 @@ class TestNest(
         netw.compile()
         results = netw.run_simulation("test")
         spike_times_bsb = results.spiketrains[0]
-        self.assertTrue(np.unique(spike_times_bsb.array_annotations["senders"]) == 1)
+        self.assertTrue(np.unique(spike_times_bsb.array_annotations["senders"]) == 0)
         membrane_potentials = results.analogsignals[0]
         # last time point is not recorded because of recorder delay.
         self.assertTrue(len(membrane_potentials) == duration / resolution - 1)
-        self.assertTrue(membrane_potentials.annotations["cell_id"] == 1)
+        self.assertTrue(membrane_potentials.annotations["cell_id"] == 0)
         defaults = nest.GetDefaults("iaf_cond_alpha")
         # since current injected is positive, the V_m should be clamped between default
         # initial V_m = -70mV and spike threshold V_th = -55 mV

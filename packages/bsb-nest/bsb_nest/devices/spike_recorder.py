@@ -19,7 +19,9 @@ class SpikeRecorder(NestDevice, classmap_entry="spike_recorder"):
                 SpikeTrain(
                     device.events["times"],
                     units="ms",
-                    array_annotations={"senders": device.events["senders"]},
+                    array_annotations={
+                        "senders": device.events["senders"] - nodes.tolist()[0]
+                    },
                     t_stop=simulation.duration,
                     device=self.name,
                     pop_size=len(nodes),

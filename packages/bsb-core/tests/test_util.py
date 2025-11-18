@@ -5,6 +5,7 @@ from bsb_test import (
     FixedPosConfigFixture,
     NumpyTestCase,
     RandomStorageFixture,
+    skip_parallel,
     skipIfOffline,
 )
 from scipy.spatial.transform import Rotation
@@ -69,6 +70,7 @@ class TestRotationUtils(unittest.TestCase):
 
 
 class TestUriSchemes(RandomStorageFixture, unittest.TestCase, engine_name="fs"):
+    @skip_parallel  # see https://github.com/dbbs-lab/bsb/issues/197
     @skipIfOffline(scheme=NeuroMorphoScheme())
     def test_nm_scheme(self):
         file = FileDependency(

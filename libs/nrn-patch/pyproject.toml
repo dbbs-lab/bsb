@@ -12,7 +12,7 @@ classifiers = [
 ]
 requires-python = ">=3.10,<4"
 dependencies = [
-  "nmodl-glia[neuron]~=6.0",
+  "nmodl-glia[neuron]~=7.0",
   "packaging~=24.0",
   "errr~=1.2",
   "numpy~=1.21",
@@ -36,7 +36,7 @@ extensions = "patch.extensions:package"
 test = [ "nrn-patch[parallel]", "coverage~=7.0" ]
 docs = [
   "sphinx~=8.1",
-  "sphinxext-bsb~=6.0",
+  "sphinxext-bsb~=7.0",
   "helveg--sphinx-code-tabs~=0.2",
   "furo~=2024.0"
 ]

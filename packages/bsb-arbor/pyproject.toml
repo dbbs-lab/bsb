@@ -13,10 +13,10 @@ classifiers = [
 ]
 dependencies = [
   "numpy~=1.21",
-  "bsb-core~=6.0",
-  "arborize~=6.0",
+  "bsb-core~=7.0",
+  "arborize~=7.0",
   "arbor~=0.10; sys_platform != 'win32'",
-  "arborize[arbor]~=6.0; sys_platform != 'win32'"
+  "arborize[arbor]~=7.0; sys_platform != 'win32'"
 ]
 
   [[project.authors]]
@@ -36,11 +36,11 @@ arbor = "bsb_arbor"
 [dependency-groups]
 test = [
   "bsb-core[parallel]",
-  "bsb-hdf5~=6.0",
-  "bsb-test~=6.0",
+  "bsb-hdf5~=7.0",
+  "bsb-test~=7.0",
   "coverage>=7.3"
 ]
-docs = [ "furo~=2024.0", "sphinxext-bsb~=6.0" ]
+docs = [ "furo~=2024.0", "sphinxext-bsb~=7.0" ]
 dev = [
   "bsb-arbor[test,docs]",
   "pre-commit~=3.5",

@@ -1,3 +1,13 @@
+## 7.0.1 (2025-11-18)
+
+### 🩹 Fixes
+
+- bump bsb versions in toml ([#195](https://github.com/dbbs-lab/bsb/pull/195), [#197](https://github.com/dbbs-lab/bsb/issues/197), [#187](https://github.com/dbbs-lab/bsb/issues/187))
+
+### ❤️ Thank You
+
+- Dimitri RODARIE
+
 # 7.0.0 (2025-11-17)
 
 ### 🚀 Features

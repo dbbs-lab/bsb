@@ -11,7 +11,7 @@ dynamic = [ "description" ]
 classifiers = [
   "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"
 ]
-dependencies = [ "bsb-core~=6.0", "PyYAML~=6.0", "pydantic" ]
+dependencies = [ "bsb-core~=7.0", "PyYAML~=6.0", "pydantic" ]
 
   [[project.authors]]
   name = "Robin De Schepper"
@@ -32,7 +32,7 @@ yaml_templates = "bsb_yaml.templates"
 
 [dependency-groups]
 test = [ "bsb-core[parallel]", "coverage>=7.3" ]
-docs = [ "furo~=2024.0", "sphinxext-bsb~=6.0" ]
+docs = [ "furo~=2024.0", "sphinxext-bsb~=7.0" ]
 dev = [ "pre-commit~=3.5", "ruff>=0.8.2" ]
 
 [tool.uv]

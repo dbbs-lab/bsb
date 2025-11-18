@@ -12,10 +12,10 @@ classifiers = [
   "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"
 ]
 dependencies = [
-  "bsb-core~=6.0",
-  "bsb-hdf5~=6.0",
-  "bsb-json~=6.0",
-  "bsb-yaml~=6.0"
+  "bsb-core~=7.0",
+  "bsb-hdf5~=7.0",
+  "bsb-json~=7.0",
+  "bsb-yaml~=7.0"
 ]
 
   [[project.authors]]
@@ -35,9 +35,9 @@ dependencies = [
 
   [project.optional-dependencies]
   parallel = [ "bsb-core[parallel]" ]
-  neuron = [ "bsb-neuron~=6.0" ]
-  nest = [ "bsb-nest~=6.0" ]
-  arbor = [ "bsb-arbor~=6.0" ]
+  neuron = [ "bsb-neuron~=7.0" ]
+  nest = [ "bsb-nest~=7.0" ]
+  arbor = [ "bsb-arbor~=7.0" ]
 
   [project.urls]
   Home = "https://github.com/dbbs-lab/bsb"
@@ -56,7 +56,7 @@ docs = [
   "furo~=2024.0",
   "sphinxemoji~=0.3",
   "sphinx-copybutton~=0.5",
-  "sphinxext-bsb~=6.0"
+  "sphinxext-bsb~=7.0"
 ]
 
 [tool.uv]

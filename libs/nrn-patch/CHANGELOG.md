@@ -1,3 +1,27 @@
+## 7.0.1 (2025-11-18)
+
+### 🩹 Fixes
+
+- bump bsb versions in toml ([#195](https://github.com/dbbs-lab/bsb/pull/195), [#197](https://github.com/dbbs-lab/bsb/issues/197), [#187](https://github.com/dbbs-lab/bsb/issues/187))
+
+### ❤️ Thank You
+
+- Dimitri RODARIE
+
+# 7.0.0 (2025-11-17)
+
+### 🚀 Features
+
+- ⚠️  Refactor Voxel partitions - Simulation controllers ([#191](https://github.com/dbbs-lab/bsb/pull/191), [#148](https://github.com/dbbs-lab/bsb/issues/148), [#145](https://github.com/dbbs-lab/bsb/issues/145), [#146](https://github.com/dbbs-lab/bsb/issues/146), [#177](https://github.com/dbbs-lab/bsb/issues/177), [#169](https://github.com/dbbs-lab/bsb/issues/169), [#181](https://github.com/dbbs-lab/bsb/issues/181), [#184](https://github.com/dbbs-lab/bsb/issues/184), [#171](https://github.com/dbbs-lab/bsb/issues/171), [#182](https://github.com/dbbs-lab/bsb/issues/182), [#186](https://github.com/dbbs-lab/bsb/issues/186), [#174](https://github.com/dbbs-lab/bsb/issues/174), [#44](https://github.com/dbbs-lab/bsb/issues/44), [#175](https://github.com/dbbs-lab/bsb/issues/175), [#149](https://github.com/dbbs-lab/bsb/issues/149), [#189](https://github.com/dbbs-lab/bsb/issues/189))
+
+### ⚠️  Breaking Changes
+
+- ⚠️  Refactor Voxel partitions - Simulation controllers ([#191](https://github.com/dbbs-lab/bsb/pull/191), [#148](https://github.com/dbbs-lab/bsb/issues/148), [#145](https://github.com/dbbs-lab/bsb/issues/145), [#146](https://github.com/dbbs-lab/bsb/issues/146), [#177](https://github.com/dbbs-lab/bsb/issues/177), [#169](https://github.com/dbbs-lab/bsb/issues/169), [#181](https://github.com/dbbs-lab/bsb/issues/181), [#184](https://github.com/dbbs-lab/bsb/issues/184), [#171](https://github.com/dbbs-lab/bsb/issues/171), [#182](https://github.com/dbbs-lab/bsb/issues/182), [#186](https://github.com/dbbs-lab/bsb/issues/186), [#174](https://github.com/dbbs-lab/bsb/issues/174), [#44](https://github.com/dbbs-lab/bsb/issues/44), [#175](https://github.com/dbbs-lab/bsb/issues/175), [#149](https://github.com/dbbs-lab/bsb/issues/149), [#189](https://github.com/dbbs-lab/bsb/issues/189))
+
+### ❤️ Thank You
+
+- Dimitri RODARIE
+
 ## 6.0.7 (2025-10-06)
 
 This was a version bump only for nrn-patch to align it with other projects, there were no code changes.

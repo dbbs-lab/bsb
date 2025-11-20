@@ -4,14 +4,14 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "bsb-json"
-version = "6.0.7"
+version = "7.0.1"
 readme = "README.md"
 requires-python = ">=3.10,<4"
 dynamic = [ "description" ]
 classifiers = [
   "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"
 ]
-dependencies = [ "bsb-core~=6.0" ]
+dependencies = [ "bsb-core~=7.0" ]
 
   [[project.authors]]
   name = "Robin De Schepper"
@@ -32,7 +32,7 @@ json_templates = "bsb_json.templates"
 
 [dependency-groups]
 test = [ "bsb-core[parallel]", "bsb-test~=4.0", "coverage>=7.3" ]
-docs = [ "furo~=2024.0", "sphinxext-bsb~=6.0" ]
+docs = [ "furo~=2024.0", "sphinxext-bsb~=7.0" ]
 dev = [ "pre-commit~=3.5", "ruff>=0.8.2" ]
 
 [tool.uv]
@@ -58,10 +58,7 @@ branch = true
 source = [ "bsb_json" ]
 
 [tool.coverage.report]
-exclude_lines = [
-  "if typing.TYPE_CHECKING:",
-  "pragma: nocover"
-]
+exclude_lines = [ "if typing.TYPE_CHECKING:", "pragma: nocover" ]
 show_missing = true
 
 [tool.ruff]

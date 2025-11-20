@@ -26,14 +26,14 @@ editable = true
 
 [project]
 name = "sphinxext-bsb"
-version = "6.0.7"
+version = "7.0.1"
 description = "BSB Sphinx documentation extension"
 requires-python = ">=3.10,<4"
 readme = "README.md"
 classifiers = [
   "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"
 ]
-dependencies = [ "bsb-core~=6.0", "sphinx>=8.1", "sphinx-design~=0.6" ]
+dependencies = [ "bsb-core~=7.0", "sphinx>=8.1", "sphinx-design~=0.6" ]
 
   [project.license]
   file = "LICENSE"

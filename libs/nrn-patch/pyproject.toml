@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "nrn-patch"
-version = "6.0.7"
+version = "7.0.1"
 readme = "README.md"
 dynamic = [ "description" ]
 classifiers = [
@@ -12,11 +12,11 @@ classifiers = [
 ]
 requires-python = ">=3.10,<4"
 dependencies = [
-  "nmodl-glia[neuron]~=6.0",
+  "nmodl-glia[neuron]~=7.0",
   "packaging~=24.0",
   "errr~=1.2",
   "numpy~=1.21",
-  "NEURON>=9.0; sys_platform != 'win32'",
+  "NEURON>=9.0; sys_platform != 'win32'"
 ]
 
   [[project.authors]]
@@ -36,7 +36,7 @@ extensions = "patch.extensions:package"
 test = [ "nrn-patch[parallel]", "coverage~=7.0" ]
 docs = [
   "sphinx~=8.1",
-  "sphinxext-bsb~=6.0",
+  "sphinxext-bsb~=7.0",
   "helveg--sphinx-code-tabs~=0.2",
   "furo~=2024.0"
 ]
@@ -61,10 +61,7 @@ branch = true
 source = [ "nrn_patch" ]
 
 [tool.coverage.report]
-exclude_lines = [
-  "if typing.TYPE_CHECKING:",
-  "pragma: nocover"
-]
+exclude_lines = [ "if typing.TYPE_CHECKING:", "pragma: nocover" ]
 show_missing = true
 
 [tool.ruff]

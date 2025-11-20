@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "bsb-core"
-version = "6.0.7"
+version = "7.0.1"
 readme = "README.md"
 requires-python = ">=3.10,<4"
 dynamic = [ "description" ]
@@ -59,7 +59,7 @@ verbosity = "bsb._options:verbosity"
 sudo = "bsb._options:sudo"
 version = "bsb._options:version"
 config = "bsb._options:config"
-sim_console_progress= "bsb._options:sim_console_progress"
+sim_console_progress = "bsb._options:sim_console_progress"
 profiling = "bsb._options:profiling"
 debug_pool = "bsb._options:debug_pool"
 quiet = "bsb._options:quiet"
@@ -70,26 +70,26 @@ quiet = "bsb._options:quiet"
 [dependency-groups]
 test = [
   "bsb-core[parallel]",
-  "bsb-arbor~=6.0; sys_platform != 'win32'",
-  "bsb-hdf5~=6.0",
-  "bsb-json~=6.0",
-  "bsb-test~=6.0",
+  "bsb-arbor~=7.0; sys_platform != 'win32'",
+  "bsb-hdf5~=7.0",
+  "bsb-json~=7.0",
+  "bsb-test~=7.0",
   "coverage>=7.3"
 ]
 docs = [
   "furo~=2024.4",
   "sphinxemoji~=0.3",
   "sphinx-copybutton~=0.5",
-  "bsb-json~=6.0",
-  "bsb-yaml~=6.0",
-  "sphinxext-bsb~=6.0"
+  "bsb-json~=7.0",
+  "bsb-yaml~=7.0",
+  "sphinxext-bsb~=7.0"
 ]
 dev = [
   "pre-commit~=3.5",
   "ruff>=0.8.2",
   "snakeviz~=2.1",
   "opentelemetry-distro>=0.59b0",
-  "opentelemetry-exporter-otlp~=1.38",
+  "opentelemetry-exporter-otlp~=1.38"
 ]
 
 [tool.uv]
@@ -127,10 +127,7 @@ branch = true
 source = [ "bsb" ]
 
 [tool.coverage.report]
-exclude_lines = [
-  "if typing.TYPE_CHECKING:",
-  "pragma: nocover"
-]
+exclude_lines = [ "if typing.TYPE_CHECKING:", "pragma: nocover" ]
 show_missing = true
 
 [tool.ruff]

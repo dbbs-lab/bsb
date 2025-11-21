@@ -994,33 +994,32 @@ class TestNest(
         duration = 100
         resolution = 0.1
         cfg = _conf_two_cells()
-        with self.assertRaises(ConfigurationError):
-            cfg.simulations = {
-                "test": {
-                    "simulator": "nest",
-                    "duration": duration,
-                    "resolution": resolution,
-                    "seed": 1234,
-                    "cell_models": {
-                        "A": {"model": "hh_psc_alpha_gap"},
-                        "C": {"model": "hh_psc_alpha_gap"},
+
+        cfg.simulations = {
+            "test": {
+                "simulator": "nest",
+                "duration": duration,
+                "resolution": resolution,
+                "seed": 1234,
+                "cell_models": {
+                    "A": {"model": "iaf_cond_alpha"},
+                    "C": {"model": "iaf_cond_alpha"},
+                },
+                "connection_models": {
+                    "C_to_A": {
+                        "synapses": [
+                            {"weight": 20.25, "delay": 1.0},
+                        ],
+                    }
+                },
+                "devices": {
+                    "record_A_spikes": {
+                        "device": "spike_recorder",
+                        "delay": 0.5,
+                        "targetting": {"strategy": "all_connections"},
                     },
-                    "connection_models": {
-                        "C_to_A": {
-                            "synapses": [
-                                {"weight": 20.25},
-                            ],
-                        }
-                    },
-                    "devices": {
-                        "record_A_spikes": {
-                            "device": "spike_recorder",
-                            "delay": 0.5,
-                            "targetting": {
-                                "strategy": "cell_model",
-                                "connection": ["C_to_A"],
-                            },
-                        },
-                    },
-                }
+                },
             }
+        }
+        with self.assertRaises(ConfigurationError):
+            Scaffold(cfg, self.storage)

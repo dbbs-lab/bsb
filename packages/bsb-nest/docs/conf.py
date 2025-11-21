@@ -29,6 +29,7 @@ extensions = ["sphinx.ext.autodoc", "sphinx.ext.intersphinx", *_project.extensio
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
     **_project.intersphinx,
 }
 

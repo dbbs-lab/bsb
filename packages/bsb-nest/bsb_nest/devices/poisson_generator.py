@@ -33,7 +33,7 @@ class PoissonGenerator(NestDevice, classmap_entry="poisson_generator"):
                     sr.events["times"],
                     units="ms",
                     array_annotations={
-                        "senders": sr.events["senders"] - nodes.tolist()[0]
+                        "senders": sr.events["senders"] - min(nodes.tolist())
                     },
                     t_stop=simulation.duration,
                     device=self.name,

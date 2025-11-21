@@ -2,6 +2,7 @@ import abc
 import warnings
 
 import nest
+import numpy as np
 from bsb import ConfigurationError, DeviceModel, Targetting, config, refs, types
 
 
@@ -53,7 +54,7 @@ class NestDevice(DeviceModel):
 
         :param bsb_nest.adapter.NestAdapter adapter: Nest adapter instance
         :param bsb_nest.simulation.NestSimulation simulation: Nest simulation instance
-        :param bsb_nest.adapter.NestSimulationData simdata: Simulation data instance
+        :param bsb.simulation.adapter.SimulationData simdata: Simulation data instance
         :return: dictionary of device target group to NEST Collection
         :rtype: dict
         """
@@ -86,7 +87,7 @@ class NestDevice(DeviceModel):
 
         :param bsb_nest.adapter.NestAdapter adapter:
         :param bsb_nest.simulation.NestSimulation simulation: Nest simulation instance
-        :param bsb_nest.adapter.NestSimulationData simdata: Simulation data instance
+        :param bsb.simulation.adapter.SimulationData simdata: Simulation data instance
         :return: Flattened NEST collection with all the targets of the device
         """
         targets_dict = self.get_dict_targets(adapter, simulation, simdata)
@@ -132,9 +133,38 @@ class NestDevice(DeviceModel):
 
         :param bsb_nest.adapter.NestAdapter adapter:
         :param bsb_nest.simulation.NestSimulation simulation: Nest simulation instance
-        :param bsb_nest.adapter.NestSimulationData simdata: Simulation data instance
+        :param bsb.simulation.adapter.SimulationData simdata: Simulation data instance
         """
         pass
+
+    @staticmethod
+    def get_bsb_ids(nest_ids, simulation, simdata):
+        """
+        Return the list of (placement id, cell id) pair corresponding to each nest id.
+        Returns also the list of placement tags corresponding to the placement id.
+        Senders not attached to a placement set (e.g., nest devices) will have the
+        placement id 0 corresponding to the `unknown` tag.
+
+        :param list nest_ids: list of nest ids
+        :param bsb_nest.simulation.NestSimulation simulation: Nest simulation instance
+        :param bsb.simulation.adapter.SimulationData simdata: Simulation data instance
+        :return: list of bsb cell ids corresponding to the nest ids, and the list of
+            referred placement sets tags
+        :rtype: tuple[numpy.ndarray[int], list[str]]
+        """
+        bsb_ids = np.zeros((len(nest_ids), 2), dtype=int)
+        ps_tags = ["unknown"]
+        for i, cell_model in enumerate(sorted(simulation.cell_models.values())):
+            ps = simdata.placement[cell_model]
+            # First nest id used for cell population (assuming its ids list is continuous)
+            starting_id = min(simdata.populations[cell_model].tolist())
+            filter_nest_ids = (nest_ids >= starting_id) * (
+                nest_ids < starting_id + len(ps)
+            )
+            bsb_ids[filter_nest_ids, 1] = nest_ids[filter_nest_ids] - starting_id
+            bsb_ids[filter_nest_ids, 0] = 1 + i
+            ps_tags.append(ps.tag)
+        return bsb_ids, ps_tags
 
 
 @config.node

@@ -42,7 +42,7 @@ class Multimeter(NestDevice, classmap_entry="multimeter"):
         def recorder(segment):
             senders = device.events["senders"]
             u_sender = np.unique(senders)
-            global_ids = simdata.get_bsb_ids(u_sender)
+            global_ids, tags = self.get_bsb_ids(u_sender, simulation, simdata)
             for sender, global_id in zip(u_sender, global_ids, strict=True):
                 sender_filter = senders == sender
                 for prop, unit in zip(self.properties, self.units, strict=False):
@@ -54,7 +54,7 @@ class Multimeter(NestDevice, classmap_entry="multimeter"):
                             name=self.name,
                             cell_type=inv_targets[sender],
                             cell_id=global_id[1],
-                            ps_name=global_id[0],
+                            ps_name=tags[global_id[0]],
                             prop_recorded=prop,
                         )
                     )

@@ -54,7 +54,7 @@ class SinusoidalPoissonGenerator(
                     sr.events["times"],
                     units="ms",
                     array_annotations={
-                        "senders": sr.events["senders"] - nodes.tolist()[0]
+                        "senders": sr.events["senders"] - min(nodes.tolist())
                     },
                     t_stop=simulation.duration,
                     device=self.name,

@@ -201,10 +201,14 @@ class TestNest(
         rate_ex = len(sr_exc) / simcfg.duration * 1000.0 / sr_exc.annotations["pop_size"]
         rate_in = len(sr_inh) / simcfg.duration * 1000.0 / sr_inh.annotations["pop_size"]
 
-        self.assertEqual(sr_exc.annotations["ps_names"], ["excitatory"])
-        self.assertAll(sr_exc.array_annotations["ps_ids"] == 0)
-        self.assertEqual(sr_inh.annotations["ps_names"], ["inhibitory"])
-        self.assertAll(sr_inh.array_annotations["ps_ids"] == 0)
+        self.assertEqual(
+            sr_exc.annotations["ps_names"], ["unknown", "excitatory", "inhibitory"]
+        )
+        self.assertAll(sr_exc.array_annotations["ps_ids"] == 1)
+        self.assertEqual(
+            sr_inh.annotations["ps_names"], ["unknown", "excitatory", "inhibitory"]
+        )
+        self.assertAll(sr_inh.array_annotations["ps_ids"] == 2)
         self.assertAll(np.unique(sr_exc.array_annotations["senders"]) <= 2000)
         self.assertAll(np.unique(sr_inh.array_annotations["senders"]) <= 500)
 

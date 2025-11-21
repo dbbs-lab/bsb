@@ -51,8 +51,8 @@ class TestNestExamples(
             self.assertEqual(signal.t_stop, 5000)
 
         # test the number of cell recorded
-        self.assertLess(neuron_ids.size, 1600 + 1)
-        self.assertEqual(np.max(neuron_ids), 1600 + 1)
+        self.assertLess(neuron_ids.size, 1600)
+        self.assertEqual(np.max(neuron_ids), 1600)
 
     def test_json_example(self):
         self.cfg = parse_configuration_file(

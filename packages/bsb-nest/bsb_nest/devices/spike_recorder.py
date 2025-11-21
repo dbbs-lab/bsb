@@ -15,14 +15,21 @@ class SpikeRecorder(NestDevice, classmap_entry="spike_recorder"):
         self.connect_to_nodes(device, nodes)
 
         def recorder(segment):
+            global_ids, tags = self.get_bsb_ids(
+                device.events["senders"], simulation, simdata
+            )
             segment.spiketrains.append(
                 SpikeTrain(
                     device.events["times"],
                     units="ms",
-                    array_annotations={"senders": device.events["senders"]},
+                    array_annotations={
+                        "senders": global_ids[:, 1],
+                        "ps_ids": global_ids[:, 0],
+                    },
                     t_stop=simulation.duration,
                     device=self.name,
                     pop_size=len(nodes),
+                    ps_names=tags,
                 )
             )
 

@@ -195,8 +195,22 @@ class TestNest(
         self.assertIsNotNone(sr_exc)
         self.assertIsNotNone(sr_inh)
 
+        self.assertEqual(50, sr_exc.annotations["pop_size"])
+        self.assertEqual(50, sr_inh.annotations["pop_size"])
+
         rate_ex = len(sr_exc) / simcfg.duration * 1000.0 / sr_exc.annotations["pop_size"]
         rate_in = len(sr_inh) / simcfg.duration * 1000.0 / sr_inh.annotations["pop_size"]
+
+        self.assertEqual(
+            sr_exc.annotations["ps_names"], ["unknown", "excitatory", "inhibitory"]
+        )
+        self.assertAll(sr_exc.array_annotations["ps_ids"] == 1)
+        self.assertEqual(
+            sr_inh.annotations["ps_names"], ["unknown", "excitatory", "inhibitory"]
+        )
+        self.assertAll(sr_inh.array_annotations["ps_ids"] == 2)
+        self.assertAll(np.unique(sr_exc.array_annotations["senders"]) <= 2000)
+        self.assertAll(np.unique(sr_inh.array_annotations["senders"]) <= 500)
 
         self.assertAlmostEqual(rate_in, 50, delta=1)
         self.assertAlmostEqual(rate_ex, 50, delta=1)
@@ -281,11 +295,11 @@ class TestNest(
         netw.compile()
         results = netw.run_simulation("test")
         spike_times_bsb = results.spiketrains[0]
-        self.assertTrue(np.unique(spike_times_bsb.array_annotations["senders"]) == 1)
+        self.assertTrue(np.unique(spike_times_bsb.array_annotations["senders"]) == 0)
         membrane_potentials = results.analogsignals[0]
         # last time point is not recorded because of recorder delay.
         self.assertTrue(len(membrane_potentials) == duration / resolution - 1)
-        self.assertTrue(membrane_potentials.annotations["cell_id"] == 1)
+        self.assertTrue(membrane_potentials.annotations["cell_id"] == 0)
         defaults = nest.GetDefaults("iaf_cond_alpha")
         # since current injected is positive, the V_m should be clamped between default
         # initial V_m = -70mV and spike threshold V_th = -55 mV
@@ -979,3 +993,37 @@ class TestNest(
             == conn_data[:, :2][conn_data[:, 2] == 2],
             "the cell pairs should be the same for static and stdp synapses",
         )
+
+    def test_error_targetting(self):
+        duration = 100
+        resolution = 0.1
+        cfg = _conf_two_cells()
+
+        cfg.simulations = {
+            "test": {
+                "simulator": "nest",
+                "duration": duration,
+                "resolution": resolution,
+                "seed": 1234,
+                "cell_models": {
+                    "A": {"model": "iaf_cond_alpha"},
+                    "C": {"model": "iaf_cond_alpha"},
+                },
+                "connection_models": {
+                    "C_to_A": {
+                        "synapses": [
+                            {"weight": 20.25, "delay": 1.0},
+                        ],
+                    }
+                },
+                "devices": {
+                    "record_A_spikes": {
+                        "device": "spike_recorder",
+                        "delay": 0.5,
+                        "targetting": {"strategy": "all_connections"},
+                    },
+                },
+            }
+        }
+        with self.assertRaises(ConfigurationError):
+            Scaffold(cfg, self.storage)

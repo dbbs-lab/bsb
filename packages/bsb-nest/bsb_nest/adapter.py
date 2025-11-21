@@ -154,7 +154,7 @@ class NestAdapter(SimulatorAdapter):
         configurations.
         """
         simdata = self.simdata[simulation]
-        for cell_model in simulation.cell_models.values():
+        for cell_model in sorted(simulation.cell_models.values()):
             simdata.populations[cell_model] = cell_model.create_population(simdata)
 
     def connect_neurons(self, simulation):

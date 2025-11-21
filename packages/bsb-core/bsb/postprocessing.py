@@ -364,7 +364,7 @@ class MergeDirect(FuseConnections, classmap_entry="merge_connections"):
 class IntermediateRemoval(FuseConnections, classmap_entry="remove_intermediate"):
     """
     Strategy that removes intermediate cells from the connection tree,
-    All the connectivity sets addressing these cells are merged.
+    Every connectivity set addressing these cells are merged.
     """
 
     cell_list: list[CellType] = config.list(type=types.list(CellType), required=True)

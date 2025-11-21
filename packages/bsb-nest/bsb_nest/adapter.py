@@ -45,6 +45,31 @@ class NestResult(SimulationResult):
         self.create_recorder(flush)
 
 
+class NestSimulationData(SimulationData):
+    """
+    Container class for simulation data.
+    """
+
+    def __init__(self, simulation, result=None):
+        """
+        :param bsb_nest.simulation.NestSimulation simulation: Nest simulation instance
+        :param NestResult result: Nest result instance
+        """
+        super().__init__(simulation, result)
+        self.nest_to_bsb_ids = {}
+
+    def get_bsb_ids(self, senders):
+        """
+        Return the list of (placement set name, cell id) pair for each nest sender.
+        Senders without a placement set (e.g., nest devices) will be stored under the
+        `nest_devices` key.
+
+        :param list senders: list of nest ids
+        :return: list of bsb cell ids
+        """
+        return [self.nest_to_bsb_ids.get(s, ["nest_devices", s]) for s in senders]
+
+
 class NestAdapter(SimulatorAdapter):
     def __init__(self, comm=None):
         super().__init__(comm=comm)
@@ -77,9 +102,9 @@ class NestAdapter(SimulatorAdapter):
         :param simulation: The simulation configuration to prepare.
         :type simulation: NestSimulation
         :returns: The prepared simulation data associated with the given simulation.
-        :rtype: bsb.simulation.adapter.SimulationData
+        :rtype: NestSimulationData
         """
-        self.simdata[simulation] = SimulationData(
+        self.simdata[simulation] = NestSimulationData(
             simulation, result=NestResult(simulation)
         )
         try:

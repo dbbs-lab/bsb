@@ -2,7 +2,7 @@ import abc
 import warnings
 
 import nest
-from bsb import DeviceModel, Targetting, config, refs, types
+from bsb import ConfigurationError, DeviceModel, Targetting, config, refs, types
 
 
 @config.node
@@ -34,6 +34,13 @@ class NestDevice(DeviceModel):
     receptor_type = config.attr(type=int, required=False, default=0)
     """Integer ID of the postsynaptic target receptor"""
 
+    def boot(self):
+        if self.targetting.type == "connection":
+            raise ConfigurationError(
+                "Targets of NestDevices should be cell populations. "
+                f"Provided for {self.get_node_name()}: {self.targetting.type}"
+            )
+
     def get_dict_targets(
         self,
         adapter,
@@ -46,7 +53,7 @@ class NestDevice(DeviceModel):
 
         :param bsb_nest.adapter.NestAdapter adapter: Nest adapter instance
         :param bsb_nest.simulation.NestSimulation simulation: Nest simulation instance
-        :param bsb.simulation.adapter.SimulationData simdata: Simulation data instance
+        :param bsb_nest.adapter.NestSimulationData simdata: Simulation data instance
         :return: dictionary of device target group to NEST Collection
         :rtype: dict
         """
@@ -79,7 +86,7 @@ class NestDevice(DeviceModel):
 
         :param bsb_nest.adapter.NestAdapter adapter:
         :param bsb_nest.simulation.NestSimulation simulation: Nest simulation instance
-        :param bsb.simulation.adapter.SimulationData simdata: Simulation data instance
+        :param bsb_nest.adapter.NestSimulationData simdata: Simulation data instance
         :return: Flattened NEST collection with all the targets of the device
         """
         targets_dict = self.get_dict_targets(adapter, simulation, simdata)
@@ -125,7 +132,7 @@ class NestDevice(DeviceModel):
 
         :param bsb_nest.adapter.NestAdapter adapter:
         :param bsb_nest.simulation.NestSimulation simulation: Nest simulation instance
-        :param bsb.simulation.adapter.SimulationData simdata: Simulation data instance
+        :param bsb_nest.adapter.NestSimulationData simdata: Simulation data instance
         """
         pass
 

@@ -195,8 +195,18 @@ class TestNest(
         self.assertIsNotNone(sr_exc)
         self.assertIsNotNone(sr_inh)
 
+        self.assertEqual(50, sr_exc.annotations["pop_size"])
+        self.assertEqual(50, sr_inh.annotations["pop_size"])
+
         rate_ex = len(sr_exc) / simcfg.duration * 1000.0 / sr_exc.annotations["pop_size"]
         rate_in = len(sr_inh) / simcfg.duration * 1000.0 / sr_inh.annotations["pop_size"]
+
+        self.assertEqual(sr_exc.annotations["ps_names"], ["excitatory"])
+        self.assertAll(sr_exc.array_annotations["ps_ids"] == 0)
+        self.assertEqual(sr_inh.annotations["ps_names"], ["inhibitory"])
+        self.assertAll(sr_inh.array_annotations["ps_ids"] == 0)
+        self.assertAll(np.unique(sr_exc.array_annotations["senders"]) <= 2000)
+        self.assertAll(np.unique(sr_inh.array_annotations["senders"]) <= 500)
 
         self.assertAlmostEqual(rate_in, 50, delta=1)
         self.assertAlmostEqual(rate_ex, 50, delta=1)
@@ -979,3 +989,38 @@ class TestNest(
             == conn_data[:, :2][conn_data[:, 2] == 2],
             "the cell pairs should be the same for static and stdp synapses",
         )
+
+    def test_error_targetting(self):
+        duration = 100
+        resolution = 0.1
+        cfg = _conf_two_cells()
+        with self.assertRaises(ConfigurationError):
+            cfg.simulations = {
+                "test": {
+                    "simulator": "nest",
+                    "duration": duration,
+                    "resolution": resolution,
+                    "seed": 1234,
+                    "cell_models": {
+                        "A": {"model": "hh_psc_alpha_gap"},
+                        "C": {"model": "hh_psc_alpha_gap"},
+                    },
+                    "connection_models": {
+                        "C_to_A": {
+                            "synapses": [
+                                {"weight": 20.25},
+                            ],
+                        }
+                    },
+                    "devices": {
+                        "record_A_spikes": {
+                            "device": "spike_recorder",
+                            "delay": 0.5,
+                            "targetting": {
+                                "strategy": "cell_model",
+                                "connection": ["C_to_A"],
+                            },
+                        },
+                    },
+                }
+            }

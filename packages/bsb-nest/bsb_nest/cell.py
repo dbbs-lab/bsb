@@ -12,8 +12,11 @@ class NestCell(CellModel):
     """Dictionary of the constants values to assign to the cell model."""
 
     def create_population(self, simdata):
-        n = len(simdata.placement[self])
+        ps = simdata.placement[self]
+        n = len(ps)
         population = nest.Create(self.model, n) if n else nest.NodeCollection([])
+        for nest_id, bsb_id in zip(population.tolist(), ps.load_ids(), strict=True):
+            simdata.nest_to_bsb_ids[nest_id] = [ps.tag, bsb_id]
         self.set_constants(population)
         self.set_parameters(population, simdata)
         return population

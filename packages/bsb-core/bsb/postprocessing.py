@@ -1,14 +1,23 @@
 import abc
+import itertools
+import typing
 
 import numpy as np
 
+from bsb import CellType
+
 from . import config
 from .config import refs, types
-from .exceptions import MorphologyDataError, MorphologyError
+from .exceptions import (
+    ConnectivityError,
+    DatasetNotFoundError,
+    MorphologyDataError,
+    MorphologyError,
+)
 from .reporting import report
 
 if typing.TYPE_CHECKING:  # pragma: nocover
-    from ..cell_types import CellType
+    from .cell_types import CellType
 
 
 @config.dynamic(attr_name="strategy")
@@ -26,7 +35,7 @@ class AfterPlacementHook(abc.ABC):
         pass
 
 
-@config.dynamic(attr_name="strategy")
+@config.dynamic(attr_name="strategy", auto_classmap=True)
 class AfterConnectivityHook(abc.ABC):
     name: str = config.attr(key=True)
 
@@ -121,9 +130,7 @@ class SpoofDetails(AfterConnectivityHook):
         compartments = np.column_stack(
             (
                 axons[np.random.randint(0, len(axons), len(connectivity_matrix))],
-                dendrites[
-                    np.random.randint(0, len(dendrites), len(connectivity_matrix))
-                ],
+                dendrites[np.random.randint(0, len(dendrites), len(connectivity_matrix))],
             )
         )
         # Erase previous connection data so that `.connect_cells` can overwrite it.
@@ -144,17 +151,15 @@ class SpoofDetails(AfterConnectivityHook):
         )
 
 
-@config.dynamic(attr_name="strategy", auto_classmap=True)
 @config.node
 class FuseConnections(AfterConnectivityHook):
-    """This hook enables the creation of a new connectivity set by chaining the provided connectivity sets.
-    For example, if connectivity sets A -> B and B -> C are given, they will be remapped to A -> C..
+    """This hook enables the creation of a new connectivity set by chaining
+    the provided connectivity sets. For example, if connectivity sets
+    A -> B and B -> C are given, they will be remapped to A -> C.
 
-    :param connections: A list of connectivity names to be merged.
+    This class should not be used directly, use child strategies instead.
     """
 
-    # remove_intermediate: list[CellType] = config.list(type=types.list(CellType),required=types.mut_excl("merge_connections", "remove_intermediate"))
-    # merge_connections: list[str] = config.list( type=types.list(str),required=types.mut_excl("merge_connections", "remove_intermediate"))
     def create_connectivity_set(self, connections, name=None):
         class Node:
             def __init__(self, name):
@@ -172,6 +177,15 @@ class FuseConnections(AfterConnectivityHook):
             def add_parent(self, parent):
                 self.parents.append(parent)
 
+            def add_connection(self, connection):
+                self.connections.append(connection)
+
+            def clear(self):
+                self.resolved_cs = [
+                    np.empty((0, 3), dtype=int),
+                    np.empty((0, 3), dtype=int),
+                ]
+
             def __eq__(self, name):
                 return self.name == name
 
@@ -184,12 +198,13 @@ class FuseConnections(AfterConnectivityHook):
         for connection in set(connections):
             try:
                 cs = self.scaffold.get_connectivity_set(connection)
-            except DatasetNotFoundError:
+            except DatasetNotFoundError as err:
                 raise ConnectivityError(
-                    f"AfterConnectivityHook {self.name} do not find {connection} ConnectivitySet."
-                )
-            except ValueError as e:
-                raise e
+                    f"AfterConnectivityHook {self.name} do not find {connection} "
+                    f"ConnectivitySet."
+                ) from err
+            except ValueError:
+                raise
             if cs.pre_type.name not in tree:
                 tree.append(Node(name=cs.pre_type.name))
                 roots.append(cs.pre_type.name)
@@ -204,10 +219,16 @@ class FuseConnections(AfterConnectivityHook):
             if cs.pre_type.name in ends:
                 ends.remove(cs.pre_type.name)
 
-        if len(roots) != 1 or len(ends) != 1:
+        if len(roots) == 0 or len(ends) == 0:
             raise ConnectivityError(
-                f"Multiple roots or ends detected in your chain of connectivity sets."
+                "Loop detected among roots and ends in your chain of connectivity sets."
             )
+        if (
+            (len(roots) > 1 or len(ends) > 1) or name is None
+        ):  # If we have multiple roots or ends we want to create multiple cs
+            generate_name = True
+        else:
+            generate_name = False
 
         def _return_cs(node, parent_cs):
             if parent_cs is not None and len(node.resolved_cs[0]) > 0:
@@ -217,8 +238,8 @@ class FuseConnections(AfterConnectivityHook):
             else:
                 return node.resolved_cs
 
-        def visit(node, passed=[], marked=[], parent_cs=None):
-            # Depth-first search recursive algorithm to merge connection sets and check for loops
+        def visit(node, last_node, passed=None, marked=None, parent_cs=None):
+            # Depth-first search recursive algorithm to merge connection sets
             if node in marked:
                 return _return_cs(node, parent_cs)
             if node in passed:
@@ -226,33 +247,51 @@ class FuseConnections(AfterConnectivityHook):
                     "Loop detected in your chain of connectivity sets."
                 )
             passed.append(node)
+
             for out_cs in node.children:
-                cs = visit(
-                    tree[tree.index(out_cs.post_type.name)],
-                    passed,
-                    marked,
-                    out_cs.load_connections().all(),
-                )
-                node.resolved_cs = np.concatenate([node.resolved_cs, cs], axis=1)
+                child = tree[tree.index(out_cs.post_type.name)]
+                if (child not in ends) or (child == last_node):
+                    cs = visit(
+                        child,
+                        last_node,
+                        passed,
+                        marked,
+                        out_cs.load_connections().all(),
+                    )
+                    node.resolved_cs = np.concatenate([node.resolved_cs, cs], axis=1)
             marked.append(node)
             return _return_cs(node, parent_cs)
 
-        first_node = tree[tree.index(roots[0])]
-        last_node = tree[tree.index(ends[0])]
-        new_cs = visit(first_node)
+        # Create all possible pairing among roots and ends
+        # and generate a new connectivity set for every pair
+        all_pairings = itertools.product(roots, ends)
+        for pair in all_pairings:
+            first_node = tree[tree.index(pair[0])]
+            last_node = tree[tree.index(pair[1])]
+            passed = []
+            new_cs = visit(first_node, last_node, passed=passed)
+            # Check for holes in the connection tree,
+            # the roots and ends out of the pair are not considered
+            not_in_target = len(roots) + len(ends) - 2
+            if (len(tree) - not_in_target) != len(passed):
+                raise ValueError(
+                    f"In the hook {self.name} the connection tree is incomplete"
+                )
 
-        first_ps = first_node.children[0].pre_type.get_placement_set()
-        last_ps = self.scaffold.get_placement_set(last_node.name)
-        if name is None:
-            name = first_node.name + "_to_" + last_ps.name
-        self.scaffold.connect_cells(first_ps, last_ps, new_cs[0], new_cs[1], name)
+            first_ps = self.scaffold.get_placement_set(first_node.name)
+            last_ps = self.scaffold.get_placement_set(last_node.name)
+            if generate_name:
+                name = first_node.name + "_to_" + last_node.name
+            self.scaffold.connect_cells(first_ps, last_ps, new_cs[0], new_cs[1], name)
+            # Reinitilize the tree for the new pair
+            for node in tree:
+                node.clear()
 
     def merge_sets(
         self,
         left_set: tuple[np.ndarray, np.ndarray],
         right_set: tuple[np.ndarray, np.ndarray],
     ):
-
         # sort according to common cell ids
         left_sorting = np.argsort(left_set[1], axis=0)
         left_pre_sorted = left_set[0][left_sorting[:, 0]]
@@ -273,26 +312,33 @@ class FuseConnections(AfterConnectivityHook):
         common1 = np.isin(u1, u2)
         common2 = np.isin(u2, u1)
 
-        # assign the indices to retrieve the positions of all the recurrences of the unique
-        left_post_ref = np.array(
-            [(index1[i], index1[i + 1]) for i in range(len(index1) - 1)]
-        )
-        left_post_ref = np.append(
-            left_post_ref, [(index1[-1], len(left_post_sorted))], axis=0
-        )
-        right_pre_ref = np.array(
-            [(index2[i], index2[i + 1]) for i in range(len(index2) - 1)]
-        )
-        right_pre_ref = np.append(
-            right_pre_ref, [(index2[-1], len(right_pre_sorted))], axis=0
-        )
+        # assign the indices to retrieve the positions of all the recurrences
+        # of the unique
+        if len(index1) > 1:
+            left_post_ref = np.array(
+                [(index1[i], index1[i + 1]) for i in range(len(index1) - 1)]
+            )
+            left_post_ref = np.append(
+                left_post_ref, [(index1[-1], len(left_post_sorted))], axis=0
+            )
+        else:
+            left_post_ref = np.array([[index1[0], len(index1)]])
+        if len(index2) > 1:
+            right_pre_ref = np.array(
+                [(index2[i], index2[i + 1]) for i in range(len(index2) - 1)]
+            )
+            right_pre_ref = np.append(
+                right_pre_ref, [(index2[-1], len(right_pre_sorted))], axis=0
+            )
+        else:
+            right_pre_ref = np.array([[index2[0], len(index2)]])
         # Cycle on the common uniques and combine the pre - post references
         new_size = np.dot(counts2[common2], counts1[common1])
         new_left_pre = np.zeros((new_size, 3), dtype=int)
         new_right_post = np.zeros((new_size, 3), dtype=int)
         cnt = 0
-        for l, r in zip(left_post_ref[common1], right_pre_ref[common2]):
-            for srs_loc in left_pre_sorted[l[0] : l[1] :]:
+        for left, r in zip(left_post_ref[common1], right_pre_ref[common2], strict=False):
+            for srs_loc in left_pre_sorted[left[0] : left[1] :]:
                 for dest_loc in right_post_sorted[r[0] : r[1] :]:
                     new_left_pre[cnt] = srs_loc
                     new_right_post[cnt] = dest_loc
@@ -303,7 +349,12 @@ class FuseConnections(AfterConnectivityHook):
 
 @config.node
 class MergeDirect(FuseConnections, classmap_entry="merge_connections"):
-    connections: list[str] = config.list(type=types.list(str), required=True)
+    """Strategy that merge the connectivity sets provided"""
+
+    connections: list[str] = config.list(type=str, required=True)
+    """
+    List of connectivity sets to merge
+    """
 
     def postprocess(self):
         self.create_connectivity_set(connections=self.connections, name=self.name)
@@ -311,49 +362,21 @@ class MergeDirect(FuseConnections, classmap_entry="merge_connections"):
 
 @config.node
 class IntermediateRemoval(FuseConnections, classmap_entry="remove_intermediate"):
+    """
+    Strategy that removes intermediate cells from the connection tree,
+    All the connectivity sets addressing this cells are merged.
+    """
 
     cell_list: list[CellType] = config.list(type=types.list(CellType), required=True)
+    """
+    List of cell types to remove
+    """
 
     def postprocess(self):
-        # out_connections = {name: [] for name in self.cell_list}
-        # in_connections = {name: [] for name in self.cell_list}
-        # in_deps = {}
-        # out_deps = {}
-        # for cs in set(self.scaffold.get_connectivity_sets()):
-        #     if cs.pre_type in self.cell_list:
-        #         out_connections[cs.pre_type.name].append(cs)
-        #         if cs.post_type in self.cell_list:
-        #             in_connections[cs.post_type].append(cs)
-        #             in_deps[cs] = cs.pre_type.name
-        #             out_deps[cs] = cs.post_type.name
-        #     elif cs.post_type in self.cell_list:
-        #         in_connections[cs.post_type].append(cs)
-        # # Create all the subsets of connections with selected cells
-        # processed = []
-        #
-        # def find_dependencies(cs, direction, cs_array,all_array):
-        #     if direction == "in":
-        #         if cs in in_deps:
-        #             for deps in out_connections[in_deps[cs]]:
-        #                 new_array = [*cs_array, deps]
-        #                 find_dependencies(deps, "in", new_array)
-        #         else:
-        #             all_array.append(cs_array)
-        #     else:
-        #         if cs in out_deps:
-        #             for deps in in_connections[out_deps[cs]]:
-        #                 new_array = [*cs_array, deps]
-        #                 find_dependencies(deps, "out", new_array)
-        #         else:
-        #             all_array.append(cs_array)
-        #
-        # for cell in self.cell_list:
-        #     if cell not in processed:
-        #         for cs_pre in in_connections[cell]:
-        #             cs_to_merge_pre = []
-        #             find_dependencies(cs_pre, "in", [cs_pre],cs_to_merge_pre)
         connection_per_cell = {name: [] for name in self.cell_list}
         graph = {name: [] for name in self.cell_list}
+        groups = []
+        groups_connectivities = []
         for cs in set(self.scaffold.get_connectivity_sets()):
             if cs.pre_type in self.cell_list:
                 connection_per_cell[cs.pre_type].append(cs)
@@ -363,6 +386,17 @@ class IntermediateRemoval(FuseConnections, classmap_entry="remove_intermediate")
                 connection_per_cell[cs.post_type].append(cs)
                 if cs.pre_type in self.cell_list:
                     graph[cs.post_type].append(cs.pre_type)
+        for cell in graph:
+            for i, g in enumerate(groups):
+                if cell in g:
+                    g = g + graph[cell]
+                    groups_connectivities[i] += connection_per_cell[cell]
+            else:
+                groups.append(graph[cell])
+                groups_connectivities.append(connection_per_cell[cell])
+        # Create the fused connectivity sets for every group of cells:
+        for group in groups_connectivities:
+            self.create_connectivity_set(connections=group)
 
 
 @config.node
@@ -402,7 +436,8 @@ __all__ = [
     "BidirectionalContact",
     "AfterPlacementHook",
     "AfterConnectivityHook",
-    "FuseConnections",
+    "MergeDirect",
+    "IntermediateRemoval",
     "Relay",
     "SpoofDetails",
 ]

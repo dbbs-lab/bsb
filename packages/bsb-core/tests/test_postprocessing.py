@@ -1,15 +1,16 @@
 import os
 import unittest
-import numpy as np
 
-from bsb_test import RandomStorageFixture, NumpyTestCase
+import numpy as np
+from bsb_test import NumpyTestCase, RandomStorageFixture
 
 from bsb import (
     MPI,
     AfterConnectivityHook,
     AfterPlacementHook,
     Configuration,
-    FuseConnections,
+    ConnectivityError,
+    MergeDirect,
     Scaffold,
     config,
 )
@@ -53,9 +54,7 @@ class TestAfterConnectivityHook(
             self.assertEqual(count_files, 1)
 
 
-class TestAfterPlacementHook(
-    RandomStorageFixture, unittest.TestCase, engine_name="hdf5"
-):
+class TestAfterPlacementHook(RandomStorageFixture, unittest.TestCase, engine_name="hdf5"):
     def setUp(self):
         super().setUp()
 
@@ -164,7 +163,6 @@ class TestFuseConnectionsHook(
         self.c_to_d = c_to_d
         self.b_to_d = b_to_d
         if not MPI.get_rank():
-
             ps_a = self.network.cell_types["A"].get_placement_set()
             ps_b = self.network.cell_types["B"].get_placement_set()
             ps_c = self.network.cell_types["C"].get_placement_set()
@@ -177,20 +175,18 @@ class TestFuseConnectionsHook(
             self.network.connect_cells(ps_d, ps_a, d_to_a[0], d_to_a[1], "D_to_A")
 
     def test_nonexistent_set(self):
-
         self.cfg.after_connectivity = dict(
             new_connection=dict(
-                strategy="bsb.postprocessing.FuseConnections",
+                strategy="merge_connections",
                 connections=["B_to_C", "K_to_B"],
             )
         )
 
-        with self.assertRaises(Exception) as e:
+        with self.assertRaises(ConnectivityError):
             self.network.run_after_connectivity()
 
     def test_merge_sets(self):
-
-        my_hook = FuseConnections(connections=["A_to_B", "B_to_C"])
+        my_hook = MergeDirect(connections=["A_to_B", "B_to_C"])
 
         computed_connections = my_hook.merge_sets(self.a_to_b, self.b_to_c)
         real_connections = (
@@ -212,40 +208,74 @@ class TestFuseConnectionsHook(
 
         self.cfg.after_connectivity = dict(
             new_connection=dict(
-                strategy="bsb.postprocessing.FuseConnections",
+                strategy="merge_connections",
                 connections=["A_to_B", "C_to_D"],
             )
         )
 
-        with self.assertRaises(Exception) as e:
+        with self.assertRaises(ValueError):
             self.network.run_after_connectivity()
 
-        # Test multiple roots
+    def test_multiple_ends(self):
         self.cfg.after_connectivity = dict(
             new_connection=dict(
-                strategy="bsb.postprocessing.FuseConnections",
-                connections=["C_to_D", "B_to_D"],
+                strategy="merge_connections",
+                connections=["B_to_C", "B_to_D", "A_to_B"],
             )
         )
+        self.network.run_after_connectivity()
+        a_to_d = self.network.get_connectivity_set("A_to_D")
+        a_to_c = self.network.get_connectivity_set("A_to_C")
 
-        with self.assertRaises(Exception) as e:
-            self.network.run_after_connectivity()
+        computed_a_to_d = a_to_d.load_connections().all()
+        computed_a_to_c = a_to_c.load_connections().all()
+        real_a_to_c = (
+            [[0, 1, 1], [1, 1, 1], [1, 2, 1], [0, 1, 1], [1, 1, 1]],
+            [[0, -1, -1], [0, -1, -1], [0, -1, -1], [1, -1, -1], [1, -1, -1]],
+        )
+        real_a_to_d = ([[0, 1, 1], [1, 1, 1]], [1, -1, -1], [1, -1, -1])
+        self.assertAll(
+            (real_a_to_c[0] == computed_a_to_c[0])
+            & (real_a_to_c[1] == computed_a_to_c[1]),
+            "A_to_C set not properly computed!",
+        )
+        self.assertAll(
+            (real_a_to_d[0] == computed_a_to_d[0])
+            & (real_a_to_d[1] == computed_a_to_d[1]),
+            "A_to_D set not properly computed!",
+        )
 
-        # Test multiple ends
+    def test_multiple_roots(self):
         self.cfg.after_connectivity = dict(
             new_connection=dict(
-                strategy="bsb.postprocessing.FuseConnections",
-                connections=["B_to_C", "B_to_D"],
+                strategy="merge_connections",
+                connections=["D_to_A", "C_to_D", "B_to_D"],
             )
         )
+        self.network.run_after_connectivity()
+        cs = self.network.get_connectivity_set("B_to_A")
+        c_to_a = self.network.get_connectivity_set("C_to_A")
 
-        with self.assertRaises(Exception) as e:
-            self.network.run_after_connectivity()
+        real_b_to_a = ([3, -1, -1], [0, -1, -1])
+        computed_b_to_a = cs.load_connections().all()
+        real_c_to_a = ([[0, -1, -1], [1, -1, -1]], [[0, -1, -1], [0, -1, -1]])
+        computed_c_to_a = c_to_a.load_connections().all()
+
+        self.assertAll(
+            (real_b_to_a[0] == computed_b_to_a[0])
+            & (real_b_to_a[1] == computed_b_to_a[1]),
+            "B_to_A set not properly computed!",
+        )
+        self.assertAll(
+            (real_c_to_a[0] == computed_c_to_a[0])
+            & (real_c_to_a[1] == computed_c_to_a[1]),
+            "C_to_A set not properly computed!",
+        )
 
     def test_with_branches(self):
         self.cfg.after_connectivity = dict(
             new_connection=dict(
-                strategy="bsb.postprocessing.FuseConnections",
+                strategy="merge_connections",
                 connections=["A_to_B", "B_to_C", "C_to_D", "B_to_D"],
             )
         )
@@ -273,7 +303,7 @@ class TestFuseConnectionsHook(
         computed_connections = cs.load_connections().all()
         self.assertEqual(len(computed_connections[0]), len(predicted_connections[0]))
         ids_found = []
-        for src, tgt in zip(*predicted_connections):
+        for src, tgt in zip(*predicted_connections, strict=False):
             ids = np.where(
                 np.all(src == computed_connections[0], axis=-1)
                 * np.all(tgt == computed_connections[1], axis=-1)
@@ -289,11 +319,11 @@ class TestFuseConnectionsHook(
 
         self.cfg.after_connectivity = dict(
             new_connection=dict(
-                strategy="bsb.postprocessing.FuseConnections",
+                strategy="merge_connections",
                 connections=["A_to_B", "B_to_C", "D_to_A", "C_to_D"],
             )
         )
-        with self.assertRaises(Exception) as e:
+        with self.assertRaises(ConnectivityError):
             self.network.run_after_connectivity()
 
     def test_three_connectivities(self):
@@ -301,7 +331,7 @@ class TestFuseConnectionsHook(
 
         self.cfg.after_connectivity = dict(
             new_connection=dict(
-                strategy="bsb.postprocessing.FuseConnections",
+                strategy="merge_connections",
                 connections=["B_to_C", "A_to_B", "C_to_D"],
             )
         )
@@ -333,11 +363,16 @@ class TestFuseConnectionsHook(
         reversed_comp = np.array(
             [
                 (ele[0], ele[1])
-                for ele in zip(computed_connections[0], computed_connections[1])
+                for ele in zip(
+                    computed_connections[0], computed_connections[1], strict=False
+                )
             ]
         )
         reversed_real = np.array(
-            [(ele[0], ele[1]) for ele in zip(real_connections[0], real_connections[1])]
+            [
+                (ele[0], ele[1])
+                for ele in zip(real_connections[0], real_connections[1], strict=False)
+            ]
         )
 
         check_all = np.zeros(len(reversed_real))
@@ -345,6 +380,4 @@ class TestFuseConnectionsHook(
             for comp in reversed_comp:
                 check_all[i] += np.all(real == comp)
 
-        self.assertAll(
-            check_all == 1, f"Some fused connections do not match real ones!"
-        )
+        self.assertAll(check_all == 1, "Some fused connections do not match real ones!")

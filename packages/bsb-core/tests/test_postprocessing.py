@@ -12,6 +12,7 @@ from bsb import (
     ConnectivityError,
     MergeDirect,
     Scaffold,
+    WorkflowError,
     config,
 )
 
@@ -182,8 +183,9 @@ class TestFuseConnectionsHook(
             )
         )
 
-        with self.assertRaises(ConnectivityError):
+        with self.assertRaises(WorkflowError) as e:
             self.network.run_after_connectivity()
+        self.assertIsInstance(e.exception.exceptions[0].error, ConnectivityError)
 
     def test_merge_sets(self):
         my_hook = MergeDirect(connections=["A_to_B", "B_to_C"])
@@ -213,8 +215,9 @@ class TestFuseConnectionsHook(
             )
         )
 
-        with self.assertRaises(ValueError):
+        with self.assertRaises(WorkflowError) as e:
             self.network.run_after_connectivity()
+        self.assertIsInstance(e.exception.exceptions[0].error, ValueError)
 
     def test_multiple_ends(self):
         self.cfg.after_connectivity = dict(
@@ -323,8 +326,9 @@ class TestFuseConnectionsHook(
                 connections=["A_to_B", "B_to_C", "D_to_A", "C_to_D"],
             )
         )
-        with self.assertRaises(ConnectivityError):
+        with self.assertRaises(WorkflowError) as e:
             self.network.run_after_connectivity()
+        self.assertIsInstance(e.exception.exceptions[0].error, ConnectivityError)
 
     def test_three_connectivities(self):
         # Test the chained A_B -> B_C -> C_D fusion.

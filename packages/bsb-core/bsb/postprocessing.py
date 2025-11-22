@@ -269,7 +269,7 @@ class FuseConnections(AfterConnectivityHook):
             first_node = tree[tree.index(pair[0])]
             last_node = tree[tree.index(pair[1])]
             passed = []
-            new_cs = visit(first_node, last_node, passed=passed)
+            new_cs = visit(first_node, last_node, passed=passed, marked=[])
             # Check for holes in the connection tree,
             # the roots and ends out of the pair are not considered
             not_in_target = len(roots) + len(ends) - 2
@@ -364,7 +364,7 @@ class MergeDirect(FuseConnections, classmap_entry="merge_connections"):
 class IntermediateRemoval(FuseConnections, classmap_entry="remove_intermediate"):
     """
     Strategy that removes intermediate cells from the connection tree,
-    Every connectivity set addressing these cells are merged.
+    Every connectivity set addressing these cells is merged.
     """
 
     cell_list: list[CellType] = config.list(type=types.list(CellType), required=True)

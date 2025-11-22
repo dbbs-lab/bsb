@@ -7,7 +7,7 @@ import numpy as np
 from bsb import CellType
 
 from . import config
-from .config import refs, types
+from .config import refs
 from .exceptions import (
     ConnectivityError,
     DatasetNotFoundError,
@@ -367,7 +367,7 @@ class IntermediateRemoval(FuseConnections, classmap_entry="remove_intermediate")
     Every connectivity set addressing these cells is merged.
     """
 
-    cell_list: list[CellType] = config.list(type=types.list(CellType), required=True)
+    cell_list: list[CellType] = config.reflist(refs.cell_type_ref, required=True)
     """
     List of cell types to remove
     """
@@ -377,13 +377,13 @@ class IntermediateRemoval(FuseConnections, classmap_entry="remove_intermediate")
         graph = {name: [] for name in self.cell_list}
         groups = []
         groups_connectivities = []
-        for cs in set(self.scaffold.get_connectivity_sets()):
+        for cs in self.scaffold.get_connectivity_sets():
             if cs.pre_type in self.cell_list:
-                connection_per_cell[cs.pre_type].append(cs)
+                connection_per_cell[cs.pre_type].append(cs.tag)
                 if cs.post_type in self.cell_list:
                     graph[cs.pre_type].append(cs.post_type)
             elif cs.post_type in self.cell_list:
-                connection_per_cell[cs.post_type].append(cs)
+                connection_per_cell[cs.post_type].append(cs.tag)
                 if cs.pre_type in self.cell_list:
                     graph[cs.post_type].append(cs.pre_type)
         for cell in graph:

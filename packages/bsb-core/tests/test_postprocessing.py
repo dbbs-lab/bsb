@@ -185,7 +185,8 @@ class TestFuseConnectionsHook(
 
         with self.assertRaises(WorkflowError) as e:
             self.network.run_after_connectivity()
-        self.assertIsInstance(e.exception.exceptions[0].error, ConnectivityError)
+        if self.network.is_main_process():
+            self.assertIsInstance(e.exception.exceptions[0].error, ConnectivityError)
 
     def test_merge_sets(self):
         my_hook = MergeDirect(connections=["A_to_B", "B_to_C"])
@@ -217,9 +218,12 @@ class TestFuseConnectionsHook(
 
         with self.assertRaises(WorkflowError) as e:
             self.network.run_after_connectivity()
-        self.assertIsInstance(e.exception.exceptions[0].error, ValueError)
+        if self.network.is_main_process():
+            self.assertIsInstance(e.exception.exceptions[0].error, ValueError)
 
     def test_multiple_ends(self):
+        """Will test that the connectivity A > B > ( C+ D ) are merged in
+        A > D and A > C"""
         self.cfg.after_connectivity = dict(
             new_connection=dict(
                 strategy="merge_connections",
@@ -249,6 +253,8 @@ class TestFuseConnectionsHook(
         )
 
     def test_multiple_roots(self):
+        """Will test that the connectivity (C + B) > D > A are merged
+        in C > A and B > A"""
         self.cfg.after_connectivity = dict(
             new_connection=dict(
                 strategy="merge_connections",
@@ -276,6 +282,8 @@ class TestFuseConnectionsHook(
         )
 
     def test_with_branches(self):
+        """Will test that the connections A > B > C > D +
+        A > B > D are merged in A > D"""
         self.cfg.after_connectivity = dict(
             new_connection=dict(
                 strategy="merge_connections",
@@ -328,10 +336,12 @@ class TestFuseConnectionsHook(
         )
         with self.assertRaises(WorkflowError) as e:
             self.network.run_after_connectivity()
-        self.assertIsInstance(e.exception.exceptions[0].error, ConnectivityError)
+        if self.network.is_main_process():
+            self.assertIsInstance(e.exception.exceptions[0].error, ConnectivityError)
 
     def test_three_connectivities(self):
-        # Test the chained A_B -> B_C -> C_D fusion.
+        """Will test that the connections A > B > C > D  are fused in
+        A > D"""
 
         self.cfg.after_connectivity = dict(
             new_connection=dict(
@@ -385,3 +395,93 @@ class TestFuseConnectionsHook(
                 check_all[i] += np.all(real == comp)
 
         self.assertAll(check_all == 1, "Some fused connections do not match real ones!")
+
+    def test_intermediate_removal(self):
+        """This test remove cell B from the connectivity tree,
+        A > B > (C + D) is fused in A > C and A > D"""
+        self.cfg.after_connectivity = dict(
+            new_connection=dict(strategy="intermediate_removal", cell_list=["B"])
+        )
+        self.network.run_after_connectivity()
+        a_to_d = self.network.get_connectivity_set("A_to_D")
+        a_to_c = self.network.get_connectivity_set("A_to_C")
+
+        computed_a_to_d = a_to_d.load_connections().all()
+        computed_a_to_c = a_to_c.load_connections().all()
+        real_a_to_c = (
+            [[0, 1, 1], [1, 1, 1], [1, 2, 1], [0, 1, 1], [1, 1, 1]],
+            [[0, -1, -1], [0, -1, -1], [0, -1, -1], [1, -1, -1], [1, -1, -1]],
+        )
+        real_a_to_d = ([[0, 1, 1], [1, 1, 1]], [[1, -1, -1], [1, -1, -1]])
+        self.assertAll(
+            (real_a_to_c[0] == computed_a_to_c[0])
+            & (real_a_to_c[1] == computed_a_to_c[1]),
+            "A_to_C set not properly computed!",
+        )
+        self.assertAll(
+            (real_a_to_d[0] == computed_a_to_d[0])
+            & (real_a_to_d[1] == computed_a_to_d[1]),
+            "A_to_D set not properly computed!",
+        )
+
+    def test_removal_of_two(self):
+        self.cfg.after_connectivity = dict(
+            new_connection=dict(strategy="intermediate_removal", cell_list=["C", "A"])
+        )
+        self.network.run_after_connectivity()
+        b_to_d = self.network.get_connectivity_set("B_to_D")
+        d_to_b = self.network.get_connectivity_set("D_to_B")
+        real_b_to_d = (
+            [
+                [3, -1, -1],
+                [0, -1, -1],
+                [0, -1, -1],
+                [0, -1, -1],
+                [1, -1, -1],
+                [3, -1, -1],
+                [0, -1, -1],
+                [3, -1, -1],
+                [0, -1, -1],
+                [0, -1, -1],
+                [1, -1, -1],
+                [3, -1, -1],
+            ],
+            [
+                [0, -1, -1],
+                [1, -1, -1],
+                [0, 2, 1],
+                [0, 1, 1],
+                [0, 2, 1],
+                [0, 1, 1],
+                [1, -1, -1],
+                [1, -1, -1],
+                [2, -1, -1],
+                [2, 1, 2],
+                [2, -1, -1],
+                [2, 1, 2],
+            ],
+        )
+        real_d_to_b = ([0, -1, -1], [0, -1, -1])
+        computed_b_to_d = b_to_d.load_connections().all()
+        computed_d_to_b = d_to_b.load_connections().all()
+        self.assertAll(
+            (real_b_to_d[0] == computed_b_to_d[0])
+            & (real_b_to_d[1] == computed_b_to_d[1]),
+            "A_to_D set not properly computed!",
+        )
+        self.assertAll(
+            (real_d_to_b[0] == computed_d_to_b[0])
+            & (real_d_to_b[1] == computed_d_to_b[1]),
+            "D_to_B set not properly computed!",
+        )
+
+    def test_intrem_loop(self):
+        """From our tree A > B > D > A if we remove both D and A
+        a loop should be detected"""
+        self.cfg.after_connectivity = dict(
+            new_connection=dict(strategy="intermediate_removal", cell_list=["D", "A"])
+        )
+        with self.assertRaises(WorkflowError) as e:
+            self.network.run_after_connectivity()
+        if self.network.is_main_process():
+            self.assertIsInstance(e.exception.exceptions[0].error, ConnectivityError)

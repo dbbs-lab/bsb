@@ -382,15 +382,16 @@ class IntermediateRemoval(FuseConnections, classmap_entry="remove_intermediate")
                 connection_per_cell[cs.pre_type].append(cs.tag)
                 if cs.post_type in self.cell_list:
                     graph[cs.pre_type].append(cs.post_type)
+                    graph[cs.post_type].append(cs.pre_type)
             elif cs.post_type in self.cell_list:
                 connection_per_cell[cs.post_type].append(cs.tag)
-                if cs.pre_type in self.cell_list:
-                    graph[cs.post_type].append(cs.pre_type)
+
         for cell in graph:
             for i, g in enumerate(groups):
                 if cell in g:
                     g = g + graph[cell]
                     groups_connectivities[i] += connection_per_cell[cell]
+                    break
             else:
                 groups.append(graph[cell])
                 groups_connectivities.append(connection_per_cell[cell])

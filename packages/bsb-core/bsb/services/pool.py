@@ -952,10 +952,14 @@ class JobPool:
 
 
 def get_node_cache_items(node):
+    from ..config import walk_nodes
+
     return [
-        attr.get_pool_cache_id(node)
-        for key in dir(node)
-        if hasattr(attr := getattr(node, key), "get_pool_cache_id")
+        attr.get_pool_cache_id(subnode)
+        for subnode in walk_nodes(node)
+        for key in dir(subnode)
+        if hasattr(subnode, key)
+        and hasattr(attr := getattr(subnode, key), "get_pool_cache_id")
     ]
 
 

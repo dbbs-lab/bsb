@@ -4,8 +4,10 @@ import functools
 import importlib.metadata
 import inspect
 import json
+import os
 import pickle
 import sys
+import typing
 import warnings
 from functools import cache
 from uuid import uuid4
@@ -238,3 +240,23 @@ def _make_otel_handler(cls, base, attr, orig_method):
             return orig_method(self, *args, **kwargs)
 
     return handler
+
+
+def _get_file_tracer_provider(file: typing.IO, buffered=True):
+    """
+    Create a provider that exports traces to a file as JSON lines.
+    """
+    from opentelemetry.sdk.trace import TracerProvider
+    from opentelemetry.sdk.trace.export import (
+        BatchSpanProcessor,
+        ConsoleSpanExporter,
+    )
+
+    exporter = (ConsoleSpanExporter if buffered else BatchSpanProcessor)(
+        out=file, formatter=lambda span: span.to_json(indent=None) + os.linesep
+    )
+
+    provider = TracerProvider()
+    provider.add_span_processor(BatchSpanProcessor(exporter))
+
+    return provider

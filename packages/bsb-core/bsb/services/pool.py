@@ -965,8 +965,9 @@ def get_node_cache_items(node):
 
 def free_stale_pool_cache(scaffold, required_cache_items: set[int]):
     for stale_key in set(scaffold._pool_cache.keys()) - required_cache_items:
-        # If so, pop them and execute the registered cleanup function.
-        scaffold._pool_cache.pop(stale_key)()
+        # If so, pop them and execute the registered cleanup functions.
+        for cleanup in scaffold._pool_cache.pop(stale_key):
+            cleanup()
 
 
 def pool_cache(caching_function):

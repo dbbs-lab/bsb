@@ -1,6 +1,6 @@
-##############
+###############
 Post Processing
-##############
+###############
 
 The BSB allows users to implement and register custom functions that run between
 workflow stages to perform additional tasks that are not covered by the
@@ -12,17 +12,16 @@ Users can register postprocessing hooks that execute after either the
 AfterPlacementHook
 ==================
 
-`AfterPlacementHook` registers a function that runs **after the placement step**
-and **before the connectivity step**.
+`AfterPlacementHook` registers a function that runs after the placement step
+and before the connectivity step.
 
 The abstract base class is provided at:
 :class:`bsb:bsb.postprocessing.AfterPlacementHook`.
 
-To create a custom hook, subclass :class:`AfterPlacementHook` and implement the
+To create a custom hook, subclass `AfterPlacementHook` and implement the
 :guilabel:`postprocess` method, which defines the logic executed at this stage.
 
-Example
--------
+**Examples**
 
 .. code-block:: python
 
@@ -35,7 +34,7 @@ AfterConnectivityHook
 =====================
 
 The :class:`AfterConnectivityHook <bsb:bsb.postprocessing.AfterConnectivityHook>`
-operates similarly to :class:`AfterPlacementHook`, but is executed **only after
+operates similarly to `AfterPlacementHook`, but is executed **only after
 the connectivity stage is complete**.
 
 The BSB provides several built-in hooks, including the following.

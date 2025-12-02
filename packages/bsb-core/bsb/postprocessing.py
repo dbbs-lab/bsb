@@ -373,31 +373,16 @@ class IntermediateRemoval(FuseConnections, classmap_entry="remove_intermediate")
     """
 
     def postprocess(self):
-        connection_per_cell = {name: [] for name in self.cell_list}
-        graph = {name: [] for name in self.cell_list}
-        groups = []
-        groups_connectivities = []
-        for cs in self.scaffold.get_connectivity_sets():
-            if cs.pre_type in self.cell_list:
-                connection_per_cell[cs.pre_type].append(cs.tag)
-                if cs.post_type in self.cell_list:
-                    graph[cs.pre_type].append(cs.post_type)
-                    graph[cs.post_type].append(cs.pre_type)
-            elif cs.post_type in self.cell_list:
-                connection_per_cell[cs.post_type].append(cs.tag)
+        removed_cs = set()
+        for cell in self.cell_list:
+            all_sets = set()
+            for cs in self.scaffold.get_connectivity_sets():
+                if cell == cs.pre_type or cell == cs.post_type:
+                    all_sets.add(cs.tag)
 
-        for cell in graph:
-            for i, g in enumerate(groups):
-                if cell in g:
-                    g = g + graph[cell]
-                    groups_connectivities[i] += connection_per_cell[cell]
-                    break
-            else:
-                groups.append(graph[cell])
-                groups_connectivities.append(connection_per_cell[cell])
-        # Create the fused connectivity sets for every group of cells:
-        for group in groups_connectivities:
-            self.create_connectivity_set(connections=group)
+            all_sets -= removed_cs
+            self.create_connectivity_set(connections=all_sets)
+        removed_cs.update(all_sets)
 
 
 @config.node

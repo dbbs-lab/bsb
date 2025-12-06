@@ -138,7 +138,7 @@ class ExtNestDevice(NestDevice, classmap_entry="external"):
 
     nest_model = config.attr(type=str, required=True)
     """Importable reference to the NEST model describing the device type."""
-    constants = config.dict(type=types.or_(types.number(), str))
+    constants = config.dict(type=types.any_())
     """Dictionary of the constants values to assign to the device model."""
 
     def implement(self, adapter, simulation, simdata):

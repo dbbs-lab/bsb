@@ -212,7 +212,10 @@ class BsbSimulate(BaseCommand, name="simulate"):
                     network.simulations[sim_name] = sim
         root = pathlib.Path(getattr(context.arguments, "output_folder", "./"))
         try:
-            root.mkdir(exist_ok=context.arguments.exists)
+            root.mkdir(
+                exist_ok=context.arguments.exists
+                or not hasattr(context.arguments, "output_folder")
+            )
         except FileExistsError:
             return report(
                 f"Could not create '{root.absolute()}', directory exists.", level=0

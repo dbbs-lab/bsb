@@ -15,6 +15,7 @@ from ...core import Scaffold, from_storage
 from ...exceptions import ConfigurationSyncError, NodeNotFoundError
 from ...option import BsbOption
 from ...reporting import report
+from ...services import MPI
 from ...storage import open_storage
 from . import BaseCommand
 
@@ -211,15 +212,17 @@ class BsbSimulate(BaseCommand, name="simulate"):
                 if name not in network.simulations and name == sim_name:
                     network.simulations[sim_name] = sim
         root = pathlib.Path(getattr(context.arguments, "output_folder", "./"))
-        try:
-            root.mkdir(
-                exist_ok=context.arguments.exists
-                or not hasattr(context.arguments, "output_folder")
-            )
-        except FileExistsError:
-            return report(
-                f"Could not create '{root.absolute()}', directory exists.", level=0
-            )
+        if not MPI.get_rank():
+            try:
+                root.mkdir(
+                    exist_ok=context.arguments.exists
+                    or not hasattr(context.arguments, "output_folder")
+                )
+            except FileExistsError:
+                return report(
+                    f"Could not create '{root.absolute()}', directory exists.", level=0
+                )
+        MPI.barrier()
         try:
             result = network.run_simulation(sim_name)
         except NodeNotFoundError as e:
@@ -253,29 +256,30 @@ class CacheCommand(BaseCommand, name="cache"):  # pragma: nocover
 
         from ...storage._util import _cache_path
 
-        if context.clear:
-            shutil.rmtree(_cache_path)
-            _cache_path.mkdir(parents=True, exist_ok=True)
-            print("Cache cleared")
-        else:
-            _cache_path.mkdir(parents=True, exist_ok=True)
-            files = [*_cache_path.iterdir()]
-            maxlen = 5
-            try:
-                maxlen = max(maxlen, max(len(file.name) for file in files))
-            except ValueError:
-                print("Cache is empty")
+        if not MPI.get_rank():
+            if context.clear:
+                shutil.rmtree(_cache_path)
+                _cache_path.mkdir(parents=True, exist_ok=True)
+                print("Cache cleared")
             else:
-                print(f"{'Files'.ljust(maxlen, ' ')}    Cached at\t\t\t    Size")
-                total_mb = 0
-                for f in files:
-                    name = f.name.ljust(maxlen, " ")
-                    stat = f.stat()
-                    stamp = datetime.fromtimestamp(stat.st_mtime)
-                    total_mb += (mb := stat.st_size / 1e6)
-                    line = f"{name}    {stamp}    {mb:.2f}MB"
-                    print(line)
-                print(f"Total: {total_mb:.2f}MB".rjust(len(line)))
+                _cache_path.mkdir(parents=True, exist_ok=True)
+                files = [*_cache_path.iterdir()]
+                maxlen = 5
+                try:
+                    maxlen = max(maxlen, max(len(file.name) for file in files))
+                except ValueError:
+                    print("Cache is empty")
+                else:
+                    print(f"{'Files'.ljust(maxlen, ' ')}    Cached at\t\t\t    Size")
+                    total_mb = 0
+                    for f in files:
+                        name = f.name.ljust(maxlen, " ")
+                        stat = f.stat()
+                        stamp = datetime.fromtimestamp(stat.st_mtime)
+                        total_mb += (mb := stat.st_size / 1e6)
+                        line = f"{name}    {stamp}    {mb:.2f}MB"
+                        print(line)
+                    print(f"Total: {total_mb:.2f}MB".rjust(len(line)))
 
     def get_options(self):
         return {

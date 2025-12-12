@@ -121,7 +121,7 @@ class Scaffold:
         :returns: A network object
         :rtype: :class:`~.core.Scaffold`
         """
-        self._pool_cache: dict[int, typing.Callable[[], None]] = {}
+        self._pool_cache: dict[int, list[typing.Callable[[], None]]] = {}
         self._pool_listeners: list[tuple[typing.Callable[[list[Job]], None], float]] = []
         self._configuration = None
         self._storage = None
@@ -856,9 +856,9 @@ class Scaffold:
         :param id: Id of the cached item. Should be unique but identical across MPI nodes
         :param cleanup: A callable that cleans up the cached item.
         """
-        if id in self._pool_cache:
-            raise RuntimeError(f"Pool cache item '{id}' already exists.")
-        self._pool_cache[id] = cleanup
+        if id not in self._pool_cache:
+            self._pool_cache[id] = []
+        self._pool_cache[id].append(cleanup)
 
 
 class ReportListener:

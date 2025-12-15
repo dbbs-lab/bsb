@@ -4,6 +4,8 @@ import warnings
 import nest
 from bsb import DeviceModel, Targetting, config, refs, types
 
+from .distributions import nest_parameter
+
 
 @config.node
 class NestRule:
@@ -138,7 +140,7 @@ class ExtNestDevice(NestDevice, classmap_entry="external"):
 
     nest_model = config.attr(type=str, required=True)
     """Importable reference to the NEST model describing the device type."""
-    constants = config.dict(type=types.any_())
+    constants = config.dict(type=nest_parameter())
     """Dictionary of the constants values to assign to the device model."""
 
     def implement(self, adapter, simulation, simdata):

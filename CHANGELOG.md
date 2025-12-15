@@ -1,3 +1,13 @@
+## 7.0.2 (2025-12-12)
+
+### 🩹 Fixes
+
+- Caching morphology loaders during placement ([#208](https://github.com/dbbs-lab/bsb/pull/208))
+
+### ❤️ Thank You
+
+- Dimitri RODARIE
+
 ## 7.0.1 (2025-11-18)
 
 ### 🩹 Fixes

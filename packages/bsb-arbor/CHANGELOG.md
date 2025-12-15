@@ -1,3 +1,7 @@
+## 7.0.2 (2025-12-12)
+
+This was a version bump only for bsb-arbor to align it with other projects, there were no code changes.
+
 ## 7.0.1 (2025-11-18)
 
 ### 🩹 Fixes

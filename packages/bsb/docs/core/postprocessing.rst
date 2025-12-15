@@ -39,27 +39,19 @@ the connectivity stage is complete**.
 
 The BSB provides several built-in hooks, including the following.
 
-FuseConnectivity
+
+MergeConnections
 ----------------
 
-This hook allows users to create new connections by merging existing
-connectivity sets, effectively bypassing intermediate cell types.
-
+The :class:`bsb:bsb.postprocessing.MergeDirect` strategy accepts a list of
+connectivity sets to merge. It reconstructs the connectivity tree defined by
+these sets and creates a new connectivity set for each root–leaf pair.
 For example, given a chain::
 
     cell_a -> cell_b -> cell_c -> cell_d
 
 you can directly connect ``cell_a`` to ``cell_d`` while bypassing
 ``cell_b`` and ``cell_c``.
-
-Two strategies are supported:
-
-MergeConnections
-^^^^^^^^^^^^^^^^
-
-The :class:`bsb:bsb.postprocessing.MergeDirect` strategy accepts a list of
-connectivity sets to merge. It reconstructs the connectivity tree defined by
-these sets and creates a new connectivity set for each root–leaf pair.
 
 This strategy does **not** allow merging discontinuous connectivity lists
 (e.g., ``[cell_a -> cell_b, cell_d -> cell_e]``).
@@ -97,11 +89,16 @@ This strategy does **not** allow merging discontinuous connectivity lists
 
 
 IntermediateRemoval
-^^^^^^^^^^^^^^^^^^^
+-------------------
 
 The :class:`bsb:bsb.postprocessing.IntermediateRemoval` strategy removes specified
 intermediate cell types from the connection path when generating new direct
 connections.
+For example, given a chain::
+
+    cell_a -> cell_b -> cell_c -> cell_d
+
+if cell_c is selected it will create a direct connection between cell_b and cell_d.
 
 **Parameters**
 

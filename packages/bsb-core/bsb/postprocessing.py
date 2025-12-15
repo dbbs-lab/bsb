@@ -151,7 +151,7 @@ class SpoofDetails(AfterConnectivityHook):
         )
 
 
-def _create_fused_set(connections, scaffold, name=None):
+def _create_fused_set(connections, hook, name=None):
     """Base method that given a set of connectivity sets' names reconstructs the
     connectivity tree and creates new connectivity sets that connect
     directly roots to leafs"""
@@ -172,9 +172,6 @@ def _create_fused_set(connections, scaffold, name=None):
         def add_parent(self, parent):
             self.parents.append(parent)
 
-        def add_connection(self, connection):
-            self.connections.append(connection)
-
         def clear(self):
             self.resolved_cs = [
                 np.empty((0, 3), dtype=int),
@@ -192,10 +189,11 @@ def _create_fused_set(connections, scaffold, name=None):
     # convert to set to avoid potential duplicates
     for connection in set(connections):
         try:
-            cs = scaffold.get_connectivity_set(connection)
+            cs = hook.scaffold.get_connectivity_set(connection)
         except DatasetNotFoundError as err:
             raise ConnectivityError(
-                f"AfterConnectivityHook {name} do not find {connection} ConnectivitySet."
+                f"AfterConnectivityHook {hook.name} do not find {connection} "
+                f"ConnectivitySet."
             ) from err
         except ValueError:
             raise
@@ -261,13 +259,13 @@ def _create_fused_set(connections, scaffold, name=None):
         # the roots and ends out of the pair are not considered
         not_in_target = len(roots) + len(ends) - 2
         if (len(tree) - not_in_target) != len(passed):
-            raise ValueError(f"In the hook {name} the connection tree is incomplete")
+            raise ValueError(f"In the hook {hook.name} the connection tree is incomplete")
 
-        first_ps = scaffold.get_placement_set(first_node.name)
-        last_ps = scaffold.get_placement_set(last_node.name)
+        first_ps = hook.scaffold.get_placement_set(first_node.name)
+        last_ps = hook.scaffold.get_placement_set(last_node.name)
         if generate_name:
             name = first_node.name + "_to_" + last_node.name
-        scaffold.connect_cells(first_ps, last_ps, new_cs[0], new_cs[1], name)
+        hook.scaffold.connect_cells(first_ps, last_ps, new_cs[0], new_cs[1], name)
         # Reinitilize the tree for the new pair
         for node in tree:
             node.clear()
@@ -344,9 +342,7 @@ class MergeDirect(AfterConnectivityHook, classmap_entry="merge_connections"):
     """
 
     def postprocess(self):
-        _create_fused_set(
-            connections=self.connections, scaffold=self.scaffold, name=self.name
-        )
+        _create_fused_set(connections=self.connections, hook=self, name=self.name)
 
 
 @config.node
@@ -370,7 +366,7 @@ class IntermediateRemoval(AfterConnectivityHook, classmap_entry="remove_intermed
                     all_sets.add(cs.tag)
 
             all_sets -= removed_cs
-            _create_fused_set(connections=all_sets, scaffold=self.scaffold)
+            _create_fused_set(connections=all_sets, hook=self)
         removed_cs.update(all_sets)
 
 

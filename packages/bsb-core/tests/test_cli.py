@@ -3,7 +3,14 @@ import os
 import sys
 import unittest
 
-from bsb_test import skip_parallel
+from bsb_test import (
+    FixedPosConfigFixture,
+    NumpyTestCase,
+    RandomStorageFixture,
+    skip_parallel,
+)
+
+from bsb import Scaffold
 
 
 class TestCLI(unittest.TestCase):
@@ -100,3 +107,79 @@ class TestOptions(unittest.TestCase):
         self.assertEqual(5, bsb.options.aaa)
         opt.unregister()
         self.assertRaises(bsb.exceptions.OptionError, lambda: bsb.options.aaa)
+
+
+@skip_parallel
+class TestCLICommands(
+    FixedPosConfigFixture,
+    RandomStorageFixture,
+    NumpyTestCase,
+    unittest.TestCase,
+    engine_name="hdf5",
+):
+    def setUp(self):
+        super().setUp()
+        self.cfg.connectivity.add(
+            "all_to_all",
+            dict(
+                strategy="bsb.connectivity.AllToAll",
+                presynaptic=dict(cell_types=["test_cell"]),
+                postsynaptic=dict(cell_types=["test_cell"]),
+            ),
+        )
+        self.cfg.simulations.add(
+            "test",
+            simulator="arbor",
+            duration=100,
+            resolution=1.0,
+            cell_models=dict(),
+            connection_models=dict(),
+            devices=dict(),
+        )
+        self.network = Scaffold(self.cfg, self.storage)
+        self.network.compile(clear=True)
+
+    def test_simulate(self):
+        import subprocess
+
+        # test correct behavior
+        result = subprocess.run(["bsb", "simulate", self.storage.root, "test"])
+        self.assertEqual(result.returncode, 0)
+        nio_files = [
+            filename for filename in os.listdir("./") if filename.endswith(".nio")
+        ]
+        self.assertEqual(len(nio_files), 1)
+        for filename in nio_files:
+            os.remove(filename)
+
+    def test_errors_simulate(self):
+        import subprocess
+
+        # wrong simulation name
+        result = subprocess.run(
+            ["bsb", "simulate", self.storage.root, "testA"], capture_output=True
+        )
+        self.assertEqual(result.returncode, 1)
+        # output folder not empty
+        result = subprocess.run(
+            ["bsb", "simulate", self.storage.root, "test", "-o", os.getcwd()],
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(result.returncode, 0)
+        self.assertEqual(
+            result.stdout.split("\n")[-2],
+            f"Could not create '{os.getcwd()}', directory exists. "
+            "Use flag '--exists' to ignore this error.",
+        )
+        # check exists flag
+        result = subprocess.run(
+            ["bsb", "simulate", self.storage.root, "test", "-o", os.getcwd(), "--exists"]
+        )
+        self.assertEqual(result.returncode, 0)
+        nio_files = [
+            filename for filename in os.listdir("./") if filename.endswith(".nio")
+        ]
+        self.assertEqual(len(nio_files), 1)
+        for filename in nio_files:
+            os.remove(filename)

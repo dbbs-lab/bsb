@@ -221,7 +221,7 @@ class BsbSimulate(BaseCommand, name="simulate"):
             except FileExistsError:
                 return report(
                     f"Could not create '{root.absolute()}', directory exists. "
-                    "Use flag '--exists' to ignore this error. ",
+                    "Use flag '--exists' to ignore this error.",
                     level=0,
                 )
         MPI.barrier()

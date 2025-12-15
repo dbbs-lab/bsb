@@ -979,3 +979,61 @@ class TestNest(
             == conn_data[:, :2][conn_data[:, 2] == 2],
             "the cell pairs should be the same for static and stdp synapses",
         )
+
+    def test_spike_generator_with_list(self):
+        spike_times = np.array([1000, 1250, 1500])
+        dt = 0.1
+        cfg = Configuration.default(
+            **{
+                "storage": {"engine": "hdf5"},
+                "partitions": {"my_layer": {"thickness": 40.0}},
+                "cell_types": {"cell_A": {"spatial": {"count": 1, "radius": 1.0}}},
+                "placement": {
+                    "cell_A_placement": {
+                        "cell_types": ["cell_A"],
+                        "partitions": ["my_layer"],
+                        "strategy": "bsb.placement.RandomPlacement",
+                    }
+                },
+                "simulations": {
+                    "basal_activity": {
+                        "duration": 2000,
+                        "resolution": dt,
+                        "simulator": "nest",
+                        "cell_models": {"cell_A": {"model": "parrot_neuron"}},
+                        "connection_models": {},
+                        "devices": {
+                            "background_noise": {
+                                "delay": dt,
+                                "device": "external",
+                                "nest_model": "spike_generator",
+                                "constants": {"spike_times": spike_times},
+                                "targetting": {
+                                    "cell_models": ["cell_A"],
+                                    "strategy": "cell_model",
+                                },
+                                "weight": 1,
+                            },
+                            "cell_A_record": {
+                                "delay": dt,
+                                "device": "spike_recorder",
+                                "targetting": {
+                                    "cell_models": ["cell_A"],
+                                    "strategy": "cell_model",
+                                },
+                            },
+                        },
+                    }
+                },
+            }
+        )
+
+        scaffold = Scaffold(cfg, storage=self.storage)
+        scaffold.compile(clear=True)
+        results = scaffold.run_simulation("basal_activity")
+        self.assertAll(
+            np.absolute(
+                spike_times + dt - results.block.segments[0].spiketrains[0].magnitude
+            )
+            <= 1e-5
+        )

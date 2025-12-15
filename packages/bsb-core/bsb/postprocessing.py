@@ -407,7 +407,6 @@ __all__ = [
     "BidirectionalContact",
     "AfterPlacementHook",
     "AfterConnectivityHook",
-    "FuseConnections",
     "MergeDirect",
     "IntermediateRemoval",
     "Relay",

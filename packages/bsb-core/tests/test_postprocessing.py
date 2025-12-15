@@ -10,11 +10,11 @@ from bsb import (
     AfterPlacementHook,
     Configuration,
     ConnectivityError,
-    MergeDirect,
     Scaffold,
     WorkflowError,
     config,
 )
+from bsb.postprocessing import _merge_sets
 
 
 class TestAfterConnectivityHook(
@@ -189,9 +189,7 @@ class TestFuseConnectionsHook(
             self.assertIsInstance(e.exception.exceptions[0].error, ConnectivityError)
 
     def test_merge_sets(self):
-        my_hook = MergeDirect(connections=["A_to_B", "B_to_C"])
-
-        computed_connections = my_hook.merge_sets(self.a_to_b, self.b_to_c)
+        computed_connections = _merge_sets(self.a_to_b, self.b_to_c)
         real_connections = (
             np.array([[0, 1, 1], [0, 1, 1], [1, 1, 1], [1, 1, 1], [1, 2, 1]]),
             np.array([[0, -1, -1], [1, -1, -1], [0, -1, -1], [1, -1, -1], [0, -1, -1]]),

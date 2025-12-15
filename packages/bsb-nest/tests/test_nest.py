@@ -985,6 +985,7 @@ class TestNest(
         dt = 0.1
         cfg = Configuration.default(
             **{
+                "network": {"chunk_size": 200},
                 "storage": {"engine": "hdf5"},
                 "partitions": {"my_layer": {"thickness": 40.0}},
                 "cell_types": {"cell_A": {"spatial": {"count": 1, "radius": 1.0}}},

@@ -112,7 +112,6 @@ class NestAdapter(SimulatorAdapter):
         self._duration = max(sim.duration for sim in simulations)
 
         try:
-            results = [self.simdata[sim].result for sim in simulations]
             with nest.RunManager():
                 for t, checkpoint_controllers in self.get_next_checkpoint():
                     nest.Run(t - self._prev_chkpoint)

@@ -952,17 +952,22 @@ class JobPool:
 
 
 def get_node_cache_items(node):
+    from ..config import walk_nodes
+
     return [
-        attr.get_pool_cache_id(node)
-        for key in dir(node)
-        if hasattr(attr := getattr(node, key), "get_pool_cache_id")
+        attr.get_pool_cache_id(subnode)
+        for subnode in walk_nodes(node)
+        for key in dir(subnode)
+        if hasattr(subnode, key)
+        and hasattr(attr := getattr(subnode, key), "get_pool_cache_id")
     ]
 
 
 def free_stale_pool_cache(scaffold, required_cache_items: set[int]):
     for stale_key in set(scaffold._pool_cache.keys()) - required_cache_items:
-        # If so, pop them and execute the registered cleanup function.
-        scaffold._pool_cache.pop(stale_key)()
+        # If so, pop them and execute the registered cleanup functions.
+        for cleanup in scaffold._pool_cache.pop(stale_key):
+            cleanup()
 
 
 def pool_cache(caching_function):

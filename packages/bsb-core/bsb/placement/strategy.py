@@ -11,6 +11,7 @@ from ..config._attrs import cfgdict
 from ..exceptions import DistributorError, EmptySelectionError
 from ..mixins import HasDependencies
 from ..reporting import warn
+from ..services import pool_cache
 from ..storage._chunks import Chunk
 from ..voxels import VoxelSet
 from .distributor import DistributorsNode
@@ -136,6 +137,7 @@ class PlacementStrategy(abc.ABC, HasDependencies):
     def is_entities(self):
         return "entities" in self.__class__.__dict__ and self.__class__.entities
 
+    @pool_cache
     def get_indicators(self):
         """
         Return indicators per cell type.

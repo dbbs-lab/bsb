@@ -2,6 +2,7 @@ import importlib.metadata
 import os
 import sys
 import unittest
+from io import StringIO
 
 from bsb_test import (
     FixedPosConfigFixture,
@@ -10,7 +11,7 @@ from bsb_test import (
     skip_parallel,
 )
 
-from bsb import Scaffold
+from bsb import MPI, NodeNotFoundError, Scaffold, handle_command
 
 
 class TestCLI(unittest.TestCase):
@@ -109,7 +110,6 @@ class TestOptions(unittest.TestCase):
         self.assertRaises(bsb.exceptions.OptionError, lambda: bsb.options.aaa)
 
 
-@skip_parallel
 class TestCLICommands(
     FixedPosConfigFixture,
     RandomStorageFixture,
@@ -139,47 +139,50 @@ class TestCLICommands(
         self.network = Scaffold(self.cfg, self.storage)
         self.network.compile(clear=True)
 
+    def tearDown(self):
+        if not MPI.get_rank():
+            for filename in os.listdir("./"):
+                if filename.endswith(".nio"):
+                    os.remove(filename)
+
     def test_simulate(self):
-        import subprocess
-
-        # test correct behavior
-        result = subprocess.run(["bsb", "simulate", self.storage.root, "test"])
-        self.assertEqual(result.returncode, 0)
+        handle_command(["simulate", self.storage.root, "test"], dryrun=False, exit=True)
         nio_files = [
             filename for filename in os.listdir("./") if filename.endswith(".nio")
         ]
-        self.assertEqual(len(nio_files), 1)
-        for filename in nio_files:
-            os.remove(filename)
+        self.assertEqual(len(nio_files), MPI.get_size())
 
-    def test_errors_simulate(self):
-        import subprocess
+    def test_simulate_wrong_name(self):
+        with self.assertRaises(NodeNotFoundError):
+            handle_command(
+                ["simulate", self.storage.root, "testA"], dryrun=False, exit=True
+            )
 
-        # wrong simulation name
-        result = subprocess.run(
-            ["bsb", "simulate", self.storage.root, "testA"], capture_output=True
-        )
-        self.assertEqual(result.returncode, 1)
+    def test_simulate_existing_output_folder(self):
         # output folder not empty
-        result = subprocess.run(
-            ["bsb", "simulate", self.storage.root, "test", "-o", os.getcwd()],
-            capture_output=True,
-            text=True,
+        capturedOutput = StringIO()
+        sys.stdout = capturedOutput
+        handle_command(
+            ["simulate", self.storage.root, "test", "-o", os.getcwd()],
+            dryrun=False,
+            exit=True,
         )
-        self.assertEqual(result.returncode, 0)
-        self.assertEqual(
-            result.stdout.split("\n")[-2],
-            f"Could not create '{os.getcwd()}', directory exists. "
-            "Use flag '--exists' to ignore this error.",
+        sys.stdout = sys.__stdout__
+        if not MPI.get_rank():
+            # report only visible on main process
+            self.assertEqual(
+                capturedOutput.getvalue().split("\n")[0],
+                f"Could not create '{os.getcwd()}', directory exists. "
+                "Use flag '--exists' to ignore this error.",
+            )
+
+    def test_simulate_exists_flag(self):
+        handle_command(
+            ["simulate", self.storage.root, "test", "-o", os.getcwd(), "--exists"],
+            dryrun=False,
+            exit=True,
         )
-        # check exists flag
-        result = subprocess.run(
-            ["bsb", "simulate", self.storage.root, "test", "-o", os.getcwd(), "--exists"]
-        )
-        self.assertEqual(result.returncode, 0)
         nio_files = [
             filename for filename in os.listdir("./") if filename.endswith(".nio")
         ]
-        self.assertEqual(len(nio_files), 1)
-        for filename in nio_files:
-            os.remove(filename)
+        self.assertEqual(len(nio_files), MPI.get_size())

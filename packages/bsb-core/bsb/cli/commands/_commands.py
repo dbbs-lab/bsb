@@ -212,6 +212,7 @@ class BsbSimulate(BaseCommand, name="simulate"):
                 if name not in network.simulations and name == sim_name:
                     network.simulations[sim_name] = sim
         root = pathlib.Path(getattr(context.arguments, "output_folder", "./"))
+        should_exit = False
         if not MPI.get_rank():
             try:
                 root.mkdir(
@@ -219,12 +220,14 @@ class BsbSimulate(BaseCommand, name="simulate"):
                     or not hasattr(context.arguments, "output_folder")
                 )
             except FileExistsError:
-                return report(
-                    f"Could not create '{root.absolute()}', directory exists. "
-                    "Use flag '--exists' to ignore this error.",
-                    level=0,
-                )
-        MPI.barrier()
+                should_exit = True
+        should_exit = MPI.bcast(should_exit)
+        if should_exit:
+            return report(
+                f"Could not create '{root.absolute()}', directory exists. "
+                "Use flag '--exists' to ignore this error.",
+                level=0,
+            )
         try:
             result = network.run_simulation(sim_name)
         except NodeNotFoundError as e:

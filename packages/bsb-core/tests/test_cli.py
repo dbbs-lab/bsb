@@ -147,6 +147,7 @@ class TestCLICommands(
 
     def test_simulate(self):
         handle_command(["simulate", self.storage.root, "test"], dryrun=False, exit=True)
+        MPI.barrier()
         nio_files = [
             filename for filename in os.listdir("./") if filename.endswith(".nio")
         ]
@@ -182,6 +183,7 @@ class TestCLICommands(
             dryrun=False,
             exit=True,
         )
+        MPI.barrier()
         nio_files = [
             filename for filename in os.listdir("./") if filename.endswith(".nio")
         ]

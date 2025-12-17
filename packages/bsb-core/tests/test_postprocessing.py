@@ -4,6 +4,7 @@ import unittest
 import numpy as np
 from bsb_test import NumpyTestCase, RandomStorageFixture
 
+import bsb.postprocessing
 from bsb import (
     MPI,
     AfterConnectivityHook,
@@ -178,7 +179,7 @@ class TestFuseConnectionsHook(
     def test_nonexistent_set(self):
         self.cfg.after_connectivity = dict(
             new_connection=dict(
-                strategy="merge_connections",
+                strategy=bsb.postprocessing.MergeDirect,
                 connections=["B_to_C", "K_to_B"],
             )
         )
@@ -209,7 +210,7 @@ class TestFuseConnectionsHook(
 
         self.cfg.after_connectivity = dict(
             new_connection=dict(
-                strategy="merge_connections",
+                strategy=bsb.postprocessing.MergeDirect,
                 connections=["A_to_B", "C_to_D"],
             )
         )
@@ -224,7 +225,7 @@ class TestFuseConnectionsHook(
         A > D and A > C"""
         self.cfg.after_connectivity = dict(
             new_connection=dict(
-                strategy="merge_connections",
+                strategy=bsb.postprocessing.MergeDirect,
                 connections=["B_to_C", "B_to_D", "A_to_B"],
             )
         )
@@ -255,7 +256,7 @@ class TestFuseConnectionsHook(
         in C > A and B > A"""
         self.cfg.after_connectivity = dict(
             new_connection=dict(
-                strategy="merge_connections",
+                strategy=bsb.postprocessing.MergeDirect,
                 connections=["D_to_A", "C_to_D", "B_to_D"],
             )
         )
@@ -284,7 +285,7 @@ class TestFuseConnectionsHook(
         A > B > D are merged in A > D"""
         self.cfg.after_connectivity = dict(
             new_connection=dict(
-                strategy="merge_connections",
+                strategy=bsb.postprocessing.MergeDirect,
                 connections=["A_to_B", "B_to_C", "C_to_D", "B_to_D"],
             )
         )
@@ -328,7 +329,7 @@ class TestFuseConnectionsHook(
 
         self.cfg.after_connectivity = dict(
             new_connection=dict(
-                strategy="merge_connections",
+                strategy=bsb.postprocessing.MergeDirect,
                 connections=["A_to_B", "B_to_C", "D_to_A", "C_to_D"],
             )
         )
@@ -343,7 +344,7 @@ class TestFuseConnectionsHook(
 
         self.cfg.after_connectivity = dict(
             new_connection=dict(
-                strategy="merge_connections",
+                strategy=bsb.postprocessing.MergeDirect,
                 connections=["B_to_C", "A_to_B", "C_to_D"],
             )
         )
@@ -394,11 +395,13 @@ class TestFuseConnectionsHook(
 
         self.assertAll(check_all == 1, "Some fused connections do not match real ones!")
 
-    def test_intermediate_removal(self):
+    def test_intermediate_bypass(self):
         """This test remove cell B from the connectivity tree,
         A > B > (C + D) is fused in A > C and A > D"""
         self.cfg.after_connectivity = dict(
-            new_connection=dict(strategy="intermediate_removal", cell_list=["B"])
+            new_connection=dict(
+                strategy=bsb.postprocessing.IntermediateBypass, cell_list=["B"]
+            )
         )
         self.network.run_after_connectivity()
         a_to_d = self.network.get_connectivity_set("A_to_D")
@@ -424,7 +427,9 @@ class TestFuseConnectionsHook(
 
     def test_removal_of_two(self):
         self.cfg.after_connectivity = dict(
-            new_connection=dict(strategy="intermediate_removal", cell_list=["C", "A"])
+            new_connection=dict(
+                strategy=bsb.postprocessing.IntermediateBypass, cell_list=["C", "A"]
+            )
         )
         self.network.run_after_connectivity()
         b_to_d = self.network.get_connectivity_set("B_to_D")
@@ -477,7 +482,9 @@ class TestFuseConnectionsHook(
         """From our tree A > B > D > A if we remove both D and A
         a loop should be detected"""
         self.cfg.after_connectivity = dict(
-            new_connection=dict(strategy="intermediate_removal", cell_list=["D", "A"])
+            new_connection=dict(
+                strategy=bsb.postprocessing.IntermediateBypass, cell_list=["D", "A"]
+            )
         )
         with self.assertRaises(WorkflowError) as e:
             self.network.run_after_connectivity()

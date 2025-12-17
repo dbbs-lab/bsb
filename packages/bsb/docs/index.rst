@@ -91,7 +91,6 @@ Content
    /core/scaffold
    /config/configuration-toc
    /core/storage
-   /core/postprocessing
    /core/job-distribution
 
 .. toctree::
@@ -104,6 +103,7 @@ Content
    /morphologies/morphology-toc
    /placement/placement-toc
    /connectivity/connectivity-toc
+   /postprocess/postprocess-toc
    /simulation/simulation-toc
 
 .. toctree::

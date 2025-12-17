@@ -187,6 +187,8 @@ def _create_fused_set(connections, hook, name=None):
     roots = []  # store the list of potential root of the tree
     ends = []  # store the list of potential end of the tree
     # convert to set to avoid potential duplicates
+    if len(connections) == 1:  # nothing to merge
+        return
     for connection in set(connections):
         try:
             cs = hook.scaffold.get_connectivity_set(connection)
@@ -332,9 +334,18 @@ def _merge_sets(
 
 
 @config.node
-class MergeDirect(AfterConnectivityHook, classmap_entry="merge_connections"):
-    """Strategy that merge the connectivity sets provided". For example, if connectivity
-    sets A -> B and B -> C are given, they will be remapped to A -> C."""
+class MergeDirect(AfterConnectivityHook):
+    """
+    Strategy that merges the provided connectivity sets. For example, if the
+    connectivity sets A → B and B → C are given, they are remapped into A → C.
+
+    The input connectivity may form a tree with multiple starting points and
+    multiple endpoints. In this case, a new connectivity set is created for
+    each start–end pair.
+
+    Discontinuous connectivity chains are not allowed. If the merge results
+    in a cell being connected to itself (i.e., a loop), an error is raised.
+    """
 
     connections: list[str] = config.list(type=str, required=True)
     """
@@ -346,10 +357,17 @@ class MergeDirect(AfterConnectivityHook, classmap_entry="merge_connections"):
 
 
 @config.node
-class IntermediateRemoval(AfterConnectivityHook, classmap_entry="remove_intermediate"):
+class IntermediateBypass(AfterConnectivityHook):
     """
-    Strategy that removes intermediate cells from the connection tree,
-    Every connectivity set addressing these cells is merged.
+    Any connectivity set that contains any of the cell types given in the `cell_list` as
+    either presynaptic or postsynaptic target will be merged with every other set that
+    contains that cell type. This effectively bypass the intermediate cell types given
+    in the `cell_list` from the connectome by patching the connections through
+    to the next cell type.
+
+    For example, given `cell_list` [B, C], the connectome A -> B -> C -> D & B -> E will
+    be merged into A -> D & A -> E, with for example all connections from A -> D expanded
+    via their intermediate connections they formed through B & C.
     """
 
     cell_list: list[CellType] = config.reflist(refs.cell_type_ref, required=True)

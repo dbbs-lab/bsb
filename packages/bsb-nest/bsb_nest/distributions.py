@@ -50,7 +50,7 @@ class nest_parameter(TypeHandler):
     def __call__(self, value, _key=None, _parent=None):
         if isinstance(value, builtins.dict) and "distribution" in value:
             return NestRandomDistribution(**value, _key=_key, _parent=_parent)
-        return value
+        return types.or_(types.list_or_scalar(types.number()), str)(value)
 
     @property
     def __name__(self):  # pragma: nocover

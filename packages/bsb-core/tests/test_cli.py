@@ -2,8 +2,16 @@ import importlib.metadata
 import os
 import sys
 import unittest
+from io import StringIO
 
-from bsb_test import skip_parallel
+from bsb_test import (
+    FixedPosConfigFixture,
+    NumpyTestCase,
+    RandomStorageFixture,
+    skip_parallel,
+)
+
+from bsb import MPI, NodeNotFoundError, Scaffold, handle_command
 
 
 class TestCLI(unittest.TestCase):
@@ -100,3 +108,83 @@ class TestOptions(unittest.TestCase):
         self.assertEqual(5, bsb.options.aaa)
         opt.unregister()
         self.assertRaises(bsb.exceptions.OptionError, lambda: bsb.options.aaa)
+
+
+class TestCLICommands(
+    FixedPosConfigFixture,
+    RandomStorageFixture,
+    NumpyTestCase,
+    unittest.TestCase,
+    engine_name="hdf5",
+):
+    def setUp(self):
+        super().setUp()
+        self.cfg.connectivity.add(
+            "all_to_all",
+            dict(
+                strategy="bsb.connectivity.AllToAll",
+                presynaptic=dict(cell_types=["test_cell"]),
+                postsynaptic=dict(cell_types=["test_cell"]),
+            ),
+        )
+        self.cfg.simulations.add(
+            "test",
+            simulator="arbor",
+            duration=100,
+            resolution=1.0,
+            cell_models=dict(),
+            connection_models=dict(),
+            devices=dict(),
+        )
+        self.network = Scaffold(self.cfg, self.storage)
+        self.network.compile(clear=True)
+
+    def tearDown(self):
+        if not MPI.get_rank():
+            for filename in os.listdir("./"):
+                if filename.endswith(".nio"):
+                    os.remove(filename)
+
+    def test_simulate(self):
+        handle_command(["simulate", self.storage.root, "test"], dryrun=False, exit=True)
+        MPI.barrier()
+        nio_files = [
+            filename for filename in os.listdir("./") if filename.endswith(".nio")
+        ]
+        self.assertEqual(len(nio_files), MPI.get_size())
+
+    def test_simulate_wrong_name(self):
+        with self.assertRaises(NodeNotFoundError):
+            handle_command(
+                ["simulate", self.storage.root, "testA"], dryrun=False, exit=True
+            )
+
+    def test_simulate_existing_output_folder(self):
+        # output folder not empty
+        capturedOutput = StringIO()
+        sys.stdout = capturedOutput
+        handle_command(
+            ["simulate", self.storage.root, "test", "-o", os.getcwd()],
+            dryrun=False,
+            exit=True,
+        )
+        sys.stdout = sys.__stdout__
+        if not MPI.get_rank():
+            # report only visible on main process
+            self.assertEqual(
+                capturedOutput.getvalue().split("\n")[0],
+                f"Could not create '{os.getcwd()}', directory exists. "
+                "Use flag '--exists' to ignore this error.",
+            )
+
+    def test_simulate_exists_flag(self):
+        handle_command(
+            ["simulate", self.storage.root, "test", "-o", os.getcwd(), "--exists"],
+            dryrun=False,
+            exit=True,
+        )
+        MPI.barrier()
+        nio_files = [
+            filename for filename in os.listdir("./") if filename.endswith(".nio")
+        ]
+        self.assertEqual(len(nio_files), MPI.get_size())

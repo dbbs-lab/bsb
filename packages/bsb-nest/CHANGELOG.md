@@ -1,3 +1,13 @@
+## 7.0.3 (2025-12-17)
+
+### 🩹 Fixes
+
+- CLI simulate and ExtNestDevice ([#207](https://github.com/dbbs-lab/bsb/pull/207), [#204](https://github.com/dbbs-lab/bsb/issues/204), [#206](https://github.com/dbbs-lab/bsb/issues/206))
+
+### ❤️ Thank You
+
+- Dimitri RODARIE
+
 ## 7.0.2 (2025-12-12)
 
 This was a version bump only for bsb-nest to align it with other projects, there were no code changes.

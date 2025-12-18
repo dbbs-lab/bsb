@@ -100,9 +100,9 @@ This configuration generates four connectivity sets, named:
  * B_to_F
 
 IntermediateBypass
--------------------
+------------------
 
-The :class:`IntermediateBypass <bsb:bsb.postprocessing.IntermediateBypass` strategy let
+The :class:`IntermediateBypass <bsb:bsb.postprocessing.IntermediateBypass>` strategy let
 the user to bypass specified intermediate cell types from the connection path when
 generating new direct connections.
 For example, given a chain::
@@ -147,7 +147,7 @@ an error is raised.
           )
 
 The naming convention for the newly created connectivity sets follows the same
-pattern used by :class:`FuseConnectivity`::
+pattern used by ``FuseConnectivity``:
 
     `<presynaptic>_to_<postsynaptic>`
 

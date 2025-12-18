@@ -42,22 +42,39 @@ the connectivity stage is complete**.
 The BSB provides several built-in :doc:`hooks </postprocess/afterconnectivity_list>`.
 
 
-Parallel
-========
+Parallel Execution
+==================
 
-class AfterPlacementHook(abc.ABC):
-    name: str = config.attr(key=True)
+By default, post-processing hooks are not parallelized. However, if there is
+a need to split the workload across multiple jobs, this can be implemented in
+the :guilabel:`queue` method of the hook.
 
-    def queue(self, pool):
-        def static_function(scaffold, name):
-            return scaffold.after_placement[name].postprocess()
+The following example demonstrates how a post-processing task can be divided
+into multiple chunks and submitted to a job pool for parallel execution:
 
-        chunks = np.unique(
-            np.concatenate([p.to_chunks(self.scaffold.network.chunk_size) for p in self.scaffold.partitions]), axis=0
-        )
-        for chunk in chunks:
-            pool.queue(static_function, (self.name,), submitter=self)
+.. code-block:: python
 
-    @abc.abstractmethod
-    def postprocess(self):  # pragma: nocover
-        pass
+   class MyParallelHook(AfterPlacementHook):
+
+       def queue(self, pool):
+           def static_function(scaffold, name, chunk=None):
+               return scaffold.after_placement[name].postprocess(chunk)
+
+           chunks = np.unique(
+               np.concatenate(
+                   [p.to_chunks(self.scaffold.network.chunk_size)
+                    for p in self.scaffold.partitions.values()]
+               ),
+               axis=0
+           )
+
+           for chunk in chunks:
+               pool.queue(
+                   static_function,
+                   (self.name,),
+                   chunk=chunk,
+                   submitter=self
+               )
+
+       def postprocess(self, chunk):
+           # instructions for post-processing

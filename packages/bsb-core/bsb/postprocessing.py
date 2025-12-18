@@ -334,7 +334,7 @@ def _merge_sets(
 
 
 @config.node
-class MergeDirect(AfterConnectivityHook):
+class FuseConnectivity(AfterConnectivityHook):
     """
     Strategy that merges the provided connectivity sets. For example, if the
     connectivity sets A → B and B → C are given, they are remapped into A → C.
@@ -425,8 +425,8 @@ __all__ = [
     "BidirectionalContact",
     "AfterPlacementHook",
     "AfterConnectivityHook",
-    "MergeDirect",
-    "IntermediateRemoval",
+    "FuseConnectivity",
+    "IntermediateBypass",
     "Relay",
     "SpoofDetails",
 ]

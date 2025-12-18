@@ -179,7 +179,7 @@ class TestFuseConnectionsHook(
     def test_nonexistent_set(self):
         self.cfg.after_connectivity = dict(
             new_connection=dict(
-                strategy=bsb.postprocessing.MergeDirect,
+                strategy=bsb.postprocessing.FuseConnectivity,
                 connections=["B_to_C", "K_to_B"],
             )
         )
@@ -210,7 +210,7 @@ class TestFuseConnectionsHook(
 
         self.cfg.after_connectivity = dict(
             new_connection=dict(
-                strategy=bsb.postprocessing.MergeDirect,
+                strategy=bsb.postprocessing.FuseConnectivity,
                 connections=["A_to_B", "C_to_D"],
             )
         )
@@ -225,7 +225,7 @@ class TestFuseConnectionsHook(
         A > D and A > C"""
         self.cfg.after_connectivity = dict(
             new_connection=dict(
-                strategy=bsb.postprocessing.MergeDirect,
+                strategy=bsb.postprocessing.FuseConnectivity,
                 connections=["B_to_C", "B_to_D", "A_to_B"],
             )
         )
@@ -256,7 +256,7 @@ class TestFuseConnectionsHook(
         in C > A and B > A"""
         self.cfg.after_connectivity = dict(
             new_connection=dict(
-                strategy=bsb.postprocessing.MergeDirect,
+                strategy=bsb.postprocessing.FuseConnectivity,
                 connections=["D_to_A", "C_to_D", "B_to_D"],
             )
         )
@@ -285,7 +285,7 @@ class TestFuseConnectionsHook(
         A > B > D are merged in A > D"""
         self.cfg.after_connectivity = dict(
             new_connection=dict(
-                strategy=bsb.postprocessing.MergeDirect,
+                strategy=bsb.postprocessing.FuseConnectivity,
                 connections=["A_to_B", "B_to_C", "C_to_D", "B_to_D"],
             )
         )
@@ -329,7 +329,7 @@ class TestFuseConnectionsHook(
 
         self.cfg.after_connectivity = dict(
             new_connection=dict(
-                strategy=bsb.postprocessing.MergeDirect,
+                strategy=bsb.postprocessing.FuseConnectivity,
                 connections=["A_to_B", "B_to_C", "D_to_A", "C_to_D"],
             )
         )
@@ -344,7 +344,7 @@ class TestFuseConnectionsHook(
 
         self.cfg.after_connectivity = dict(
             new_connection=dict(
-                strategy=bsb.postprocessing.MergeDirect,
+                strategy=bsb.postprocessing.FuseConnectivity,
                 connections=["B_to_C", "A_to_B", "C_to_D"],
             )
         )

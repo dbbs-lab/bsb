@@ -1,5 +1,5 @@
 ###############
-Post Processing
+Post processing
 ###############
 
 The BSB allows users to implement and register custom functions that run between
@@ -7,7 +7,7 @@ workflow stages to perform additional tasks that are not covered by the
 built-in steps.
 
 Users can register postprocessing hooks that execute after either the
-**Placement** or **Connectivity** stages.
+placement or connectivity stages.
 
 The hook possess :guilabel:`postprocess` method, which is the function called in the post-process stage.
 
@@ -22,13 +22,13 @@ The hook possess :guilabel:`postprocess` method, which is the function called in
 AfterPlacementHook
 ==================
 
-`AfterPlacementHook` registers a function that runs after the placement step
+``AfterPlacementHook`` registers a function that runs after the placement step
 and before the connectivity step.
 
 :class:`AfterPlacementHook <bsb:bsb.postprocessing.AfterPlacementHook>` is an abstract class, this means
 that the :guilabel:`postprocess` method need to be implemented.
 
-An example of `AfterPlacementHook` that allow the user to label cells according to their position can be found :doc:`here </examples/label_cells>`
+An example of ``AfterPlacementHook`` that allow the user to label cells according to their position can be found :doc:`here </examples/label_cells>`
 
 
 
@@ -36,13 +36,13 @@ AfterConnectivityHook
 =====================
 
 The :class:`AfterConnectivityHook <bsb:bsb.postprocessing.AfterConnectivityHook>`
-operates similarly to `AfterPlacementHook`, but is executed **only after
-the connectivity stage is complete**.
+operates similarly to ``AfterPlacementHook``, but is executed only after
+the connectivity stage is complete.
 
 The BSB provides several built-in :doc:`hooks </postprocess/afterconnectivity_list>`.
 
 
-Parallel Execution
+Parallel execution
 ==================
 
 By default, post-processing hooks are not parallelized. However, if there is

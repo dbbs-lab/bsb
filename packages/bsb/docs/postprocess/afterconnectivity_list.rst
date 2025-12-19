@@ -1,12 +1,12 @@
-##############################
-List of AfterConnectivityHooks
-##############################
+####################################
+List of hooks for after-connectivity
+####################################
 
 
-Merge Connections
------------------
+:class:`FuseConnectivity <bsb:bsb.postprocessing.FuseConnectivity>`
+===================================================================
 
-The :class:`FuseConnectivity <bsb:bsb.postprocessing.FuseConnectivity>` strategy accepts a list of
+This strategy accepts a list of
 connectivity sets to merge. It reconstructs the connectivity tree defined by
 these sets and creates a new connectivity set for each root–leaf pair.
 For example, given a chain::
@@ -16,7 +16,7 @@ For example, given a chain::
 you can directly connect ``cell_a`` to ``cell_d`` while bypassing
 ``cell_b`` and ``cell_c``.
 
-This strategy does **not** allow merging discontinuous connectivity lists
+This strategy does not allow merging discontinuous connectivity lists
 (e.g., ``[cell_a -> cell_b, cell_d -> cell_e]``).
 If the merge results in a cell being connected to itself (i.e., a loop),
 an error is raised.
@@ -25,8 +25,8 @@ an error is raised.
 
 * ``connections`` – List of connectivity sets to merge.
 
-**Examples**
-
+Examples
+--------
 
 .. tab-set::
 
@@ -99,10 +99,10 @@ This configuration generates four connectivity sets, named:
  * B_to_D
  * B_to_F
 
-IntermediateBypass
-------------------
+:class:`IntermediateBypass <bsb:bsb.postprocessing.IntermediateBypass>`
+=======================================================================
 
-The :class:`IntermediateBypass <bsb:bsb.postprocessing.IntermediateBypass>` strategy let
+This strategy let
 the user to bypass specified intermediate cell types from the connection path when
 generating new direct connections.
 For example, given a chain::
@@ -118,7 +118,8 @@ if cell_c is selected it will create a direct connection between cell_b and cell
 If the merge results in a cell being connected to itself (i.e., a loop),
 an error is raised.
 
-**Examples**
+Examples
+--------
 
 .. tab-set::
 
@@ -149,7 +150,7 @@ an error is raised.
 The naming convention for the newly created connectivity sets follows the same
 pattern used by ``FuseConnectivity``:
 
-    `<presynaptic>_to_<postsynaptic>`
+    <presynaptic>_to_<postsynaptic>
 
 The algorithm automatically traverses and resolves all branches in the
 connectivity tree.

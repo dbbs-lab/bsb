@@ -178,9 +178,8 @@ class TestFuseConnectionsHook(
 
     def test_nonexistent_set(self):
         self.cfg.after_connectivity = dict(
-            new_connection=dict(
-                strategy=bsb.postprocessing.FuseConnectivity,
-                connections=["B_to_C", "K_to_B"],
+            new_connection=bsb.postprocessing.FuseConnectivity(
+                connections=["B_to_C", "K_to_B"]
             )
         )
 
@@ -209,9 +208,8 @@ class TestFuseConnectionsHook(
         # Test that discontinuous trees is detected
 
         self.cfg.after_connectivity = dict(
-            new_connection=dict(
-                strategy=bsb.postprocessing.FuseConnectivity,
-                connections=["A_to_B", "C_to_D"],
+            new_connection=bsb.postprocessing.FuseConnectivity(
+                connections=["A_to_B", "C_to_D"]
             )
         )
 
@@ -224,9 +222,8 @@ class TestFuseConnectionsHook(
         """Will test that the connectivity A > B > ( C+ D ) are merged in
         A > D and A > C"""
         self.cfg.after_connectivity = dict(
-            new_connection=dict(
-                strategy=bsb.postprocessing.FuseConnectivity,
-                connections=["B_to_C", "B_to_D", "A_to_B"],
+            new_connection=bsb.postprocessing.FuseConnectivity(
+                connections=["B_to_C", "B_to_D", "A_to_B"]
             )
         )
         self.network.run_after_connectivity()
@@ -255,9 +252,8 @@ class TestFuseConnectionsHook(
         """Will test that the connectivity (C + B) > D > A are merged
         in C > A and B > A"""
         self.cfg.after_connectivity = dict(
-            new_connection=dict(
-                strategy=bsb.postprocessing.FuseConnectivity,
-                connections=["D_to_A", "C_to_D", "B_to_D"],
+            new_connection=bsb.postprocessing.FuseConnectivity(
+                connections=["D_to_A", "C_to_D", "B_to_D"]
             )
         )
         self.network.run_after_connectivity()
@@ -284,9 +280,8 @@ class TestFuseConnectionsHook(
         """Will test that the connections A > B > C > D +
         A > B > D are merged in A > D"""
         self.cfg.after_connectivity = dict(
-            new_connection=dict(
-                strategy=bsb.postprocessing.FuseConnectivity,
-                connections=["A_to_B", "B_to_C", "C_to_D", "B_to_D"],
+            new_connection=bsb.postprocessing.FuseConnectivity(
+                connections=["A_to_B", "B_to_C", "C_to_D", "B_to_D"]
             )
         )
         self.network.run_after_connectivity()
@@ -328,9 +323,8 @@ class TestFuseConnectionsHook(
         # Test that a loop is detected
 
         self.cfg.after_connectivity = dict(
-            new_connection=dict(
-                strategy=bsb.postprocessing.FuseConnectivity,
-                connections=["A_to_B", "B_to_C", "D_to_A", "C_to_D"],
+            new_connection=bsb.postprocessing.FuseConnectivity(
+                connections=["A_to_B", "B_to_C", "D_to_A", "C_to_D"]
             )
         )
         with self.assertRaises(WorkflowError) as e:
@@ -343,9 +337,8 @@ class TestFuseConnectionsHook(
         A > D"""
 
         self.cfg.after_connectivity = dict(
-            new_connection=dict(
-                strategy=bsb.postprocessing.FuseConnectivity,
-                connections=["B_to_C", "A_to_B", "C_to_D"],
+            new_connection=bsb.postprocessing.FuseConnectivity(
+                connections=["B_to_C", "A_to_B", "C_to_D"]
             )
         )
         self.network.run_after_connectivity()

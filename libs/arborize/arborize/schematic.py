@@ -112,17 +112,22 @@ class Schematic:
         return f"{self._name}_{self._next_id}"
 
     def create_location(
-        self, location: tuple[int, int], coords, radii, labels, endpoint=None
+        self,
+        location: tuple[int, int],
+        coords: tuple[float, float, float],
+        radius: float,
+        labels: list[str],
+        endpoint: tuple[int, int] | None = None,
     ):
         """
         Add a new location to the schematic. A location is a tuple of the branch id and
         point-on-branch id. Locations must be appended in ascending order.
 
-        :param location:
-        :param coords:
-        :param radii:
-        :param labels:
-        :param endpoint:
+        :param location: The location tuple with branch id and point id.
+        :param coords: The 3 coordinates of the point.
+        :param radius: The radius of the branch at the point.
+        :param labels: The list of labels for the point.
+        :param endpoint: Optional endpoint of the previous branch to connect the location to.
         :return:
         """
         if self._frozen:
@@ -150,7 +155,7 @@ class Schematic:
                 f", should construct ({bid}, {len(branch.points)}) or ({next_bid}.0)."
             )
         # We append the point to the cable, this may create new units.
-        point = branch.append(location, coords, radii, labels)
+        point = branch.append(location, coords, radius, labels)
         if endpoint:
             # If an endpoint was passed, we should set that as our parent both at the
             # cable and unit level.

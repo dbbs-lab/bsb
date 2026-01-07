@@ -54,7 +54,7 @@ class Schematic:
         """
         Iterate over the unit branches depth-first order.
         """
-        stack: deque[UnitBranch] = deque(self.roots)
+        stack: deque[UnitBranch] = deque(reversed(self.roots))
         while True:
             try:
                 branch = stack.pop()

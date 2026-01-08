@@ -9,7 +9,7 @@ built-in steps.
 Users can register postprocessing hooks that execute after either the
 placement or connectivity stages.
 
-The hook possess :guilabel:`postprocess` method, which is the function called in the post-process stage.
+The hook possesses :guilabel:`postprocess` method, which is the function called in the post-process stage.
 
 **Example of hook structure**
 
@@ -26,9 +26,9 @@ AfterPlacementHook
 and before the connectivity step.
 
 :class:`AfterPlacementHook <bsb:bsb.postprocessing.AfterPlacementHook>` is an abstract class, this means
-that the :guilabel:`postprocess` method need to be implemented.
+that the :guilabel:`postprocess` method needs to be implemented by the user.
 
-An example of ``AfterPlacementHook`` that allow the user to label cells according to their position can be found :doc:`here </examples/label_cells>`
+An example of ``AfterPlacementHook`` that allows users to label cells according to their position can be found :doc:`here </examples/label_cells>`
 
 
 

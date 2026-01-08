@@ -6,20 +6,12 @@ List of hooks for after-connectivity
 :class:`FuseConnectivity <bsb:bsb.postprocessing.FuseConnectivity>`
 ===================================================================
 
-This strategy accepts a list of
-connectivity sets to merge. It reconstructs the connectivity tree defined by
-these sets and creates a new connectivity set for each root–leaf pair.
-For example, given a chain::
+This strategy accepts a list of connectivity sets to merge. It reconstructs the connectivity tree defined by these sets and creates a new connectivity set for each root–leaf pair.
 
-    cell_a -> cell_b -> cell_c -> cell_d
+For example, given a chain: cell_a -> cell_b -> cell_c -> cell_d you can directly connect ``cell_a`` to ``cell_d``, bypassing ``cell_b`` and ``cell_c``.
 
-you can directly connect ``cell_a`` to ``cell_d`` while bypassing
-``cell_b`` and ``cell_c``.
-
-This strategy does not allow merging discontinuous connectivity lists
-(e.g., ``[cell_a -> cell_b, cell_d -> cell_e]``).
-If the merge results in a cell being connected to itself (i.e., a loop),
-an error is raised.
+This strategy does not allow merging discontinuous connectivity lists (e.g., [cell_a -> cell_b, cell_d -> cell_e]).
+If the merge results in a cell being connected to itself (i.e., a loop), an error is raised.
 
 **Parameters**
 
@@ -102,14 +94,13 @@ This configuration generates four connectivity sets, named:
 :class:`IntermediateBypass <bsb:bsb.postprocessing.IntermediateBypass>`
 =======================================================================
 
-This strategy let
-the user to bypass specified intermediate cell types from the connection path when
-generating new direct connections.
+This strategy allows the user to bypass specified intermediate cell types
+from the connection path when generating new direct connections.
 For example, given a chain::
 
     cell_a -> cell_b -> cell_c -> cell_d
 
-if cell_c is selected it will create a direct connection between cell_b and cell_d.
+if ``cell_c`` is selected it will create a direct connection between ``cell_b`` and ``cell_d``.
 
 **Parameters**
 
@@ -152,8 +143,8 @@ pattern used by ``FuseConnectivity``:
 
     <presynaptic>_to_<postsynaptic>
 
-The algorithm automatically traverses and resolves all branches in the
-connectivity tree.
+The algorithm automatically traverses and resolves all branches in
+the connectivity tree.
 
 For example, consider the following connectivity graph::
 
@@ -198,8 +189,8 @@ given the connectivity tree::
     B -> C -> D -> E -> F
     A ---^
 
-and selecting C and E as intermediate cells, the following connectivity
-sets are produced:
+If C and E are selected as intermediate cells,
+the following connectivity sets are produced:
 
 - ``A_to_D``
 - ``B_to_D``

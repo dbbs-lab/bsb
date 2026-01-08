@@ -94,8 +94,8 @@ This configuration generates four connectivity sets, named:
 :class:`IntermediateBypass <bsb:bsb.postprocessing.IntermediateBypass>`
 =======================================================================
 
-This strategy allows the user to bypass specified intermediate cell types
-from the connection path when generating new direct connections.
+This strategy lets the user bypass the specified intermediate cell types
+from the connection path and generates new direct connections.
 For example, given a chain::
 
     cell_a -> cell_b -> cell_c -> cell_d

@@ -1,13 +1,14 @@
 import os
 import unittest
 
+from patch import p
+
 from arborize import Schematic, define_model, neuron_build
 from arborize.exceptions import (
     UnconnectedPointInSpaceWarning,
     UnknownLocationError,
     UnknownSynapseError,
 )
-from patch import p
 
 # This import only works when tests are executed from root dir.
 from tests._shared import SchematicsFixture

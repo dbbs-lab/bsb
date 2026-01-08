@@ -287,8 +287,13 @@ def _collapse_proxies(proxies: list[_SinglePointProxy]):
                     # Floating point in space somewhere, not supported by
                     # NEURON. Warn the user as this is probably not intentional.
                     warnings.warn(
-                        f"Branch '{proxy.branch_name}' has a single point {proxy.branch.points[0].loc} in space at {proxy.branch.points[0].coords} not connected to anything. This is not supported by NEURON and will be ignored.",
+                        f"Branch '{proxy.branch_name}' has a single "
+                        f"point {proxy.branch.points[0].loc} in space at "
+                        f"{proxy.branch.points[0].coords} not connected to "
+                        "anything. This is not supported by NEURON and will be "
+                        "ignored.",
                         UnconnectedPointInSpaceWarning,
+                        stacklevel=2,
                     )
                 continue
             else:
@@ -300,15 +305,12 @@ def _collapse_proxies(proxies: list[_SinglePointProxy]):
                 # eventually point to.
                 true_children = _reify_proxy_children(proxy)
 
-                print("Root proxy with children:", proxy.children, true_children)
-
                 first_child = true_children[0]
                 # We loop only over *additional* children, so that this
                 # algorithm does nothing in the case of a single child
                 # connected to a single point root proxy, where the root
                 # proxy point can simply be discarded.
                 for child in true_children[1:]:
-                    print("Connecting", child, "to", first_child)
                     child.connect(first_child, 0)
         else:
             # Proxies with a parent, connect the proxy children to the parent.
@@ -317,19 +319,12 @@ def _collapse_proxies(proxies: list[_SinglePointProxy]):
             # error if it is.
             if isinstance(proxy.parent, _SinglePointProxy):
                 raise RuntimeError(
-                    f"Parent of proxy {proxy.branch_name} is a proxy itself. Please report this bug."
+                    f"Parent of proxy {proxy.branch_name} is a proxy itself."
+                    " Please report this bug."
                 )
 
             # The children might be proxies themselves, so we reify them.
             true_children = _reify_proxy_children(proxy)
-            print(
-                "Non-root proxy:",
-                proxy.branch_name,
-                "\n",
-                proxy.children,
-                "\n",
-                true_children,
-            )
 
             for child in true_children:
                 _connect_section_or_proxy(child, proxy.parent)
@@ -345,7 +340,6 @@ def _reify_proxy_children(proxy):
         except IndexError:
             break
         if isinstance(child, _SinglePointProxy):
-            print("Reifying child proxy", child)
             child.reified = True
             if child.children:
                 stack.extend(reversed(child.children))

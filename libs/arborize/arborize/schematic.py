@@ -127,7 +127,9 @@ class Schematic:
         :param coords: The 3 coordinates of the point.
         :param radius: The radius of the branch at the point.
         :param labels: The list of labels for the point.
-        :param endpoint: Optional endpoint of the previous branch to connect the location to.
+        :param endpoint: Optional endpoint of the previous branch to connect
+          the location to.
+
         :return:
         """
         if self._frozen:

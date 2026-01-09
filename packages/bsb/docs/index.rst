@@ -103,6 +103,7 @@ Content
    /morphologies/morphology-toc
    /placement/placement-toc
    /connectivity/connectivity-toc
+   /postprocess/postprocess-toc
    /simulation/simulation-toc
 
 .. toctree::

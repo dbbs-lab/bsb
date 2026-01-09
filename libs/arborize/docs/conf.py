@@ -61,6 +61,7 @@ intersphinx_mapping = {
     "scipy": ("https://scipy.github.io/devdocs/", None),
     "errr": ("https://errr.readthedocs.io/en/latest/", None),
     "mpi4py": ("https://mpi4py.readthedocs.io/en/stable/", None),
+    "morphio": ("https://morphio.readthedocs.io/en/latest/", None),
     **_project.intersphinx,
 }
 
@@ -79,8 +80,7 @@ html_theme = "furo"
 html_static_path = ["_static", *_project.html_static_path]
 html_favicon = _project.html_favicon
 
-html_theme_options = {
-}
+html_theme_options = {}
 
 html_context = {
     **_project.html_context,

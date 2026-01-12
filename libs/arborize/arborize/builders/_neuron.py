@@ -317,7 +317,7 @@ def _collapse_proxies(proxies: list[_SinglePointProxy]):
 
             # The parent should never be a proxy itself (see docstring),
             # error if it is.
-            if isinstance(proxy.parent, _SinglePointProxy):
+            if isinstance(proxy.parent, _SinglePointProxy):  # pragma: nocover
                 raise RuntimeError(
                     f"Parent of proxy {proxy.branch_name} is a proxy itself."
                     " Please report this bug."

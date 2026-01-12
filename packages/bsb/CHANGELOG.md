@@ -1,3 +1,13 @@
+## 7.1.0 (2026-01-09)
+
+### 🚀 Features
+
+- Add Class to fuse connections ([#203](https://github.com/dbbs-lab/bsb/pull/203))
+
+### ❤️ Thank You
+
+- Filippo @filimarc
+
 ## 7.0.3 (2025-12-17)
 
 This was a version bump only for bsb to align it with other projects, there were no code changes.

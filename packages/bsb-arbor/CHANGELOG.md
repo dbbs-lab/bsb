@@ -1,3 +1,7 @@
+## 7.1.0 (2026-01-09)
+
+This was a version bump only for bsb-arbor to align it with other projects, there were no code changes.
+
 ## 7.0.3 (2025-12-17)
 
 This was a version bump only for bsb-arbor to align it with other projects, there were no code changes.

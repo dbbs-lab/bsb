@@ -1,3 +1,13 @@
+## 7.2.0 (2026-01-13)
+
+### 🚀 Features
+
+- Added support for MorphIO options and fixed single point branches in NEURON builder ([#210](https://github.com/dbbs-lab/bsb/pull/210))
+
+### ❤️ Thank You
+
+- Robin De Schepper
+
 ## 7.1.0 (2026-01-09)
 
 This was a version bump only for arborize to align it with other projects, there were no code changes.

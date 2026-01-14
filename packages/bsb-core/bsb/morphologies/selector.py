@@ -88,18 +88,15 @@ class NeuroMorphoSelector(NameSelector, classmap_entry="from_neuromorpho"):
     _files = "dableFiles/"
 
     def __boot__(self):
-        fail_to_boot = False
-        if self.scaffold.is_main_process():
-            try:
-                morphos = self._scrape_nm(self.names)
-            except Exception:
-                fail_to_boot = True
-            else:
-                for name, morpho in morphos.items():
-                    self.scaffold.morphologies.save(name, morpho, overwrite=True)
-        self.scaffold._comm.bcast(fail_to_boot)
-        if fail_to_boot:
-            raise
+        with self.scaffold._comm.try_main():
+            if self.scaffold.is_main_process():
+                try:
+                    morphos = self._scrape_nm(self.names)
+                except Exception:
+                    raise
+                else:
+                    for name, morpho in morphos.items():
+                        self.scaffold.morphologies.save(name, morpho, overwrite=True)
 
     def __unboot__(self):
         if self.scaffold.is_main_process():

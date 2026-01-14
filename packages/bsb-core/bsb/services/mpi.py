@@ -1,5 +1,6 @@
 import functools
 import os
+from contextlib import AbstractContextManager
 
 from ..exceptions import DependencyError
 from ._util import MockModule
@@ -73,6 +74,52 @@ class MPIService:
                     pass
 
             return WindowMock()
+
+    def try_all(self, default_exception):
+        """
+        Create a context manager that checks if any exception is raised by any processes
+        within the context, and make all other processes raise an exception in that case
+
+        :param Exception default_exception: Exception instance to raise for all processes
+          that did not raise during the context.
+        :return: context manager
+        """
+        comm = self
+
+        class bcast_all(AbstractContextManager):
+            def __enter__(self):
+                pass
+
+            def __exit__(self, exctype, excinst, exctb):
+                exceptions = comm.allgather(excinst)
+                if any(exceptions):
+                    if exceptions[comm.get_rank()]:
+                        raise exceptions[comm.get_rank()]
+                    else:
+                        raise default_exception
+
+        return bcast_all()
+
+    def try_main(self):
+        """
+        Create a context manager that checks if any exception is raised by the main
+        process within the context, and make all other processes raise this exception in
+        that case
+
+        :return: context manager
+        """
+        comm = self
+
+        class bcast(AbstractContextManager):
+            def __enter__(self):
+                pass
+
+            def __exit__(self, exctype, excinst, exctb):
+                exception = comm.bcast(excinst)
+                if exception is not None:
+                    raise exception
+
+        return bcast()
 
 
 class MPIModule(MockModule):

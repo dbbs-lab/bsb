@@ -462,6 +462,7 @@ def _root_is_booted(obj):
 
 
 def _boot_nodes(top_node, scaffold):
+    fail_boot = False
     for node in walk_nodes(top_node):
         node.scaffold = scaffold
         # Boot attributes
@@ -476,9 +477,14 @@ def _boot_nodes(top_node, scaffold):
         try:
             run_hook(node, "boot")
         except Exception as e:
-            errr.wrap(BootError, e, prepend=f"Failed to boot {node}:")
-    # fixme: why is this here? Will deadlock in case of BootError on specific node only.
-    scaffold._comm.barrier()
+            fail_boot = [e, f"Failed to boot {node}:"]
+    fail_boot = scaffold._comm.allgather(fail_boot)
+    if any(fail_boot):
+        if fail_boot[scaffold._comm.get_rank()]:
+            e, prepend = fail_boot[scaffold._comm.get_rank()]
+            errr.wrap(BootError, e, prepend=prepend)
+        else:
+            raise BootError("Boot failed on other process.")
 
 
 def _unset_nodes(top_node):

@@ -2,13 +2,18 @@ import os
 import unittest
 from types import NoneType
 
+from bsb_test import RandomStorageFixture, timeout
+
 from bsb import (
+    BootError,
     CellType,
     CfgReferenceError,
     Chunk,
+    Configuration,
     FixedPositions,
     PlacementIndications,
     Reference,
+    Scaffold,
     config,
 )
 
@@ -45,7 +50,7 @@ class Root430:
     extensions = config.dict(type=Extension, required=True)
 
 
-class TestIssues(unittest.TestCase):
+class TestIssues(RandomStorageFixture, unittest.TestCase, engine_name="hdf5"):
     def test_430(self):
         with self.assertRaises(CfgReferenceError, msg="Regression of issue #430"):
             _config = Root430(
@@ -62,3 +67,15 @@ class TestIssues(unittest.TestCase):
                 Chunk((0, 0, 0), (100, 100, 100)),
                 {CellType(spatial=dict(radius=1, count=1)): PlacementIndications()},
             )
+
+    @timeout(3)
+    def test_211(self):
+        """
+        Test if the absence of a file does not make the reconstruction
+        get stuck in parallel.
+        """
+        cfg = Configuration.default(
+            files=dict(annotations={"file": "path/to/missing/file.nrrd", "type": "nrrd"}),
+        )
+        with self.assertRaises(BootError):
+            Scaffold(cfg, self.storage)

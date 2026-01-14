@@ -96,12 +96,6 @@ def view_profile(fstem):
     ProfilingSession.load(fstem).view()
 
 
-__all__ = [
-    "ProfilingSession",
-    "activate_session",
-    "get_active_session",
-    "view_profile",
-]
 _otel_tracer = trace.get_tracer("bsb", str(importlib.metadata.version("bsb-core")))
 
 
@@ -260,3 +254,12 @@ def _get_file_tracer_provider(file: typing.IO, buffered=True):
     provider.add_span_processor(BatchSpanProcessor(exporter))
 
     return provider
+
+
+__all__ = [
+    "ProfilingSession",
+    "activate_session",
+    "get_active_session",
+    "view_profile",
+    "_telemetry_trace",
+]

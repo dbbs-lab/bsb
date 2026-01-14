@@ -1,6 +1,6 @@
 import unittest
 
-from bsb_test import RandomStorageFixture, skip_parallel, skipIfOffline
+from bsb_test import RandomStorageFixture, skipIfOffline
 
 from bsb import (
     MPI,
@@ -105,7 +105,6 @@ class TestSelectors(RandomStorageFixture, unittest.TestCase, engine_name="hdf5")
         m = s.morphologies.select(*ct.spatial.morphologies)[0]
         self.assertEqual(name, m.get_meta()["neuron_name"], "meta not stored")
 
-    @skip_parallel  # https://github.com/dbbs-lab/bsb/issues/187
     @skipIfOffline(scheme=NeuroMorphoScheme())
     def test_nm_selector_wrong_name(self):
         ct = CellType(

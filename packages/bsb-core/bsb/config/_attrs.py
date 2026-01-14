@@ -489,13 +489,13 @@ def _boot_nodes(top_node, scaffold):
 
 def _unset_nodes(top_node):
     for node in walk_nodes(top_node):
+        run_hook(node, "unboot")
         with contextlib.suppress(Exception):
             del node.scaffold
         node._config_parent = None
         node._config_key = None
         if hasattr(node, "_config_index"):
             node._config_index = None
-        run_hook(node, "unboot")
 
 
 class ConfigurationAttribute:

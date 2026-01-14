@@ -1,5 +1,6 @@
 import abc
 import concurrent
+import contextlib
 import re
 import tempfile
 import typing
@@ -12,7 +13,7 @@ import requests
 from .. import config
 from ..config import types
 from ..config._attrs import cfglist
-from ..exceptions import MissingMorphologyError, SelectorError
+from ..exceptions import MissingMorphologyError, MorphologyRepositoryError, SelectorError
 from .parsers import parse_morphology_file
 
 if typing.TYPE_CHECKING:  # pragma: nocover
@@ -99,6 +100,14 @@ class NeuroMorphoSelector(NameSelector, classmap_entry="from_neuromorpho"):
         self.scaffold._comm.bcast(fail_to_boot)
         if fail_to_boot:
             raise
+
+    def __unboot__(self):
+        if self.scaffold.is_main_process():
+            for name in self.names:
+                with contextlib.suppress(MorphologyRepositoryError):
+                    # remove morphology if it was saved in the scaffold.
+                    self.scaffold.morphologies.remove(name)
+        self.scaffold._comm.barrier()
 
     @classmethod
     def _swc_url(cls, archive, name):

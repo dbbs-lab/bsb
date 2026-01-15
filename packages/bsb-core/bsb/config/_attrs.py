@@ -473,7 +473,7 @@ def _boot_nodes(top_node, scaffold):
                     boot(node, scaffold)
                     booted.add(boot)
         # Boot node hook
-        with scaffold._comm.try_all(BootError("Boot failed on other process.")):
+        with scaffold._comm.try_all(BootError("Boot failed on different rank.")):
             try:
                 run_hook(node, "boot")
             except Exception as e:

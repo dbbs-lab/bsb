@@ -1,6 +1,6 @@
+import contextlib
 import functools
 import os
-from contextlib import AbstractContextManager
 
 from ..exceptions import DependencyError
 from ._util import MockModule
@@ -75,7 +75,8 @@ class MPIService:
 
             return WindowMock()
 
-    def try_all(self, default_exception):
+    @contextlib.contextmanager
+    def try_all(self, default_exception=None):
         """
         Create a context manager that checks if any exception is raised by any processes
         within the context, and make all other processes raise an exception in that case
@@ -84,42 +85,45 @@ class MPIService:
           that did not raise during the context.
         :return: context manager
         """
-        comm = self
+        exc_instance = None
+        default_exception = default_exception or RuntimeError(
+            "An error occurred on a different rank"
+        )
+        try:
+            yield
+        except Exception as e:
+            exc_instance = e
+        finally:
+            exceptions = self.allgather(exc_instance)
+            if any(exceptions):
+                raise (
+                    exceptions[self.get_rank()]
+                    if exceptions[self.get_rank()]
+                    else default_exception
+                )
 
-        class bcast_all(AbstractContextManager):
-            def __enter__(self):
-                pass
-
-            def __exit__(self, exctype, excinst, exctb):
-                exceptions = comm.allgather(excinst)
-                if any(exceptions):
-                    if exceptions[comm.get_rank()]:
-                        raise exceptions[comm.get_rank()]
-                    else:
-                        raise default_exception
-
-        return bcast_all()
-
+    @contextlib.contextmanager
     def try_main(self):
         """
         Create a context manager that checks if any exception is raised by the main
         process within the context, and make all other processes raise this exception in
         that case
+        Warning: All processes will still enter the context, but only main exception will
+        be raised.
 
         :return: context manager
         """
-        comm = self
-
-        class bcast(AbstractContextManager):
-            def __enter__(self):
-                pass
-
-            def __exit__(self, exctype, excinst, exctb):
-                exception = comm.bcast(excinst)
-                if exception is not None:
-                    raise exception
-
-        return bcast()
+        exc_instance = None
+        try:
+            # All processes have to enter the context
+            # contextlib will throw an error if one does not yield
+            yield
+        except Exception as e:
+            exc_instance = e
+        finally:
+            exception = self.bcast(exc_instance)
+            if exception is not None:
+                raise exception
 
 
 class MPIModule(MockModule):

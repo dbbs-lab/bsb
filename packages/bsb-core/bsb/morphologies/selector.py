@@ -90,21 +90,17 @@ class NeuroMorphoSelector(NameSelector, classmap_entry="from_neuromorpho"):
     def __boot__(self):
         with self.scaffold._comm.try_main():
             if self.scaffold.is_main_process():
-                try:
-                    morphos = self._scrape_nm(self.names)
-                except Exception:
-                    raise
-                else:
-                    for name, morpho in morphos.items():
-                        self.scaffold.morphologies.save(name, morpho, overwrite=True)
+                morphos = self._scrape_nm(self.names)
+                for name, morpho in morphos.items():
+                    self.scaffold.morphologies.save(name, morpho, overwrite=True)
 
     def __unboot__(self):
-        if self.scaffold.is_main_process():
-            for name in self.names:
-                with contextlib.suppress(MorphologyRepositoryError):
-                    # remove morphology if it was saved in the scaffold.
-                    self.scaffold.morphologies.remove(name)
-        self.scaffold._comm.barrier()
+        with self.scaffold._comm.try_main():
+            if self.scaffold.is_main_process():
+                for name in self.names:
+                    with contextlib.suppress(MorphologyRepositoryError):
+                        # remove morphology if it was saved in the scaffold.
+                        self.scaffold.morphologies.remove(name)
 
     @classmethod
     def _swc_url(cls, archive, name):

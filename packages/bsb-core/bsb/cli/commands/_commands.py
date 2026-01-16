@@ -229,7 +229,7 @@ class BsbSimulate(BaseCommand, name="simulate"):
                 level=0,
             )
         try:
-            result = network.run_simulation(sim_name)
+            result = network.run_simulation(sim_name, root / f"{uuid4()}.nio")
         except NodeNotFoundError as e:
             append = ", " if len(network.simulations) else ""
             append += ", ".join(f"'{name}'" for name in extra_simulations)

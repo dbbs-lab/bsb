@@ -58,7 +58,7 @@ class NestAdapter(SimulatorAdapter):
         finally:
             self.reset_kernel()
 
-    def prepare(self, simulation):
+    def prepare(self, simulation, filename):
         """
         Prepare the simulation environment in NEST.
 
@@ -80,7 +80,7 @@ class NestAdapter(SimulatorAdapter):
         :rtype: bsb.simulation.adapter.SimulationData
         """
         self.simdata[simulation] = SimulationData(
-            simulation, result=NestResult(simulation)
+            simulation, result=NestResult(simulation, filename)
         )
         try:
             report("Installing  NEST modules...", level=2)
@@ -186,7 +186,9 @@ class NestAdapter(SimulatorAdapter):
                     )
                 )
             except Exception as e:
-                raise NestConnectError(f"{connection_model} error during connect.") from e
+                raise NestConnectError(
+                    f"{connection_model} error during connect."
+                ) from e
 
     def set_settings(self, simulation: "NestSimulation"):
         nest.set_verbosity(simulation.verbosity)

@@ -70,7 +70,7 @@ class NeuronAdapter(SimulatorAdapter):
 
         return engine
 
-    def prepare(self, simulation):
+    def prepare(self, simulation, filename):
         """
         Prepare the simulation environment and data structures for running a NEURON
         simulation.
@@ -90,7 +90,8 @@ class NeuronAdapter(SimulatorAdapter):
         """
 
         self.simdata[simulation] = NeuronSimulationData(
-            simulation, result=NeuronResult(simulation)
+            simulation,
+            result=NeuronResult(simulation, filename=filename),
         )
         try:
             report("Preparing simulation", level=2)
@@ -192,7 +193,9 @@ class NeuronAdapter(SimulatorAdapter):
         offset = 0
         transmap = {}
 
-        pre_types = set(cs.pre_type for cs in simulation.get_connectivity_sets().values())
+        pre_types = set(
+            cs.pre_type for cs in simulation.get_connectivity_sets().values()
+        )
         for pre_type in sorted(pre_types, key=lambda pre_type: pre_type.name):
             data = []
             for _cm, cs in simulation.get_connectivity_sets().items():
@@ -209,7 +212,9 @@ class NeuronAdapter(SimulatorAdapter):
                     continue
 
                 # Now look up which transmitters are on our chunks
-                pre_t, _ = cs.load_connections().from_(simdata.chunks).as_globals().all()
+                pre_t, _ = (
+                    cs.load_connections().from_(simdata.chunks).as_globals().all()
+                )
                 our_cm_transmitters = np.unique(pre_t[:, :2], axis=0)
                 # Look up the local ids of those transmitters
                 pre_lc, _ = cs.load_connections().from_(simdata.chunks).all()

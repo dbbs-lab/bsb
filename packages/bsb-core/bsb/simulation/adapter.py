@@ -66,7 +66,7 @@ class FixedStepProgressController:
 
 
 class SimulationData:
-    def __init__(self, simulation: "Simulation", result=None):
+    def __init__(self, simulation: "Simulation", result=None, filename=None):
         self.chunks = None
         self.populations = dict()
         self.placement: dict[CellModel, PlacementSet] = {
@@ -75,7 +75,7 @@ class SimulationData:
         self.connections = dict()
         self.devices = dict()
         if result is None:
-            result = SimulationResult(simulation)
+            result = SimulationResult(simulation, filename=filename)
         self.result: SimulationResult = result
 
 
@@ -92,7 +92,7 @@ class SimulatorAdapter(abc.ABC):
         self._duration = None
         self.current_checkpoint = 0
 
-    def simulate(self, *simulations, post_prepare=None):
+    def simulate(self, *simulations, post_prepare=None, filename=None):
         """
         Simulate the given simulations.
 
@@ -113,7 +113,7 @@ class SimulatorAdapter(abc.ABC):
                 self._controllers.append(listener)
 
             for simulation in simulations:
-                data = self.prepare(simulation)
+                data = self.prepare(simulation, filename)
                 alldata.append(data)
                 for hook in simulation.post_prepare:
                     hook(self, simulation, data)
@@ -123,7 +123,7 @@ class SimulatorAdapter(abc.ABC):
             return self.collect(results)
 
     @abc.abstractmethod
-    def prepare(self, simulation):  # pragma: nocover
+    def prepare(self, simulation, filename):  # pragma: nocover
         """
         Reset the simulation backend and prepare for the given simulation.
 

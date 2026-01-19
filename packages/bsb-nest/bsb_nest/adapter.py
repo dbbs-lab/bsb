@@ -51,14 +51,16 @@ class NestAdapter(SimulatorAdapter):
         self.loaded_modules = set()
         self._prev_chkpoint = 0
 
-    def simulate(self, *simulations, post_prepare=None):
+    def simulate(self, *simulations, post_prepare=None, filename=None):
         try:
             self.reset_kernel()
-            return super().simulate(*simulations, post_prepare=post_prepare)
+            return super().simulate(
+                *simulations, post_prepare=post_prepare, filename=filename
+            )
         finally:
             self.reset_kernel()
 
-    def prepare(self, simulation, filename):
+    def prepare(self, simulation, filename=None):
         """
         Prepare the simulation environment in NEST.
 
@@ -186,9 +188,7 @@ class NestAdapter(SimulatorAdapter):
                     )
                 )
             except Exception as e:
-                raise NestConnectError(
-                    f"{connection_model} error during connect."
-                ) from e
+                raise NestConnectError(f"{connection_model} error during connect.") from e
 
     def set_settings(self, simulation: "NestSimulation"):
         nest.set_verbosity(simulation.verbosity)

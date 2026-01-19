@@ -123,7 +123,7 @@ class SimulatorAdapter(abc.ABC):
             return self.collect(results)
 
     @abc.abstractmethod
-    def prepare(self, simulation, filename):  # pragma: nocover
+    def prepare(self, simulation, filename=None):  # pragma: nocover
         """
         Reset the simulation backend and prepare for the given simulation.
 

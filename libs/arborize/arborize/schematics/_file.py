@@ -5,7 +5,7 @@ import tempfile
 import typing
 from typing import Optional, TextIO, Union
 
-from morphio import Morphology, SomaType
+from morphio import Morphology, Option, SomaType
 
 from ..schematic import Schematic
 
@@ -19,6 +19,7 @@ def file_schematic(
     fname: str = None,
     *,
     name=None,
+    morphio_options: Option = Option.no_modifier,
 ) -> Schematic:
     if hasattr(file_like, "read"):
         if not file_like.name and not fname:
@@ -40,7 +41,7 @@ def file_schematic(
         finally:
             os.unlink(abspath)
 
-    morpho = Morphology(os.fspath(file_like))
+    morpho = Morphology(os.fspath(file_like), options=morphio_options)
     schematic = Schematic(name=name)
     branches = [
         morpho.soma,

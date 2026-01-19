@@ -1,6 +1,8 @@
 import dataclasses
 import random
 import typing
+import warnings
+from collections import deque
 from collections.abc import Mapping, Sequence
 
 import errr
@@ -8,13 +10,18 @@ import errr
 from .._util import get_arclengths, get_location_name
 from ..constraints import Constraint
 from ..definitions import CableProperties, Ion, Mechanism, MechId, mechdict
-from ..exceptions import TransmitterError, UnknownLocationError, UnknownSynapseError
+from ..exceptions import (
+    TransmitterError,
+    UnconnectedPointInSpaceWarning,
+    UnknownLocationError,
+    UnknownSynapseError,
+)
 
 if typing.TYPE_CHECKING:  # pragma: nocover
     from glia._glia import MechAccessor
     from patch.objects import PointProcess, Section, Segment
 
-    from ..schematic import Location, Schematic
+    from ..schematic import Location, Schematic, UnitBranch
 
 
 class NeuronModel:
@@ -169,39 +176,177 @@ class NeuronModel:
 def neuron_build(schematic: "Schematic"):
     schematic.freeze()
     name = schematic.create_name()
-    branchmap = {}
+    branch_map = {}
     sections = []
+    proxies = []
     locations = {}
     for branch in schematic:
-        bname = f"{name}_{get_location_name(branch.points)}"
-        alens = get_arclengths(branch.points)
-        section, mechs = _build_branch(branch, bname)
-        section.locations = [point.loc for point in branch.points]
-        for i, point in enumerate(branch.points):
-            try:
-                arcpair = (alens[i], alens[i + 1])
-            except IndexError:
-                arcpair = (1, 1)
-            locations[point.loc] = LocationAccessor(point.loc, section, mechs, arcpair)
-        sections.append(section)
-        branchmap[branch] = section
-        if branch.parent:
-            section.connect(branchmap[branch.parent])
+        branch_name = f"{name}_{get_location_name(branch.points)}"
+        arc_lengths = get_arclengths(branch.points)
+        section, mechanisms = _build_branch_or_proxy(branch, branch_name)
+        if not isinstance(section, _SinglePointProxy):
+            # We're dealing with a real section!
+            # Store the points on the section for later use.
+            section.locations = [point.loc for point in branch.points]
+            # Create a location accessor for each point
+            for i, point in enumerate(branch.points):
+                try:
+                    arc_pair = (arc_lengths[i], arc_lengths[i + 1])
+                except IndexError:
+                    arc_pair = (1, 1)
+                # Store the location accessor on the locations lookup map
+                locations[point.loc] = LocationAccessor(
+                    point.loc, section, mechanisms, arc_pair
+                )
+            # Store the section in the sections list
+            sections.append(section)
+            # Store it in the branch map so its children can find their parent
+            branch_map[branch] = section
+            # If it has a parent, look it up in the branch map and connect it
+            if branch.parent:
+                # This function makes it safe to connect to proxies
+                _connect_section_or_proxy(section, branch_map[branch.parent])
+        else:
+            # We're dealing with a single point proxy
+            proxies.append(section)
+            branch_map[branch] = section
+            # Connect the proxy to its parent
+            _connect_section_or_proxy(section, branch_map.get(branch.parent))
+
+    _collapse_proxies(proxies)
+
     return NeuronModel(sections, locations, [*schematic.get_cable_types().keys()])
 
 
-def _build_branch(branch, name):
+class _SinglePointProxy:
+    def __init__(self, branch: "UnitBranch", branch_name: str):
+        self.children = []
+        self.branch = branch
+        self.branch_name = branch_name
+        self.parent = None
+        self.reified = False
+
+
+def _build_branch_or_proxy(branch: "UnitBranch", name: str):
     from patch import p
+
+    if len(branch.points) < 2:
+        return _SinglePointProxy(branch, name), []
 
     section = p.Section(name=name)
     section.labels = [*branch.labels]
     section.synapses = []
     apply_geometry(section, branch.points)
     apply_cable_properties(section, branch.definition.cable)
-    mechs = apply_mech_definitions(section, branch.definition.mechs)
+    mechanisms = apply_mech_definitions(section, branch.definition.mechs)
     apply_ions(section, branch.definition.ions)
     section.synapse_types = branch.definition.synapses
-    return section, mechs
+    return section, mechanisms
+
+
+def _connect_section_or_proxy(section, parent):
+    connect = True
+    if isinstance(section, _SinglePointProxy):
+        section.parent = parent
+        connect = False
+    if isinstance(parent, _SinglePointProxy):
+        parent.children.append(section)
+        connect = False
+    if connect:
+        section.connect(parent)
+
+
+def _collapse_proxies(proxies: list[_SinglePointProxy]):
+    """
+    Removes proxies from the schematic and connects the real sections to each
+    other.
+
+    Nota bene: Locations are added to schematics in an ordered incremental
+    fashion from branch 0 to branch N with higher branch numbers always being
+    later siblings or children of lower branch numbers. Since `neuron_build`
+    iterates over the branches in insert order and adds proxies to the list
+    during that iteration, proxies will also occur in this list in the same
+    order where parents appear before their children.
+
+    That means that a proxy that has another proxy as a parent has already
+    been collapsed as a direct child of the parent proxy in a previous
+    iteration and can be skipped.
+    """
+
+    for proxy in proxies:
+        if proxy.reified:
+            # This proxy has already been reified/collapsed in a previous
+            # iteration as a downstream of another proxy.
+            continue
+        if not proxy.parent:
+            # Root proxies
+            if len(proxy.children) == 0:
+                # Root proxy without children, no connections need to be made,
+                # the proxy can simply be ignored.
+                if len(proxy.branch.points) > 0:
+                    # Floating point in space somewhere, not supported by
+                    # NEURON. Warn the user as this is probably not intentional.
+                    warnings.warn(
+                        f"Branch '{proxy.branch_name}' has a single "
+                        f"point {proxy.branch.points[0].loc} in space at "
+                        f"{proxy.branch.points[0].coords} not connected to "
+                        "anything. This is not supported by NEURON and will be "
+                        "ignored.",
+                        UnconnectedPointInSpaceWarning,
+                        stacklevel=2,
+                    )
+                continue
+            else:
+                # Root proxy with child(ren), connect them to the start of
+                # the first child.
+
+                # The children might be proxies themselves, so we need to
+                # reify them to a collection of actual sections they
+                # eventually point to.
+                true_children = _reify_proxy_children(proxy)
+
+                first_child = true_children[0]
+                # We loop only over *additional* children, so that this
+                # algorithm does nothing in the case of a single child
+                # connected to a single point root proxy, where the root
+                # proxy point can simply be discarded.
+                for child in true_children[1:]:
+                    child.connect(first_child, 0)
+        else:
+            # Proxies with a parent, connect the proxy children to the parent.
+
+            # The parent should never be a proxy itself (see docstring),
+            # error if it is.
+            if isinstance(proxy.parent, _SinglePointProxy):  # pragma: nocover
+                raise RuntimeError(
+                    f"Parent of proxy {proxy.branch_name} is a proxy itself."
+                    " Please report this bug."
+                )
+
+            # The children might be proxies themselves, so we reify them.
+            true_children = _reify_proxy_children(proxy)
+
+            for child in true_children:
+                _connect_section_or_proxy(child, proxy.parent)
+
+
+def _reify_proxy_children(proxy):
+    stack = deque(reversed(proxy.children))
+    true_children = []
+
+    while True:
+        try:
+            child = stack.pop()
+        except IndexError:
+            break
+        if isinstance(child, _SinglePointProxy):
+            child.reified = True
+            if child.children:
+                stack.extend(reversed(child.children))
+        else:
+            true_children.append(child)
+
+    return true_children
 
 
 def apply_geometry(section, points):

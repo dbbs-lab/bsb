@@ -1,3 +1,13 @@
+## 7.2.1 (2026-01-19)
+
+### 🩹 Fixes
+
+- Replace MPI barrier with an error collection system ([#212](https://github.com/dbbs-lab/bsb/pull/212))
+
+### ❤️ Thank You
+
+- Dimitri RODARIE
+
 ## 7.2.0 (2026-01-13)
 
 ### 🚀 Features

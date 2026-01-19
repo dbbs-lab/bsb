@@ -1,3 +1,7 @@
+## 7.2.1 (2026-01-19)
+
+This was a version bump only for bsb-neuron to align it with other projects, there were no code changes.
+
 ## 7.2.0 (2026-01-13)
 
 This was a version bump only for bsb-neuron to align it with other projects, there were no code changes.

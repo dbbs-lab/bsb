@@ -93,14 +93,14 @@ class MPIService:
             yield
         except Exception as e:
             exc_instance = e
-        finally:
-            exceptions = self.allgather(exc_instance)
-            if any(exceptions):
-                raise (
-                    exceptions[self.get_rank()]
-                    if exceptions[self.get_rank()]
-                    else default_exception
-                )
+
+        exceptions = self.allgather(exc_instance)
+        if any(exceptions):
+            raise (
+                exceptions[self.get_rank()]
+                if exceptions[self.get_rank()]
+                else default_exception
+            )
 
     @contextlib.contextmanager
     def try_main(self):
@@ -120,10 +120,10 @@ class MPIService:
             yield
         except Exception as e:
             exc_instance = e
-        finally:
-            exception = self.bcast(exc_instance)
-            if exception is not None:
-                raise exception
+
+        exception = self.bcast(exc_instance)
+        if exception is not None:
+            raise exception
 
 
 class MPIModule(MockModule):

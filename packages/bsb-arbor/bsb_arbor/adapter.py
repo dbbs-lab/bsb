@@ -29,7 +29,7 @@ class ArborSimulationData(SimulationData):
         """
         Container class for simulation data.
         """
-        super().__init__(simulation, filename)
+        super().__init__(simulation, filename=filename)
         self.arbor_sim: arbor.simulation = None
 
 

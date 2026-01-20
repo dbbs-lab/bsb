@@ -31,6 +31,16 @@ class SimulationResult:
 
         self.recorders = []
 
+    @property
+    def analogsignals(self):
+        if hasattr(self, "block"):
+            return self.block.segments[0].analogsignals
+
+    @property
+    def spiketrains(self):
+        if hasattr(self, "block"):
+            return self.block.segments[0].spiketrains
+
     def add(self, recorder):
         self.recorders.append(recorder)
 

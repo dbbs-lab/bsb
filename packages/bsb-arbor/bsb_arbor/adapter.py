@@ -25,11 +25,11 @@ class ArborSimulationData(SimulationData):
     Container class for simulation data.
     """
 
-    def __init__(self, simulation):
+    def __init__(self, simulation, filename):
         """
         Container class for simulation data.
         """
-        super().__init__(simulation)
+        super().__init__(simulation, filename=filename)
         self.arbor_sim: arbor.simulation = None
 
 
@@ -375,11 +375,13 @@ class ArborAdapter(SimulatorAdapter):
         super().__init__(comm)
         self.simdata: dict[ArborSimulation, ArborSimulationData] = {}
 
-    def prepare(self, simulation: "ArborSimulation") -> ArborSimulationData:
+    def prepare(
+        self, simulation: "ArborSimulation", filename=None
+    ) -> ArborSimulationData:
         """
         Prepares the arbor simulation engine with the given simulation.
         """
-        simdata = self._create_simdata(simulation)
+        simdata = self._create_simdata(simulation, filename)
         try:
             context = arbor.context(arbor.proc_allocation(threads=simulation.threads))
             if self.comm.get_size() > 1:
@@ -466,8 +468,8 @@ class ArborAdapter(SimulatorAdapter):
         self._cache_devices(simulation, simdata)
         return ArborRecipe(simulation, simdata)
 
-    def _create_simdata(self, simulation):
-        self.simdata[simulation] = simdata = ArborSimulationData(simulation)
+    def _create_simdata(self, simulation, filename):
+        self.simdata[simulation] = simdata = ArborSimulationData(simulation, filename)
         self._assign_chunks(simulation, simdata)
         return simdata
 

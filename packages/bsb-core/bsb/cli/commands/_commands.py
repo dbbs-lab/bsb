@@ -229,13 +229,13 @@ class BsbSimulate(BaseCommand, name="simulate"):
                 level=0,
             )
         try:
-            result = network.run_simulation(sim_name)
+            network.run_simulation(sim_name, output_filename=root / f"{uuid4()}.nio")
         except NodeNotFoundError as e:
             append = ", " if len(network.simulations) else ""
             append += ", ".join(f"'{name}'" for name in extra_simulations)
             errr.wrap(type(e), e, append=append)
-        else:
-            result.write(root / f"{uuid4()}.nio", "ow")
+        # else:
+        #     result.write(root / f"{uuid4()}.nio", "ow")
 
     def get_options(self):
         return {

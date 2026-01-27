@@ -449,7 +449,7 @@ class Scaffold:
                 pool.schedule(pipelines)
             pool.execute()
 
-    def run_simulation(self, simulation_name: str):
+    def run_simulation(self, simulation_name: str, output_filename: str = None):
         """
         Run a simulation starting from the default single-instance adapter.
 
@@ -460,7 +460,7 @@ class Scaffold:
         adapter = get_simulation_adapter(
             simulation.simulator, comm=self._comm.get_communicator()
         )
-        return adapter.simulate(simulation)[0]
+        return adapter.simulate(simulation, filename=output_filename)[0]
 
     def get_simulation(self, sim_name: str) -> Simulation:
         """

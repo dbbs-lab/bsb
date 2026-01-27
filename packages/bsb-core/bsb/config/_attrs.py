@@ -473,23 +473,22 @@ def _boot_nodes(top_node, scaffold):
                     boot(node, scaffold)
                     booted.add(boot)
         # Boot node hook
-        try:
-            run_hook(node, "boot")
-        except Exception as e:
-            errr.wrap(BootError, e, prepend=f"Failed to boot {node}:")
-    # fixme: why is this here? Will deadlock in case of BootError on specific node only.
-    scaffold._comm.barrier()
+        with scaffold._comm.try_all(BootError("Boot failed on different rank.")):
+            try:
+                run_hook(node, "boot")
+            except Exception as e:
+                errr.wrap(BootError, e, prepend=f"Failed to boot {node}:")
 
 
 def _unset_nodes(top_node):
     for node in walk_nodes(top_node):
+        run_hook(node, "unboot")
         with contextlib.suppress(Exception):
             del node.scaffold
         node._config_parent = None
         node._config_key = None
         if hasattr(node, "_config_index"):
             node._config_index = None
-        run_hook(node, "unboot")
 
 
 class ConfigurationAttribute:

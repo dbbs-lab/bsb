@@ -5,6 +5,7 @@ from patch import p
 
 from arborize import Schematic, define_model, neuron_build
 from arborize.exceptions import (
+    ProxyWarning,
     UnconnectedPointInSpaceWarning,
     UnknownLocationError,
     UnknownSynapseError,
@@ -266,7 +267,8 @@ class TestSinglePointBranchBuilding(unittest.TestCase):
     def test_root_with_single_point_children(self):
         """
         This test verifies that when single point branches occur as terminal
-        branches, that they are discarded.
+        branches, that they are discarded. This test also asserts that proxy
+        location accessors behave as expected.
         """
         schematic = Schematic()
         schematic.definition = define_model({}, use_defaults=True)
@@ -285,16 +287,36 @@ class TestSinglePointBranchBuilding(unittest.TestCase):
 
         cell = neuron_build(schematic)
 
+        # Assert only 1 section was created (2 proxies removed)
         self.assertEqual(len(cell.sections), 1)
 
-    def test_single_point_root_multiple_children(self):
+        # Assert that the proxied locations can be found
+        proxy_1 = cell.get_location((1, 0))
+        proxy_2 = cell.get_location((2, 0))
+
+        true_loc = cell.get_location((0, 1))
+        # And that they refer to the correct unproxied Section location
+        self.assertEqual(true_loc, proxy_1.proxied_loc)
+        self.assertEqual(true_loc, proxy_2.proxied_loc)
+
+        # Assert that the user is warned when using proxies in possibly unsafe
+        # ways.
+        with self.assertWarns(ProxyWarning):
+            _ = proxy_1.section
+        with self.assertWarns(ProxyWarning):
+            _ = proxy_1.mechanisms
+
+    def _build_single_point_root_multiple_children(self, middle_label="dendrites"):
         """
         This test asserts that when a single point branch occurs as a root
         branch, the children are connected to its first child, when all
-        children are multipoint branches.
+        children are multipoint branches. This test also asserts that the
+        proxy location accessor heuristic prefers same-label children.
         """
         schematic = Schematic()
-        schematic.definition = define_model({}, use_defaults=True)
+        schematic.definition = define_model(
+            {"cable_types": {"soma": {"mechanisms": {"pas": {}}}}}, use_defaults=True
+        )
 
         # Morphology diagram:
         #   _
@@ -309,16 +331,18 @@ class TestSinglePointBranchBuilding(unittest.TestCase):
         schematic.create_location((1, 1), (1, 1, 0), 1, ["dendrites"])
         schematic.create_location((1, 2), (2, 1, 0), 1, ["dendrites"])
         # Then branch 2 with 3 points for the higher bottom of the fork
-        schematic.create_location((2, 0), (0, 0, 0), 1, ["dendrites"], endpoint=(0, 0))
-        schematic.create_location((2, 1), (1, -1, 0), 1, ["dendrites"])
-        schematic.create_location((2, 2), (2, -1, 0), 1, ["dendrites"])
+        schematic.create_location((2, 0), (0, 0, 0), 1, [middle_label], endpoint=(0, 0))
+        schematic.create_location((2, 1), (1, -1, 0), 1, [middle_label])
+        schematic.create_location((2, 2), (2, -1, 0), 1, [middle_label])
         # Finally, branch 3 with 3 points for the lower bottom of the fork
         schematic.create_location((3, 0), (0, 0, 0), 1, ["dendrites"], endpoint=(0, 0))
         schematic.create_location((3, 1), (1, -2, 0), 1, ["dendrites"])
         schematic.create_location((3, 2), (2, -2, 0), 1, ["dendrites"])
 
-        cell = neuron_build(schematic)
+        return neuron_build(schematic)
 
+    def test_single_point_root_multiple_children(self):
+        cell = self._build_single_point_root_multiple_children()
         # Assert that the single point branch did not create a section.
         self.assertEqual(len(cell.sections), 3)
 
@@ -349,9 +373,23 @@ class TestSinglePointBranchBuilding(unittest.TestCase):
         self.assertEqual(cell.sections[0]._references, [cell.sections[1]])
         self.assertEqual(cell.sections[1]._references, [cell.sections[0]])
 
-    def test_single_point_with_parent_and_multiple_children(self):
+    def _build_single_point_with_parent_and_multiple_children(
+        self, parent_label="dendrites", middle_label="dendrites"
+    ):
+        """
+        This test verifies that we connect a proxy with a parent to the parent
+        electrically and hand the user a location accessor to the parent.
+        """
         schematic = Schematic()
-        schematic.definition = define_model({}, use_defaults=True)
+        schematic.definition = define_model(
+            {
+                "cable_types": {
+                    "soma": {"mechanisms": {"pas": {}, "hh": {}}},
+                    "dendrites": {"mechanisms": {"pas": {}}},
+                }
+            },
+            use_defaults=True,
+        )
 
         # Morphology diagram:
         #     _
@@ -360,20 +398,22 @@ class TestSinglePointBranchBuilding(unittest.TestCase):
         #     _
 
         # We start the morphology off by creating branch 0 at 0, 0, 0
-        schematic.create_location((0, 0), (0, 0, 0), 1, ["soma"])
-        schematic.create_location((0, 1), (1, 0, 0), 1, ["soma"])
+        schematic.create_location((0, 0), (0, 0, 0), 1, [parent_label])
+        schematic.create_location((0, 1), (1, 0, 0), 1, [parent_label])
         # Then branch 1 as a single point branch connected to branch 0
-        schematic.create_location((1, 0), (1, 0, 0), 1, ["dendrites"], endpoint=(0, 1))
+        schematic.create_location((1, 0), (1, 0, 0), 1, ["soma"], endpoint=(0, 1))
         # Then 3 sibling branches connected to single-point-branch 1
-        schematic.create_location((2, 0), (1, 0, 0), 1, ["dendrites"], endpoint=(1, 0))
-        schematic.create_location((2, 1), (2, 1, 0), 1, ["dendrites"])
+        schematic.create_location((2, 0), (1, 0, 0), 1, [middle_label], endpoint=(1, 0))
+        schematic.create_location((2, 1), (2, 1, 0), 1, [middle_label])
         schematic.create_location((3, 0), (1, 0, 0), 1, ["dendrites"], endpoint=(1, 0))
         schematic.create_location((3, 1), (2, 0, 0), 1, ["dendrites"])
         schematic.create_location((4, 0), (1, 0, 0), 1, ["dendrites"], endpoint=(1, 0))
         schematic.create_location((4, 1), (2, -1, 0), 1, ["dendrites"])
 
-        cell = neuron_build(schematic)
+        return neuron_build(schematic)
 
+    def test_single_point_with_parent_and_multiple_children(self):
+        cell = self._build_single_point_with_parent_and_multiple_children()
         # Assert that the single point branch did not create a section.
         self.assertEqual(len(cell.sections), 4)
 
@@ -450,3 +490,109 @@ class TestSinglePointBranchBuilding(unittest.TestCase):
         # root-most branch.
         self.assertEqual(cell.sections[4]._references, [cell.sections[3]])
         self.assertEqual(cell.sections[5]._references, [cell.sections[3]])
+
+    def test_location_accessor_heuristic_parent_same_label(self):
+        """
+        Assert that the location accessor points to the parent with the
+        same labels as the proxy, which users that don't know about proxies
+        likely intend to do.
+        """
+        # Assert that parent is proxied when children share no label
+        cell = self._build_single_point_with_parent_and_multiple_children(
+            parent_label="soma", middle_label="dendrites"
+        )
+        proxy_loc = cell.get_location((1, 0))
+        self.assertEqual((0, 1), proxy_loc._proxied_loc.location)
+        # Assert that parent is proxied even when children also have same label
+        cell = self._build_single_point_with_parent_and_multiple_children(
+            parent_label="soma", middle_label="soma"
+        )
+        proxy_loc = cell.get_location((1, 0))
+        self.assertEqual((0, 1), proxy_loc._proxied_loc.location)
+
+        # Assert that we're warning the user about proxy ambiguity
+        with self.assertWarns(ProxyWarning):
+            section = proxy_loc.section
+        with self.assertWarns(ProxyWarning):
+            mechanisms = proxy_loc.mechanisms
+
+        # Assert that the correct section is proxied
+        self.assertEqual(cell.get_location((0, 1)).section, section)
+        # Assert that the correct mechanisms are proxied
+        self.assertEqual(cell.get_location((0, 1)).section, mechanisms["pas"]._section)
+
+    def test_location_accessor_heuristic_child_same_label(self):
+        """
+        Assert that even though the branches have electrically been connected to
+        the parent, the location accessor points to the child with the
+        same labels as the proxy, which users that don't know about proxies
+        likely intend to do.
+        """
+        cell = self._build_single_point_root_multiple_children(middle_label="soma")
+        proxy_loc = cell.get_location((0, 0))
+
+        # Assert that we're warning the user about proxy ambiguity
+        with self.assertWarns(ProxyWarning):
+            section = proxy_loc.section
+        with self.assertWarns(ProxyWarning):
+            mechanisms = proxy_loc.mechanisms
+
+        # Assert that the section matches
+        print(cell.get_location((2, 0)).section, section)
+        self.assertEqual(cell.get_location((2, 0)).section, section)
+        # Assert that we can access its mechanisms
+        self.assertEqual(section, mechanisms["pas"]._section)
+        # And that it explains to users why it might not contain the mechanisms
+        # they expected
+        with self.assertRaisesRegex(
+            KeyError,
+            r"'foo' \- Location \(0, 0\)\[soma\] proxies \(2, 0\)\[soma\]\. Mechanism 'foo' not found on proxied location\.",
+        ):
+            _foo = mechanisms["foo"]
+
+    def test_location_accessor_heuristic_parent_diff_label(self):
+        """
+        Assert that the location accessor points to the parent when no branch
+        has the same labels as the proxy
+        """
+        # Assert that parent is proxied when children share no label
+        cell = self._build_single_point_with_parent_and_multiple_children(
+            parent_label="dendrites", middle_label="dendrites"
+        )
+        proxy_loc = cell.get_location((1, 0))
+        self.assertEqual((0, 1), proxy_loc._proxied_loc.location)
+
+        # Assert that we're warning the user about proxy ambiguity
+        with self.assertWarns(ProxyWarning):
+            section = proxy_loc.section
+        with self.assertWarns(ProxyWarning):
+            mechanisms = proxy_loc.mechanisms
+
+        # Assert that the correct section is proxied
+        self.assertEqual(cell.get_location((0, 1)).section, section)
+        # Assert that the correct mechanisms are proxied
+        self.assertEqual(cell.get_location((0, 1)).section, mechanisms["pas"]._section)
+        # And that it explains to users why it might not contain the mechanisms
+        # they expected
+        with self.assertRaisesRegex(
+            KeyError,
+            r"'hh' \- Location \(1, 0\)\[soma\] proxies \(0, 1\)\[dendrites\]\. Mechanism 'hh' not found on proxied location\.",
+        ):
+            _hh = mechanisms["hh"]
+
+    def test_location_accessor_heuristic_no_parent_diff_label(self):
+        """
+        Assert that the location accessor points to the first child when no
+        branch has the same labels as the proxy, in the absence of a parent
+        """
+        cell = self._build_single_point_root_multiple_children(middle_label="dendrites")
+        proxy_loc = cell.get_location((0, 0))
+
+        # Assert that we're warning the user about proxy ambiguity
+        with self.assertWarns(ProxyWarning):
+            section = proxy_loc.section
+        with self.assertWarns(ProxyWarning):
+            _mechanisms = proxy_loc.mechanisms
+
+        # Assert that the section matches the first child
+        self.assertEqual(cell.get_location((1, 0)).section, section)

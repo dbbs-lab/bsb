@@ -4,6 +4,7 @@ import typing
 import warnings
 from collections import deque
 from collections.abc import Mapping, Sequence
+from functools import cache
 
 import errr
 
@@ -11,6 +12,7 @@ from .._util import get_arclengths, get_location_name
 from ..constraints import Constraint
 from ..definitions import CableProperties, Ion, Mechanism, MechId, mechdict
 from ..exceptions import (
+    ProxyWarning,
     TransmitterError,
     UnconnectedPointInSpaceWarning,
     UnknownLocationError,
@@ -213,7 +215,8 @@ def neuron_build(schematic: "Schematic"):
             # Connect the proxy to its parent
             _connect_section_or_proxy(section, branch_map.get(branch.parent))
 
-    _collapse_proxies(proxies)
+    proxy_locations = _collapse_proxies(proxies, locations)
+    locations.update(proxy_locations)
 
     return NeuronModel(sections, locations, [*schematic.get_cable_types().keys()])
 
@@ -256,7 +259,9 @@ def _connect_section_or_proxy(section, parent):
         section.connect(parent)
 
 
-def _collapse_proxies(proxies: list[_SinglePointProxy]):
+def _collapse_proxies(
+    proxies: list[_SinglePointProxy], real_locations: dict["Location", "LocationAccessor"]
+):
     """
     Removes proxies from the schematic and connects the real sections to each
     other.
@@ -273,11 +278,14 @@ def _collapse_proxies(proxies: list[_SinglePointProxy]):
     iteration and can be skipped.
     """
 
+    locations = {}
+
     for proxy in proxies:
         if proxy.reified:
             # This proxy has already been reified/collapsed in a previous
             # iteration as a downstream of another proxy.
             continue
+
         if not proxy.parent:
             # Root proxies
             if len(proxy.children) == 0:
@@ -305,13 +313,15 @@ def _collapse_proxies(proxies: list[_SinglePointProxy]):
                 # eventually point to.
                 true_children = _reify_proxy_children(proxy)
 
-                first_child = true_children[0]
+                # The proxied electric location is the start of the first child
+                electric_proxy = (true_children[0], (0, 0))
+
                 # We loop only over *additional* children, so that this
                 # algorithm does nothing in the case of a single child
                 # connected to a single point root proxy, where the root
                 # proxy point can simply be discarded.
                 for child in true_children[1:]:
-                    child.connect(first_child, 0)
+                    child.connect(electric_proxy[0], 0)
         else:
             # Proxies with a parent, connect the proxy children to the parent.
 
@@ -323,11 +333,76 @@ def _collapse_proxies(proxies: list[_SinglePointProxy]):
                     " Please report this bug."
                 )
 
+            # The proxied electric location is the end of the proxy parent.
+            electric_proxy = (proxy.parent, (1, 1))
+
             # The children might be proxies themselves, so we reify them.
             true_children = _reify_proxy_children(proxy)
 
             for child in true_children:
-                _connect_section_or_proxy(child, proxy.parent)
+                _connect_section_or_proxy(child, electric_proxy[0])
+
+        # The only branches of the control flow above that can reach this
+        # part of the code have exactly 1 point. Check defensively
+        if len(proxy.branch.points) != 1:
+            raise RuntimeError("Proxied location should have exactly one point.")
+
+        # Even though we've already figured out where to connect everything
+        # electrically, we now need to hand back a location accessor to the user
+        # that behaves as unsurprising as possible. We use this heuristic to try
+        # to find a good candidate that will hopefully serve users well.
+        proxied_loc, proxied_section, proxied_arcs = _guess_best_proxy_accessor(
+            proxy, true_children
+        )
+
+        loc = proxy.branch.points[0].loc
+        locations[loc] = ProxiedLocationAccessor(
+            loc,
+            proxy.branch.labels,
+            real_locations[proxied_loc],
+            proxied_section,
+            proxied_arcs,
+        )
+
+    return locations
+
+
+def _guess_best_proxy_accessor(
+    proxy: _SinglePointProxy, true_children: list["Section"]
+) -> tuple["Location", "Section", tuple[float, float]]:
+    """
+    Simple heuristic to try to make proxied locations behave like normal. There
+    are 2 rules in order of importance:
+
+    * If a section has the same labels as the proxy means it has the same
+      cable properties and mechanisms and works for the most part the same.
+    * The tip of the parent is better than a child, because the tip of a branch
+      is already considered a 0 surface area point in the rest of Arborize.
+
+    This means in order of preference we have: a parent with the same labels, a
+    child with the same labels, a parent, or a child.
+    """
+    # Labels in Arborize are sorted according to their insertion order in the
+    # definitions, with the last appearing key considered "most specific" and
+    # having the final say. Since both Arborize and alphabetic ordering are
+    # deterministic and list equality in Python is order-sensitive, we sort
+    # the labels alphabetically here to be sure we don't miss any equalities.
+    proxy_labels = sorted(proxy.branch.labels)
+    if proxy.parent and sorted(proxy.parent.labels) == proxy_labels:
+        # Best case: Return the same labeled parent
+        return proxy.parent.locations[-1], proxy.parent, (1, 1)
+    else:
+        for child in true_children:
+            if sorted(child.labels) == proxy_labels:
+                # Not so best case: Return the same labeled child
+                return child.locations[0], child, (0, 0)
+        else:
+            if proxy.parent:
+                # Worse case: Return mislabeled parent
+                return proxy.parent.locations[-1], proxy.parent, (1, 1)
+            else:
+                # Worst case: Return mislabeled first child
+                return true_children[0].locations[0], true_children[0], (0, 0)
 
 
 def _reify_proxy_children(proxy):
@@ -410,6 +485,10 @@ class LocationAccessor:
         )
 
     @property
+    def location(self):
+        return self._loc
+
+    @property
     def section(self):
         return self._section
 
@@ -420,3 +499,80 @@ class LocationAccessor:
     def arc(self, x=0):
         a0, a1 = self._arcs
         return (a1 - a0) * x + a0
+
+    def describe(self):
+        return f"{self._loc}[{','.join(self.section.labels)}]"
+
+
+class ProxiedLocationAccessor(LocationAccessor):
+    def __init__(self, loc, labels, proxied_loc, section, arcs):
+        super().__init__(loc, section, proxied_loc.mechanisms, arcs)
+        self._labels = labels
+        self._proxied_loc = proxied_loc
+
+    @property
+    def proxied_loc(self):
+        return self._proxied_loc
+
+    @property
+    def section(self):
+        warnings.warn(
+            f"Location {self.describe()} was constructed from less "
+            "than 2 points and has 0 surface area, which NEURON does not "
+            f"support. Proxied location {self._proxied_loc.describe()} section "
+            "was used instead. Double-check you do not create conflicting "
+            "instructions.",
+            category=ProxyWarning,
+            stacklevel=1,
+        )
+        return self._section
+
+    @property
+    @cache
+    def mechanisms(self) -> Mapping["MechId", "MechAccessor"]:
+        warnings.warn(
+            f"Location {self.describe()} was constructed from less "
+            "than 2 points and has 0 surface area, which NEURON does not "
+            f"support. Proxied location {self._proxied_loc.describe()} "
+            "mechanisms were used instead. Double-check you do not create "
+            "conflicting instructions.",
+            category=ProxyWarning,
+            stacklevel=1,
+        )
+        return proxymechdict(self, self._proxied_loc, self._mechs)
+
+    def describe(self):
+        return f"{self._loc}[{','.join(self._labels)}]"
+
+
+class proxymechdict(mechdict):
+    def __init__(self, loc, proxied_loc, mechs):
+        self._loc = loc
+        self._proxied_loc = proxied_loc
+        super().__init__(mechs)
+
+    def __getitem__(self, item):
+        try:
+            return super().__getitem__(item)
+        except KeyError:
+            raise ProxyKeyError(
+                item,
+                f"Location {self._loc.describe()} proxies {self._proxied_loc.describe()}. Mechanism '{item}' not found on proxied location.",
+            ) from None
+
+
+class ProxyKeyError(KeyError):
+    """
+    KeyError with extra steps.
+
+    Key errors might be inspected to find out which key errored, but they
+    don't show much info, this does both.
+    """
+
+    def __init__(self, key, message):
+        self.key = key
+        self.message = message
+        super().__init__(key)  # pass just the key to parent
+
+    def __str__(self):
+        return f"{self.key!r} - {self.message}"

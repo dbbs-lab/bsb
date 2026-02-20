@@ -71,7 +71,7 @@ FAQ
         adapter.reset_kernel()
         simulation_backend = adapter.prepare(simulation)
         # Set NEST communicator here
-        nest.set_communicator(comm_nest)
+        nest.set_communicator.__func__(comm_nest)
         # rest of your code here.
 
 .. dropdown:: When do I need to recompile my Scaffold?

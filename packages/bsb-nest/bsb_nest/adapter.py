@@ -195,6 +195,6 @@ class NestAdapter(SimulatorAdapter):
         # When simulating with MUSIC the following line might cause issue.
         # Set the MPI communicator for NEST manually in your script once
         # the NESTAdapter has been prepared.
-        nest.set_communicator(self.comm._comm)
+        nest.set_communicator.__func__(self.comm._comm)
         if simulation.seed is not None:
             nest.rng_seed = simulation.seed

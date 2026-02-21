@@ -7,7 +7,7 @@ fi
 if [ -z "$NEST_VERSION" ]; then NEST_VERSION="3.7"; fi
 
 # Trying to load NEST
-INSTALLATION_FOLDER="$NEST_FOLDER/install/"
+INSTALLATION_FOLDER="$NEST_FOLDER/install"
 if [ -f "$INSTALLATION_FOLDER/bin/nest_vars.sh" ]; then
   . "$INSTALLATION_FOLDER/bin/nest_vars.sh"
 fi
@@ -21,7 +21,7 @@ while [ -f "$LOCK_FILE" ]; do sleep 1; done
 touch "$LOCK_FILE"
 
 # Check if NEST has been already installed
-if [ "$(which nest)" != "" ];  then
+if [ "$(which nest)" == "$INSTALLATION_FOLDER/bin/nest" ];  then
   INSTALLED_VERSION=$(echo $(nest --version) | grep -o -E 'version [0-9.]+' | sed 's/version //')
   if [ "$INSTALLED_VERSION" == "$NEST_VERSION.0" ] || [ "$INSTALLED_VERSION" == "$NEST_VERSION" ]; then
     echo "NEST already installed.";

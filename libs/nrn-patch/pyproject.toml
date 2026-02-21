@@ -30,7 +30,7 @@ dependencies = [
 extensions = "patch.extensions:package"
 
   [project.optional-dependencies]
-  parallel = [ "mpi4py~=3.0" ]
+  parallel = [ "mpi4py~=4.1.0" ]
 
 [dependency-groups]
 test = [ "nrn-patch[parallel]", "coverage~=7.0" ]

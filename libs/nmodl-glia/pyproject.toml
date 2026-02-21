@@ -31,7 +31,7 @@ dependencies = [
   file = "LICENSE"
 
   [project.optional-dependencies]
-  parallel = [ "mpi4py~=3.0" ]
+  parallel = [ "mpi4py~=4.1.0" ]
   neuron = [ "nrn-patch~=7.0" ]
   arbor = [ "arbor~=0.10" ]
 

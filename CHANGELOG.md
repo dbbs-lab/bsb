@@ -1,3 +1,15 @@
+## 7.2.2 (2026-02-21)
+
+### 🩹 Fixes
+
+- bump mpi4py and minor fixes ([#221](https://github.com/dbbs-lab/bsb/pull/221))
+- bump mpi4py for libs ([0951e81](https://github.com/dbbs-lab/bsb/commit/0951e81))
+
+### ❤️ Thank You
+
+- Dimitri RODARIE
+- drodarie
+
 ## 7.2.1 (2026-01-19)
 
 ### 🩹 Fixes

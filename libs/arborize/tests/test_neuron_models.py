@@ -546,7 +546,10 @@ class TestSinglePointBranchBuilding(unittest.TestCase):
         # they expected
         with self.assertRaisesRegex(
             KeyError,
-            r"'foo' \- Location \(0, 0\)\[soma\] proxies \(2, 0\)\[soma\]\. Mechanism 'foo' not found on proxied location\.",
+            (
+                r"'foo' \- Location \(0, 0\)\[soma\] proxies \(2, 0\)\[soma\]\. "
+                r"Mechanism 'foo' not found on proxied location\."
+            ),
         ):
             _foo = mechanisms["foo"]
 
@@ -576,7 +579,10 @@ class TestSinglePointBranchBuilding(unittest.TestCase):
         # they expected
         with self.assertRaisesRegex(
             KeyError,
-            r"'hh' \- Location \(1, 0\)\[soma\] proxies \(0, 1\)\[dendrites\]\. Mechanism 'hh' not found on proxied location\.",
+            (
+                r"'hh' \- Location \(1, 0\)\[soma\] proxies \(0, 1\)\[dendrites\]\. "
+                r"Mechanism 'hh' not found on proxied location\."
+            ),
         ):
             _hh = mechanisms["hh"]
 

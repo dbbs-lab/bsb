@@ -504,6 +504,24 @@ class LocationAccessor:
         return f"{self._loc}[{','.join(self.section.labels)}]"
 
 
+@cache
+def _mechanisms(proxy_accessor):
+    # Cache function outside the Accessor class to avoid
+    # memory leaks, see B019
+    warnings.warn(
+        f"Location {proxy_accessor.describe()} was constructed from less "
+        "than 2 points and has 0 surface area, which NEURON does not "
+        f"support. Proxied location {proxy_accessor._proxied_loc.describe()} "
+        "mechanisms were used instead. Double-check you do not create "
+        "conflicting instructions.",
+        category=ProxyWarning,
+        stacklevel=1,
+    )
+    return proxymechdict(
+        proxy_accessor, proxy_accessor._proxied_loc, proxy_accessor._mechs
+    )
+
+
 class ProxiedLocationAccessor(LocationAccessor):
     def __init__(self, loc, labels, proxied_loc, section, arcs):
         super().__init__(loc, section, proxied_loc.mechanisms, arcs)
@@ -528,18 +546,8 @@ class ProxiedLocationAccessor(LocationAccessor):
         return self._section
 
     @property
-    @cache
     def mechanisms(self) -> Mapping["MechId", "MechAccessor"]:
-        warnings.warn(
-            f"Location {self.describe()} was constructed from less "
-            "than 2 points and has 0 surface area, which NEURON does not "
-            f"support. Proxied location {self._proxied_loc.describe()} "
-            "mechanisms were used instead. Double-check you do not create "
-            "conflicting instructions.",
-            category=ProxyWarning,
-            stacklevel=1,
-        )
-        return proxymechdict(self, self._proxied_loc, self._mechs)
+        return _mechanisms(self)
 
     def describe(self):
         return f"{self._loc}[{','.join(self._labels)}]"
@@ -557,7 +565,11 @@ class proxymechdict(mechdict):
         except KeyError:
             raise ProxyKeyError(
                 item,
-                f"Location {self._loc.describe()} proxies {self._proxied_loc.describe()}. Mechanism '{item}' not found on proxied location.",
+                (
+                    f"Location {self._loc.describe()} proxies "
+                    f"{self._proxied_loc.describe()}. Mechanism '{item}' not found "
+                    "on proxied location."
+                ),
             ) from None
 
 

@@ -1,3 +1,13 @@
+## 7.2.3 (2026-02-21)
+
+### 🩹 Fixes
+
+- rectified proxy location accessor behavior ([#219](https://github.com/dbbs-lab/bsb/pull/219))
+
+### ❤️ Thank You
+
+- Robin De Schepper
+
 ## 7.2.2 (2026-02-21)
 
 ### 🩹 Fixes

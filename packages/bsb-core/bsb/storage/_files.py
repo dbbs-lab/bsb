@@ -150,10 +150,6 @@ class FileDependency:
         )
 
     def should_update(self):
-        if not self.file_store:
-            raise ValueError(
-                "Can't update file dependency in store before scaffold is ready."
-            )
         stored = self.get_stored_file()
         return stored is None or self._scheme.should_update(self, stored)
 

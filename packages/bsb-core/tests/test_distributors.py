@@ -153,7 +153,12 @@ class TestVolumetricRotations(
         region_ids = np.asarray(
             voxel_set.data[:, 0][voxel_set.index_of(positions)], dtype=int
         )
-        rotations = np.array(self.network.get_placement_set("a").load_rotations())
+        rotations = self.network.get_placement_set("a").load_rotations()
+        rotations2 = np.array(
+            [rot.as_euler("xyz", degrees=True) for rot in rotations.iter()]
+        )
+        rotations = np.array(rotations)
+        self.assertTrue(np.allclose(rotations, rotations2), "Regression for issue #220")
         # Regions without orientation field -> no rotation
         self.assertTrue(
             np.array_equal(

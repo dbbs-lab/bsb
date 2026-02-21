@@ -43,6 +43,37 @@ FAQ
 
         # rest of your code here.
 
+    .. rubric:: Advanced MPI options
+
+    Note that if you manually create the MPI communicator with a subgroup of cores available
+    and pass it to your BSB Scaffold, it will also set the MPI communicator for NEST.
+    If you need a different MPI communicator between NEST and BSB, you should set it manually once the `NESTAdapter` has been prepared
+    (see also this :doc:`BSB-NEST example</examples/nest_repeated_sim>`):
+
+    .. code-block:: python
+
+        import nest
+        from mpi4py import MPI
+        from bsb import from_storage
+        from bsb_nest import NestAdapter
+
+        # We take all cores for NEST
+        comm_nest = MPI.COMM_WORLD
+
+        # We do not take the last core for BSB
+        comm_bsb = MPI.COMM_WORLD.Create_group(
+            MPI.COMM_WORLD.group.Excl([MPI.COMM_WORLD.Get_size() - 1])
+        )
+
+        scaffold = from_storage("network.hdf5", comm=comm_bsb)
+        simulation = scaffold.get_simulation("basal_activity")
+        adapter = NestAdapter()
+        adapter.reset_kernel()
+        simulation_backend = adapter.prepare(simulation)
+        # Set NEST communicator here
+        nest.set_communicator.__func__(comm_nest)
+        # rest of your code here.
+
 .. dropdown:: When do I need to recompile my Scaffold?
     :animate: fade-in-slide-down
 

@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "bsb-core"
-version = "7.2.1"
+version = "7.2.2"
 readme = "README.md"
 requires-python = ">=3.10,<4"
 dynamic = [ "description" ]
@@ -45,7 +45,7 @@ dependencies = [
   file = "LICENSE"
 
   [project.optional-dependencies]
-  parallel = [ "mpi4py~=3.0", "mpipool>=2.2.1,<3", "mpilock~=1.1" ]
+  parallel = [ "mpi4py~=4.1.0", "mpipool>=2.2.1,<3", "mpilock~=1.1" ]
 
 [project.entry-points."bsb.storage.engines"]
 fs = "bsb.storage.fs"

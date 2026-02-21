@@ -1,5 +1,6 @@
 from bsb import LocationTargetting, config
 
+from .._util import ignore_arborize_proxy_warnings
 from ..device import NeuronDevice
 
 
@@ -24,6 +25,7 @@ class VoltageRecorder(NeuronDevice, classmap_entry="voltage_recorder"):
                         cell_id=target.id,
                     )
 
+    @ignore_arborize_proxy_warnings()
     def _add_voltage_recorder(self, results, location, **annotations):
         section = location.section
         x = location.arc(0)

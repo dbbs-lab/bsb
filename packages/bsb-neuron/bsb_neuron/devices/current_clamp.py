@@ -1,5 +1,6 @@
 from bsb import LocationTargetting, config, warn
 
+from .._util import ignore_arborize_proxy_warnings
 from ..device import NeuronDevice
 
 
@@ -32,6 +33,7 @@ class CurrentClamp(NeuronDevice, classmap_entry="current_clamp"):
                     )
                     clamped = True
 
+    @ignore_arborize_proxy_warnings()
     def _add_clamp(self, simdata, location, **annotations):
         sx = location.arc(0.5)
         clamp = location.section.iclamp(

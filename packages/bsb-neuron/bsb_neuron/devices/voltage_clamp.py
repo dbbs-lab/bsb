@@ -2,6 +2,7 @@ import warnings
 
 from bsb import LocationTargetting, config, types
 
+from .._util import ignore_arborize_proxy_warnings
 from ..device import NeuronDevice
 
 
@@ -41,6 +42,7 @@ class VoltageClamp(NeuronDevice, classmap_entry="vclamp"):
                 )
                 clamped = True
 
+    @ignore_arborize_proxy_warnings()
     def _add_clamp(self, results, location, **annotations):
         sx = location.arc(0.5)
         clamp = location.section.vclamp(

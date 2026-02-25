@@ -4,8 +4,12 @@ import functools
 import importlib.metadata
 import inspect
 import json
+import os
 import pickle
+import random
+import string
 import sys
+import typing
 import warnings
 from functools import cache
 from uuid import uuid4
@@ -94,12 +98,6 @@ def view_profile(fstem):
     ProfilingSession.load(fstem).view()
 
 
-__all__ = [
-    "ProfilingSession",
-    "activate_session",
-    "get_active_session",
-    "view_profile",
-]
 _otel_tracer = trace.get_tracer("bsb", str(importlib.metadata.version("bsb-core")))
 
 
@@ -238,3 +236,78 @@ def _make_otel_handler(cls, base, attr, orig_method):
             return orig_method(self, *args, **kwargs)
 
     return handler
+
+
+def _get_file_tracer_provider(file: typing.IO, buffered=True):
+    """
+    Create a provider that exports traces to a file as JSON lines.
+    """
+    from opentelemetry.sdk.trace import TracerProvider
+    from opentelemetry.sdk.trace.export import (
+        ConsoleSpanExporter,
+        SimpleSpanProcessor,
+    )
+
+    exporter = ConsoleSpanExporter(
+        out=file, formatter=lambda span: span.to_json(indent=None) + os.linesep
+    )
+    processor = (BatchSpanProcessor if buffered else SimpleSpanProcessor)(exporter)
+    provider = TracerProvider()
+    provider.add_span_processor(processor)
+
+    return provider
+
+
+from opentelemetry.sdk.trace import ReadableSpan
+from opentelemetry.sdk.trace.export import SpanExporter
+
+
+class JSONLinesSpanExporter(SpanExporter):
+    """
+    OpenTelemetry span exporter that writes spans as JSON lines to a file.
+
+    The output path is read from the ``BSB_OTEL_JSONLINES_PATH`` environment
+    variable (default: ``traces.jsonlines``).
+
+    Register as a traces exporter with opentelemetry-instrument::
+
+        BSB_OTEL_JSONLINES_PATH=./logs.jsonlines \\
+            opentelemetry-instrument --traces_exporter jsonlines bsb compile
+    """
+
+    def __init__(self):
+        from opentelemetry.sdk.trace.export import SpanExportResult
+
+        self._result_ok = SpanExportResult.SUCCESS
+        from bsb._otel_env import OTEL_EXPORTER_JSONLINES_PATH
+
+        path = os.environ.get(OTEL_EXPORTER_JSONLINES_PATH, "traces_*.jsonlines")
+        if "_*" in path:
+            path = path.replace(
+                "*",
+                "".join(random.choices(string.ascii_lowercase + string.digits, k=8)),
+            )
+        self._file = open(path, "a")
+
+    def export(self, spans: typing.Sequence[ReadableSpan]):
+        for span in spans:
+            self._file.write(span.to_json(indent=None) + os.linesep)
+        self._file.flush()
+        return self._result_ok
+
+    def shutdown(self):
+        self._file.close()
+
+    def force_flush(self, timeout_millis=30000):
+        self._file.flush()
+        return True
+
+
+__all__ = [
+    "ProfilingSession",
+    "activate_session",
+    "get_active_session",
+    "view_profile",
+    "_telemetry_trace",
+    "JSONLinesSpanExporter",
+]

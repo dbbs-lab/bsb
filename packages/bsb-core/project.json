@@ -59,8 +59,8 @@
       "options": {
         "commands": [
           "npx -y rimraf .coverage*",
-          "uv run coverage run -p -m unittest discover -v -s ./tests",
-          "mpiexec -n 2 uv run coverage run -p -m unittest discover -v -s ./tests",
+          "uv run coverage run -p -m unittest discover -v -s ./tests -t .",
+          "mpiexec -n 2 uv run coverage run -p -m unittest discover -v -s ./tests -t .",
           "uv run coverage combine",
           "uv run coverage xml -i -o ../../coverage/packages/bsb-core/coverage.xml",
           "uv run coverage html -i -d ../../coverage/packages/bsb-core/html"

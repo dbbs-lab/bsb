@@ -51,14 +51,16 @@ class NestAdapter(SimulatorAdapter):
         self.loaded_modules = set()
         self._prev_chkpoint = 0
 
-    def simulate(self, *simulations, post_prepare=None):
+    def simulate(self, *simulations, post_prepare=None, filename=None):
         try:
             self.reset_kernel()
-            return super().simulate(*simulations, post_prepare=post_prepare)
+            return super().simulate(
+                *simulations, post_prepare=post_prepare, filename=filename
+            )
         finally:
             self.reset_kernel()
 
-    def prepare(self, simulation):
+    def prepare(self, simulation, filename=None):
         """
         Prepare the simulation environment in NEST.
 
@@ -80,7 +82,7 @@ class NestAdapter(SimulatorAdapter):
         :rtype: bsb.simulation.adapter.SimulationData
         """
         self.simdata[simulation] = SimulationData(
-            simulation, result=NestResult(simulation)
+            simulation, result=NestResult(simulation, filename)
         )
         try:
             report("Installing  NEST modules...", level=2)

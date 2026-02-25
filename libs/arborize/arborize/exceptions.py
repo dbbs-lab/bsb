@@ -32,3 +32,7 @@ class ArborizeWarning(Warning):
 
 class UnconnectedPointInSpaceWarning(ArborizeWarning):
     pass
+
+
+class ProxyWarning(ArborizeWarning):
+    pass

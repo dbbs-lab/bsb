@@ -285,7 +285,7 @@ class RotationSet:
         return self._rot(angles)
 
     def _rot(self, angles):
-        return Rotation.from_euler("xyz", angles)
+        return Rotation.from_euler("xyz", angles, degrees=True)
 
 
 def branch_iter(branch):

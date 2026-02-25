@@ -1,3 +1,17 @@
+## 7.2.3 (2026-02-21)
+
+This was a version bump only for bsb-hdf5 to align it with other projects, there were no code changes.
+
+## 7.2.2 (2026-02-21)
+
+### 🩹 Fixes
+
+- bump mpi4py and minor fixes ([#221](https://github.com/dbbs-lab/bsb/pull/221))
+
+### ❤️ Thank You
+
+- Dimitri RODARIE
+
 ## 7.2.1 (2026-01-19)
 
 This was a version bump only for bsb-hdf5 to align it with other projects, there were no code changes.

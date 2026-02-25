@@ -1,5 +1,6 @@
 from bsb import LocationTargetting, config, types
 
+from .._util import ignore_arborize_proxy_warnings
 from ..device import NeuronDevice
 
 
@@ -9,6 +10,7 @@ class SpikeGenerator(NeuronDevice, classmap_entry="spike_generator"):
     synapses = config.list()
     parameters = config.catch_all(type=types.any_())
 
+    @ignore_arborize_proxy_warnings()
     def implement(self, adapter, simulation, simdata):
         for _model, pop in self.targetting.get_targets(
             adapter, simulation, simdata

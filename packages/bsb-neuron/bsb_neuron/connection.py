@@ -1,6 +1,8 @@
 import numpy as np
 from bsb import AdapterError, ConnectionModel, Parameter, config, types
 
+from bsb_neuron._util import ignore_arborize_proxy_warnings
+
 
 @config.dynamic(
     attr_name="model_strategy",
@@ -71,6 +73,7 @@ class TransceiverModel(NeuronConnection, classmap_entry="transceiver"):
         self.create_transmitters(simdata, cs)
         self.create_receivers(simdata, cs)
 
+    @ignore_arborize_proxy_warnings()
     def create_transmitters(self, simdata, cs):
         """
         :type simdata: bsb_neuron.simulation.NeuronSimulationData
@@ -92,6 +95,7 @@ class TransceiverModel(NeuronConnection, classmap_entry="transceiver"):
             point = (loc[1], 0)
             cell.insert_transmitter(gid, point, source=self.source)
 
+    @ignore_arborize_proxy_warnings()
     def create_receivers(self, simdata, cs):
         """
         :type simdata: bsb_neuron.simulation.NeuronSimulationData

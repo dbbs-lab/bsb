@@ -1,3 +1,25 @@
+## 7.2.3 (2026-02-21)
+
+### 🩹 Fixes
+
+- rectified proxy location accessor behavior ([#219](https://github.com/dbbs-lab/bsb/pull/219))
+
+### ❤️ Thank You
+
+- Robin De Schepper
+
+## 7.2.2 (2026-02-21)
+
+### 🩹 Fixes
+
+- bump mpi4py for libs ([0951e81](https://github.com/dbbs-lab/bsb/commit/0951e81))
+- bump mpi4py and minor fixes ([#221](https://github.com/dbbs-lab/bsb/pull/221))
+
+### ❤️ Thank You
+
+- Dimitri RODARIE
+- drodarie
+
 ## 7.2.1 (2026-01-19)
 
 This was a version bump only for arborize to align it with other projects, there were no code changes.

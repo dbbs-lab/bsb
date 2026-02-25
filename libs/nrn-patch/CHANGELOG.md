@@ -1,3 +1,45 @@
+## 7.2.3 (2026-02-21)
+
+This was a version bump only for nrn-patch to align it with other projects, there were no code changes.
+
+## 7.2.2 (2026-02-21)
+
+### 🩹 Fixes
+
+- bump mpi4py for libs ([0951e81](https://github.com/dbbs-lab/bsb/commit/0951e81))
+- bump mpi4py and minor fixes ([#221](https://github.com/dbbs-lab/bsb/pull/221))
+
+### ❤️ Thank You
+
+- Dimitri RODARIE
+- drodarie
+
+## 7.2.1 (2026-01-19)
+
+This was a version bump only for nrn-patch to align it with other projects, there were no code changes.
+
+## 7.2.0 (2026-01-13)
+
+### 🚀 Features
+
+- Added support for MorphIO options and fixed single point branches in NEURON builder ([#210](https://github.com/dbbs-lab/bsb/pull/210))
+
+### ❤️ Thank You
+
+- Robin De Schepper
+
+## 7.1.0 (2026-01-09)
+
+This was a version bump only for nrn-patch to align it with other projects, there were no code changes.
+
+## 7.0.3 (2025-12-17)
+
+This was a version bump only for nrn-patch to align it with other projects, there were no code changes.
+
+## 7.0.2 (2025-12-12)
+
+This was a version bump only for nrn-patch to align it with other projects, there were no code changes.
+
 ## 7.0.1 (2025-11-18)
 
 ### 🩹 Fixes

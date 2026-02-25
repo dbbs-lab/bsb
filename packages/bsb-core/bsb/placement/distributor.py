@@ -5,6 +5,8 @@ from dataclasses import dataclass
 import numpy as np
 from scipy.spatial.transform import Rotation
 
+from bsb import pool_cache
+
 from .. import config
 from ..exceptions import EmptySelectionError
 from ..morphologies import MorphologySet, RotationSet
@@ -250,7 +252,8 @@ class DistributorsNode:
 
         return curried
 
-    def _specials(self, partitions, indicator, positions):
+    @pool_cache
+    def _get_morpho_loaders(self, indicator):
         sel = indicator.assert_indication("morphologies")
         loaders = self.scaffold.storage.morphologies.select(*sel)
         if not loaders and not self.morphologies.may_be_empty:
@@ -258,6 +261,10 @@ class DistributorsNode:
                 f"Given {len(sel)} selectors: did not find any suitable morphologies",
                 sel,
             )
+        return loaders
+
+    def _specials(self, partitions, indicator, positions):
+        loaders = self._get_morpho_loaders(indicator)
         distr = self._curry(partitions, indicator, positions, loaders)
         morphologies, rotations = distr("morphologies")
         if morphologies is not None and (

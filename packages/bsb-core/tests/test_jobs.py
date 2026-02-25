@@ -539,7 +539,8 @@ def mock_free_cache(scaffold, required_cache_items: set[str]):
         # Save cleaned items in a file for testing
         with open(f"test_cache_{MPI.get_rank()}.txt", "a") as f:
             f.write(f"{stale_key}\n")
-        scaffold._pool_cache.pop(stale_key)()
+        for cleanup in scaffold._pool_cache.pop(stale_key):
+            cleanup()
 
 
 def mock_read_required_cache_items(self):
@@ -579,16 +580,21 @@ class TestPoolCache(RandomStorageFixture, unittest.TestCase, engine_name="hdf5")
             storage=self.storage,
         )
         self.network.placement.withcache.cache_something.cache_clear()
-        self.id_cache = _cache_hash("{root}.placement.withcache.cache_something")
+        self.ids_cache = [
+            _cache_hash("{root}.placement.withcache.cache_something"),
+            _cache_hash("{root}.placement.withcache.get_indicators"),
+            _cache_hash("{root}.placement.withcache.distribute._get_morpho_loaders"),
+        ]
 
     @timeout(3)
     def test_cache_registration(self):
         """
         Test that when a cache is hit, it is registered in the scaffold.
         """
+        # we only run place so we should not have to cache get_indicators
         self.network.placement.withcache.place(None, None)
         self.assertEqual(
-            [self.id_cache],
+            [self.ids_cache[0]],
             [*self.network._pool_cache.keys()],
         )
 
@@ -598,7 +604,7 @@ class TestPoolCache(RandomStorageFixture, unittest.TestCase, engine_name="hdf5")
         Test that we can detect which jobs need which items.
         """
         self.assertEqual(
-            [self.id_cache],
+            self.ids_cache,
             get_node_cache_items(self.network.placement.withcache),
         )
 
@@ -611,7 +617,7 @@ class TestPoolCache(RandomStorageFixture, unittest.TestCase, engine_name="hdf5")
             self.assertEqual(set(), pool.get_required_cache_items())
             pool.queue_placement(self.network.placement.withcache, [0, 0, 0])
             self.assertEqual(
-                {self.id_cache},
+                {id_ for id_ in self.ids_cache},
                 pool.get_required_cache_items(),
             )
 
@@ -664,13 +670,20 @@ class TestPoolCache(RandomStorageFixture, unittest.TestCase, engine_name="hdf5")
                 deps=[job0, job1, job2, job3],
             )
             pool.execute()
-
+        # withcache.get_indicators and withcache.cache_something first because
+        # the withcache jobs are done first. then, withoutcache.get_indicators
+        ids_cache_freed = [
+            self.ids_cache[1],
+            self.ids_cache[0],
+            _cache_hash("{root}.placement.withoutcache.get_indicators"),
+        ]
         for filename in os.listdir():
             if filename.startswith(f"test_cache_{MPI.get_rank()}"):
                 with open(filename) as f:
                     lines = f.readlines()
+                    # Once for the cache_something, once for each get_indicators
                     self.assertEqual(
-                        len(lines), 1, "The free function should be called only once."
+                        len(lines), 3, "The free function should be called only thrice."
                     )
-                    self.assertEqual(lines[0], f"{self.id_cache}\n")
+                    self.assertEqual(lines, [f"{id_}\n" for id_ in ids_cache_freed])
                 os.remove(filename)

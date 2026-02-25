@@ -112,7 +112,6 @@ class NestAdapter(SimulatorAdapter):
         self._duration = max(sim.duration for sim in simulations)
 
         try:
-            results = [self.simdata[sim].result for sim in simulations]
             with nest.RunManager():
                 for t, checkpoint_controllers in self.get_next_checkpoint():
                     nest.Run(t - self._prev_chkpoint)
@@ -193,12 +192,10 @@ class NestAdapter(SimulatorAdapter):
         nest.set_verbosity(simulation.verbosity)
         nest.resolution = simulation.resolution
         nest.overwrite_files = True
+        # When simulating with MUSIC the following line might cause issue.
+        # Set the MPI communicator for NEST manually in your script once
+        # the NESTAdapter has been prepared.
+        if "mpi4py" in sys.modules:
+            nest.set_communicator.__func__(self.comm._comm)
         if simulation.seed is not None:
             nest.rng_seed = simulation.seed
-
-    def check_comm(self):
-        if nest.NumProcesses() != self.comm.get_size():
-            raise RuntimeError(
-                f"NEST is managing {nest.NumProcesses()} processes, but "
-                f"{self.comm.get_size()} were detected. Please check your MPI setup."
-            )

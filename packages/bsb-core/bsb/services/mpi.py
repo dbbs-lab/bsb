@@ -1,3 +1,4 @@
+import contextlib
 import functools
 import os
 
@@ -73,6 +74,56 @@ class MPIService:
                     pass
 
             return WindowMock()
+
+    @contextlib.contextmanager
+    def try_all(self, default_exception=None):
+        """
+        Create a context manager that checks if any exception is raised by any processes
+        within the context, and make all other processes raise an exception in that case
+
+        :param Exception default_exception: Exception instance to raise for all processes
+          that did not raise during the context.
+        :return: context manager
+        """
+        exc_instance = None
+        default_exception = default_exception or RuntimeError(
+            "An error occurred on a different rank"
+        )
+        try:
+            yield
+        except Exception as e:
+            exc_instance = e
+
+        exceptions = self.allgather(exc_instance)
+        if any(exceptions):
+            raise (
+                exceptions[self.get_rank()]
+                if exceptions[self.get_rank()]
+                else default_exception
+            )
+
+    @contextlib.contextmanager
+    def try_main(self):
+        """
+        Create a context manager that checks if any exception is raised by the main
+        process within the context, and make all other processes raise this exception in
+        that case
+        Warning: All processes will still enter the context, but only main exception will
+        be raised.
+
+        :return: context manager
+        """
+        exc_instance = None
+        try:
+            # All processes have to enter the context
+            # contextlib will throw an error if one does not yield
+            yield
+        except Exception as e:
+            exc_instance = e
+
+        exception = self.bcast(exc_instance)
+        if exception is not None:
+            raise exception
 
 
 class MPIModule(MockModule):

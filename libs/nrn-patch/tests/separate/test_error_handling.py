@@ -22,7 +22,9 @@ class TestErrorHandling(_shared.NeuronTestCase):
                 v = p.Vector()
                 v.__neuron__().record(p.Section())
 
-        with self.assertRaises(HocError, msg="Did not capture `RuntimeError: hoc error`"):
+        with self.assertRaises(
+            HocError, msg="Did not capture `RuntimeError: hoc error`"
+        ):
             test()
 
     def test_handler_requirements(self):
@@ -37,7 +39,7 @@ class TestErrorHandling(_shared.NeuronTestCase):
             test()
 
         class UndefinedRequirements(ErrorHandler):
-            def catch(self, error, context):  # pragme: nocover
+            def catch(self, error, context):  # pragma: nocover
                 pass
 
         def test_undef():

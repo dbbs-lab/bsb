@@ -24,3 +24,15 @@ UnknownSynapseError: type["ModelError"]  # noqa: F821
 SchematicError: type["ArborizeError"]  # noqa: F821
 ConstructionError: type["SchematicError"]  # noqa: F821
 FrozenError: type["SchematicError"]  # noqa: F821
+
+
+class ArborizeWarning(Warning):
+    pass
+
+
+class UnconnectedPointInSpaceWarning(ArborizeWarning):
+    pass
+
+
+class ProxyWarning(ArborizeWarning):
+    pass

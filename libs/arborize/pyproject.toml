@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "arborize"
-version = "7.0.1"
+version = "7.2.3"
 readme = "README.md"
 requires-python = ">=3.10,<4"
 dynamic = [ "description" ]
@@ -26,7 +26,7 @@ dependencies = [
   file = "LICENSE"
 
   [project.optional-dependencies]
-  parallel = [ "mpi4py~=3.0" ]
+  parallel = [ "mpi4py~=4.1.0" ]
   bluepyopt = [ "bluepyopt~=1.14", "dill>=0.3.8" ]
   neuron = [ "nrn-patch~=7.0", "nmodl-glia[neuron]~=7.0" ]
   arbor = [ "arbor~=0.10", "nmodl-glia[arbor]~=7.0" ]

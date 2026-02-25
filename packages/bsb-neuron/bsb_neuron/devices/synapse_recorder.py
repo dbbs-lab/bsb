@@ -1,5 +1,6 @@
 from bsb import LocationTargetting, config
 
+from .._util import ignore_arborize_proxy_warnings
 from ..device import NeuronDevice
 
 
@@ -10,6 +11,7 @@ class SynapseRecorder(NeuronDevice, classmap_entry="synapse_recorder"):
     synapse_types = config.list()
     """List of synaptic types"""
 
+    @ignore_arborize_proxy_warnings()
     def implement(self, adapter, simulation, simdata):
         for _model, pop in self.targetting.get_targets(
             adapter, simulation, simdata

@@ -242,18 +242,58 @@ def _get_file_tracer_provider(file: typing.IO, buffered=True):
     """
     from opentelemetry.sdk.trace import TracerProvider
     from opentelemetry.sdk.trace.export import (
-        BatchSpanProcessor,
         ConsoleSpanExporter,
+        SimpleSpanProcessor,
     )
 
-    exporter = (ConsoleSpanExporter if buffered else BatchSpanProcessor)(
+    exporter = ConsoleSpanExporter(
         out=file, formatter=lambda span: span.to_json(indent=None) + os.linesep
     )
-
+    processor = (BatchSpanProcessor if buffered else SimpleSpanProcessor)(exporter)
     provider = TracerProvider()
-    provider.add_span_processor(BatchSpanProcessor(exporter))
+    provider.add_span_processor(processor)
 
     return provider
+
+
+from opentelemetry.sdk.trace import ReadableSpan
+from opentelemetry.sdk.trace.export import SpanExporter
+
+
+class JSONLinesSpanExporter(SpanExporter):
+    """
+    OpenTelemetry span exporter that writes spans as JSON lines to a file.
+
+    The output path is read from the ``BSB_OTEL_JSONLINES_PATH`` environment
+    variable (default: ``traces.jsonlines``).
+
+    Register as a traces exporter with opentelemetry-instrument::
+
+        BSB_OTEL_JSONLINES_PATH=./logs.jsonlines \\
+            opentelemetry-instrument --traces_exporter jsonlines bsb compile
+    """
+
+    def __init__(self):
+        from opentelemetry.sdk.trace.export import SpanExportResult
+
+        self._result_ok = SpanExportResult.SUCCESS
+        from bsb._otel_env import OTEL_EXPORTER_JSONLINES_PATH
+
+        path = os.environ.get(OTEL_EXPORTER_JSONLINES_PATH, "traces.jsonlines")
+        self._file = open(path, "a")
+
+    def export(self, spans: typing.Sequence[ReadableSpan]):
+        for span in spans:
+            self._file.write(span.to_json(indent=None) + os.linesep)
+        self._file.flush()
+        return self._result_ok
+
+    def shutdown(self):
+        self._file.close()
+
+    def force_flush(self, timeout_millis=30000):
+        self._file.flush()
+        return True
 
 
 __all__ = [
@@ -262,4 +302,5 @@ __all__ = [
     "get_active_session",
     "view_profile",
     "_telemetry_trace",
+    "JSONLinesSpanExporter",
 ]

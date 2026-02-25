@@ -6,6 +6,8 @@ import inspect
 import json
 import os
 import pickle
+import random
+import string
 import sys
 import typing
 import warnings
@@ -279,7 +281,12 @@ class JSONLinesSpanExporter(SpanExporter):
         self._result_ok = SpanExportResult.SUCCESS
         from bsb._otel_env import OTEL_EXPORTER_JSONLINES_PATH
 
-        path = os.environ.get(OTEL_EXPORTER_JSONLINES_PATH, "traces.jsonlines")
+        path = os.environ.get(OTEL_EXPORTER_JSONLINES_PATH, "traces_*.jsonlines")
+        if "_*" in path:
+            path = path.replace(
+                "*",
+                "".join(random.choices(string.ascii_lowercase + string.digits, k=8)),
+            )
         self._file = open(path, "a")
 
     def export(self, spans: typing.Sequence[ReadableSpan]):

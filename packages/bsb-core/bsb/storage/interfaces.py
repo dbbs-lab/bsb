@@ -386,6 +386,7 @@ class PlacementSet(Interface):
         self._type = cell_type
         self._tag = cell_type.name
         self._morphology_labels = None
+        self._labels = None
 
     @abc.abstractmethod
     def __len__(self):  # pragma: nocover
@@ -605,7 +606,6 @@ class PlacementSet(Interface):
         """
         pass
 
-    @abc.abstractmethod
     def set_label_filter(self, labels):  # pragma: nocover
         """
         Should limit the scope of the placement set to the given labels.
@@ -613,7 +613,16 @@ class PlacementSet(Interface):
         :param labels: List of labels
         :type labels: list[str]
         """
-        pass
+        self._labels = labels
+
+    def get_label_filter(self):  # pragma: nocover
+        """
+        Get the labels used to limit the scope of the placement set.
+
+        :param labels: List of labels
+        :type labels: list[str]
+        """
+        return self._labels
 
     @abc.abstractmethod
     def set_morphology_label_filter(self, morphology_labels):  # pragma: nocover

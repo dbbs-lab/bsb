@@ -396,9 +396,6 @@ class PlacementSet(
                 updated_labels, default=list
             )
 
-    def set_label_filter(self, labels):
-        self._labels = labels
-
     def set_morphology_label_filter(self, morphology_labels):
         """
         Sets the labels by which any morphology loaded from this set will be filtered.
@@ -474,7 +471,7 @@ class PlacementSet(
     @handles_handles("r")
     def load_ids(self, handle=HANDLED):
         if self._chunks is None or not len(self._chunks):
-            return np.arange(len(self))
+            return self.get_labelled(self._labels, handle=handle)
         stats = self.get_chunk_stats(handle)
         ranges = []
         ctr = 0
@@ -484,7 +481,10 @@ class PlacementSet(
             if chunk in self._chunks:
                 ranges.append(np.arange(ctr, ctr + len_))
             ctr += len_
-        return np.concatenate(ranges)
+        ranges = np.concatenate(ranges)
+        if self._labels:
+            ranges = ranges[self.get_label_mask(self._labels, handle=handle)]
+        return ranges
 
     @handles_handles("r")
     def convert_to_local(self, ids, handle=HANDLED):

@@ -58,8 +58,8 @@ class EncodedLabels(np.ndarray):
         cp.labels = {k: v.copy() for k, v in cp.labels.items()}
         return cp
 
-    def label(self, labels, points):
-        if not len(points):
+    def label(self, labels, points, overwrite=False):
+        if not np.any(points):
             return
         _transitions = {}
         # A counter that skips existing values.
@@ -68,14 +68,17 @@ class EncodedLabels(np.ndarray):
         # This local function looks up the new id that a point should transition
         # to when `labels` are added to the labels it already has.
         def transition(point):
-            nonlocal _transitions
+            nonlocal _transitions, overwrite
             # Check if we already know the transition of this value.
             if point in _transitions:
                 return _transitions[point]
             else:
                 # First time making this transition. Join the existing and new labels
                 trans_labels = self.labels[point].copy()
-                trans_labels.update(labels)
+                if not overwrite:
+                    trans_labels.update(labels)
+                else:
+                    trans_labels = _lset(labels)
                 # Check if this new combination of labels already is assigned an id.
                 for k, v in self.labels.items():
                     if trans_labels == v:
@@ -110,7 +113,9 @@ class EncodedLabels(np.ndarray):
         :param list[str] labels: List of labels
         :rtype: numpy.ndarray[int]
         """
-        labels = set(labels or [])
+        if labels is None:
+            return np.full(self.size, True, dtype=bool)
+        labels = set(labels)
         has_any = [
             k
             for k, v in self.labels.items()

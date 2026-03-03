@@ -6,6 +6,7 @@ from bsb import (
     Chunk,
     DatasetExistsError,
     DatasetNotFoundError,
+    LabellingException,
     MissingMorphologyError,
     MorphologySelector,
     MorphologySet,
@@ -342,35 +343,27 @@ class PlacementSet(
         self._engine._write_chunk_stats(handle, stats)
 
     @handles_handles("a")
-    def label_by_mask(self, mask, labels, handle=HANDLED):
+    def label_by_mask(self, mask, labels, overwrite=False, handle=HANDLED):
         cells = np.array(mask, copy=False)
         if cells.dtype != bool or len(cells) != len(self):
             raise LabellingException("Mask doesn't fit data.")
-        self._write_labels(
-            labels,
-            handle,
-            lambda: self._lendemux(),
-            lambda s: cells[s],
-        )
+        self.label(labels, np.where(cells)[0], overwrite=overwrite, handle=handle)
 
     @handles_handles("a")
-    def label(self, labels, cells, handle=HANDLED):
+    def label(self, labels, cells, overwrite=False, handle=HANDLED):
         cells = np.array(cells, copy=False)
         len_ = len(self)
-        oob = cells > len_
+        oob = (cells >= len_) + (cells < 0)
         if np.any(oob):
             oob_idx = cells[oob]
             raise LabellingException(
                 f"Cell labels {oob_idx} out of range for placement set with size {len_}."
             )
         self._write_labels(
-            labels,
-            handle,
-            lambda: self._demux(cells),
-            lambda x: x,
+            labels, handle, lambda: self._demux(cells), lambda x: x, overwrite
         )
 
-    def _write_labels(self, labels, handle, demux_f, data_f):
+    def _write_labels(self, labels, handle, demux_f, data_f, overwrite=False):
         # Create a label reader that can read out label data per chunk, and pads missing
         # cells with unlabelled cells.
         label_reader = self._labels_chunks.get_chunk_reader(
@@ -387,7 +380,7 @@ class PlacementSet(
             else:
                 updated_labels = enc_labels.labels
             # Label the cells
-            enc_labels.label(labels, data_f(block))
+            enc_labels.label(labels, data_f(block), overwrite=overwrite)
             # Overwrite with new labelled data.
             self._labels_chunks.overwrite(chunk, enc_labels, handle=handle)
         # Update the shared labelset reference on the PS.
@@ -407,12 +400,9 @@ class PlacementSet(
 
     @handles_handles("r")
     def get_unique_labels(self, handle=HANDLED):
-        u, c = np.unique(
-            self._labels_chunks.load(handle=handle, pad_by="position"),
-            return_counts=True,
-        )
+        u = np.unique(self._labels_chunks.load(handle=handle, pad_by="position"))
         # take out the extra empty set
-        return list(u.labels.values())[-len(c) :]
+        return np.array(list(u.labels.values()))[u]
 
     @handles_handles("r")
     def get_labelled(self, labels=None, handle=HANDLED):
@@ -423,27 +413,17 @@ class PlacementSet(
     def get_label_mask(self, labels=None, handle=HANDLED):
         return self._labels_chunks.load(handle=handle, pad_by="position").get_mask(labels)
 
-    def _lendemux(self):
-        """
-        .. warning::
-
-            This function sets the chunk context for as long as it iterates.
-        """
-        ctr = 0
-        for chunk in self.get_loaded_chunks():
-            with self.chunk_context([chunk]):
-                len_ = len(self)
-                yield chunk, slice(ctr, ctr := ctr + len_)
-
     def _demux(self, ids):
         """
         .. warning::
 
             This function sets the chunk context for as long as it iterates.
         """
+        # recover ids before applying label filtering
+        ids = self.load_ids()[ids]
         for chunk in self.get_loaded_chunks():
             with self.chunk_context([chunk]):
-                ln = len(self)
+                ln = len(self._position_chunks.load())
                 idx = ids < ln
                 block = ids[idx]
                 yield chunk, block
@@ -546,7 +526,3 @@ def encode_labels(data, ds):
     serialized = json.dumps(EncodedLabels.none(1).labels, default=list)
     labels = json.loads(ps_group.attrs.get("labelsets", serialized))
     return EncodedLabels(shape=data.shape, buffer=data, labels=labels)
-
-
-class LabellingException(Exception):
-    pass

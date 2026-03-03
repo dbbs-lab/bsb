@@ -25,6 +25,7 @@ from bsb import (
     Configuration,
     DatasetExistsError,
     DatasetNotFoundError,
+    LabellingException,
     MorphologySet,
     Scaffold,
     Storage,
@@ -241,11 +242,19 @@ class TestPlacementSet(
         self.assertEqual(int, arr.dtype, "Expected ints")
         self.assertClose(np.arange(100), arr, "Expected ids 0 to 99")
 
+        labels = ["test_label"]
+        ps.label(labels=labels, cells=np.linspace(0, 100, 20, endpoint=False, dtype=int))
         # Load one chunk (the `FixedPosConfigFixture` places 25 cells in 4 chunks).
         ps.set_chunk_filter([(1, 0, 0)])
         arr = ps.load_ids()
         self.assertEqual((25,), arr.shape, "Expected 25 ids")
         self.assertClose(np.arange(25, 50), arr, "Expected ids 25 to 49")
+
+        ps.set_label_filter(labels)
+        self.assertEqual(ps.get_label_filter(), labels)
+        arr = ps.load_ids()
+        self.assertEqual((5,), arr.shape, "Expected 5 ids")
+        self.assertClose(np.arange(25, 50, 5), arr, "Expected ids 25 to 45")
 
     def test_load_positions(self):
         self.network.compile()
@@ -414,8 +423,8 @@ class TestPlacementSet(
         )
         self.assertClose(
             np.delete(np.arange(len(ps)), cells_to_label),
-            ps.get_labelled(),
-            "Empty set should return all non labelled cells",
+            ps.get_labelled([]),
+            "Empty list should return all non labelled cells",
         )
 
     def test_label_filter(self):
@@ -446,7 +455,74 @@ class TestPlacementSet(
         self.assertEqual(7, len(ps), "overlapping labels, incorrectly counted")
         self.assertEqual(7, len(ps.load_positions()), "pos not filtered")
         self.assertEqual(7, len(ps.load_morphologies()), "morpho not filtered")
-        self.assertEqual(7, len(ps.load_morphologies()), "rot not filtered")
+        self.assertEqual(7, len(ps.load_rotations()), "rot not filtered")
+
+    @skip_parallel
+    def test_overwrite_labels(self):
+        self.network.compile()
+        ps = self.network.get_placement_set("test_cell")
+        cells_to_label = np.full(len(ps), False, dtype=bool)
+        ids_selected = np.array([4, 76, 15, 99, 33])
+        cells_to_label[ids_selected] = True
+        labels = ["label1", "label2"]
+        # Label first with both label1 and label2
+        ps.label_by_mask(cells_to_label, labels=labels)
+        ps.set_label_filter(labels)
+        self.assertClose(ps.load_ids(), np.sort(ids_selected))
+        self.assertAll(
+            np.asarray(ps.get_unique_labels()) == np.asarray([set(), set(labels)])
+        )
+        # Overwrite the labels of the same cells with only label1
+        ps.label_by_mask(
+            np.full(ids_selected.size, True, dtype=bool),
+            labels=[labels[0]],
+            overwrite=True,
+        )
+        # label filters return any matching
+        self.assertClose(ps.load_ids(), np.sort(ids_selected))
+        # no more cells should be labelled with label2
+        ps.set_label_filter([labels[1]])
+        self.assertEqual(ps.load_ids().size, 0)
+        # unique labels does not take into account label filters
+        self.assertAll(
+            np.asarray(ps.get_unique_labels()) == np.asarray([set(), set([labels[0]])])
+        )
+        # remove the labels
+        ps.set_label_filter([labels[0]])
+        cells = np.full(ids_selected.size, True, dtype=bool)
+        ps.label_by_mask(
+            cells,
+            labels=[],
+            overwrite=True,
+        )
+        # no more cells should be labelled with label1
+        self.assertEqual(ps.load_ids().size, 0)
+        ps.set_label_filter(None)
+        self.assertClose(ps.load_ids(), np.arange(100, dtype=int))
+        self.assertAll(np.asarray(ps.get_unique_labels()) == np.asarray([set()]))
+
+    def test_label_errors(self):
+        self.network.compile()
+        ps = self.network.get_placement_set("test_cell")
+        labels = ["test_label"]
+        with self.assertRaises(
+            LabellingException, msg="Negative ids should raise exception"
+        ):
+            ps.label(labels, np.arange(-1, 50))
+
+        with self.assertRaises(
+            LabellingException, msg="Ids out of range should raise exception"
+        ):
+            ps.label(labels, np.arange(50, len(ps) + 1))
+
+    def test_label_by_mask_errors(self):
+        self.network.compile()
+        ps = self.network.get_placement_set("test_cell")
+        labels = ["test_label"]
+        with self.assertRaises(
+            LabellingException, msg="Negative ids should raise exception"
+        ):
+            ps.label_by_mask(np.full(len(ps) + 1, True), labels)
 
 
 class TestMorphologyRepository(NumpyTestCase, RandomStorageFixture, engine_name=None):

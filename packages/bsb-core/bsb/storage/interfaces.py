@@ -639,7 +639,19 @@ class PlacementSet(Interface):
         pass
 
     @abc.abstractmethod
-    def label(self, labels, cells):  # pragma: nocover
+    def label_by_mask(self, mask, labels, overwrite=False):
+        """
+        Should label the masked with the given labels.
+
+        :param list[bool] mask: Array of boolean for each cell to label
+        :param list[str] labels: List of labels
+        :param bool overwrite: If True, overwrite any existing labels
+        :raises LabellingException: If the array provided has invalid shape.
+        """
+        pass
+
+    @abc.abstractmethod
+    def label(self, labels, cells, overwrite=False):  # pragma: nocover
         """
         Should label the cells with given labels.
 
@@ -647,6 +659,8 @@ class PlacementSet(Interface):
         :type labels: list[str]
         :param cells: Array of cells in this set to label.
         :type cells: list[int]
+        :param bool overwrite: If True, overwrite any existing labels
+        :raises LabellingException: If the ids provided are invalid.
         """
         pass
 

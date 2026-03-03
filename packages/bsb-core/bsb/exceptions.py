@@ -65,6 +65,7 @@ _t(
             ),
             UnknownGIDError=_e(),
         ),
+        LabellingException=_e(),
         MorphologyError=_e(
             MorphologyRepositoryError=_e(),
             MissingMorphologyError=_e(),
@@ -200,6 +201,7 @@ __all__ = [
     "JobPoolContextError",
     "JobPoolError",
     "JobSchedulingError",
+    "LabellingException",
     "LayoutError",
     "MissingActiveConfigError",
     "MissingMorphologyError",

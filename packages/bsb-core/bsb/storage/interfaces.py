@@ -639,7 +639,7 @@ class PlacementSet(Interface):
         pass
 
     @abc.abstractmethod
-    def label_by_mask(self, labels, mask, overwrite=False):
+    def label_by_mask(self, labels, mask, overwrite=False):  # pragma: nocover
         """
         Should label the masked with the given labels.
 

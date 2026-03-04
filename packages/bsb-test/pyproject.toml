@@ -50,6 +50,7 @@ name = "bsb_test"
 [tool.coverage.run]
 branch = true
 source = [ "bsb_test" ]
+omit = [ "bsb_test/engines.py", "bsb_test/configs/*", "bsb_test/data/*" ]
 
 [tool.coverage.report]
 exclude_lines = [ "if typing.TYPE_CHECKING:", "pragma: nocover" ]

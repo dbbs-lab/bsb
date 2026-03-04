@@ -459,6 +459,8 @@ class TestPlacementSet(
 
     @skip_parallel
     def test_overwrite_labels(self):
+        # overwriting labels does not work in this unit test
+        # in parallel because of how we use the label_filter
         self.network.compile()
         ps = self.network.get_placement_set("test_cell")
         cells_to_label = np.full(len(ps), False, dtype=bool)
@@ -466,7 +468,7 @@ class TestPlacementSet(
         cells_to_label[ids_selected] = True
         labels = ["label1", "label2"]
         # Label first with both label1 and label2
-        ps.label_by_mask(cells_to_label, labels=labels)
+        ps.label_by_mask(labels, cells_to_label)
         ps.set_label_filter(labels)
         self.assertClose(ps.load_ids(), np.sort(ids_selected))
         self.assertAll(
@@ -474,8 +476,8 @@ class TestPlacementSet(
         )
         # Overwrite the labels of the same cells with only label1
         ps.label_by_mask(
+            [labels[0]],
             np.full(ids_selected.size, True, dtype=bool),
-            labels=[labels[0]],
             overwrite=True,
         )
         # label filters return any matching
@@ -491,8 +493,8 @@ class TestPlacementSet(
         ps.set_label_filter([labels[0]])
         cells = np.full(ids_selected.size, True, dtype=bool)
         ps.label_by_mask(
+            [],
             cells,
-            labels=[],
             overwrite=True,
         )
         # no more cells should be labelled with label1
@@ -500,6 +502,52 @@ class TestPlacementSet(
         ps.set_label_filter(None)
         self.assertClose(ps.load_ids(), np.arange(100, dtype=int))
         self.assertAll(np.asarray(ps.get_unique_labels()) == np.asarray([set()]))
+
+    @skip_parallel
+    def test_example_labels(self):
+        # Unit test of the example given on the PlacementSet documentation
+        # overwriting labels does not work in this unit test
+        # in parallel because of how we use the label_filter
+        self.network.compile()
+        ps = self.network.get_placement_set("test_cell")
+        self.assertAll(ps.load_ids() == np.arange(100, dtype=int))
+        # you can put as many labels onto one cell
+        ps.label(["labelA", "labelB"], [1, 5, 6])
+        filter_ = np.zeros(len(ps), dtype=bool)
+        filter_[np.array([0, 1, 3, 5])] = True
+        ps.label_by_mask(["labelC"], filter_)
+        ps.label(["labelD"], [1], overwrite=True)
+        self.assertAll(ps.get_labelled(["labelA"]) == np.array([5, 6]))
+        filter_[1] = False
+        self.assertAll(ps.get_label_mask(["labelC"]) == filter_)
+        self.assertAll(ps.get_labelled(["labelB", "labelC"]) == np.array([0, 3, 5, 6]))
+        self.assertAll(ps.get_labelled(["labelD"]) == np.array([1]))
+        self.assertAll(ps.get_label_mask() == np.ones(len(ps), dtype=bool))
+        self.assertAll(np.isin([2, 4], ps.get_labelled([])))
+        self.assertAll(
+            ps.get_unique_labels()
+            == np.array(
+                [
+                    set(),
+                    {"labelA", "labelB"},
+                    {"labelC"},
+                    {"labelA", "labelB", "labelC"},
+                    {"labelD"},
+                ]
+            )
+        )
+        ps.set_label_filter(["labelA"])
+        self.assertAll(ps.load_ids() == np.array([5, 6]))
+        self.assertEqual(len(ps), 2)
+        ps.set_label_filter(["labelB", "labelC"])
+        self.assertAll(ps.load_ids() == np.array([0, 3, 5, 6]))
+        ps.set_label_filter([])
+        self.assertAll(np.isin([2, 4], ps.load_ids()))
+        ps.set_label_filter(None)
+        self.assertAll(ps.load_ids() == np.arange(100, dtype=int))
+        ps.set_label_filter(["labelA"])
+        ps.label(["labelE"], [1])
+        self.assertAll(ps.get_labelled(["labelE"]) == np.array([6]))
 
     def test_label_errors(self):
         self.network.compile()
@@ -520,9 +568,9 @@ class TestPlacementSet(
         ps = self.network.get_placement_set("test_cell")
         labels = ["test_label"]
         with self.assertRaises(
-            LabellingException, msg="Negative ids should raise exception"
+            LabellingException, msg="Array with wrong length should raise exception"
         ):
-            ps.label_by_mask(np.full(len(ps) + 1, True), labels)
+            ps.label_by_mask(labels, np.full(len(ps) + 1, True))
 
 
 class TestMorphologyRepository(NumpyTestCase, RandomStorageFixture, engine_name=None):
@@ -837,11 +885,12 @@ class TestConnectivitySet(
         )
 
     def test_labelled_cells(self):
+        # setting seed necessary for parallel testing
         np.random.seed(0)
         ps = self.network.get_placement_set("test_cell")
         labelled_a = np.asarray(np.random.choice(2, len(ps)), dtype=bool)
-        ps.label_by_mask(labelled_a, ["labelA"])
-        ps.label_by_mask(~labelled_a, ["labelB"])
+        ps.label_by_mask(["labelA"], labelled_a)
+        ps.label_by_mask(["labelB"], ~labelled_a)
         self.network.configuration.connectivity.add(
             "a_to_b",
             dict(

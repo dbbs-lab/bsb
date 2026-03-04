@@ -14,9 +14,9 @@ rotations and additional datasets.
 Retrieving a PlacementSet
 =========================
 
-Multiple ``get_placement_set`` methods exist in several places as shortcuts to create the
-same :class:`bsb:bsb.storage.interfaces.PlacementSet`. If the placement set does not exist, a
-``DatesetNotFoundError`` is thrown.
+Multiple ``get_placement_set`` methods exist in several places as shortcuts to access the
+same :class:`PlacementSet<bsb:bsb.storage.interfaces.PlacementSet>` object.
+If the placement set does not exist, a ``DatesetNotFoundError`` is thrown.
 
 .. code-block:: python
 
@@ -35,7 +35,7 @@ Identifiers
 
 Cells have no global identifiers, instead you use the indices of their data, i.e. the
 n-th position belongs to cell n, and so will the n-th rotation.
-To easily retrieve the cells' IDs make use of the method :meth:`bsb:bsb.storage.interfaces.PlacementSet.load_ids`.
+To easily retrieve the cells' IDs make use of the method :meth:`load_ids <bsb:bsb.storage.interfaces.PlacementSet.load_ids>`.
 
 .. code-block:: python
 
@@ -46,7 +46,7 @@ Positions
 =========
 
 The positions of the cells can be retrieved using the
-:meth:`bsb:bsb.storage.interfaces.PlacementSet.load_positions` method.
+:meth:`load_positions <bsb:bsb.storage.interfaces.PlacementSet.load_positions>` method.
 
 .. code-block:: python
 
@@ -57,7 +57,7 @@ Morphologies
 ============
 
 The morphology of the cells can be retrieved using the
-:meth:`bsb:bsb.storage.interfaces.PlacementSet.load_morphologies` method.
+:meth:`load_morphologies <bsb:bsb.storage.interfaces.PlacementSet.load_morphologies>` method.
 
 .. code-block:: python
 
@@ -67,15 +67,15 @@ The morphology of the cells can be retrieved using the
 .. warning::
 
    | Loading morphologies is especially expensive.
-   | :meth:`bsb:bsb.storage.interfaces.PlacementSet.load_morphologies` returns a
-     :class:`bsb:bsb.morphologies.MorphologySet`.
+   | :meth:`load_morphologies <bsb:bsb.storage.interfaces.PlacementSet.load_morphologies>` returns a
+     :class:`MorphologySet <bsb:bsb.morphologies.MorphologySet>`.
    | There are better ways to iterate over it using either **soft caching** or **hard caching**.
 
 Rotations
 =========
 
 The positions of the cells can be retrieved using the
-:meth:`bsb:bsb.storage.interfaces.PlacementSet.load_rotations` method.
+:meth:`load_rotations <bsb:bsb.storage.interfaces.PlacementSet.load_rotations>` method.
 
 .. code-block:: python
 
@@ -85,8 +85,96 @@ The positions of the cells can be retrieved using the
 Labeling
 ========
 
-You can label cells and/or their attached morphologies using the
-:meth:`bsb:bsb.storage.interfaces.PlacementSet.load_rotations`
+You can label cells using the
+:meth:`label <bsb:bsb.storage.interfaces.PlacementSet.label>` or the
+:meth:`label_by_mask <bsb:bsb.storage.interfaces.PlacementSet.label_by_mask>` methods.
+These functions are almost identical. The first one uses cell ids while the other needs a boolean mask array.
+
+.. note::
+
+    Labeling is by default cumulative, i.e., if you relabel a cell then the new labels will be
+    added to the previous ones. To overwrite the labels previously put, you can set the `overwrite` flag.
+
+.. code-block:: python
+
+  # Assuming ps has 7 cells
+  print(ps.load_ids())  # prints [0, 1, 2, 3, 4, 5, 6]
+  # you can put as many labels onto one cell
+  ps.label(["labelA", "labelB"], [1, 5, 6])
+  # the boolean mask array should be the same size as the ps
+  ps.label_by_mask(["labelC"], [True, True, False, True, False, True, False])
+  # we overwrite the previous labels
+  ps.label(["labelD"], [1], overwrite=True)
+
+You can retrieve the cells labelled leveraging the
+:meth:`get_labelled <bsb:bsb.storage.interfaces.PlacementSet.get_labelled>` or the
+:meth:`get_label_mask <bsb:bsb.storage.interfaces.PlacementSet.get_label_mask>` methods.
+These functions are the counterpart of the ``label`` and ``label_by_mask`` functions:
+one returns the list of ids labelled while the other provides a boolean mask array.
+Finally, you can retrieve the list of unique label sets that is attached to each cell with the
+method :meth:`get_unique_labels <bsb:bsb.storage.interfaces.PlacementSet.get_unique_labels>` .
+
+.. note::
+
+    If you provide `None` as labels to these functions, they would return all ps ids.
+    You should provide an empty list to filter non labelled cells.
+
+.. note::
+
+    The function will return cells labelled by **any** of the labels provided.
+
+.. code-block:: python
+
+    # reusing previous example
+    print(ps.get_labelled(["labelA"]))  # should print [5, 6]
+    print(ps.get_label_mask(["labelC"]))  # should print [True, False, False, True, False, True, False]
+    print(ps.get_labelled(["labelB", "labelC"])) # should print [0, 3, 5, 6]
+    print(ps.get_labelled(["labelD"]))  # should print [1]
+    print(ps.get_label_mask())  # should print [True, True, True, True, True, True, True]
+    print(ps.get_labelled([]))  # should print [2, 4]
+    # should print [set(), {"labelA", "labelB"}, {"labelC"}, {"labelA", "labelB", "labelC"}, {"labelD"}]
+    print(ps.get_unique_labels())
+
+You can also filter your `PlacementSet` according to the labels used setting the `label_filter`s
+(getter: :meth:`get_label_filter <bsb:bsb.storage.interfaces.PlacementSet.get_label_filter>`
+setter: :meth:`set_label_filter <bsb:bsb.storage.interfaces.PlacementSet.set_label_filter>`).
+Similar to the previous function, this filter returns cells matching any of the labels provided
+
+.. note::
+
+    The PlacementSet ids do not change with this filter.
+
+.. code-block:: python
+
+    # reusing previous example
+    ps.set_label_filter(["labelA"])
+    print(ps.load_ids())  # should print [5, 6]
+    print(len(ps))  # should print 2
+    ps.set_label_filter(["labelB", "labelC"])
+    print(ps.load_ids())  # should print [0, 3, 5, 6]
+    ps.set_label_filter([])  # filter cells that are not labelled
+    print(ps.load_ids()) # should print [2, 4]
+    ps.set_label_filter(None)  # reset label filtering
+    print(ps.load_ids()) # should print [0, 1, 2, 3, 4, 5, 6]
+
+
+.. important::
+    If you want to label the PlacementSet again after filtering it,
+    you have to use indexes corresponding to its new length.
+
+.. code-block:: python
+
+    # reusing previous example
+    ps.set_label_filter(["labelA"])
+    print(ps.load_ids())  # should print [5, 6]
+    # So to label cell 6, we use its new index: 1
+    ps.label(["labelE"], [1])  # will add label "labelE" to cell 6
+    print(ps.get_labelled(["labelE"]))  # should print [6]
+
+Morphology filtering
+====================
+
+To do
 
 Additional datasets
 ===================

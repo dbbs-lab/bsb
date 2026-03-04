@@ -343,7 +343,7 @@ class PlacementSet(
         self._engine._write_chunk_stats(handle, stats)
 
     @handles_handles("a")
-    def label_by_mask(self, mask, labels, overwrite=False, handle=HANDLED):
+    def label_by_mask(self, labels, mask, overwrite=False, handle=HANDLED):
         cells = np.array(mask, copy=False)
         if cells.dtype != bool or len(cells) != len(self):
             raise LabellingException("Mask doesn't fit data.")

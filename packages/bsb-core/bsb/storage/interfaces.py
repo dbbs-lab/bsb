@@ -639,12 +639,12 @@ class PlacementSet(Interface):
         pass
 
     @abc.abstractmethod
-    def label_by_mask(self, mask, labels, overwrite=False):
+    def label_by_mask(self, labels, mask, overwrite=False):
         """
         Should label the masked with the given labels.
 
-        :param list[bool] mask: Array of boolean for each cell to label
         :param list[str] labels: List of labels
+        :param list[bool] mask: Array of boolean for each cell to label
         :param bool overwrite: If True, overwrite any existing labels
         :raises: LabellingException if the array provided has invalid shape.
         """
@@ -677,8 +677,8 @@ class PlacementSet(Interface):
     @abc.abstractmethod
     def get_labelled(self, labels=None):  # pragma: nocover
         """
-        Should return the ids of the cells labelled with given labels. If labels are not
-        provided, will filter non labelled cells.
+        Should return the ids of the cells labelled with given labels.
+        To filter non labelled cells, set labels to empty list.
 
         :param labels: List of labels
         :type labels: list[str]
@@ -690,10 +690,11 @@ class PlacementSet(Interface):
     def get_label_mask(self, labels=None):  # pragma: nocover
         """
         Should return a mask that fits the placement set for the cells with given labels.
-        If labels are not provided, will filter non labelled cells.
+        To filter non labelled cells, set labels to empty list.
 
         :param labels: List of labels
         :type labels: list[str]
+        :rtype: numpy.ndarray[bool]
         """
         pass
 

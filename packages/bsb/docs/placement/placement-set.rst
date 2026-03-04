@@ -82,6 +82,37 @@ The positions of the cells can be retrieved using the
   for n, rotation in enumerate(ps.load_rotations()):
     print(f"Cell {n}, rotation: ", rotation)
 
+Chunk filtering
+===============
+
+You can use a list of Chunks to subsample the cells present within them.
+This can be done when you generate the `PlacementSet` object with on of the function
+``get_placement_set`` or using the
+:meth:`set_chunk_filter <bsb:bsb.storage.interfaces.PlacementSet.set_chunk_filter>` method.
+
+.. important::
+
+    Note that the ids of the placement set will be remapped according to the Chunk filter
+
+.. code-block:: python
+
+    from bsb import Chunk
+
+    # we suppose here a case where 10 `my_cell` cells are placed in two Chunks
+    # 7 in the Chunk [0, 0, 0]
+    # 3 in the Chunk [0, 0, 1]
+    ps = scaffold.get_placement_set(
+            "my_cell",
+            chunks=[Chunk([0, 0, 0], chunk_size=100)]
+    )
+    print(ps.get_all_chunks())  # should print Chunk([0, 0, 0])
+    print(ps.load_ids())  # should print [0, 1, 2, 3, 4, 5, 6]
+    ps.set_chunk_filter([Chunk([0, 0, 1], chunk_size=100)])
+    print(ps.get_all_chunks())  # should print Chunk([0, 0, 1])
+    print(ps.load_ids())  # should print [0, 1, 2]
+    ps.set_chunk_filter([])  # reset chunk filter
+    print(ps.load_ids())  # should print [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+
 Labeling
 ========
 
@@ -138,11 +169,19 @@ method :meth:`get_unique_labels <bsb:bsb.storage.interfaces.PlacementSet.get_uni
 You can also filter your `PlacementSet` according to the labels used setting the `label_filter`s
 (getter: :meth:`get_label_filter <bsb:bsb.storage.interfaces.PlacementSet.get_label_filter>`
 setter: :meth:`set_label_filter <bsb:bsb.storage.interfaces.PlacementSet.set_label_filter>`).
-Similar to the previous function, this filter returns cells matching any of the labels provided
+This means that the length of the `PlacementSet` and all its attached datasets
+(ids, rotations, morphologies) will be sub-sampled according to the label filter.
+
+Similar to the previous function, this filter returns cells matching any of the labels provided.
+
+.. important::
+
+    Unlike the Chunk filtering, the PlacementSet ids do not change with the labels filter.
 
 .. note::
 
-    The PlacementSet ids do not change with this filter.
+    You can also filter cell labels when you retrieve the `PlacementSet`
+    with the function ``get_placement_set``.
 
 .. code-block:: python
 
@@ -174,7 +213,19 @@ Similar to the previous function, this filter returns cells matching any of the 
 Morphology filtering
 ====================
 
-To do
+Similar to the general cell labelling, you can use morphology labels
+(ie. labels assigned to morphology points, see also
+:ref:`this page <morphology_labels>`) to filter the morphologies sections
+that you want to isolate in your ps.
+
+.. note::
+
+    You can also filter morphology labels when you retrieve the `PlacementSet`
+    with the function ``get_placement_set``.
+
+.. code-block:: python
+
+    ps.set_morphology_label_filter(["dendrites", "apical_dendrites"])
 
 Additional datasets
 ===================

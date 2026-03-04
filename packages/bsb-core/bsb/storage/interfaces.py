@@ -646,7 +646,7 @@ class PlacementSet(Interface):
         :param list[bool] mask: Array of boolean for each cell to label
         :param list[str] labels: List of labels
         :param bool overwrite: If True, overwrite any existing labels
-        :raises LabellingException: If the array provided has invalid shape.
+        :raises: LabellingException if the array provided has invalid shape.
         """
         pass
 
@@ -660,7 +660,7 @@ class PlacementSet(Interface):
         :param cells: Array of cells in this set to label.
         :type cells: list[int]
         :param bool overwrite: If True, overwrite any existing labels
-        :raises LabellingException: If the ids provided are invalid.
+        :raises: LabellingException if the ids provided are invalid.
         """
         pass
 

@@ -835,3 +835,40 @@ class TestConnectivitySet(
             [len(block[1]) for block in spies["block_data"]],
             "expected each block to have 625 global locs",
         )
+
+    def test_labelled_cells(self):
+        np.random.seed(0)
+        ps = self.network.get_placement_set("test_cell")
+        labelled_a = np.asarray(np.random.choice(2, len(ps)), dtype=bool)
+        ps.label_by_mask(labelled_a, ["labelA"])
+        ps.label_by_mask(~labelled_a, ["labelB"])
+        self.network.configuration.connectivity.add(
+            "a_to_b",
+            dict(
+                strategy="bsb.connectivity.AllToAll",
+                presynaptic=dict(cell_types=["test_cell"], labels=["labelA"]),
+                postsynaptic=dict(cell_types=["test_cell"], labels=["labelB"]),
+            ),
+        )
+        self.network.configuration.connectivity.add(
+            "b_to_a",
+            dict(
+                strategy="bsb.connectivity.AllToAll",
+                presynaptic=dict(cell_types=["test_cell"], labels=["labelB"]),
+                postsynaptic=dict(cell_types=["test_cell"], labels=["labelA"]),
+            ),
+        )
+        self.network.compile(
+            skip_after_placement=True,
+            skip_after_connectivity=True,
+            redo=True,
+            only=["a_to_b", "b_to_a"],
+        )
+        a_to_b = self.network.get_connectivity_set("a_to_b").load_connections().all()
+        b_to_a = self.network.get_connectivity_set("b_to_a").load_connections().all()
+        ids_a = np.where(labelled_a)[0]
+        ids_b = np.where(~labelled_a)[0]
+        self.assertAll(ids_a == np.unique(a_to_b[0][:, 0]))
+        self.assertAll(ids_a == np.unique(b_to_a[1][:, 0]))
+        self.assertAll(ids_b == np.unique(a_to_b[1][:, 0]))
+        self.assertAll(ids_b == np.unique(b_to_a[0][:, 0]))

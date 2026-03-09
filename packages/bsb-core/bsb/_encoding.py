@@ -59,7 +59,13 @@ class EncodedLabels(np.ndarray):
         return cp
 
     def label(self, labels, points, overwrite=False):
-        if not np.any(points):
+        # points can be either a boolean mask or a list of indices
+        if (
+            np.asarray(points).dtype != bool
+            and not len(points)
+            or np.asarray(points).dtype == bool
+            and not np.any(points)
+        ):
             return
         _transitions = {}
         # A counter that skips existing values.

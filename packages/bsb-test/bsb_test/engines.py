@@ -412,6 +412,13 @@ class TestPlacementSet(
         ps = self.network.get_placement_set("test_cell")
         cells_to_label = [33, 12, 0, 3, 77]
         labels = ["label1", "label2"]
+        # Test empty labeling
+        ps.label(labels, np.full(len(ps), False))
+        self.assertAll(
+            np.asarray(ps.get_unique_labels()) == np.asarray([set()]),
+            "No cells should have been labelled.",
+        )
+
         ps.label(labels, cells_to_label)
         self.assertAll(
             np.asarray(ps.get_unique_labels()) == np.asarray([set(), set(labels)])

@@ -25,7 +25,7 @@ from bsb import (
     Configuration,
     DatasetExistsError,
     DatasetNotFoundError,
-    LabellingException,
+    LabellingError,
     MorphologySet,
     Scaffold,
     Storage,
@@ -560,13 +560,11 @@ class TestPlacementSet(
         self.network.compile()
         ps = self.network.get_placement_set("test_cell")
         labels = ["test_label"]
-        with self.assertRaises(
-            LabellingException, msg="Negative ids should raise exception"
-        ):
+        with self.assertRaises(LabellingError, msg="Negative ids should raise exception"):
             ps.label(labels, np.arange(-1, 50))
 
         with self.assertRaises(
-            LabellingException, msg="Ids out of range should raise exception"
+            LabellingError, msg="Ids out of range should raise exception"
         ):
             ps.label(labels, np.arange(50, len(ps) + 1))
 
@@ -575,7 +573,7 @@ class TestPlacementSet(
         ps = self.network.get_placement_set("test_cell")
         labels = ["test_label"]
         with self.assertRaises(
-            LabellingException, msg="Array with wrong length should raise exception"
+            LabellingError, msg="Array with wrong length should raise exception"
         ):
             ps.label_by_mask(labels, np.full(len(ps) + 1, True))
 

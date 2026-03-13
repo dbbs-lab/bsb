@@ -6,7 +6,7 @@ from bsb import (
     Chunk,
     DatasetExistsError,
     DatasetNotFoundError,
-    LabellingException,
+    LabellingError,
     MissingMorphologyError,
     MorphologySelector,
     MorphologySet,
@@ -346,7 +346,7 @@ class PlacementSet(
     def label_by_mask(self, labels, mask, overwrite=False, handle=HANDLED):
         cells = np.array(mask, copy=False)
         if cells.dtype != bool or len(cells) != len(self):
-            raise LabellingException("Mask doesn't fit data.")
+            raise LabellingError("Mask doesn't fit data.")
         self.label(labels, np.where(cells)[0], overwrite=overwrite, handle=handle)
 
     @handles_handles("a")
@@ -356,7 +356,7 @@ class PlacementSet(
         oob = (cells >= len_) + (cells < 0)
         if np.any(oob):
             oob_idx = cells[oob]
-            raise LabellingException(
+            raise LabellingError(
                 f"Cell labels {oob_idx} out of range for placement set with size {len_}."
             )
         self._write_labels(

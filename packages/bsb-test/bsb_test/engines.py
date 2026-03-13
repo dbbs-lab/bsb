@@ -482,10 +482,9 @@ class TestPlacementSet(
             np.asarray(ps.get_unique_labels()) == np.asarray([set(), set(labels)])
         )
         # Overwrite the labels of the same cells with only label1
-        ps.label_by_mask(
-            [labels[0]],
+        ps.remove_labels_by_mask(
+            [labels[1]],
             np.full(ids_selected.size, True, dtype=bool),
-            overwrite=True,
         )
         # label filters return any matching
         self.assertClose(ps.load_ids(), np.sort(ids_selected))
@@ -499,10 +498,9 @@ class TestPlacementSet(
         # remove the labels
         ps.set_label_filter([labels[0]])
         cells = np.full(ids_selected.size, True, dtype=bool)
-        ps.label_by_mask(
-            [],
+        ps.remove_labels_by_mask(
+            labels,
             cells,
-            overwrite=True,
         )
         # no more cells should be labelled with label1
         self.assertEqual(ps.load_ids().size, 0)
@@ -523,7 +521,8 @@ class TestPlacementSet(
         filter_ = np.zeros(len(ps), dtype=bool)
         filter_[np.array([0, 1, 3, 5])] = True
         ps.label_by_mask(["labelC"], filter_)
-        ps.label(["labelD"], [1], overwrite=True)
+        ps.remove_labels(["labelA", "labelB", "labelC"], [1])
+        ps.label(["labelD"], [1])
         self.assertAll(ps.get_labelled(["labelA"]) == np.array([5, 6]))
         filter_[1] = False
         self.assertAll(ps.get_label_mask(["labelC"]) == filter_)
@@ -576,6 +575,10 @@ class TestPlacementSet(
             LabellingError, msg="Array with wrong length should raise exception"
         ):
             ps.label_by_mask(labels, np.full(len(ps) + 1, True))
+        with self.assertRaises(
+            LabellingError, msg="Array with wrong length should raise exception"
+        ):
+            ps.remove_labels_by_mask(labels, np.full(len(ps) + 1, True))
 
 
 class TestMorphologyRepository(NumpyTestCase, RandomStorageFixture, engine_name=None):

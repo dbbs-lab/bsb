@@ -58,7 +58,35 @@ class EncodedLabels(np.ndarray):
         cp.labels = {k: v.copy() for k, v in cp.labels.items()}
         return cp
 
-    def label(self, labels, points, overwrite=False):
+    def remove_labels(self, labels, points):
+        # points can be either a boolean mask or a list of indices
+        if (
+            np.asarray(points).dtype != bool
+            and not len(points)
+            or np.asarray(points).dtype == bool
+            and not np.any(points)
+        ):
+            return
+
+        # A counter that skips existing values.
+        counter = (c for c in itertools.count() if c not in self.labels)
+
+        for i in points:
+            point = self[i]
+            point_labels = self.labels[point].copy()
+            is_in = np.isin(labels, list(point_labels))
+            if np.any(is_in):
+                point_labels -= set(np.array(labels)[is_in])
+                for k, v in self.labels.items():
+                    if point_labels == v:
+                        new_id = k
+                        break
+                else:
+                    new_id = next(counter)
+                    self.labels[new_id] = point_labels
+                self[i] = new_id
+
+    def label(self, labels, points):
         # points can be either a boolean mask or a list of indices
         if (
             np.asarray(points).dtype != bool
@@ -74,17 +102,14 @@ class EncodedLabels(np.ndarray):
         # This local function looks up the new id that a point should transition
         # to when `labels` are added to the labels it already has.
         def transition(point):
-            nonlocal _transitions, overwrite
+            nonlocal _transitions
             # Check if we already know the transition of this value.
             if point in _transitions:
                 return _transitions[point]
             else:
                 # First time making this transition. Join the existing and new labels
                 trans_labels = self.labels[point].copy()
-                if not overwrite:
-                    trans_labels.update(labels)
-                else:
-                    trans_labels = _lset(labels)
+                trans_labels.update(labels)
                 # Check if this new combination of labels already is assigned an id.
                 for k, v in self.labels.items():
                     if trans_labels == v:

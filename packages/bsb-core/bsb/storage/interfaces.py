@@ -639,19 +639,18 @@ class PlacementSet(Interface):
         pass
 
     @abc.abstractmethod
-    def label_by_mask(self, labels, mask, overwrite=False):  # pragma: nocover
+    def label_by_mask(self, labels, mask):  # pragma: nocover
         """
         Should label the masked with the given labels.
 
         :param list[str] labels: List of labels
         :param list[bool] mask: Array of boolean for each cell to label
-        :param bool overwrite: If True, overwrite any existing labels
         :raises: LabellingError if the array provided has invalid shape.
         """
         pass
 
     @abc.abstractmethod
-    def label(self, labels, cells, overwrite=False):  # pragma: nocover
+    def label(self, labels, cells):  # pragma: nocover
         """
         Should label the cells with given labels.
 
@@ -659,7 +658,30 @@ class PlacementSet(Interface):
         :type labels: list[str]
         :param cells: Array of cells in this set to label.
         :type cells: list[int]
-        :param bool overwrite: If True, overwrite any existing labels
+        :raises: LabellingError if the ids provided are invalid.
+        """
+        pass
+
+    @abc.abstractmethod
+    def remove_labels_by_mask(self, labels, mask):  # pragma: nocover
+        """
+        Should remove the provided labels assigned to the masked cells.
+
+        :param list[str] labels: List of labels
+        :param list[bool] mask: Array of boolean for each cell to label
+        :raises: LabellingError if the array provided has invalid shape.
+        """
+        pass
+
+    @abc.abstractmethod
+    def remove_labels(self, labels, cells):
+        """
+        Should remove the provided labels assigned to the cells.
+
+        :param labels: List of labels
+        :type labels: list[str]
+        :param cells: Array of cells in this set to remove labels.
+        :type cells: list[int]
         :raises: LabellingError if the ids provided are invalid.
         """
         pass

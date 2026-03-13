@@ -1,5 +1,6 @@
 import itertools
 import json
+from functools import partial
 
 import numpy as np
 from bsb import (
@@ -343,14 +344,20 @@ class PlacementSet(
         self._engine._write_chunk_stats(handle, stats)
 
     @handles_handles("a")
-    def label_by_mask(self, labels, mask, overwrite=False, handle=HANDLED):
+    def label_by_mask(self, labels, mask, handle=HANDLED):
         cells = np.array(mask, copy=False)
         if cells.dtype != bool or len(cells) != len(self):
             raise LabellingError("Mask doesn't fit data.")
-        self.label(labels, np.where(cells)[0], overwrite=overwrite, handle=handle)
+        self.label(labels, np.where(cells)[0], handle=handle)
 
     @handles_handles("a")
-    def label(self, labels, cells, overwrite=False, handle=HANDLED):
+    def remove_labels_by_mask(self, labels, mask, handle=HANDLED):
+        cells = np.array(mask, copy=False)
+        if cells.dtype != bool or len(cells) != len(self):
+            raise LabellingError("Mask doesn't fit data.")
+        self.remove_labels(labels, np.where(cells)[0], handle=handle)
+
+    def _check_cell_ids(self, cells):
         cells = np.array(cells, copy=False)
         len_ = len(self)
         oob = (cells >= len_) + (cells < 0)
@@ -359,11 +366,37 @@ class PlacementSet(
             raise LabellingError(
                 f"Cell labels {oob_idx} out of range for placement set with size {len_}."
             )
+        return cells
+
+    @handles_handles("a")
+    def label(self, labels, cells, handle=HANDLED):
+        cells = self._check_cell_ids(cells)
         self._write_labels(
-            labels, handle, lambda: self._demux(cells), lambda x: x, overwrite
+            labels,
+            handle,
+            lambda: self._demux(cells),
+            partial(self._add_labels, data_f=lambda x: x),
         )
 
-    def _write_labels(self, labels, handle, demux_f, data_f, overwrite=False):
+    @handles_handles("a")
+    def remove_labels(self, labels, cells, handle=HANDLED):
+        cells = self._check_cell_ids(cells)
+        self._write_labels(
+            labels,
+            handle,
+            lambda: self._demux(cells),
+            partial(self._remove_labels, data_f=lambda x: x),
+        )
+
+    @staticmethod
+    def _add_labels(enc_labels, block, labels, data_f):
+        enc_labels.label(labels, data_f(block))
+
+    @staticmethod
+    def _remove_labels(enc_labels, block, labels, data_f):
+        enc_labels.remove_labels(labels, data_f(block))
+
+    def _write_labels(self, labels, handle, demux_f, update_function):
         # Create a label reader that can read out label data per chunk, and pads missing
         # cells with unlabelled cells.
         label_reader = self._labels_chunks.get_chunk_reader(
@@ -380,7 +413,7 @@ class PlacementSet(
             else:
                 updated_labels = enc_labels.labels
             # Label the cells
-            enc_labels.label(labels, data_f(block), overwrite=overwrite)
+            update_function(enc_labels, block, labels)
             # Overwrite with new labelled data.
             self._labels_chunks.overwrite(chunk, enc_labels, handle=handle)
         # Update the shared labelset reference on the PS.

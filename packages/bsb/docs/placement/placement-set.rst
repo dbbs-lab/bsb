@@ -123,8 +123,10 @@ These functions are almost identical. The first one uses cell ids while the othe
 
 .. note::
 
-    Labeling is by default cumulative, i.e., if you relabel a cell then the new labels will be
-    added to the previous ones. To overwrite the labels previously put, you can set the `overwrite` flag.
+    Labeling is cumulative, i.e., if you relabel a cell then the new labels will be
+    added to the previous ones. You can remove labels previously put, using the
+    :meth:`remove_labels <bsb:bsb.storage.interfaces.PlacementSet.remove_labels>` or
+    :meth:`remove_labels_by_mask <bsb:bsb.storage.interfaces.PlacementSet.remove_labels_by_mask>` functions.
 
 .. code-block:: python
 
@@ -135,7 +137,8 @@ These functions are almost identical. The first one uses cell ids while the othe
   # the boolean mask array should be the same size as the ps
   ps.label_by_mask(["labelC"], [True, True, False, True, False, True, False])
   # we overwrite the previous labels
-  ps.label(["labelD"], [1], overwrite=True)
+  ps.remove_labels(["labelA", "labelB", "labelC"], [1])
+  ps.label(["labelD"], [1])
 
 You can retrieve the cells labelled leveraging the
 :meth:`get_labelled <bsb:bsb.storage.interfaces.PlacementSet.get_labelled>` or the

@@ -238,7 +238,7 @@ class ChunkedProperty:
                 maxshape=maxshape,
                 dtype=self.dtype,
             )
-        else:
+        elif len(data) > 0:
             dset = chunk_group[key]
             start_pos = dset.shape[0]
             dset.resize(start_pos + len(data), axis=0)

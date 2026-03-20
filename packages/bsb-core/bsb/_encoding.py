@@ -58,8 +58,42 @@ class EncodedLabels(np.ndarray):
         cp.labels = {k: v.copy() for k, v in cp.labels.items()}
         return cp
 
+    def remove_labels(self, labels, points):
+        # points can be either a boolean mask or a list of indices
+        if (
+            np.asarray(points).dtype != bool
+            and not len(points)
+            or np.asarray(points).dtype == bool
+            and not np.any(points)
+        ):
+            return
+
+        # A counter that skips existing values.
+        counter = (c for c in itertools.count() if c not in self.labels)
+
+        for i in points:
+            point = self[i]
+            point_labels = self.labels[point].copy()
+            is_in = np.isin(labels, list(point_labels))
+            if np.any(is_in):
+                point_labels -= set(np.array(labels)[is_in])
+                for k, v in self.labels.items():
+                    if point_labels == v:
+                        new_id = k
+                        break
+                else:
+                    new_id = next(counter)
+                    self.labels[new_id] = point_labels
+                self[i] = new_id
+
     def label(self, labels, points):
-        if not len(points):
+        # points can be either a boolean mask or a list of indices
+        if (
+            np.asarray(points).dtype != bool
+            and not len(points)
+            or np.asarray(points).dtype == bool
+            and not np.any(points)
+        ):
             return
         _transitions = {}
         # A counter that skips existing values.
@@ -110,7 +144,9 @@ class EncodedLabels(np.ndarray):
         :param list[str] labels: List of labels
         :rtype: numpy.ndarray[int]
         """
-        labels = set(labels or [])
+        if labels is None:
+            return np.full(self.size, True, dtype=bool)
+        labels = set(labels)
         has_any = [
             k
             for k, v in self.labels.items()

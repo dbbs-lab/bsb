@@ -452,8 +452,8 @@ class TestGeometricShapes(unittest.TestCase, NumpyTestCase):
         self.assertClose(mbb[1], expected_mbb[1])
         wireframe = np.array(sc.generate_wireframe())
         self.assertEqual((3, 1, 4, 4), wireframe.shape)
-        self.assertTrue(np.alltrue(wireframe.reshape(3, 16).T - expected_mbb[0] >= -1e-5))
-        self.assertTrue(np.alltrue(wireframe.reshape(3, 16).T - expected_mbb[1] <= 1e-5))
+        self.assertTrue(np.all(wireframe.reshape(3, 16).T - expected_mbb[0] >= -1e-5))
+        self.assertTrue(np.all(wireframe.reshape(3, 16).T - expected_mbb[1] <= 1e-5))
 
     # Create a cuboid, add it to a ShapeComposition object and test the minimal bounding
     # box, inside_mbox, inside_shapes and generate_point_cloud methods
@@ -545,8 +545,8 @@ class TestGeometricShapes(unittest.TestCase, NumpyTestCase):
         self.assertClose(mbb[1], expected_mbb[1])
         wireframe = np.array(sc.generate_wireframe())
         self.assertEqual((3, 1, 4, 4), wireframe.shape)
-        self.assertTrue(np.alltrue(wireframe.reshape(3, 16).T - expected_mbb[0] >= -1e-5))
-        self.assertTrue(np.alltrue(wireframe.reshape(3, 16).T - expected_mbb[1] <= 1e-5))
+        self.assertTrue(np.all(wireframe.reshape(3, 16).T - expected_mbb[0] >= -1e-5))
+        self.assertTrue(np.all(wireframe.reshape(3, 16).T - expected_mbb[1] <= 1e-5))
 
     # Create a cone, add it to a ShapeComposition object and test the minimal bounding box
     # inside_mbox, inside_shapes and generate_point_cloud methods
@@ -643,7 +643,7 @@ class TestGeometricShapes(unittest.TestCase, NumpyTestCase):
         wireframe = np.array(sc.generate_wireframe())
         self.assertEqual((3, 1, 30, 30), wireframe.shape)
         self.assertTrue(
-            np.alltrue(
+            np.all(
                 np.linalg.norm(
                     (wireframe[:, 0, :, 0] - cone.origin[..., np.newaxis])[
                         np.array([0, 1])

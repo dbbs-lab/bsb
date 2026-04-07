@@ -180,6 +180,7 @@ class VolumeFiller:
         for particle_type in self.particle_types:
             count = particle_type["count"]
             if count.size == 1:
+                particle_type["count"] = particle_type["count"][0]
                 self._fill_global(particle_type)
             else:
                 self._fill_per_voxel(particle_type)
@@ -200,7 +201,7 @@ class VolumeFiller:
                 self.add_particle(radius, particle_position, type=particle_type)
 
     def _fill_global(self, particle_type):
-        particle_count = int(particle_type["count"][0])
+        particle_count = int(particle_type["count"])
         particle_type["placed"] = particle_type.get("placed", 0) + particle_count
         radius = particle_type["radius"]
         # Generate a matrix with random positions for the particles

@@ -200,7 +200,7 @@ class VolumeFiller:
                 self.add_particle(radius, particle_position, type=particle_type)
 
     def _fill_global(self, particle_type):
-        particle_count = int(particle_type["count"])
+        particle_count = int(particle_type["count"][0])
         particle_type["placed"] = particle_type.get("placed", 0) + particle_count
         radius = particle_type["radius"]
         # Generate a matrix with random positions for the particles

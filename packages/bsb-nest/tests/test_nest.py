@@ -827,7 +827,7 @@ class TestNest(
         duration = 100
         resolution = 0.1
         cfg = _conf_two_cells()
-        with self.assertRaises(CastError):
+        with self.assertRaises(BootError):
             cfg.simulations = {
                 "test": {
                     "simulator": "nest",
@@ -848,6 +848,7 @@ class TestNest(
                     "devices": {},
                 }
             }
+            _ = Scaffold(cfg, self.storage)
 
     def test_gap_junctions_syn(self):
         duration = 100
@@ -881,7 +882,7 @@ class TestNest(
         duration = 100
         resolution = 0.1
         cfg = _conf_two_cells()
-        with self.assertRaises(ConfigurationError):
+        with self.assertRaises(BootError):
             cfg.simulations = {
                 "test": {
                     "simulator": "nest",
@@ -902,6 +903,7 @@ class TestNest(
                     "devices": {},
                 }
             }
+            _ = Scaffold(cfg, self.storage)
 
     def test_multisyn_collocation(self):
         cfg = _conf_single_cell()

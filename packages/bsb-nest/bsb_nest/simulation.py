@@ -49,7 +49,7 @@ class NestSimulation(Simulation):
                         pass
                     elif "file not found" in e.message:
                         raise NestModuleError(f"Module {module} not found") from None
-                    else:
+                    else:  # pragma: nocover
                         raise
-                else:
+                else:  # pragma: nocover
                     raise

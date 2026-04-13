@@ -1,8 +1,9 @@
 import unittest
 
 import numpy as np
-from bsb_arbor import SpikeRecorder
+from bsb_arbor import ArborSimulation, SpikeRecorder
 from bsb_test import FixedPosConfigFixture, NumpyTestCase, RandomStorageFixture
+from neo import io
 
 from bsb import (
     MPI,
@@ -563,3 +564,80 @@ class TestAdapterControllers(
             & (segments[-1].spiketrains[0].magnitude < 100),
             "Spike times in last segment fall outside the expected range (90-100).",
         )
+
+    def test_checkpoints_with_double_sim(self):
+        """This test checks that if two simulations are run the results are written in two
+        separate blocks inside the same file"""
+        self.network.simulations.test.devices["new_recorder"] = dict(
+            device="spike_controller",
+            targetting={
+                "strategy": "cell_model",
+                "cell_models": ["test_cell"],
+            },
+            step=10,
+        )
+        sim_2 = dict(
+            simulator="arbor",
+            duration=50,
+            resolution=0.5,
+            cell_models={
+                "test_cell": {
+                    "model_strategy": "lif",
+                    "constants": {
+                        "C_m": 250,
+                        "tau_m": 20,
+                        "t_ref": 2.0,
+                        "E_L": 0.0,
+                        "E_R": 0.0,
+                        "V_m": 0.0,
+                        "V_th": 20,
+                    },
+                },
+                "h_cell": {
+                    "model_strategy": "lif",
+                    "constants": {
+                        "C_m": 250,
+                        "tau_m": 20,
+                        "t_ref": 2.0,
+                        "E_L": 0.0,
+                        "E_R": 0.0,
+                        "V_m": 0.0,
+                        "V_th": 20,
+                    },
+                },
+            },
+            connection_models={
+                "test_to_h_cell": {"weight": 20.68015524367846, "delay": 1.5}
+            },
+            devices=dict(
+                pg={
+                    "device": "poisson_generator",
+                    "rate": 1600,
+                    "targetting": {"strategy": "all"},
+                    "weight": 2000,
+                    "delay": 1.5,
+                },
+                new_recorder=dict(
+                    device="spike_controller",
+                    targetting={
+                        "strategy": "cell_model",
+                        "cell_models": ["test_cell"],
+                    },
+                    step=10,
+                ),
+            ),
+        )
+        self.network.simulations["sim_2"] = ArborSimulation(sim_2)
+
+        nio_file = "out.nio"
+        self.network.run_simulation("test", output_filename=nio_file)
+        self.network.run_simulation("sim_2", output_filename=nio_file)
+
+        written_results = io.NixIO(nio_file, "ro")
+        blocks = written_results.read_all_blocks()
+        self.assertEqual(len(blocks), 2)
+        self.assertEqual(len(blocks[0].segments), 11)
+        self.assertEqual(len(blocks[1].segments), 6)
+        import os
+
+        os.remove(nio_file)

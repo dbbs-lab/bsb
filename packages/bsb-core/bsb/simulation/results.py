@@ -61,10 +61,10 @@ class SimulationResult:
                 traceback.print_exc()
                 warn("Recorder errored out!")
         if hasattr(self, "filename"):
-            io = io.NixIO(self.filename, mode="rw")
-            block = io.nix_file.blocks[self.block_id]
-            io._write_segment(segment, block)
-            io.close()
+            out_stream = io.NixIO(self.filename, mode="rw")
+            block = out_stream.nix_file.blocks[self.block_id]
+            out_stream._write_segment(segment, block)
+            out_stream.close()
         else:
             self.block.segments.append(segment)
 

@@ -157,10 +157,26 @@ class ConnectivitySet(Resource, IConnectivitySet):
     def connect(self, pre_set, post_set, src_locs, dest_locs, handle=HANDLED):
         src_locs = _point_to_2d(src_locs)
         dest_locs = _point_to_2d(dest_locs)
+        pre_labels = None
+        post_labels = None
         if not len(src_locs):
             return
         if len(src_locs) != len(dest_locs):
             raise ValueError("Location matrices must be of same length.")
+        if pre_set.get_label_filter():
+            # Convert the ids filtered by labels according to chunks
+            mask_labels = pre_set.convert_to_local(pre_set.load_ids(handle=handle))
+            src_locs[:, 0] = mask_labels[src_locs[:, 0]]
+            # Reset temporary the labels so that they do not affect _demux
+            pre_labels = pre_set.get_label_filter()
+            pre_set.set_label_filter(None)
+        if post_set.get_label_filter():
+            # Convert the ids filtered by labels according to chunks
+            mask_labels = post_set.convert_to_local(post_set.load_ids(handle=handle))
+            dest_locs[:, 0] = mask_labels[dest_locs[:, 0]]
+            # Reset temporary the labels so that they do not affect _demux
+            post_labels = post_set.get_label_filter()
+            post_set.set_label_filter(None)
         if pre_set._requires_morpho_mapping():
             src_locs = pre_set._morpho_backmap(src_locs)
         if post_set._requires_morpho_mapping():
@@ -170,6 +186,11 @@ class ConnectivitySet(Resource, IConnectivitySet):
                 # Don't write empty data
                 continue
             self.chunk_connect(*data, handle=handle)
+        # Bring back the labels filters
+        if pre_labels:
+            pre_set.set_label_filter(pre_labels)
+        if post_labels:
+            post_set.set_label_filter(post_labels)
 
     def _demux(self, pre, post, src_locs, dst_locs):
         src_chunks = pre.get_loaded_chunks()

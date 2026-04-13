@@ -1,11 +1,13 @@
 import itertools
 import json
+from functools import partial
 
 import numpy as np
 from bsb import (
     Chunk,
     DatasetExistsError,
     DatasetNotFoundError,
+    LabellingError,
     MissingMorphologyError,
     MorphologySelector,
     MorphologySet,
@@ -342,35 +344,59 @@ class PlacementSet(
         self._engine._write_chunk_stats(handle, stats)
 
     @handles_handles("a")
-    def label_by_mask(self, mask, labels, handle=HANDLED):
+    def label_by_mask(self, labels, mask, handle=HANDLED):
         cells = np.array(mask, copy=False)
         if cells.dtype != bool or len(cells) != len(self):
-            raise LabellingException("Mask doesn't fit data.")
-        self._write_labels(
-            labels,
-            handle,
-            lambda: self._lendemux(),
-            lambda s: cells[s],
-        )
+            raise LabellingError("Mask doesn't fit data.")
+        self.label(labels, np.where(cells)[0], handle=handle)
+
+    @handles_handles("a")
+    def remove_labels_by_mask(self, labels, mask, handle=HANDLED):
+        cells = np.array(mask, copy=False)
+        if cells.dtype != bool or len(cells) != len(self):
+            raise LabellingError("Mask doesn't fit data.")
+        self.remove_labels(labels, np.where(cells)[0], handle=handle)
+
+    def _check_cell_ids(self, cells):
+        cells = np.array(cells, copy=False)
+        len_ = len(self)
+        oob = (cells >= len_) + (cells < 0)
+        if np.any(oob):
+            oob_idx = cells[oob]
+            raise LabellingError(
+                f"Cell labels {oob_idx} out of range for placement set with size {len_}."
+            )
+        return cells
 
     @handles_handles("a")
     def label(self, labels, cells, handle=HANDLED):
-        cells = np.array(cells, copy=False)
-        len_ = len(self)
-        oob = cells > len_
-        if np.any(oob):
-            oob_idx = cells[oob]
-            raise LabellingException(
-                f"Cell labels {oob_idx} out of range for placement set with size {len_}."
-            )
+        cells = self._check_cell_ids(cells)
         self._write_labels(
             labels,
             handle,
             lambda: self._demux(cells),
-            lambda x: x,
+            partial(self._add_labels, data_f=lambda x: x),
         )
 
-    def _write_labels(self, labels, handle, demux_f, data_f):
+    @handles_handles("a")
+    def remove_labels(self, labels, cells, handle=HANDLED):
+        cells = self._check_cell_ids(cells)
+        self._write_labels(
+            labels,
+            handle,
+            lambda: self._demux(cells),
+            partial(self._remove_labels, data_f=lambda x: x),
+        )
+
+    @staticmethod
+    def _add_labels(enc_labels, block, labels, data_f):
+        enc_labels.label(labels, data_f(block))
+
+    @staticmethod
+    def _remove_labels(enc_labels, block, labels, data_f):
+        enc_labels.remove_labels(labels, data_f(block))
+
+    def _write_labels(self, labels, handle, demux_f, update_function):
         # Create a label reader that can read out label data per chunk, and pads missing
         # cells with unlabelled cells.
         label_reader = self._labels_chunks.get_chunk_reader(
@@ -387,7 +413,7 @@ class PlacementSet(
             else:
                 updated_labels = enc_labels.labels
             # Label the cells
-            enc_labels.label(labels, data_f(block))
+            update_function(enc_labels, block, labels)
             # Overwrite with new labelled data.
             self._labels_chunks.overwrite(chunk, enc_labels, handle=handle)
         # Update the shared labelset reference on the PS.
@@ -395,9 +421,6 @@ class PlacementSet(
             handle[self._path].attrs["labelsets"] = json.dumps(
                 updated_labels, default=list
             )
-
-    def set_label_filter(self, labels):
-        self._labels = labels
 
     def set_morphology_label_filter(self, morphology_labels):
         """
@@ -410,12 +433,9 @@ class PlacementSet(
 
     @handles_handles("r")
     def get_unique_labels(self, handle=HANDLED):
-        u, c = np.unique(
-            self._labels_chunks.load(handle=handle, pad_by="position"),
-            return_counts=True,
-        )
+        u = np.unique(self._labels_chunks.load(handle=handle, pad_by="position"))
         # take out the extra empty set
-        return list(u.labels.values())[-len(c) :]
+        return np.array(list(u.labels.values()))[u]
 
     @handles_handles("r")
     def get_labelled(self, labels=None, handle=HANDLED):
@@ -426,27 +446,17 @@ class PlacementSet(
     def get_label_mask(self, labels=None, handle=HANDLED):
         return self._labels_chunks.load(handle=handle, pad_by="position").get_mask(labels)
 
-    def _lendemux(self):
-        """
-        .. warning::
-
-            This function sets the chunk context for as long as it iterates.
-        """
-        ctr = 0
-        for chunk in self.get_loaded_chunks():
-            with self.chunk_context([chunk]):
-                len_ = len(self)
-                yield chunk, slice(ctr, ctr := ctr + len_)
-
     def _demux(self, ids):
         """
         .. warning::
 
             This function sets the chunk context for as long as it iterates.
         """
+        # recover ids before applying label filtering
+        ids = self.load_ids()[ids]
         for chunk in self.get_loaded_chunks():
             with self.chunk_context([chunk]):
-                ln = len(self)
+                ln = len(self._position_chunks.load())
                 idx = ids < ln
                 block = ids[idx]
                 yield chunk, block
@@ -474,7 +484,7 @@ class PlacementSet(
     @handles_handles("r")
     def load_ids(self, handle=HANDLED):
         if self._chunks is None or not len(self._chunks):
-            return np.arange(len(self))
+            return self.get_labelled(self._labels, handle=handle)
         stats = self.get_chunk_stats(handle)
         ranges = []
         ctr = 0
@@ -484,7 +494,10 @@ class PlacementSet(
             if chunk in self._chunks:
                 ranges.append(np.arange(ctr, ctr + len_))
             ctr += len_
-        return np.concatenate(ranges)
+        ranges = np.concatenate(ranges)
+        if self._labels:
+            ranges = ranges[self.get_label_mask(self._labels, handle=handle)]
+        return ranges
 
     @handles_handles("r")
     def convert_to_local(self, ids, handle=HANDLED):
@@ -546,7 +559,3 @@ def encode_labels(data, ds):
     serialized = json.dumps(EncodedLabels.none(1).labels, default=list)
     labels = json.loads(ps_group.attrs.get("labelsets", serialized))
     return EncodedLabels(shape=data.shape, buffer=data, labels=labels)
-
-
-class LabellingException(Exception):
-    pass

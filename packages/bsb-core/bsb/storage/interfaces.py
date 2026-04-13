@@ -386,6 +386,7 @@ class PlacementSet(Interface):
         self._type = cell_type
         self._tag = cell_type.name
         self._morphology_labels = None
+        self._labels = None
 
     @abc.abstractmethod
     def __len__(self):  # pragma: nocover
@@ -605,7 +606,6 @@ class PlacementSet(Interface):
         """
         pass
 
-    @abc.abstractmethod
     def set_label_filter(self, labels):  # pragma: nocover
         """
         Should limit the scope of the placement set to the given labels.
@@ -613,7 +613,16 @@ class PlacementSet(Interface):
         :param labels: List of labels
         :type labels: list[str]
         """
-        pass
+        self._labels = labels
+
+    def get_label_filter(self):  # pragma: nocover
+        """
+        Get the labels used to limit the scope of the placement set.
+
+        :param labels: List of labels
+        :type labels: list[str]
+        """
+        return self._labels
 
     @abc.abstractmethod
     def set_morphology_label_filter(self, morphology_labels):  # pragma: nocover
@@ -630,6 +639,17 @@ class PlacementSet(Interface):
         pass
 
     @abc.abstractmethod
+    def label_by_mask(self, labels, mask):  # pragma: nocover
+        """
+        Should label the masked with the given labels.
+
+        :param list[str] labels: List of labels
+        :param list[bool] mask: Array of boolean for each cell to label
+        :raises: LabellingError if the array provided has invalid shape.
+        """
+        pass
+
+    @abc.abstractmethod
     def label(self, labels, cells):  # pragma: nocover
         """
         Should label the cells with given labels.
@@ -638,6 +658,31 @@ class PlacementSet(Interface):
         :type labels: list[str]
         :param cells: Array of cells in this set to label.
         :type cells: list[int]
+        :raises: LabellingError if the ids provided are invalid.
+        """
+        pass
+
+    @abc.abstractmethod
+    def remove_labels_by_mask(self, labels, mask):  # pragma: nocover
+        """
+        Should remove the provided labels assigned to the masked cells.
+
+        :param list[str] labels: List of labels
+        :param list[bool] mask: Array of boolean for each cell to label
+        :raises: LabellingError if the array provided has invalid shape.
+        """
+        pass
+
+    @abc.abstractmethod
+    def remove_labels(self, labels, cells):
+        """
+        Should remove the provided labels assigned to the cells.
+
+        :param labels: List of labels
+        :type labels: list[str]
+        :param cells: Array of cells in this set to remove labels.
+        :type cells: list[int]
+        :raises: LabellingError if the ids provided are invalid.
         """
         pass
 
@@ -654,8 +699,8 @@ class PlacementSet(Interface):
     @abc.abstractmethod
     def get_labelled(self, labels=None):  # pragma: nocover
         """
-        Should return the ids of the cells labelled with given labels. If labels are not
-        provided, will filter non labelled cells.
+        Should return the ids of the cells labelled with given labels.
+        To filter non labelled cells, set labels to empty list.
 
         :param labels: List of labels
         :type labels: list[str]
@@ -667,10 +712,11 @@ class PlacementSet(Interface):
     def get_label_mask(self, labels=None):  # pragma: nocover
         """
         Should return a mask that fits the placement set for the cells with given labels.
-        If labels are not provided, will filter non labelled cells.
+        To filter non labelled cells, set labels to empty list.
 
         :param labels: List of labels
         :type labels: list[str]
+        :rtype: numpy.ndarray[bool]
         """
         pass
 

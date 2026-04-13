@@ -1,3 +1,7 @@
+## 7.3.0 (2026-03-20)
+
+This was a version bump only for arborize to align it with other projects, there were no code changes.
+
 ## 7.2.3 (2026-02-21)
 
 ### 🩹 Fixes

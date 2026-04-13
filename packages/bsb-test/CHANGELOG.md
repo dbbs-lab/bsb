@@ -1,3 +1,13 @@
+## 7.3.0 (2026-03-20)
+
+### 🚀 Features
+
+- overwrite labels for ps ([#224](https://github.com/dbbs-lab/bsb/pull/224))
+
+### ❤️ Thank You
+
+- Dimitri RODARIE
+
 ## 7.2.3 (2026-02-21)
 
 This was a version bump only for bsb-test to align it with other projects, there were no code changes.

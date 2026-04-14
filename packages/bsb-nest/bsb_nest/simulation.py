@@ -46,10 +46,7 @@ class NestSimulation(Simulation):
             except Exception as e:
                 if e.errorname == "DynamicModuleManagementError":
                     if "loaded already" in e.message:
-                        pass
+                        continue
                     elif "file not found" in e.message:
                         raise NestModuleError(f"Module {module} not found") from None
-                    else:  # pragma: nocover
-                        raise
-                else:  # pragma: nocover
-                    raise
+                raise  # pragma: nocover

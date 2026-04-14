@@ -47,12 +47,6 @@ dependencies = [
   [project.optional-dependencies]
   parallel = [ "mpi4py~=4.1.0", "mpipool>=2.2.1,<3", "mpilock~=1.1" ]
 
-[project.entry-points.opentelemetry_traces_exporter]
-jsonlines = "bsb.profiling:JSONLinesSpanExporter"
-
-[project.entry-points.opentelemetry_environment_variables]
-bsb = "bsb._otel_env"
-
 [project.entry-points."bsb.storage.engines"]
 fs = "bsb.storage.fs"
 
@@ -80,6 +74,7 @@ test = [
   "bsb-hdf5~=7.0",
   "bsb-json~=7.0",
   "bsb-test~=7.0",
+  "bsb-otel~=7.2",
   "coverage>=7.3"
 ]
 docs = [
@@ -93,13 +88,15 @@ docs = [
 dev = [
   "pre-commit~=3.5",
   "ruff>=0.8.2",
-  "snakeviz~=2.1",
-  "opentelemetry-distro>=0.59b0",
-  "opentelemetry-exporter-otlp~=1.38"
+  "snakeviz~=2.1"
 ]
 
 [tool.uv]
 default-groups = [ "dev", "docs", "test" ]
+
+[tool.uv.sources.bsb-otel]
+path = "../bsb-otel"
+editable = true
 
 [tool.uv.sources.bsb-test]
 path = "../bsb-test"

@@ -1,0 +1,63 @@
+{
+  "name": "bsb-otel",
+  "$schema": "../../.nx/installation/node_modules/nx/schemas/project-schema.json",
+  "projectType": "library",
+  "sourceRoot": "packages/bsb-otel/bsb_otel",
+  "targets": {
+    "lock":   { "executor": "@nxlv/python:lock" },
+    "sync":   { "executor": "@nxlv/python:sync" },
+    "add":    { "executor": "@nxlv/python:add" },
+    "update": { "executor": "@nxlv/python:update" },
+    "remove": { "executor": "@nxlv/python:remove" },
+    "build": {
+      "executor": "@nxlv/python:build",
+      "outputs": ["{workspaceRoot}/dist/bsb-otel"],
+      "options": { "outputPath": "dist/bsb-otel", "publish": false }
+    },
+    "lint": {
+      "executor": "@nxlv/python:ruff",
+      "options": { "lintFilePatterns": ["bsb_otel", "tests"] }
+    },
+    "format": {
+      "executor": "@nxlv/python:ruff-format",
+      "options": { "filePatterns": ["bsb_otel", "tests"] }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "uv run coverage run -m unittest discover -s ./tests",
+          "mpiexec -n 2 uv run coverage run -p -m unittest discover -s ./tests"
+        ],
+        "parallel": false,
+        "cwd": "packages/bsb-otel"
+      }
+    },
+    "iso-docs": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "uv run sphinx-build -b html docs docs/_build/iso-html",
+        "cwd": "packages/bsb-otel"
+      }
+    },
+    "docs": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["bsb-core:iso-docs"],
+      "options": {
+        "command": "uv run sphinx-build -b html docs docs/_build/html",
+        "cwd": "packages/bsb-otel"
+      }
+    },
+    "install": {
+      "executor": "@nxlv/python:install",
+      "options": { "silent": false, "args": "", "cwd": "packages/bsb-otel" }
+    },
+    "nx-release-publish": {
+      "executor": "@nxlv/python:publish",
+      "options": { "packageRoot": "dist/bsb-otel" }
+    }
+  },
+  "release": {
+    "version": { "generator": "@nxlv/python:release-version" }
+  }
+}

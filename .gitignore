@@ -178,3 +178,5 @@ node_modules
 *.pkl
 *.nio
 *.swc
+
+.claude/settings.local.json

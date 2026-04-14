@@ -2,9 +2,7 @@ import itertools
 import unittest
 from copy import copy
 
-from bsb.core import Scaffold
-from bsb.services import MPI
-from bsb.simulation import get_simulation_adapter
+from bsb import MPI, Scaffold, config, get_simulation_adapter
 from bsb_test import (
     ConfigFixture,
     MorphologiesFixture,
@@ -15,6 +13,7 @@ from patch import p
 
 from bsb_neuron.cell import ArborizedModel
 from bsb_neuron.connection import TransceiverModel
+from bsb_neuron.devices import VoltageRecorder
 
 
 class TestNeuronMinimal(
@@ -525,3 +524,126 @@ class TestNeuronMultiBranchLoop(
             ],
             receiving_cells,
         )
+
+
+class TestCheckpoints(
+    RandomStorageFixture,
+    ConfigFixture,
+    NetworkFixture,
+    MorphologiesFixture,
+    unittest.TestCase,
+    config="complete",
+    morpho_filters=["3branch"],
+    engine_name="hdf5",
+):
+    def setUp(self):
+        import os
+
+        import psutil
+
+        super().setUp()
+        p.parallel.gid_clear()
+        for ct in self.network.cell_types.values():
+            ct.spatial.morphologies = ["3branch"]
+
+        hh_soma = {
+            "cable_types": {
+                "soma": {
+                    "cable": {"Ra": 10, "cm": 1},
+                    "mechanisms": {"pas": {}, "hh": {}},
+                }
+            },
+            "synapse_types": {"ExpSyn": {}},
+        }
+        devices = {
+            "spike_generator": {
+                "device": "spike_generator",
+                "start": 9,
+                "number": 8,
+                "weight": 1,
+                "delay": 1,
+                "targetting": {
+                    "strategy": "cell_model",
+                    "cell_models": ["A", "B", "C"],
+                },
+            }
+        }
+
+        for i in range(200):
+            devices[str(i)] = {
+                "device": "voltage_recorder",
+                "targetting": {"strategy": "cell_model", "cell_models": ["A", "B", "C"]},
+            }
+
+        self.network.simulations.add(
+            "test",
+            simulator="neuron",
+            duration=10000,
+            resolution=0.1,
+            temperature=32,
+            cell_models=dict(
+                A=ArborizedModel(model=hh_soma),
+                B=ArborizedModel(model=hh_soma),
+                C=ArborizedModel(model=hh_soma),
+            ),
+            connection_models=dict(
+                A_to_A=TransceiverModel(synapses=[dict(synapse="ExpSyn")]),
+                A_to_B=TransceiverModel(synapses=[dict(synapse="ExpSyn")]),
+                B_to_C=TransceiverModel(synapses=[dict(synapse="ExpSyn")]),
+                C_to_A=TransceiverModel(synapses=[dict(synapse="ExpSyn")]),
+                C_to_B=TransceiverModel(synapses=[dict(synapse="ExpSyn")]),
+            ),
+            devices=devices,
+        )
+        self.network.compile()
+        print(f"{self.network.simulations.test.duration}")
+        self.process = psutil.Process(os.getpid())
+        # Baseline before the test
+        self.before_mem = self.process.memory_info().rss
+
+    def test_RAM_usage(self):
+        import psutil
+
+        @config.node
+        class SpikeController(
+            VoltageRecorder,
+            classmap_entry="ram_controller",
+        ):
+            threshold = config.attr(type=float, required=True)
+
+            def __init__(self, **kwargs):
+                super().__init__()
+                self._status = 1
+                self._memory = psutil.virtual_memory()
+
+            def implement(self, adapter, simulation, simdata):
+                super().implement(adapter, simulation, simdata)
+                self._simdata = simdata
+
+            def get_next_checkpoint(self):
+                return self._status
+
+            def run_checkpoint(self, kwargs=None):
+                # If threshold is reached Flush data
+                if self._memory.percent > self.threshold:
+                    self._simdata.result.flush()
+
+                self._status += 1
+
+                return self._status
+
+        self.network.simulations.test.devices["new"] = dict(
+            device="spike_controller",
+            targetting={
+                "strategy": "cell_model",
+                "cell_models": ["A", "B", "C"],
+            },
+            threshold=75,
+        )
+        self.network.run_simulation("test", "out.nio")
+
+    def tearDown(self):
+        # Memory after the test
+        after_mem = self.process.memory_info().rss
+        delta = (after_mem - self.before_mem) / (1024**2)
+        print(f"\n{self._testMethodName} used {delta:.2f} MB")

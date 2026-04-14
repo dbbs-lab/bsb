@@ -14,6 +14,7 @@ import shortuuid
 from bsb import Engine, MPILock, ScaffoldWarning, config, report, warn
 from bsb import StorageNode as IStorageNode
 
+from ._telemetry import _hdf5_tracer
 from .connectivity_set import ConnectivitySet
 from .file_store import FileStore
 from .morphology_repository import MorphologyRepository
@@ -87,6 +88,35 @@ class NoopLock:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         pass
+
+
+class _SpannedHandle:
+    """Wraps an h5py.File to emit an ``hdf5.file.open`` span covering its lifetime."""
+
+    def __init__(self, file, path, mode, wait_ms):
+        self._file = file
+        self._path = path
+        self._mode = mode
+        self._wait_ms = wait_ms
+
+    def __enter__(self):
+        self._span_ctx = _hdf5_tracer.start_as_current_span(
+            "hdf5.file.open",
+            attributes={
+                "hdf5.file.path": self._path,
+                "hdf5.file.mode": self._mode,
+                "hdf5.file.wait_ms": self._wait_ms,
+                "hdf5.file.slow_lock": self._wait_ms > 0,
+            },
+        )
+        self._span_ctx.__enter__()
+        return self._file.__enter__()
+
+    def __exit__(self, *args):
+        try:
+            self._file.__exit__(*args)
+        finally:
+            self._span_ctx.__exit__(*args)
 
 
 class HDF5Engine(Engine):
@@ -163,7 +193,7 @@ class HDF5Engine(Engine):
                     stacklevel=4,
                 )
 
-            return handle
+            return _SpannedHandle(handle, self._root, mode, i)
 
     def exists(self):
         return os.path.exists(self._root)

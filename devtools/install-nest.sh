@@ -1,6 +1,6 @@
 # Get Nest installation folder
+SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]:-$0}"; )" &> /dev/null && pwd 2> /dev/null; )"
 if [ -z "$NEST_FOLDER" ]; then
-  SCRIPT_DIR="$( cd -- "$( dirname -- "${BASH_SOURCE[0]:-$0}"; )" &> /dev/null && pwd 2> /dev/null; )";
   NEST_FOLDER="$(dirname $SCRIPT_DIR)/.nx/installation/nest";
 fi
 # Get NEST version
@@ -13,7 +13,7 @@ if [ -f "$INSTALLATION_FOLDER/bin/nest_vars.sh" ]; then
 fi
 
 # Lock check and installation to prevent concurrent file edition
-LOCK_FILE="/tmp/bsb-nest.lock"
+LOCK_FILE="$SCRIPT_DIR/bsb-nest.lock"
 # Remove lock file on exit
 trap 'rm -f "$LOCK_FILE"' EXIT
 # Wait to be able to create file

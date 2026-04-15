@@ -59,7 +59,7 @@ class DistributionPlacement(PlacementStrategy, classmap_entry="distrib_placement
             # For each partitions
             for p in indicator.partitions:
                 # Guess the number of cells to place within the partition.
-                num_to_place = indicator.guess(voxels=p.to_voxels())
+                num_to_place = np.sum(indicator.guess(voxels=p.to_voxels()))
                 # Extract the size of the partition
                 partition_size = p._data.mdc - p._data.ldc
                 # Retrieve the ratio interval occupied by the current Chunk along the axis

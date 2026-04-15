@@ -96,11 +96,11 @@ class PlacementIndicator:
         count_ratio = self.indication("count_ratio")
         local_count_ratio = self.indication("local_count_ratio")
         if count is not None:
-            estimate = self._estim_for_chunk(chunk, count)
+            estimate = [self._estim_for_chunk(chunk, count)]
         if density is not None:
-            estimate = self._density_to_estim(density, chunk)
+            estimate = [self._density_to_estim(density, chunk)]
         if planar_density is not None:
-            estimate = self._pdensity_to_estim(planar_density, chunk)
+            estimate = [self._pdensity_to_estim(planar_density, chunk)]
         if relative_to is not None:
             relation = relative_to
             if count_ratio is not None:
@@ -109,22 +109,24 @@ class PlacementIndicator:
                 # This number is uniformly distributed across the current
                 # strategy's partition(s).
                 strats = self._strat.scaffold.get_placement_of(relation)
-                estimate = self._estim_for_chunk(
-                    chunk,
-                    sum(PlacementIndicator(s, relation).guess() for s in strats)
-                    * count_ratio,
-                )
+                estimate = [
+                    self._estim_for_chunk(
+                        chunk,
+                        sum(PlacementIndicator(s, relation).guess() for s in strats)
+                        * count_ratio,
+                    )
+                ]
             elif local_count_ratio is not None:
                 # This count estimate is the ratio of the number of cell of the
                 # target strategy that were placed in the current chunk.
                 strats = self._strat.scaffold.get_placement_of(relation)
-                estimate = (
+                estimate = [
                     sum(
                         PlacementIndicator(s, relation).guess(chunk, voxels)
                         for s in strats
                     )
                     * local_count_ratio
-                )
+                ]
             elif density_ratio is not None:
                 # Create an indicator based on this strategy for the related CT.
                 # This means we'll read only the CT indications, and ignore any
@@ -135,11 +137,13 @@ class PlacementIndicator:
                 rel_pl_density = rel_ind.indication("planar_density")
                 rel_pl_density_key = rel_ind.indication("density_key")
                 if rel_density is not None:
-                    estimate = self._density_to_estim(rel_density * density_ratio, chunk)
+                    estimate = [
+                        self._density_to_estim(rel_density * density_ratio, chunk)
+                    ]
                 elif rel_pl_density is not None:
-                    estimate = self._pdensity_to_estim(
-                        rel_pl_density * density_ratio, chunk
-                    )
+                    estimate = [
+                        self._pdensity_to_estim(rel_pl_density * density_ratio, chunk)
+                    ]
                 elif rel_pl_density_key is not None:
                     # Use the relation's `guess` to guess according to the relation's
                     # density key
@@ -161,6 +165,7 @@ class PlacementIndicator:
                         estimate += np.sum(
                             self._estim_for_voxels(p.to_voxels(), density_key)
                         )
+                        estimate = [estimate]
                     except IndexError as _:
                         raise PlacementError(
                             f"Partition {p} voxelset does not have "

@@ -180,6 +180,7 @@ class VolumeFiller:
         for particle_type in self.particle_types:
             count = particle_type["count"]
             if count.size == 1:
+                particle_type["count"] = particle_type["count"][0]
                 self._fill_global(particle_type)
             else:
                 self._fill_per_voxel(particle_type)

@@ -545,7 +545,7 @@ class TestCheckpoints(
         p.parallel.gid_clear()
         for ct in self.network.cell_types.values():
             ct.spatial.morphologies = ["3branch"]
-
+        self.network.chunk_size=[50,50,50]
         hh_soma = {
             "cable_types": {
                 "soma": {
@@ -587,16 +587,15 @@ class TestCheckpoints(
                 C=ArborizedModel(model=hh_soma),
             ),
             connection_models=dict(
-                A_to_A=TransceiverModel(synapses=[dict(synapse="ExpSyn")]),
-                A_to_B=TransceiverModel(synapses=[dict(synapse="ExpSyn")]),
-                B_to_C=TransceiverModel(synapses=[dict(synapse="ExpSyn")]),
-                C_to_A=TransceiverModel(synapses=[dict(synapse="ExpSyn")]),
-                C_to_B=TransceiverModel(synapses=[dict(synapse="ExpSyn")]),
+                A_to_A=TransceiverModel(synapses=[dict(synapse="ExpSyn",delay=1.0)]),
+                A_to_B=TransceiverModel(synapses=[dict(synapse="ExpSyn",delay=1.0)]),
+                B_to_C=TransceiverModel(synapses=[dict(synapse="ExpSyn",delay=1.0)]),
+                C_to_A=TransceiverModel(synapses=[dict(synapse="ExpSyn",delay=1.0)]),
+                C_to_B=TransceiverModel(synapses=[dict(synapse="ExpSyn",delay=1.0)]),
             ),
             devices=devices,
         )
         self.network.compile()
-        print(f"{self.network.simulations.test.duration}")
         self.process = psutil.Process(os.getpid())
         # Baseline before the test
         self.before_mem = self.process.memory_info().rss
@@ -606,7 +605,11 @@ class TestCheckpoints(
          the maximum peak of memory do not exceed 600 MB and that after every flush
          the usage is at least 250 MB below the peak."""
         import tracemalloc
+        import os
         tracemalloc.start()
+
+        flush_threshold = 250 /MPI.get_size()
+        total_threshold = 600 /MPI.get_size()
         @config.node
         class SpikeController(
             VoltageRecorder,
@@ -630,7 +633,7 @@ class TestCheckpoints(
                 self._simdata.result.flush()
                 if self._status:
                     mem_size_after, mem_peak = tracemalloc.get_traced_memory()
-                    assert (mem_peak/(1024**2) - mem_size_after/(1024**2)) > 250
+                    assert (mem_peak/(1024**2) - mem_size_after/(1024**2)) > flush_threshold
 
                 self._status += self.step
                 return self._status
@@ -643,9 +646,11 @@ class TestCheckpoints(
             },
             step=5000,
         )
-        self.network.run_simulation("test", "out.nio")
+        rank = MPI.get_rank()
+        self.network.run_simulation("test", "out"+str(rank)+".nio")
 
         mem_size, mem_peak = tracemalloc.get_traced_memory()
-        self.assertLess(mem_peak/ (1024 ** 2),600,"Memory overflow")
+        self.assertLess(mem_peak/ (1024 ** 2),total_threshold,"Memory overflow")
+        os.remove("out"+str(rank)+".nio")
 
 

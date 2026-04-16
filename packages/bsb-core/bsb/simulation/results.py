@@ -52,7 +52,6 @@ class SimulationResult:
 
     def flush(self):
         from neo import Segment, io
-
         segment = Segment()
         for recorder in self.recorders:
             try:
@@ -65,6 +64,7 @@ class SimulationResult:
             block = out_stream.nix_file.blocks[self.block_id]
             out_stream._write_segment(segment, block)
             out_stream.close()
+            del segment
         else:
             self.block.segments.append(segment)
 

@@ -569,7 +569,7 @@ class TestCheckpoints(
             }
         }
 
-        for i in range(200):
+        for i in range(20):
             devices[str(i)] = {
                 "device": "voltage_recorder",
                 "targetting": {"strategy": "cell_model", "cell_models": ["A", "B", "C"]},
@@ -578,7 +578,7 @@ class TestCheckpoints(
         self.network.simulations.add(
             "test",
             simulator="neuron",
-            duration=10000,
+            duration=20000,
             resolution=0.1,
             temperature=32,
             cell_models=dict(
@@ -602,34 +602,37 @@ class TestCheckpoints(
         self.before_mem = self.process.memory_info().rss
 
     def test_RAM_usage(self):
-        import psutil
-
+        """This test run a simulation that records around 1.1 GB of data and check that
+         the maximum peak of memory do not exceed 600 MB and that after every flush
+         the usage is at least 250 MB below the peak."""
+        import tracemalloc
+        tracemalloc.start()
         @config.node
         class SpikeController(
             VoltageRecorder,
             classmap_entry="ram_controller",
         ):
-            threshold = config.attr(type=float, required=True)
+            step = config.attr(type=float, required=True)
 
             def __init__(self, **kwargs):
                 super().__init__()
-                self._status = 1
-                self._memory = psutil.virtual_memory()
+                self._status = 0
 
             def implement(self, adapter, simulation, simdata):
                 super().implement(adapter, simulation, simdata)
                 self._simdata = simdata
 
             def get_next_checkpoint(self):
-                return self._status
+                return self._status + self.step
 
             def run_checkpoint(self, kwargs=None):
-                # If threshold is reached Flush data
-                if self._memory.percent > self.threshold:
-                    self._simdata.result.flush()
+                # Flush data
+                self._simdata.result.flush()
+                if self._status:
+                    mem_size_after, mem_peak = tracemalloc.get_traced_memory()
+                    assert (mem_peak/(1024**2) - mem_size_after/(1024**2)) > 250
 
-                self._status += 1
-
+                self._status += self.step
                 return self._status
 
         self.network.simulations.test.devices["new"] = dict(
@@ -638,12 +641,11 @@ class TestCheckpoints(
                 "strategy": "cell_model",
                 "cell_models": ["A", "B", "C"],
             },
-            threshold=75,
+            step=5000,
         )
         self.network.run_simulation("test", "out.nio")
 
-    def tearDown(self):
-        # Memory after the test
-        after_mem = self.process.memory_info().rss
-        delta = (after_mem - self.before_mem) / (1024**2)
-        print(f"\n{self._testMethodName} used {delta:.2f} MB")
+        mem_size, mem_peak = tracemalloc.get_traced_memory()
+        self.assertLess(mem_peak/ (1024 ** 2),600,"Memory overflow")
+
+

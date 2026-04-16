@@ -2,8 +2,63 @@ import json
 import os
 import tempfile
 import typing
+import unittest
+from collections import deque
 
+from bsb.profiling import _telemetry_trace
 from opentelemetry import trace
+
+
+def _pop(queue):
+    try:
+        return queue.pop()
+    except IndexError:
+        return None
+
+
+def _visit_test_cases(root, visitor):
+    queue = deque([root])
+    while node := _pop(queue):
+        if isinstance(node, unittest.TestCase):
+            visitor(node)
+        else:
+            queue.extend(reversed(list(node)))
+
+
+def _wrap_case(case: unittest.TestCase):
+    original_run = case.run
+
+    def wrapped_run(*args, **kwargs):
+        with _telemetry_trace(
+            case.id(),
+            attributes={
+                "python.test_package": case.id().split(".")[0],
+                "python.test_module": case.id().split(".")[1],
+                "python.test_class": case.id().split(".")[2],
+                "python.test_case": case.id().split(".")[3],
+            },
+            broadcast=True,
+        ):
+            return original_run(*args, **kwargs)
+
+    case.run = wrapped_run
+
+
+def wrap_tests_with_traces(suite):
+    """
+    Wrap every :class:`unittest.TestCase` in *suite* so that each test run is
+    recorded as an OpenTelemetry trace span.
+
+    Intended to be called from a ``load_tests`` hook::
+
+        from bsb_otel.testing import wrap_tests_with_traces
+
+        def load_tests(loader, tests, pattern):
+            suite = loader.discover("tests")
+            wrap_tests_with_traces(suite)
+            return suite
+    """
+    _visit_test_cases(suite, _wrap_case)
 
 
 def _get_file_tracer_provider(file: typing.IO, buffered=True):
@@ -66,4 +121,4 @@ class OTelFixture:
         self.temp_file.close()
 
 
-__all__ = ["OTelFixture"]
+__all__ = ["OTelFixture", "wrap_tests_with_traces"]

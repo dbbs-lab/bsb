@@ -16,15 +16,6 @@ for ((i=0; i<length; i++)); do
   extra=""
   # if example folder contains nest in the title, install also NEST
   if [[ $folder == *"nest"* ]]; then
-    echo "Installing NEST"
-    uv pip install cmake cython~=3.0.12
-    script="../$( dirname -- "${BASH_SOURCE[0]:-$0}"; )/install-nest.sh"
-    uv run bash $script > /dev/null
-    if [ $? -ne 0 ]; then
-      output_results+=("1")
-      cd .. || exit 1
-      continue
-    fi
     extra="--env-file $NEST_FOLDER/install/bin/nest_vars.sh"
   fi
   uv sync

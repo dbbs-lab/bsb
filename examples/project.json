@@ -11,6 +11,7 @@
       }
     },
     "sync": {
+      "dependsOn": ["bsb-nest:install-nest"],
       "executor": "@nxlv/python:sync",
       "options": {}
     },
@@ -48,6 +49,7 @@
       "cache": true
     },
     "test": {
+      "dependsOn": ["examples:sync"],
       "executor": "@nxlv/python:run-commands",
       "outputs": [],
       "options": {

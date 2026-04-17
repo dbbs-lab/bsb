@@ -647,7 +647,7 @@ def walk_node_attributes(node):
 
 def walk_nodes(node):
     """
-    Walk over all of the child configuration nodes of ``node``.
+    Walk over all the child configuration nodes of ``node``.
 
     :returns: node generator
     :rtype: Any

@@ -1,21 +1,12 @@
 import functools
 import sys
 
-import nest
 import numpy as np
 import psutil
 from bsb import ConfigurationError, ConnectionModel, compose_nodes, config, options, types
 from tqdm import tqdm
 
 from .distributions import nest_parameter
-
-
-def _is_delay_required(node):
-    model = node.get("model", NestSynapseSettings.model.default)
-    if model not in nest.Models(mtype="synapses"):
-        raise ConfigurationError(f"Unknown synapse model '{model}'.")
-    else:
-        return nest.GetDefaults(model)["has_delay"]
 
 
 @config.node
@@ -28,12 +19,20 @@ class NestSynapseSettings:
     """Importable reference to the NEST model describing the synapse type."""
     weight = config.attr(type=float, required=True)
     """Weight of the connection between the presynaptic and the postsynaptic cells."""
-    delay = config.attr(type=float, required=_is_delay_required, default=None)
+    delay = config.attr(type=float, default=None)
     """Delay of the transmission between the presynaptic and the postsynaptic cells."""
     receptor_type = config.attr(type=int)
     """Index of the postsynaptic receptor to target."""
     constants = config.catch_all(type=nest_parameter())
     """Dictionary of the constants values to assign to the synapse model."""
+
+    def __boot__(self):
+        import nest
+
+        if self.model not in nest.Models(mtype="synapses"):
+            raise ConfigurationError(f"Unknown synapse model '{self.model}'.")
+        if nest.GetDefaults(self.model)["has_delay"] and self.delay is None:
+            raise ConfigurationError("Synapse model requires 'delay' to be set.")
 
 
 @config.node
@@ -67,6 +66,8 @@ class LazySynapseCollection:
 
     @functools.cached_property
     def collection(self):
+        import nest
+
         return nest.GetConnections(self._pre, self._post)
 
 

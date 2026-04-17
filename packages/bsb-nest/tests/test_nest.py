@@ -823,11 +823,39 @@ class TestNest(
             membrane_potentials[time_effect_sec_syn - 1],
         )
 
+    def test_unknown_modules(self):
+        duration = 100
+        resolution = 0.1
+        cfg = _conf_two_cells()
+        with self.assertRaises(BootError):
+            cfg.simulations = {
+                "test": {
+                    "simulator": "nest",
+                    "duration": duration,
+                    "resolution": resolution,
+                    "modules": ["bla"],
+                    "seed": 1234,
+                    "cell_models": {
+                        "A": {"model": "iaf_cond_alpha"},
+                        "C": {"model": "parrot_neuron"},
+                    },
+                    "connection_models": {
+                        "C_to_A": {
+                            "synapses": [
+                                {"model": "static_synapse", "weight": -20.25, "delay": 1},
+                            ],
+                        }
+                    },
+                    "devices": {},
+                }
+            }
+            _ = Scaffold(cfg, self.storage)
+
     def test_unknown_synapse(self):
         duration = 100
         resolution = 0.1
         cfg = _conf_two_cells()
-        with self.assertRaises(CastError):
+        with self.assertRaises(BootError):
             cfg.simulations = {
                 "test": {
                     "simulator": "nest",
@@ -848,6 +876,34 @@ class TestNest(
                     "devices": {},
                 }
             }
+            _ = Scaffold(cfg, self.storage)
+
+    def test_unknown_cell(self):
+        duration = 100
+        resolution = 0.1
+        cfg = _conf_two_cells()
+        with self.assertRaises(BootError):
+            cfg.simulations = {
+                "test": {
+                    "simulator": "nest",
+                    "duration": duration,
+                    "resolution": resolution,
+                    "seed": 1234,
+                    "cell_models": {
+                        "A": {"model": "bla_bla"},
+                        "C": {"model": "parrot_neuron"},
+                    },
+                    "connection_models": {
+                        "C_to_A": {
+                            "synapses": [
+                                {"model": "static_synapse", "weight": -20.25, "delay": 1},
+                            ],
+                        }
+                    },
+                    "devices": {},
+                }
+            }
+            _ = Scaffold(cfg, self.storage)
 
     def test_gap_junctions_syn(self):
         duration = 100
@@ -881,7 +937,7 @@ class TestNest(
         duration = 100
         resolution = 0.1
         cfg = _conf_two_cells()
-        with self.assertRaises(ConfigurationError):
+        with self.assertRaises(BootError):
             cfg.simulations = {
                 "test": {
                     "simulator": "nest",
@@ -902,6 +958,7 @@ class TestNest(
                     "devices": {},
                 }
             }
+            _ = Scaffold(cfg, self.storage)
 
     def test_multisyn_collocation(self):
         cfg = _conf_single_cell()

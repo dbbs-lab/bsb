@@ -1,3 +1,15 @@
+## 7.3.1 (2026-04-16)
+
+### 🩹 Fixes
+
+- Nest installation with Nx ([4bd2458](https://github.com/dbbs-lab/bsb/commit/4bd2458))
+- Loading modules to check NEST models ([#228](https://github.com/dbbs-lab/bsb/pull/228))
+
+### ❤️ Thank You
+
+- Dimitri RODARIE
+- drodarie
+
 ## 7.3.0 (2026-03-20)
 
 ### 🚀 Features

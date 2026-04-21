@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "bsb-otel"
-version = "7.2.3"
+version = "7.3.1"
 readme = "README.md"
 requires-python = ">=3.10,<4"
 dynamic = ["description"]
@@ -62,6 +62,7 @@ default-groups = ["dev", "docs", "test"]
 [tool.uv.sources]
 bsb-core = { path = "../bsb-core", editable = true }
 bsb-test = { path = "../bsb-test", editable = true }
+sphinxext-bsb = { path = "../../libs/sphinxext-bsb", editable = true }
 
 [tool.flit.module]
 name = "bsb_otel"

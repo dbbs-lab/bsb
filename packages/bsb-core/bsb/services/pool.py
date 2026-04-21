@@ -689,7 +689,9 @@ class JobPool:
         future = concurrent.futures.Future()
         self._schedulers.append(future)
         ctx = contextvars.copy_context()
-        thread = threading.Thread(target=ctx.run, args=(self._schedule, future, nodes, scheduler))
+        thread = threading.Thread(
+            target=ctx.run, args=(self._schedule, future, nodes, scheduler)
+        )
         thread.start()
 
     @property

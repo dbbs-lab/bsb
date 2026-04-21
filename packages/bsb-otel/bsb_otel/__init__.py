@@ -5,10 +5,11 @@ BSB OpenTelemetry integration package.
 import importlib.metadata
 import signal
 
+from bsb.services import MPI
 from opentelemetry import trace
 from opentelemetry.trace import NonRecordingSpan, get_current_span, set_span_in_context
 
-from bsb.services import MPI
+
 class _SpanContextManagerProxy:
     """
     Proxy for the span context manager returned by tracer.start_as_current_span,

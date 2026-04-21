@@ -49,9 +49,7 @@ def _wrap_case(case: unittest.TestCase):
     # Wrap setUp/tearDown — walk the MRO so mixin-defined hooks are found.
     # Skip only if the hook resolves to unittest.TestCase's own no-op.
     for hook_name in ("setUp", "tearDown"):
-        defining_base = next(
-            (b for b in cls.__mro__ if hook_name in b.__dict__), None
-        )
+        defining_base = next((b for b in cls.__mro__ if hook_name in b.__dict__), None)
         if defining_base is None or defining_base is unittest.TestCase:
             continue
         orig = getattr(case, hook_name)
@@ -72,9 +70,7 @@ def _wrap_class_hooks(cls):
     # Wrap setUpClass/tearDownClass — walk the MRO so mixin-defined hooks are found.
     # Skip only if the hook resolves to unittest.TestCase's own no-op.
     for hook_name in ("setUpClass", "tearDownClass"):
-        defining_base = next(
-            (b for b in cls.__mro__ if hook_name in b.__dict__), None
-        )
+        defining_base = next((b for b in cls.__mro__ if hook_name in b.__dict__), None)
         if defining_base is None or defining_base is unittest.TestCase:
             continue
         descriptor = defining_base.__dict__[hook_name]

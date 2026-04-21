@@ -40,7 +40,7 @@ class JSONLinesSpanExporter(SpanExporter):
                 "*",
                 "".join(random.choices(string.ascii_lowercase + string.digits, k=8)),
             )
-        self._file = open(path, "a")
+        self._file = open(path, "a")  # noqa: SIM115
 
     def export(self, spans: typing.Sequence[ReadableSpan]):
         for span in spans:

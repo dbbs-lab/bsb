@@ -8,13 +8,14 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from bsb import MPI, handle_command
-from bsb.profiling import _instrument_node
 from bsb_otel import get_bsb_tracer
 from bsb_otel.testing import OTelFixture
 
+from bsb import MPI, handle_command
+from bsb.profiling import _instrument_node
+
 _tracer = get_bsb_tracer("bsb-core")
-from bsb_test.parallel import skip_parallel, skip_serial
+from bsb_test.parallel import skip_parallel, skip_serial  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Minimal ABC + concrete pair used by TestTelemetryInterfaces.
@@ -79,21 +80,16 @@ def _run_trace_subprocess(code, *, timeout=10):
             proc.wait()
 
         spans = []
-        try:
-            with open(span_file) as f:
-                for line in f:
-                    line = line.strip()
-                    if line:
-                        spans.append(json.loads(line))
-        except FileNotFoundError:
-            pass
+        with contextlib.suppress(FileNotFoundError), open(span_file) as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    spans.append(json.loads(line))
 
         return spans
     finally:
-        try:
+        with contextlib.suppress(OSError):
             os.unlink(span_file)
-        except OSError:
-            pass
 
 
 # ===========================================================================
@@ -157,9 +153,8 @@ class TestTelemetryMPI(unittest.TestCase):
         Every span carries the correct mpi.rank and mpi.size for the rank it
         was recorded on.
         """
-        with OTelFixture() as results:
-            with _tracer.trace("probe"):
-                pass
+        with OTelFixture() as results, _tracer.trace("probe"):
+            pass
 
         my_spans = results()
         all_spans = MPI.allgather(my_spans)  # list[list[dict]], one per rank
@@ -190,11 +185,13 @@ class TestTelemetryMPI(unittest.TestCase):
         This verifies the full "back all the way up to the single broadcasted
         root" property.
         """
-        with OTelFixture() as results:
-            with _tracer.trace("broadcast_root"):
-                with _tracer.trace("rank_child"):
-                    with _tracer.trace("rank_grandchild"):
-                        pass
+        with (
+            OTelFixture() as results,
+            _tracer.trace("broadcast_root"),
+            _tracer.trace("rank_child"),
+            _tracer.trace("rank_grandchild"),
+        ):
+            pass
 
         my_spans = results()
         all_spans = MPI.allgather(my_spans)

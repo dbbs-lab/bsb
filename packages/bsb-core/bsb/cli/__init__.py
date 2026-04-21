@@ -3,9 +3,10 @@ import inspect
 import json
 import sys
 
+from bsb_otel import get_bsb_tracer
+
 from .._contexts import get_cli_context, reset_cli_context
 from ..exceptions import CommandError, DryrunError
-from bsb_otel import get_bsb_tracer
 from .commands import load_root_command
 
 

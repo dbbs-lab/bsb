@@ -8,9 +8,13 @@ def load_tests(loader, tests, pattern):
     This method is called by the unittest module during test discovery.
     """
 
-    # Re-run discovery without the top_level_dir argument, to load all tests
-    # without triggering exactly this loader (which would loop infinitely)
-    suite = loader.discover("tests")
+    # Use the pattern passed by the caller (e.g. via -p "test_connectivity2.py")
+    # Fall back to the loader's default if none was given
+    effective_pattern = pattern or loader.testNamePatterns or "test*.py"
+
+    # Discover respecting the pattern, without top_level_dir to avoid
+    # re-triggering this load_tests and looping infinitely
+    suite = loader.discover("tests", pattern=effective_pattern)
 
     # Then visit the tree to wrap each test case in OTel logic
     wrap_tests_with_traces(suite)

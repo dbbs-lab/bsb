@@ -5,6 +5,24 @@ The BSB is instrumented with OpenTelemetry for observability and diagnostics
 purposes. This guide explains how to set up tracing and profiling for
 development and debugging.
 
+Installation
+------------
+
+BSB packages depend on ``bsb-otel`` for lightweight API-only tracing. To
+actually **run** BSB with observability (exporters, the ``opentelemetry-instrument``
+CLI, and test fixtures like ``OTelFixture``), you need the SDK extra:
+
+.. code-block:: bash
+
+    pip install 'bsb-otel[sdk]'
+
+Without this extra, importing ``OTelFixture`` or ``JSONLinesSpanExporter``, or
+running ``opentelemetry-instrument``, will raise an ``ImportError`` with install
+instructions.
+
+Overview
+--------
+
 The basic functionality of OpenTelemetry is to collect traces, events, and
 metrics.
 
@@ -195,9 +213,10 @@ as such:
 
 .. code-block:: python
 
-    from bsb.profiling import _telemetry_trace
+    from bsb_otel import get_bsb_tracer
 
-    with _telemetry_trace("My Script", broadcast=True):
+    tracer = get_bsb_tracer("my-package")
+    with tracer.trace("My Script"):
         # Your BSB code here
 
 Now you should see all of the BSB telemetry reported in a single trace again.
@@ -205,7 +224,7 @@ Now you should see all of the BSB telemetry reported in a single trace again.
 API
 ---
 
-OpenTelemetry spans can be added using :func:`~bsb.profiling._telemetry_trace`.
+OpenTelemetry spans can be added using :meth:`~bsb_otel.BsbTracer.trace`.
 
 Profiling
 ---------

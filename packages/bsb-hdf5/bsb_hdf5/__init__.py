@@ -100,7 +100,7 @@ class _SpannedHandle:
         self._wait_ms = wait_ms
 
     def __enter__(self):
-        self._span_ctx = _hdf5_tracer.start_as_current_span(
+        self._span_ctx = _hdf5_tracer.trace(
             "hdf5.file.open",
             attributes={
                 "hdf5.file.path": self._path,

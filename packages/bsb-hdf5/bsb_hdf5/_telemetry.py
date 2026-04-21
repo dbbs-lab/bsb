@@ -1,5 +1,3 @@
-import importlib.metadata
+from bsb_otel import get_bsb_tracer
 
-from opentelemetry import trace
-
-_hdf5_tracer = trace.get_tracer("bsb-hdf5", importlib.metadata.version("bsb-hdf5"))
+_hdf5_tracer = get_bsb_tracer("bsb-hdf5")

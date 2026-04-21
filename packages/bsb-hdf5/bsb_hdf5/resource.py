@@ -40,7 +40,7 @@ def handles_handles(handle_type, handler=lambda args: args[0]._engine):
             _attrs = {"hdf5.mode": handle_type}
             if _path is not None:
                 _attrs["hdf5.path"] = _path
-            with _hdf5_tracer.start_as_current_span(
+            with _hdf5_tracer.trace(
                 f"hdf5.{f.__name__}", attributes=_attrs
             ):
                 try:
@@ -98,14 +98,14 @@ class Resource:
         return handle.require_group(self._path)
 
     def create(self, data, *args, **kwargs):
-        with _hdf5_tracer.start_as_current_span(
+        with _hdf5_tracer.trace(
             "hdf5.create", attributes={"hdf5.path": self._path, "hdf5.mode": "a"}
         ):
             with self._engine._write(), self._engine._handle("a") as f:
                 f.create_dataset(self._path, data=data, *args, **kwargs)  # noqa: B026
 
     def keys(self):
-        with _hdf5_tracer.start_as_current_span(
+        with _hdf5_tracer.trace(
             "hdf5.keys", attributes={"hdf5.path": self._path, "hdf5.mode": "r"}
         ):
             with self._engine._read(), self._engine._handle("r") as f:
@@ -114,14 +114,14 @@ class Resource:
                     return list(node.keys())
 
     def remove(self):
-        with _hdf5_tracer.start_as_current_span(
+        with _hdf5_tracer.trace(
             "hdf5.remove", attributes={"hdf5.path": self._path, "hdf5.mode": "a"}
         ):
             with self._engine._write(), self._engine._handle("a") as f:
                 del f[self._path]
 
     def get_dataset(self, selector=()):
-        with _hdf5_tracer.start_as_current_span(
+        with _hdf5_tracer.trace(
             "hdf5.get_dataset", attributes={"hdf5.path": self._path, "hdf5.mode": "r"}
         ):
             with self._engine._read(), self._engine._handle("r") as f:
@@ -129,7 +129,7 @@ class Resource:
 
     @property
     def attributes(self):
-        with _hdf5_tracer.start_as_current_span(
+        with _hdf5_tracer.trace(
             "hdf5.attributes", attributes={"hdf5.path": self._path, "hdf5.mode": "r"}
         ):
             with self._engine._read(), self._engine._handle("r") as f:
@@ -142,7 +142,7 @@ class Resource:
         return attrs[name]
 
     def exists(self):
-        with _hdf5_tracer.start_as_current_span(
+        with _hdf5_tracer.trace(
             "hdf5.exists", attributes={"hdf5.path": self._path, "hdf5.mode": "r"}
         ):
             with self._engine._read(), self._engine._handle("r") as f:
@@ -168,7 +168,7 @@ class Resource:
 
     @property
     def shape(self):
-        with _hdf5_tracer.start_as_current_span(
+        with _hdf5_tracer.trace(
             "hdf5.shape", attributes={"hdf5.path": self._path, "hdf5.mode": "r"}
         ):
             with self._engine._read(), self._engine._handle("r") as f:
@@ -180,7 +180,7 @@ class Resource:
     def append(self, new_data, dtype=float):
         if type(new_data) is not np.ndarray:
             new_data = np.array(new_data)
-        with _hdf5_tracer.start_as_current_span(
+        with _hdf5_tracer.trace(
             "hdf5.append",
             attributes={
                 "hdf5.path": self._path,

@@ -12,6 +12,7 @@ classifiers = [
   "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"
 ]
 dependencies = [
+  "bsb-otel~=7.2",
   "numpy~=1.19",
   "scipy~=1.5",
   "scikit-learn~=1.0",
@@ -45,7 +46,7 @@ dependencies = [
   file = "LICENSE"
 
   [project.optional-dependencies]
-  parallel = [ "mpi4py~=4.1.0", "mpipool>=2.2.1,<3", "mpilock~=1.1" ]
+  parallel = [ "mpi4py~=4.1.0", "mpipool>=2.2.1,<3", "mpilock~=2.0" ]
 
 [project.entry-points."bsb.storage.engines"]
 fs = "bsb.storage.fs"
@@ -74,7 +75,7 @@ test = [
   "bsb-hdf5~=7.0",
   "bsb-json~=7.0",
   "bsb-test~=7.0",
-  "bsb-otel~=7.2",
+  "bsb-otel[sdk]~=7.2",
   "coverage>=7.3"
 ]
 docs = [

@@ -3,8 +3,14 @@ import random
 import string
 import typing
 
-from opentelemetry.sdk.trace import ReadableSpan
-from opentelemetry.sdk.trace.export import SpanExporter
+try:
+    from opentelemetry.sdk.trace import ReadableSpan
+    from opentelemetry.sdk.trace.export import SpanExporter
+except ImportError:
+    raise ImportError(
+        "bsb_otel.exporters requires the OpenTelemetry SDK. "
+        "Install it with: pip install 'bsb-otel[sdk]'"
+    ) from None
 
 from bsb_otel._otel_env import OTEL_EXPORTER_JSONLINES_PATH
 

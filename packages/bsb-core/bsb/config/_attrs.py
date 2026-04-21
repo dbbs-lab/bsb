@@ -399,7 +399,7 @@ def _getref(remote, key):
 
 
 def _getrefname(remote):
-    """Canonical way to retrieve a the name of a remote node."""
+    """Canonical way to retrieve the name of a remote node."""
     try:
         return remote.get_node_name()
     except TypeError:

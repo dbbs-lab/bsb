@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "bsb-test"
-version = "7.2.3"
+version = "7.3.1"
 readme = "README.md"
 requires-python = ">=3.10,<4"
 dynamic = [ "description" ]
@@ -50,6 +50,11 @@ name = "bsb_test"
 [tool.coverage.run]
 branch = true
 source = [ "bsb_test" ]
+omit = [
+  "bsb_test/engines.py",
+  "bsb_test/configs/*",
+  "bsb_test/data/*"
+]
 
 [tool.coverage.report]
 exclude_lines = [ "if typing.TYPE_CHECKING:", "pragma: nocover" ]

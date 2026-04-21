@@ -385,7 +385,7 @@ class ArborAdapter(SimulatorAdapter):
             if self.comm.get_size() > 1:
                 if not arbor.config()["mpi4py"]:
                     warn(
-                        f"Arbor does not seem to be built with MPI support, running"
+                        f"Arbor does not seem to be built with MPI support, running "
                         f"duplicate simulations on {self.comm.get_size()} nodes."
                     )
                 else:

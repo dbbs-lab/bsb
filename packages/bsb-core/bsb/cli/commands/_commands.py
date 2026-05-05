@@ -2,22 +2,57 @@
 Contains builtin commands.
 """
 
-import contextlib
-import itertools
-import pathlib
-from uuid import uuid4
+# fmt: off
+# isort: off
+from ..._trace import t as _t  # noqa: E402
 
-import errr
+_t("bsb/cli/commands/_commands.py: enter")
+_t("bsb/cli/commands/_commands.py: pre  import contextlib")
+import contextlib  # noqa: E402
+_t("bsb/cli/commands/_commands.py: post import contextlib")
+_t("bsb/cli/commands/_commands.py: pre  import itertools")
+import itertools  # noqa: E402
+_t("bsb/cli/commands/_commands.py: post import itertools")
+_t("bsb/cli/commands/_commands.py: pre  import pathlib")
+import pathlib  # noqa: E402
+_t("bsb/cli/commands/_commands.py: post import pathlib")
+_t("bsb/cli/commands/_commands.py: pre  from uuid import uuid4")
+from uuid import uuid4  # noqa: E402
+_t("bsb/cli/commands/_commands.py: post from uuid import uuid4")
 
-from ..._options import ConfigOption
-from ...config import parse_configuration_file
-from ...core import Scaffold, from_storage
-from ...exceptions import ConfigurationSyncError, NodeNotFoundError
-from ...option import BsbOption
-from ...reporting import report
-from ...services import MPI
-from ...storage import open_storage
-from . import BaseCommand
+_t("bsb/cli/commands/_commands.py: pre  import errr")
+import errr  # noqa: E402
+_t("bsb/cli/commands/_commands.py: post import errr")
+
+_t("bsb/cli/commands/_commands.py: pre  from ..._options import ConfigOption")
+from ..._options import ConfigOption  # noqa: E402
+_t("bsb/cli/commands/_commands.py: post from ..._options import ConfigOption")
+_t("bsb/cli/commands/_commands.py: pre  from ...config import parse_configuration_file")
+from ...config import parse_configuration_file  # noqa: E402
+_t("bsb/cli/commands/_commands.py: post from ...config import parse_configuration_file")
+_t("bsb/cli/commands/_commands.py: pre  from ...core import Scaffold, from_storage")
+from ...core import Scaffold, from_storage  # noqa: E402
+_t("bsb/cli/commands/_commands.py: post from ...core import Scaffold, from_storage")
+_t("bsb/cli/commands/_commands.py: pre  from ...exceptions import ...")
+from ...exceptions import ConfigurationSyncError, NodeNotFoundError  # noqa: E402
+_t("bsb/cli/commands/_commands.py: post from ...exceptions import ...")
+_t("bsb/cli/commands/_commands.py: pre  from ...option import BsbOption")
+from ...option import BsbOption  # noqa: E402
+_t("bsb/cli/commands/_commands.py: post from ...option import BsbOption")
+_t("bsb/cli/commands/_commands.py: pre  from ...reporting import report")
+from ...reporting import report  # noqa: E402
+_t("bsb/cli/commands/_commands.py: post from ...reporting import report")
+_t("bsb/cli/commands/_commands.py: pre  from ...services import MPI")
+from ...services import MPI  # noqa: E402
+_t("bsb/cli/commands/_commands.py: post from ...services import MPI")
+_t("bsb/cli/commands/_commands.py: pre  from ...storage import open_storage")
+from ...storage import open_storage  # noqa: E402
+_t("bsb/cli/commands/_commands.py: post from ...storage import open_storage")
+_t("bsb/cli/commands/_commands.py: pre  from . import BaseCommand")
+from . import BaseCommand  # noqa: E402
+_t("bsb/cli/commands/_commands.py: post from . import BaseCommand")
+# fmt: on
+# isort: on
 
 
 class XScale(BsbOption, name="x", cli=("x",), env=("BSB_CONFIG_NETWORK_X",)):
@@ -141,8 +176,13 @@ class MakeConfigCommand(BaseCommand, name="make-config"):
 
 class BsbCompile(BaseCommand, name="compile"):
     def handler(self, context):
+        _t("bsb/cli/commands/_commands.py: BsbCompile.handler enter")
+        _t("bsb/cli/commands/_commands.py: BsbCompile pre  parse_configuration_file")
         cfg = parse_configuration_file(context.config)
+        _t("bsb/cli/commands/_commands.py: BsbCompile post parse_configuration_file")
+        _t("bsb/cli/commands/_commands.py: BsbCompile pre  Scaffold(cfg)")
         network = Scaffold(cfg)
+        _t("bsb/cli/commands/_commands.py: BsbCompile post Scaffold(cfg)")
         if network.storage.preexisted:
             with contextlib.suppress(ConfigurationSyncError):
                 network.sync_config()

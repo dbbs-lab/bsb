@@ -1,9 +1,26 @@
-import contextlib
-import functools
-import os
+# fmt: off
+# isort: off
+from .._trace import t as _t  # noqa: E402
 
-from ..exceptions import DependencyError
-from ._util import MockModule
+_t("bsb/services/mpi.py: enter")
+_t("bsb/services/mpi.py: pre  import contextlib")
+import contextlib  # noqa: E402
+_t("bsb/services/mpi.py: post import contextlib")
+_t("bsb/services/mpi.py: pre  import functools")
+import functools  # noqa: E402
+_t("bsb/services/mpi.py: post import functools")
+_t("bsb/services/mpi.py: pre  import os")
+import os  # noqa: E402
+_t("bsb/services/mpi.py: post import os")
+
+_t("bsb/services/mpi.py: pre  from ..exceptions import DependencyError")
+from ..exceptions import DependencyError  # noqa: E402
+_t("bsb/services/mpi.py: post from ..exceptions import DependencyError")
+_t("bsb/services/mpi.py: pre  from ._util import MockModule")
+from ._util import MockModule  # noqa: E402
+_t("bsb/services/mpi.py: post from ._util import MockModule")
+# fmt: on
+# isort: on
 
 
 class MPIService:
@@ -14,8 +31,13 @@ class MPIService:
     """
 
     def __init__(self, comm=None):
+        _t("bsb/services/mpi.py: MPIService.__init__ enter")
+        _t("bsb/services/mpi.py: MPIService.__init__ pre  MPIModule('mpi4py.MPI')  *** mpi4py.MPI loaded inside ***")
         self._mpi = MPIModule("mpi4py.MPI")
+        _t("bsb/services/mpi.py: MPIService.__init__ post MPIModule('mpi4py.MPI')")
+        _t("bsb/services/mpi.py: MPIService.__init__ pre  self._comm = comm or self._mpi.COMM_WORLD")
         self._comm = comm or self._mpi.COMM_WORLD
+        _t("bsb/services/mpi.py: MPIService.__init__ post self._comm = comm or self._mpi.COMM_WORLD")
 
     def get_communicator(self):
         return self._comm

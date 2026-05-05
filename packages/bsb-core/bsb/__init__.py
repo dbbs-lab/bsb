@@ -7,13 +7,32 @@ which are essential for `bsb-core` to function. First time users are recommended
 install the `bsb` package instead.
 """
 
-import functools
-import importlib
-import sys
-import typing
-import warnings
+# fmt: off
+# isort: off
+from ._trace import t as _t  # noqa: E402  must stay first
+_t("bsb/__init__.py: enter")
 
-import bsb.exceptions as _exc
+_t("bsb/__init__.py: pre  import functools")
+import functools  # noqa: E402
+_t("bsb/__init__.py: post import functools")
+_t("bsb/__init__.py: pre  import importlib")
+import importlib  # noqa: E402
+_t("bsb/__init__.py: post import importlib")
+_t("bsb/__init__.py: pre  import sys")
+import sys  # noqa: E402
+_t("bsb/__init__.py: post import sys")
+_t("bsb/__init__.py: pre  import typing")
+import typing  # noqa: E402
+_t("bsb/__init__.py: post import typing")
+_t("bsb/__init__.py: pre  import warnings")
+import warnings  # noqa: E402
+_t("bsb/__init__.py: post import warnings")
+
+_t("bsb/__init__.py: pre  import bsb.exceptions as _exc")
+import bsb.exceptions as _exc  # noqa: E402
+_t("bsb/__init__.py: post import bsb.exceptions as _exc")
+# fmt: on
+# isort: on
 
 # Patch functools on 3.8
 try:
@@ -35,15 +54,22 @@ for e in _exc.__dict__.values():
     if isinstance(e, type) and issubclass(e, Warning):
         warnings.simplefilter("always", e)
 
+_t("bsb/__init__.py: pre  from .options import profiling as _pr")
 try:
     from .options import profiling as _pr
 except Exception:
+    _t("bsb/__init__.py: post .options import FAILED (caught)")
     pass
 else:
+    _t("bsb/__init__.py: post from .options import profiling as _pr")
     if _pr:
+        _t("bsb/__init__.py: pre  from .profiling import activate_session")
         from .profiling import activate_session
+        _t("bsb/__init__.py: post from .profiling import activate_session")
 
+        _t("bsb/__init__.py: pre  activate_session()")
         activate_session()
+        _t("bsb/__init__.py: post activate_session()")
 
 
 def _get_annotation_submodule(name: str):

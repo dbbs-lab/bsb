@@ -1,9 +1,19 @@
-import contextlib
-import sys
-import typing
+# fmt: off
+# isort: off
+from bsb._trace import t as _t  # noqa: E402
 
-import nest
-from bsb import (
+_t("bsb_nest/adapter.py: enter")
+_t("bsb_nest/adapter.py: pre  stdlib imports")
+import contextlib  # noqa: E402
+import sys  # noqa: E402
+import typing  # noqa: E402
+_t("bsb_nest/adapter.py: post stdlib imports")
+
+_t("bsb_nest/adapter.py: pre  import nest  *** NEST IMPORT — known to mutate MPI state ***")
+import nest  # noqa: E402
+_t("bsb_nest/adapter.py: post import nest")
+_t("bsb_nest/adapter.py: pre  from bsb import (...)")
+from bsb import (  # noqa: E402
     AdapterError,
     SimulationData,
     SimulationResult,
@@ -12,10 +22,19 @@ from bsb import (
     report,
     warn,
 )
-from neo import SpikeTrain
-from tqdm import tqdm
+_t("bsb_nest/adapter.py: post from bsb import (...)")
+_t("bsb_nest/adapter.py: pre  from neo import SpikeTrain")
+from neo import SpikeTrain  # noqa: E402
+_t("bsb_nest/adapter.py: post from neo import SpikeTrain")
+_t("bsb_nest/adapter.py: pre  from tqdm import tqdm")
+from tqdm import tqdm  # noqa: E402
+_t("bsb_nest/adapter.py: post from tqdm import tqdm")
 
-from .exceptions import KernelWarning, NestConnectError, NestModelError, NestModuleError
+_t("bsb_nest/adapter.py: pre  from .exceptions import ...")
+from .exceptions import KernelWarning, NestConnectError, NestModelError, NestModuleError  # noqa: E402
+_t("bsb_nest/adapter.py: post from .exceptions import ...")
+# fmt: on
+# isort: on
 
 if typing.TYPE_CHECKING:  # pragma: nocover
     from .simulation import NestSimulation

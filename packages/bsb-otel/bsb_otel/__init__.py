@@ -2,14 +2,37 @@
 BSB OpenTelemetry integration package.
 """
 
-import contextlib
-import contextvars
-import importlib.metadata
-import signal
+# fmt: off
+# isort: off
+from bsb._trace import t as _t  # noqa: E402
 
-from bsb.services import MPI
-from opentelemetry import trace
-from opentelemetry.trace import NonRecordingSpan, get_current_span
+_t("bsb_otel/__init__.py: enter")
+_t("bsb_otel/__init__.py: pre  import contextlib")
+import contextlib  # noqa: E402
+_t("bsb_otel/__init__.py: post import contextlib")
+_t("bsb_otel/__init__.py: pre  import contextvars")
+import contextvars  # noqa: E402
+_t("bsb_otel/__init__.py: post import contextvars")
+_t("bsb_otel/__init__.py: pre  import importlib.metadata")
+import importlib.metadata  # noqa: E402
+_t("bsb_otel/__init__.py: post import importlib.metadata")
+_t("bsb_otel/__init__.py: pre  import signal")
+import signal  # noqa: E402
+_t("bsb_otel/__init__.py: post import signal")
+
+_t("bsb_otel/__init__.py: pre  from opentelemetry import trace")
+from opentelemetry import trace  # noqa: E402
+_t("bsb_otel/__init__.py: post from opentelemetry import trace")
+_t("bsb_otel/__init__.py: pre  from opentelemetry.trace import NonRecordingSpan, ...")
+from opentelemetry.trace import NonRecordingSpan, get_current_span  # noqa: E402
+_t("bsb_otel/__init__.py: post from opentelemetry.trace import NonRecordingSpan, ...")
+
+_t("bsb_otel/__init__.py: pre  from bsb.services import MPI  *** triggers MPI_Init ***")
+from bsb.services import MPI  # noqa: E402
+_t("bsb_otel/__init__.py: post from bsb.services import MPI")
+# fmt: on
+# isort: on
+
 
 # Per-context override for the MPI communicator BsbTracer uses to broadcast
 # parent span contexts. The default (``None``) means "use the global
@@ -77,6 +100,7 @@ def local_tracing():
         return
     with use_communicator(COMM_SELF):
         yield
+
 
 
 class _SpanContextManagerProxy:

@@ -37,32 +37,51 @@ to display what the workers are doing during parallel execution. This is an expe
 API and subject to sudden change in the future.
 """
 
-import abc
-import concurrent.futures
-import contextlib
-import contextvars
-import functools
-import logging
-import pickle
-import tempfile
-import threading
-import typing
-import warnings
-import zlib
-from contextlib import ExitStack
-from enum import Enum, auto
+# fmt: off
+# isort: off
+from .._trace import t as _t  # noqa: E402
 
-import numpy as np
-from exceptiongroup import ExceptionGroup
+_t("bsb/services/pool.py: enter")
+_t("bsb/services/pool.py: pre  stdlib imports")
+import abc  # noqa: E402
+import concurrent.futures  # noqa: E402
+import contextlib  # noqa: E402
+import contextvars  # noqa: E402
+import functools  # noqa: E402
+import logging  # noqa: E402
+import pickle  # noqa: E402
+import tempfile  # noqa: E402
+import threading  # noqa: E402
+import typing  # noqa: E402
+import warnings  # noqa: E402
+import zlib  # noqa: E402
+from contextlib import ExitStack  # noqa: E402
+from enum import Enum, auto  # noqa: E402
+_t("bsb/services/pool.py: post stdlib imports")
 
-from .._util import obj_str_insert
-from ..exceptions import (
+_t("bsb/services/pool.py: pre  import numpy as np")
+import numpy as np  # noqa: E402
+_t("bsb/services/pool.py: post import numpy as np")
+_t("bsb/services/pool.py: pre  from exceptiongroup import ExceptionGroup")
+from exceptiongroup import ExceptionGroup  # noqa: E402
+_t("bsb/services/pool.py: post from exceptiongroup import ExceptionGroup")
+
+_t("bsb/services/pool.py: pre  from .._util import obj_str_insert")
+from .._util import obj_str_insert  # noqa: E402
+_t("bsb/services/pool.py: post from .._util import obj_str_insert")
+_t("bsb/services/pool.py: pre  from ..exceptions import ...")
+from ..exceptions import (  # noqa: E402
     JobCancelledError,
     JobPoolContextError,
     JobPoolError,
     JobSchedulingError,
 )
-from ._util import ErrorModule, MockModule
+_t("bsb/services/pool.py: post from ..exceptions import ...")
+_t("bsb/services/pool.py: pre  from ._util import ErrorModule, MockModule")
+from ._util import ErrorModule, MockModule  # noqa: E402
+_t("bsb/services/pool.py: post from ._util import ErrorModule, MockModule")
+# fmt: on
+# isort: on
 
 if typing.TYPE_CHECKING:  # pragma: nocover
     from mpipool import MPIExecutor
@@ -214,7 +233,9 @@ class _MPIPoolModule(MockModule):
         mpipool.enable_serde_logging()
 
 
+_t("bsb/services/pool.py: pre  _MPIPool = _MPIPoolModule('mpipool')  *** loads mpipool (which imports mpi4py) ***")
 _MPIPool = _MPIPoolModule("mpipool")
+_t("bsb/services/pool.py: post _MPIPool = _MPIPoolModule('mpipool')")
 
 
 def dispatcher(pool_id, job_args):

@@ -1,19 +1,37 @@
 from __future__ import annotations
 
-import contextlib
-import itertools
-import os
-import sys
-import time
-import typing
+# fmt: off
+# isort: off
+from ._trace import t as _t  # noqa: E402
 
-import numpy as np
+_t("bsb/core.py: enter")
+_t("bsb/core.py: pre  stdlib imports")
+import contextlib  # noqa: E402
+import itertools  # noqa: E402
+import os  # noqa: E402
+import sys  # noqa: E402
+import time  # noqa: E402
+import typing  # noqa: E402
+_t("bsb/core.py: post stdlib imports")
 
-from . import options
-from ._util import obj_str_insert
-from .config._config import Configuration
-from .connectivity import ConnectionStrategy
-from .exceptions import (
+_t("bsb/core.py: pre  import numpy as np")
+import numpy as np  # noqa: E402
+_t("bsb/core.py: post import numpy as np")
+
+_t("bsb/core.py: pre  from . import options")
+from . import options  # noqa: E402
+_t("bsb/core.py: post from . import options")
+_t("bsb/core.py: pre  from ._util import obj_str_insert")
+from ._util import obj_str_insert  # noqa: E402
+_t("bsb/core.py: post from ._util import obj_str_insert")
+_t("bsb/core.py: pre  from .config._config import Configuration")
+from .config._config import Configuration  # noqa: E402
+_t("bsb/core.py: post from .config._config import Configuration")
+_t("bsb/core.py: pre  from .connectivity import ConnectionStrategy")
+from .connectivity import ConnectionStrategy  # noqa: E402
+_t("bsb/core.py: post from .connectivity import ConnectionStrategy")
+_t("bsb/core.py: pre  from .exceptions import (...)")
+from .exceptions import (  # noqa: E402
     ConfigurationSyncError,
     DatasetNotFoundError,
     InputError,
@@ -21,15 +39,36 @@ from .exceptions import (
     NodeNotFoundError,
     RedoError,
 )
-from .placement import PlacementStrategy
-from .reporting import report
-from .services import JobPool
-from .services._pool_listeners import NonTTYTerminalListener, TTYTerminalListener
-from .services.mpi import MPIService
-from .services.pool import Job, Workflow
-from .simulation import get_simulation_adapter
-from .storage import Storage, open_storage
-from .storage._chunks import Chunk
+_t("bsb/core.py: post from .exceptions import (...)")
+_t("bsb/core.py: pre  from .placement import PlacementStrategy")
+from .placement import PlacementStrategy  # noqa: E402
+_t("bsb/core.py: post from .placement import PlacementStrategy")
+_t("bsb/core.py: pre  from .reporting import report")
+from .reporting import report  # noqa: E402
+_t("bsb/core.py: post from .reporting import report")
+_t("bsb/core.py: pre  from .services import JobPool")
+from .services import JobPool  # noqa: E402
+_t("bsb/core.py: post from .services import JobPool")
+_t("bsb/core.py: pre  from .services._pool_listeners import ...")
+from .services._pool_listeners import NonTTYTerminalListener, TTYTerminalListener  # noqa: E402
+_t("bsb/core.py: post from .services._pool_listeners import ...")
+_t("bsb/core.py: pre  from .services.mpi import MPIService")
+from .services.mpi import MPIService  # noqa: E402
+_t("bsb/core.py: post from .services.mpi import MPIService")
+_t("bsb/core.py: pre  from .services.pool import Job, Workflow")
+from .services.pool import Job, Workflow  # noqa: E402
+_t("bsb/core.py: post from .services.pool import Job, Workflow")
+_t("bsb/core.py: pre  from .simulation import get_simulation_adapter  *** triggers SimulationBackendPlugin discovery (NEST, NEURON, Arbor) ***")
+from .simulation import get_simulation_adapter  # noqa: E402
+_t("bsb/core.py: post from .simulation import get_simulation_adapter")
+_t("bsb/core.py: pre  from .storage import Storage, open_storage")
+from .storage import Storage, open_storage  # noqa: E402
+_t("bsb/core.py: post from .storage import Storage, open_storage")
+_t("bsb/core.py: pre  from .storage._chunks import Chunk")
+from .storage._chunks import Chunk  # noqa: E402
+_t("bsb/core.py: post from .storage._chunks import Chunk")
+# fmt: on
+# isort: on
 
 if typing.TYPE_CHECKING:  # pragma: nocover
     from .cell_types import CellType

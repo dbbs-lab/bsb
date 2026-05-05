@@ -7,11 +7,26 @@ Inherit from :class:`BaseCommand` for regular CLI style commands, or from
 BSB.
 """
 
-import argparse
+# fmt: off
+# isort: off
+from ..._trace import t as _t  # noqa: E402
 
-from ...exceptions import CommandError
-from ...profiling import _instrument_command
-from ...reporting import report
+_t("bsb/cli/commands/__init__.py: enter")
+_t("bsb/cli/commands/__init__.py: pre  import argparse")
+import argparse  # noqa: E402
+_t("bsb/cli/commands/__init__.py: post import argparse")
+
+_t("bsb/cli/commands/__init__.py: pre  from ...exceptions import CommandError")
+from ...exceptions import CommandError  # noqa: E402
+_t("bsb/cli/commands/__init__.py: post from ...exceptions import CommandError")
+_t("bsb/cli/commands/__init__.py: pre  from ...profiling import _instrument_command")
+from ...profiling import _instrument_command  # noqa: E402
+_t("bsb/cli/commands/__init__.py: post from ...profiling import _instrument_command")
+_t("bsb/cli/commands/__init__.py: pre  from ...reporting import report")
+from ...reporting import report  # noqa: E402
+_t("bsb/cli/commands/__init__.py: post from ...reporting import report")
+# fmt: on
+# isort: on
 
 
 class BaseParser(argparse.ArgumentParser):
@@ -144,11 +159,15 @@ class RootCommand(BaseCommand, name="bsb"):
 
 
 def load_root_command():
+    _t("bsb/cli/commands/__init__.py: load_root_command pre  from ...plugins import discover")
     from ...plugins import discover
+    _t("bsb/cli/commands/__init__.py: load_root_command post from ...plugins import discover")
 
     # Simply discovering the plugin modules should append them to their parent command
     # class using the `__init_subclass__` function.
+    _t("bsb/cli/commands/__init__.py: load_root_command pre  discover('commands')")
     discover("commands")
+    _t("bsb/cli/commands/__init__.py: load_root_command post discover('commands')")
     return RootCommand()
 
 

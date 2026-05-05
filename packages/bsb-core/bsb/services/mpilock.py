@@ -1,6 +1,11 @@
 # TODO: check for parallel support in the hdf5 provider, if it has it, provide noop
 
-from ._util import MockModule
+from .._trace import t as _t
+
+_t("bsb/services/mpilock.py: enter")
+_t("bsb/services/mpilock.py: pre  from ._util import MockModule")
+from ._util import MockModule  # noqa: E402
+_t("bsb/services/mpilock.py: post from ._util import MockModule")
 
 
 class MockedWindowController:

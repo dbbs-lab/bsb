@@ -12,13 +12,28 @@ consumers and can be used independent of the underlying storage engine, which is
 goal of this module.
 """
 
-import functools
-import typing
-from inspect import isclass
+# fmt: off
+# isort: off
+from .._trace import t as _t  # noqa: E402
 
-from .. import plugins
-from ..exceptions import UnknownStorageEngineError
-from ..services.mpi import MPIService
+_t("bsb/storage/__init__.py: enter")
+_t("bsb/storage/__init__.py: pre  stdlib imports")
+import functools  # noqa: E402
+import typing  # noqa: E402
+from inspect import isclass  # noqa: E402
+_t("bsb/storage/__init__.py: post stdlib imports")
+
+_t("bsb/storage/__init__.py: pre  from .. import plugins")
+from .. import plugins  # noqa: E402
+_t("bsb/storage/__init__.py: post from .. import plugins")
+_t("bsb/storage/__init__.py: pre  from ..exceptions import UnknownStorageEngineError")
+from ..exceptions import UnknownStorageEngineError  # noqa: E402
+_t("bsb/storage/__init__.py: post from ..exceptions import UnknownStorageEngineError")
+_t("bsb/storage/__init__.py: pre  from ..services.mpi import MPIService")
+from ..services.mpi import MPIService  # noqa: E402
+_t("bsb/storage/__init__.py: post from ..services.mpi import MPIService")
+# fmt: on
+# isort: on
 
 if typing.TYPE_CHECKING:  # pragma: nocover
     from .interfaces import (

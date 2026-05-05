@@ -1,7 +1,7 @@
 [![Build Status](https://github.com/dbbs-lab/bsb/actions/workflows/main.yml/badge.svg)](https://github.com/dbbs-lab/bsb/actions/workflows/main.yml)
 [![Documentation Status](https://readthedocs.org/projects/patch/badge/?version=latest)](https://patch.readthedocs.io/latest/)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
-[![codecov](https://codecov.io/gh/Helveg/patch/branch/master/graph/badge.svg)](https://codecov.io/gh/Helveg/patch)
+[![codecov](https://codecov.io/gh/dbbs-lab/bsb/branch/main/graph/badge.svg)](https://codecov.io/gh/dbbs-lab/bsb)
 
 
 ![Drop in replacement](patch.gif)

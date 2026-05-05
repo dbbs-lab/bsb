@@ -2,12 +2,81 @@
 BSB OpenTelemetry integration package.
 """
 
+import contextlib
+import contextvars
 import importlib.metadata
 import signal
 
 from bsb.services import MPI
 from opentelemetry import trace
 from opentelemetry.trace import NonRecordingSpan, get_current_span
+
+# Per-context override for the MPI communicator BsbTracer uses to broadcast
+# parent span contexts. The default (``None``) means "use the global
+# ``bsb.services.MPI`` communicator" (typically ``MPI.COMM_WORLD``). This
+# affects ONLY tracing's internal broadcast — it is not a general MPI scope
+# override; other BSB code keeps using the global ``MPI`` service.
+_trace_comm: contextvars.ContextVar = contextvars.ContextVar(
+    "bsb_otel_trace_communicator", default=None
+)
+
+
+@contextlib.contextmanager
+def use_communicator(comm):
+    """
+    Override the MPI communicator that :class:`BsbTracer` uses for span
+    broadcasts within this block.
+
+    - Pass ``mpi4py.MPI.COMM_SELF`` (size 1 from this rank's view) to
+      disable cross-rank correlation — each rank traces independently.
+      Use :func:`local_tracing` for that case.
+    - Pass any sub-communicator to broadcast within that group only.
+    - The default is the global ``bsb.services.MPI`` communicator.
+
+    .. note::
+       This only affects the bsb-otel broadcast logic. ``mpi.rank`` and
+       ``mpi.size`` span attributes still report the *global* rank/size
+       from :data:`bsb.services.MPI`. Other BSB code (locks, gather, etc.)
+       is unaffected.
+
+    Implemented as a :class:`contextvars.ContextVar`, so it propagates
+    across asyncio tasks and through ``contextvars.copy_context().run(...)``
+    (which the BSB job pool uses), but does not leak across threads
+    spawned with the bare ``threading.Thread``.
+    """
+    token = _trace_comm.set(comm)
+    try:
+        yield
+    finally:
+        _trace_comm.reset(token)
+
+
+@contextlib.contextmanager
+def local_tracing():
+    """
+    Disable cross-rank broadcast for spans created inside this block.
+
+    Shorthand for ``use_communicator(mpi4py.MPI.COMM_SELF)``. Use this
+    around rank-divergent code paths (where different ranks make different
+    sequences of ``trace()`` calls) to avoid the collective-broadcast
+    deadlock that would otherwise occur.
+
+    Inside the block each rank only synchronises with the chosen
+    communicator (``COMM_SELF`` — i.e. itself), so no new cross-rank
+    broadcast root is created. A cross-rank parent established *before*
+    the block is preserved: spans created inside still inherit it as
+    their parent, so their trace_id stays correlated across ranks.
+
+    Falls back to a no-op if mpi4py is not importable, since the broadcast
+    machinery is then already inactive.
+    """
+    try:
+        from mpi4py.MPI import COMM_SELF
+    except ImportError:
+        yield
+        return
+    with use_communicator(COMM_SELF):
+        yield
 
 
 class _SpanContextManagerProxy:
@@ -59,15 +128,47 @@ class BsbTracer:
         if attributes is None:
             attributes = {}
 
-        attributes["mpi.rank"] = rank = MPI.get_rank()
-        attributes["mpi.size"] = size = MPI.get_size()
+        # mpi.rank/mpi.size always reflect the GLOBAL communicator so spans
+        # are comparable across runs regardless of the contextual broadcast
+        # comm chosen via ``use_communicator``.
+        attributes["mpi.rank"] = MPI.get_rank()
+        attributes["mpi.size"] = MPI.get_size()
+
+        # Pick the communicator BsbTracer broadcasts on. Defaults to the
+        # global MPI service; ``use_communicator``/``local_tracing`` can
+        # override it per scope.
+        comm = _trace_comm.get()
+        if comm is None:
+            rank, size = MPI.get_rank(), MPI.get_size()
+
+            def bcast(obj, root=0):
+                return MPI.bcast(obj, root=root)
+        else:
+            rank, size = comm.Get_rank(), comm.Get_size()
+
+            def bcast(obj, root=0):
+                return comm.bcast(obj, root=root)
+
+        _btrace(f"trace[{name!r}] enter bcast_rank={rank}/{size}")
 
         # In serial mode the broadcast dance is dead weight: bcast is a no-op
         # and the rank>0 branch is unreachable. Just create a normal span.
+        # This is also the path taken when ``local_tracing()`` is active,
+        # since COMM_SELF reports size 1.
         if size == 1:
+            _btrace(f"trace[{name!r}] serial fast-path")
+            return self._otel_tracer.start_as_current_span(name, attributes=attributes)
+
+        # No SDK provider configured: nothing meaningful to broadcast, and
+        # imposing a collective barrier on every trace() call would deadlock
+        # any rank-divergent caller. Stay true to OTel's "API works without
+        # SDK" contract — each rank traces locally as a no-op.
+        if trace._TRACER_PROVIDER is None:
+            _btrace(f"trace[{name!r}] no SDK provider, local-only")
             return self._otel_tracer.start_as_current_span(name, attributes=attributes)
 
         if not get_current_span().get_span_context().is_valid:
+            _btrace(f"trace[{name!r}] no parent → broadcast branch")
             if rank == 0:
                 parent_span_ctx_mgr = self._otel_tracer.start_as_current_span(
                     name, attributes=attributes
@@ -78,15 +179,22 @@ class BsbTracer:
                 # it. If the local tracer is a no-op (no SDK provider) the
                 # context is invalid and there's nothing meaningful to share;
                 # broadcast None instead so non-root ranks also fall through
-                # to a local no-op span. This preserves OTel's principle that
-                # the API works without an SDK.
-                MPI.bcast(
+                # to a local no-op span.
+                _btrace(
+                    f"trace[{name!r}] rank0 pre-bcast valid={parent_span_context.is_valid}"
+                )
+                bcast(
                     parent_span_context if parent_span_context.is_valid else None,
                     root=0,
                 )
+                _btrace(f"trace[{name!r}] rank0 post-bcast")
                 return _SpanContextManagerProxy(parent_span_ctx_mgr, parent_span)
             else:
-                parent_span_context = MPI.bcast(None, root=0)
+                _btrace(f"trace[{name!r}] rank{rank} pre-bcast (waiting on root)")
+                parent_span_context = bcast(None, root=0)
+                _btrace(
+                    f"trace[{name!r}] rank{rank} post-bcast got={parent_span_context!r}"
+                )
                 if parent_span_context is None:
                     return self._otel_tracer.start_as_current_span(
                         name, attributes=attributes
@@ -95,7 +203,24 @@ class BsbTracer:
                     NonRecordingSpan(parent_span_context), end_on_exit=False
                 )
 
+        _btrace(f"trace[{name!r}] inherit parent → child span")
         return self._otel_tracer.start_as_current_span(name, attributes=attributes)
+
+
+def _btrace(msg):
+    """Diagnostic trace to stderr; gated on $BSB_OTEL_TRACE."""
+    import os
+    import sys
+    import time
+
+    if not os.environ.get("BSB_OTEL_TRACE"):
+        return
+    rank = os.environ.get("OMPI_COMM_WORLD_RANK", "?")
+    print(
+        f"[bsb_otel t={time.monotonic():.3f}s rank={rank}] {msg}",
+        file=sys.stderr,
+        flush=True,
+    )
 
 
 def get_bsb_tracer(package_name: str, version: str = None) -> BsbTracer:
@@ -167,4 +292,6 @@ __all__ = [
     "TerminationError",
     "ensure_spans_on_exit",
     "get_bsb_tracer",
+    "local_tracing",
+    "use_communicator",
 ]

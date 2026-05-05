@@ -25,9 +25,8 @@ class TestBsbTracerRegistry(unittest.TestCase):
 
 class TestBsbTracerSpan(unittest.TestCase):
     def test_trace_records_a_span(self):
-        with OTelFixture() as results:
-            with get_bsb_tracer("bsb-otel").trace("probe"):
-                pass
+        with OTelFixture() as results, get_bsb_tracer("bsb-otel").trace("probe"):
+            pass
         spans = results()
         # Rank 0 records the broadcast root span; non-root ranks attach a
         # NonRecordingSpan and record nothing.

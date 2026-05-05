@@ -181,7 +181,8 @@ class BsbTracer:
                 # broadcast None instead so non-root ranks also fall through
                 # to a local no-op span.
                 _btrace(
-                    f"trace[{name!r}] rank0 pre-bcast valid={parent_span_context.is_valid}"
+                    f"trace[{name!r}] rank0 pre-bcast "
+                    f"valid={parent_span_context.is_valid}"
                 )
                 bcast(
                     parent_span_context if parent_span_context.is_valid else None,

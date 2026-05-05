@@ -1,6 +1,7 @@
 import unittest
 
 from bsb_otel import BsbTracer, _tracer_registry, get_bsb_tracer
+from bsb_otel.testing import OTelFixture
 
 
 class TestBsbTracerRegistry(unittest.TestCase):
@@ -21,8 +22,16 @@ class TestBsbTracerRegistry(unittest.TestCase):
 
 
 class TestBsbTracerSpan(unittest.TestCase):
-    def test_trace_yields_a_span(self):
-        # Without an SDK provider configured, OTel returns a NonRecordingSpan;
-        # the tracer should still produce a usable context manager.
-        with get_bsb_tracer("bsb-otel").trace("probe") as span:
-            self.assertIsNotNone(span)
+    def test_trace_records_a_span(self):
+        with OTelFixture() as results:
+            with get_bsb_tracer("bsb-otel").trace("probe"):
+                pass
+        spans = results()
+        # Rank 0 records the broadcast root span; non-root ranks attach a
+        # NonRecordingSpan and record nothing.
+        from bsb import MPI
+
+        if MPI.get_rank() == 0:
+            self.assertEqual([s["name"] for s in spans], ["probe"])
+        else:
+            self.assertEqual(spans, [])

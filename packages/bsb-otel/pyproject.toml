@@ -46,6 +46,7 @@ test = [
   "bsb-core[parallel]",
   "bsb-test~=7.0",
   "coverage>=7.3",
+  "opentelemetry-sdk~=1.0",
 ]
 docs = [
   "furo~=2024.0",

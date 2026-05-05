@@ -7,7 +7,7 @@ import signal
 
 from bsb.services import MPI
 from opentelemetry import trace
-from opentelemetry.trace import NonRecordingSpan, get_current_span, set_span_in_context
+from opentelemetry.trace import NonRecordingSpan, get_current_span
 
 
 class _SpanContextManagerProxy:
@@ -60,7 +60,12 @@ class BsbTracer:
             attributes = {}
 
         attributes["mpi.rank"] = rank = MPI.get_rank()
-        attributes["mpi.size"] = MPI.get_size()
+        attributes["mpi.size"] = size = MPI.get_size()
+
+        # In serial mode the broadcast dance is dead weight: bcast is a no-op
+        # and the rank>0 branch is unreachable. Just create a normal span.
+        if size == 1:
+            return self._otel_tracer.start_as_current_span(name, attributes=attributes)
 
         if not get_current_span().get_span_context().is_valid:
             if rank == 0:
@@ -68,12 +73,27 @@ class BsbTracer:
                     name, attributes=attributes
                 )
                 parent_span = parent_span_ctx_mgr.__enter__()
-                set_span_in_context(parent_span)
                 parent_span_context = parent_span.get_span_context()
+                if not parent_span_context.is_valid:
+                    # Release the other ranks from their bcast wait before
+                    # raising, so they fail symmetrically instead of hanging.
+                    MPI.bcast(None, root=0)
+                    raise RuntimeError(
+                        "BsbTracer can't broadcast a parent span: the OTel "
+                        "tracer produced an invalid context. Configure an "
+                        "OpenTelemetry SDK provider before tracing across "
+                        "MPI ranks."
+                    )
                 MPI.bcast(parent_span_context, root=0)
                 return _SpanContextManagerProxy(parent_span_ctx_mgr, parent_span)
             else:
                 parent_span_context = MPI.bcast(None, root=0)
+                if parent_span_context is None:
+                    raise RuntimeError(
+                        "BsbTracer received no parent context from rank 0; "
+                        "rank 0 most likely raised because no OpenTelemetry "
+                        "SDK provider is configured."
+                    )
                 return trace.use_span(
                     NonRecordingSpan(parent_span_context), end_on_exit=False
                 )

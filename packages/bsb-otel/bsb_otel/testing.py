@@ -211,7 +211,9 @@ class OTelFixture:
             if name not in self._old_tracers:
                 del _bsb_otel._tracer_registry[name]
         self.temp_file.seek(0)
-        self.results = [json.loads(line) for line in self.temp_file.readlines()]
+        self.results = [
+            json.loads(line) for line in self.temp_file.readlines() if line.strip()
+        ]
         self.temp_file.close()
 
 

@@ -1,5 +1,7 @@
 import unittest
 
+from opentelemetry import trace as ot
+
 from bsb_otel import BsbTracer, _tracer_registry, get_bsb_tracer
 from bsb_otel.testing import OTelFixture
 
@@ -35,3 +37,14 @@ class TestBsbTracerSpan(unittest.TestCase):
             self.assertEqual([s["name"] for s in spans], ["probe"])
         else:
             self.assertEqual(spans, [])
+
+    def test_trace_no_ops_without_sdk_provider(self):
+        # Mirror OTel's "API works without SDK" contract: with no provider
+        # configured, BsbTracer.trace must be a usable, non-recording no-op
+        # — and the multi-rank broadcast path must not deadlock or raise.
+        self.assertIsNone(
+            ot._TRACER_PROVIDER,
+            "test precondition: no real TracerProvider should be configured",
+        )
+        with get_bsb_tracer("bsb-otel").trace("noop") as span:
+            self.assertFalse(span.is_recording())

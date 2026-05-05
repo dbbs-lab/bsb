@@ -188,7 +188,10 @@ class BsbTracer:
             _btrace(f"trace[{name!r}] no SDK provider, local-only")
             return self._otel_tracer.start_as_current_span(name, attributes=attributes)
 
-        if not get_current_span().get_span_context().is_valid:
+        # A NonRecordingSpan can hold a None SpanContext; treat that as "no
+        # valid parent" rather than crashing on the .is_valid lookup.
+        current_ctx = get_current_span().get_span_context()
+        if current_ctx is None or not current_ctx.is_valid:
             _btrace(f"trace[{name!r}] no parent → broadcast branch")
             if rank == 0:
                 parent_span_ctx_mgr = self._otel_tracer.start_as_current_span(

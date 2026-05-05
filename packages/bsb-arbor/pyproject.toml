@@ -15,7 +15,7 @@ dependencies = [
   "numpy~=1.21",
   "bsb-core~=7.0",
   "arborize~=7.0",
-  "arbor~=0.10; sys_platform != 'win32'",
+  "arbor==0.11; sys_platform != 'win32'",
   "arborize[arbor]~=7.0; sys_platform != 'win32'"
 ]
 

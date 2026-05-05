@@ -74,25 +74,22 @@ class BsbTracer:
                 )
                 parent_span = parent_span_ctx_mgr.__enter__()
                 parent_span_context = parent_span.get_span_context()
-                if not parent_span_context.is_valid:
-                    # Release the other ranks from their bcast wait before
-                    # raising, so they fail symmetrically instead of hanging.
-                    MPI.bcast(None, root=0)
-                    raise RuntimeError(
-                        "BsbTracer can't broadcast a parent span: the OTel "
-                        "tracer produced an invalid context. Configure an "
-                        "OpenTelemetry SDK provider before tracing across "
-                        "MPI ranks."
-                    )
-                MPI.bcast(parent_span_context, root=0)
+                # Broadcast the parent context so non-root ranks can attach
+                # it. If the local tracer is a no-op (no SDK provider) the
+                # context is invalid and there's nothing meaningful to share;
+                # broadcast None instead so non-root ranks also fall through
+                # to a local no-op span. This preserves OTel's principle that
+                # the API works without an SDK.
+                MPI.bcast(
+                    parent_span_context if parent_span_context.is_valid else None,
+                    root=0,
+                )
                 return _SpanContextManagerProxy(parent_span_ctx_mgr, parent_span)
             else:
                 parent_span_context = MPI.bcast(None, root=0)
                 if parent_span_context is None:
-                    raise RuntimeError(
-                        "BsbTracer received no parent context from rank 0; "
-                        "rank 0 most likely raised because no OpenTelemetry "
-                        "SDK provider is configured."
+                    return self._otel_tracer.start_as_current_span(
+                        name, attributes=attributes
                     )
                 return trace.use_span(
                     NonRecordingSpan(parent_span_context), end_on_exit=False

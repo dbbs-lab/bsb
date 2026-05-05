@@ -169,7 +169,11 @@ class OTelFixture:
             ) from None
         import bsb_otel as _bsb_otel
 
-        self._old_provider = trace.get_tracer_provider()
+        # Read the raw module global (not get_tracer_provider()): the public
+        # accessor returns the proxy provider when no real provider is set, and
+        # restoring that proxy back into _TRACER_PROVIDER causes its get_tracer
+        # to recurse into itself.
+        self._old_provider = trace._TRACER_PROVIDER
         self.temp_file = tempfile.NamedTemporaryFile("w+")
         provider = _get_file_tracer_provider(file=self.temp_file)
         # Note: overriding _TRACER_PROVIDER is not officially supported by OTel.

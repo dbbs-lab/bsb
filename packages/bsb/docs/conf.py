@@ -55,7 +55,7 @@ autodoc_mock_imports = [
     "plotly",
     "psutil",
     "mpilock",
-    "zwembad",
+    "mpipool",
     "arbor",
     "morphio",
     "nrrd",

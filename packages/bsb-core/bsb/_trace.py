@@ -204,3 +204,16 @@ if not _DISABLED:
     _info(f"env (filtered)={_filtered_env()}")
 
 t("_trace.py: module loaded")
+
+
+# Build banner — printed on every load, regardless of BSB_TRACE_IMPORTS, so we
+# can verify from the HPC collaborator's log that the right commit is running.
+# Bump _BUILD on every edit to anything in this debug branch.
+_BUILD = 1
+_BRANCH = "debug/mpi-trace-fingerprint"
+sys.stderr.write(
+    f"\n============== RUNNING TRACES "
+    f"[enabled={'true' if not _DISABLED else 'false'}, "
+    f"build={_BUILD}, branch={_BRANCH}] ==============\n"
+)
+sys.stderr.flush()

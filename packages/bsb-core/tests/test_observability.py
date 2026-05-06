@@ -60,11 +60,21 @@ def _run_trace_subprocess(code, *, timeout=10):
     with tempfile.NamedTemporaryFile(suffix=".jsonlines", delete=False) as tf:
         span_file = tf.name
 
+    # Strip MPI launcher env vars so the spawned child does not try to attach
+    # to the parent rank's MPI runtime. Without this, an os._exit(1) inside a
+    # subprocess of an MPI rank can cause OpenMPI to abort the whole job.
     env = {
-        **os.environ,
-        "OTEL_TRACES_EXPORTER": "jsonlines",
-        "OTEL_EXPORTER_JSONLINES_PATH": span_file,
+        k: v
+        for k, v in os.environ.items()
+        if not k.startswith(("OMPI_", "PMI_", "PMIX_", "PMI2_", "SLURM_"))
+        and k != "MPI_LOCALRANKID"
     }
+    env.update(
+        {
+            "OTEL_TRACES_EXPORTER": "jsonlines",
+            "OTEL_EXPORTER_JSONLINES_PATH": span_file,
+        }
+    )
 
     try:
         proc = subprocess.Popen(
@@ -282,6 +292,7 @@ class TestTelemetryExitConditions(unittest.TestCase):
         self.assertEqual(len(spans), 1)
         self.assertEqual(spans[0]["name"], "work")
 
+    @skip_parallel
     @unittest.expectedFailure
     def test_hard_exit_loses_span(self):
         """

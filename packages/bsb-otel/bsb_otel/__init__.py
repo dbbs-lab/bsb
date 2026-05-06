@@ -36,7 +36,7 @@ def use_communicator(comm):
     .. note::
        This only affects the bsb-otel broadcast logic. ``mpi.rank`` and
        ``mpi.size`` span attributes still report the *global* rank/size
-       from :data:`bsb.services.MPI`. Other BSB code (locks, gather, etc.)
+       from ``bsb.services.MPI``. Other BSB code (locks, gather, etc.)
        is unaffected.
 
     Implemented as a :class:`contextvars.ContextVar`, so it propagates

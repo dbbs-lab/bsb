@@ -18,8 +18,8 @@ Welcome to Patch's documentation!
    :target: https://github.com/astral-sh/ruff
    :alt: Ruff Formatting
 
-.. image:: https://codecov.io/gh/Helveg/patch/branch/master/graph/badge.svg
-    :target: https://codecov.io/gh/Helveg/patch
+.. image:: https://codecov.io/gh/dbbs-lab/bsb/branch/main/graph/badge.svg
+    :target: https://codecov.io/gh/dbbs-lab/bsb
 
 .. toctree::
    :maxdepth: 2

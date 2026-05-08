@@ -15,7 +15,7 @@ dependencies = [
   "numpy~=1.21",
   "bsb-core~=7.0",
   "arborize~=7.0",
-  "arbor~=0.10; sys_platform != 'win32'",
+  "arbor==0.11; sys_platform != 'win32'",
   "arborize[arbor]~=7.0; sys_platform != 'win32'"
 ]
 
@@ -42,7 +42,6 @@ test = [
 ]
 docs = [ "furo~=2024.0", "sphinxext-bsb~=7.0" ]
 dev = [
-  "bsb-arbor[test,docs]",
   "pre-commit~=3.5",
   "ruff>=0.8.2",
   "snakeviz~=2.1"

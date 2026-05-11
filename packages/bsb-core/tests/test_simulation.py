@@ -565,7 +565,7 @@ class TestAdapterControllers(
             "Spike times in last segment fall outside the expected range (90-100).",
         )
 
-    def test_checkpoints_with_double_sim(self):
+    def test_checkpoints_with_triple_sim(self):
         """This test checks that if two simulations are run the results are written in two
         separate blocks inside the same file"""
         self.network.simulations.test.devices["new_recorder"] = dict(
@@ -628,16 +628,19 @@ class TestAdapterControllers(
             ),
         )
         self.network.simulations["sim_2"] = ArborSimulation(sim_2)
+        self.network.simulations["sim_3"] = ArborSimulation(sim_2)
 
         nio_file = "out.nio"
         self.network.run_simulation("test", output_filename=nio_file)
         self.network.run_simulation("sim_2", output_filename=nio_file)
+        self.network.run_simulation("sim_3", output_filename=nio_file)
 
         written_results = io.NixIO(nio_file, "ro")
         blocks = written_results.read_all_blocks()
-        self.assertEqual(len(blocks), 2)
+        self.assertEqual(len(blocks), 3)
         self.assertEqual(len(blocks[0].segments), 11)
         self.assertEqual(len(blocks[1].segments), 6)
+        self.assertEqual(len(blocks[2].segments), 6)
         import os
 
         os.remove(nio_file)

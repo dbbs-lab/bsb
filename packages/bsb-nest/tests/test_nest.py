@@ -8,7 +8,12 @@ from bsb.config import Configuration
 from bsb.core import Scaffold
 from bsb.services import MPI
 from bsb_test import NumpyTestCase, RandomStorageFixture, get_test_config
-from nest import NESTErrors
+from packaging.version import Version
+
+if Version(nest.__version__) >= Version("3.10"):
+    from nest import NESTErrors
+else:
+    from nest.lib.hl_api_exceptions import NESTErrors
 from scipy.optimize import curve_fit
 
 from bsb_nest import NestAdapter

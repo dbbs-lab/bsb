@@ -2,7 +2,7 @@ import itertools
 import unittest
 from copy import copy
 
-from bsb import MPI, Scaffold, config, get_simulation_adapter
+from bsb import MPI, Scaffold, get_simulation_adapter
 from bsb_test import (
     ConfigFixture,
     MorphologiesFixture,
@@ -13,7 +13,6 @@ from patch import p
 
 from bsb_neuron.cell import ArborizedModel
 from bsb_neuron.connection import TransceiverModel
-from bsb_neuron.devices import VoltageRecorder
 
 
 class TestNeuronMinimal(

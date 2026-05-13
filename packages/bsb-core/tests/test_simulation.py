@@ -657,7 +657,7 @@ class TestAdapterControllers(
         within a 5 MB threshold. It also checks that peak memory usage never
         exceeds 500 MB.
         If PLOT_GRAPH is set to True, it will also plot the graph of memory
-        after every flush.
+        values collected after every flush.
         """
         import os
         import tracemalloc

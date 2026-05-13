@@ -35,11 +35,15 @@ class SimulationResult:
     def analogsignals(self):
         if hasattr(self, "block"):
             return self.block.segments[0].analogsignals
+        else:
+            return []
 
     @property
     def spiketrains(self):
         if hasattr(self, "block"):
             return self.block.segments[0].spiketrains
+        else:
+            return []
 
     def add(self, recorder):
         self.recorders.append(recorder)
@@ -52,6 +56,7 @@ class SimulationResult:
 
     def flush(self):
         from neo import Segment, io
+
         segment = Segment()
         for recorder in self.recorders:
             try:

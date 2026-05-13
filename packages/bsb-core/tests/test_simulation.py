@@ -3,12 +3,13 @@ import unittest
 import numpy as np
 from bsb_arbor import ArborSimulation, SpikeRecorder
 from bsb_test import FixedPosConfigFixture, NumpyTestCase, RandomStorageFixture
-from neo import io
+from neo import AnalogSignal, io
 
 from bsb import (
     MPI,
     AttributeMissingError,
     Scaffold,
+    SimulationResult,
     config,
     get_simulation_adapter,
     options,
@@ -313,7 +314,6 @@ class SpikeController(
         return self._status
 
 
-@unittest.skipIf(MPI.get_size() > 1, "Skipped during parallel testing.")
 class TestAdapterControllers(
     FixedPosConfigFixture,
     RandomStorageFixture,
@@ -428,6 +428,7 @@ class TestAdapterControllers(
             "Only rec_15 device should be registered",
         )
 
+    @unittest.skipIf(MPI.get_size() > 1, "Skipped during parallel testing.")
     def test_registration_of_listener(self):
         self.network.simulations.test.devices["rec_15"] = dict(
             device="spike_controller",
@@ -480,6 +481,7 @@ class TestAdapterControllers(
         with self.assertRaises(AttributeMissingError):
             adapter.prepare(sim)
 
+    @unittest.skipIf(MPI.get_size() > 1, "Skipped during parallel testing.")
     def test_record_checkpoint(self):
         """Create a test with an AdapterController that flushes every 10 steps,
         so with a simulation of 100 of duration it will create 10 segments plus
@@ -517,6 +519,7 @@ class TestAdapterControllers(
             "Spike times in segment 6 fall outside the expected range (60–70).",
         )
 
+    @unittest.skipIf(MPI.get_size() > 1, "Skipped during parallel testing.")
     def test_two_controllers(self):
         """Test two AdapterController instances together, one configured with 15 steps
         and the other with 40 steps, it will flush at [ 15,30,40,45,60,75,80,90].
@@ -565,6 +568,7 @@ class TestAdapterControllers(
             "Spike times in last segment fall outside the expected range (90-100).",
         )
 
+    @unittest.skipIf(MPI.get_size() > 1, "Skipped during parallel testing.")
     def test_checkpoints_with_triple_sim(self):
         """This test checks that if two simulations are run the results are written in two
         separate blocks inside the same file"""
@@ -644,3 +648,61 @@ class TestAdapterControllers(
         import os
 
         os.remove(nio_file)
+
+    def test_RAM_usage(self):
+        """
+        This test writes over 7 GB of data in 60 segments of 120 MB each.
+
+        It verifies that memory usage, after the initial steps, remains stable
+        within a 5 MB threshold. It also checks that peak memory usage never
+        exceeds 500 MB.
+        If PLOT_GRAPH is set to True, it will also plot the graph of memory
+        after every flush.
+        """
+        import os
+        import tracemalloc
+
+        import matplotlib.pyplot as plt
+        from quantities import ms
+
+        tracemalloc.start()
+        PLOT_GRAPH = False
+        MB = 1024 * 1024
+        total_threshold = 500
+        rank = MPI.get_rank()
+
+        sim = self.network.simulations.test
+        nio_file = "out" + str(rank) + ".nio"
+        my_result = SimulationResult(sim, nio_file)
+
+        def my_flush(segment):
+            # Creates a signal of 120 MB
+            signal = np.ones(15 * MB)
+            segment.analogsignals.append(
+                AnalogSignal(signal, sampling_period=0.1 * ms, units="mV")
+            )
+
+        my_result.create_recorder(my_flush)
+
+        num_samples = 60
+        mem_size = np.zeros(num_samples)
+        for sample in range(num_samples):
+            my_result.flush()
+            mem_size_after, mem_peak = tracemalloc.get_traced_memory()
+            mem_size[sample] = mem_size_after / MB
+
+        _, mem_peak = tracemalloc.get_traced_memory()
+        mean = np.mean(mem_size[5::])
+        max_dev = np.max(np.abs(mem_size[5::] - mean))
+        if PLOT_GRAPH:
+            plt.plot(mem_size)
+
+            plt.xlabel("step")
+            plt.ylabel("Mem Size")
+            plt.ylim(0, 400)
+
+            plt.grid(True)
+            plt.show()
+        self.assertClose(0, max_dev, atol=5.0)
+        self.assertLess(mem_peak / MB, total_threshold)
+        os.remove("out" + str(rank) + ".nio")

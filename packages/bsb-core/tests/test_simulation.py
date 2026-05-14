@@ -661,8 +661,6 @@ class TestAdapterControllers(
         """
         import os
         import tracemalloc
-
-        import matplotlib.pyplot as plt
         from quantities import ms
 
         tracemalloc.start()
@@ -695,14 +693,14 @@ class TestAdapterControllers(
         mean = np.mean(mem_size[5::])
         max_dev = np.max(np.abs(mem_size[5::] - mean))
         if PLOT_GRAPH:
+            import matplotlib.pyplot as plt
             plt.plot(mem_size)
-
             plt.xlabel("step")
             plt.ylabel("Mem Size")
             plt.ylim(0, 400)
-
             plt.grid(True)
             plt.show()
+
         self.assertClose(0, max_dev, atol=5.0)
         self.assertLess(mem_peak / MB, total_threshold)
         os.remove("out" + str(rank) + ".nio")

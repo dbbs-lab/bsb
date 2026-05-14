@@ -397,6 +397,7 @@ class TestAdapterControllers(
         self.network = Scaffold(self.cfg, self.storage)
         self.network.compile()
 
+    @unittest.skipIf(MPI.get_size() > 1, "Skipped during parallel testing.")
     def test_controller_registration(self):
         self.network.simulations.test.devices["rec_15"] = dict(
             device="spike_controller",
@@ -453,6 +454,7 @@ class TestAdapterControllers(
             "The first controller should be the listener",
         )
 
+    @unittest.skipIf(MPI.get_size() > 1, "Skipped during parallel testing.")
     def test_incorrect_controller(self):
         @config.node
         class RottenController(
@@ -694,6 +696,7 @@ class TestAdapterControllers(
         max_dev = np.max(np.abs(mem_size[5::] - mean))
         if PLOT_GRAPH:
             import matplotlib.pyplot as plt
+
             plt.plot(mem_size)
             plt.xlabel("step")
             plt.ylabel("Mem Size")

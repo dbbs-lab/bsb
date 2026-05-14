@@ -663,6 +663,7 @@ class TestAdapterControllers(
         """
         import os
         import tracemalloc
+
         from quantities import ms
 
         tracemalloc.start()

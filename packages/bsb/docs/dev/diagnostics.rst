@@ -224,7 +224,7 @@ Now you should see all of the BSB telemetry reported in a single trace again.
 API
 ---
 
-OpenTelemetry spans can be added using ``bsb_otel.tracer.BsbTracer.trace()``.
+OpenTelemetry spans can be added using :meth:`~bsb_otel.tracer.BsbTracer.trace`.
 
 Profiling
 ---------

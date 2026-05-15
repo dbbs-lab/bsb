@@ -20,6 +20,7 @@ extensions = [
 
 intersphinx_mapping = {
     "python": ("https://docs.python.org/3", None),
+    "opentelemetry": ("https://opentelemetry-python.readthedocs.io/en/latest/", None),
     **_project.intersphinx,
 }
 

@@ -180,3 +180,7 @@ node_modules
 *.swc
 
 .claude/settings.local.json
+.claude/skills/**/NOTES.md
+.claude/skills/**/local.md
+.claude/skills/**/personal.md
+.patches/

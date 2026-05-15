@@ -213,7 +213,7 @@ as such:
 
 .. code-block:: python
 
-    from bsb_otel import get_bsb_tracer
+    from bsb_otel.tracer import get_bsb_tracer
 
     tracer = get_bsb_tracer("my-package")
     with tracer.trace("My Script"):

@@ -56,7 +56,7 @@ def _wrap_case(case: unittest.TestCase):
 
         def make_wrapper(original, name):
             def wrapped_hook(*args, **kwargs):
-                from bsb_otel import get_bsb_tracer
+                from bsb_otel.tracer import get_bsb_tracer
 
                 with get_bsb_tracer("bsb-otel").trace(f"{cls_name}.{name}"):
                     return original(*args, **kwargs)
@@ -81,7 +81,7 @@ def _wrap_class_hooks(cls):
             @classmethod
             @functools.wraps(func)
             def wrapped(klass, *args, **kwargs):
-                from bsb_otel import get_bsb_tracer
+                from bsb_otel.tracer import get_bsb_tracer
 
                 with get_bsb_tracer("bsb-otel").trace(f"{cls_name}.{name}"):
                     return func(klass, *args, **kwargs)
@@ -167,7 +167,7 @@ class OTelFixture:
                 "OTelFixture requires the OpenTelemetry SDK. "
                 "Install it with: pip install 'bsb-otel[sdk]'"
             ) from None
-        import bsb_otel as _bsb_otel
+        from bsb_otel import tracer as _bsb_otel
 
         # Read the raw module global (not get_tracer_provider()): the public
         # accessor returns the proxy provider when no real provider is set, and
@@ -196,7 +196,7 @@ class OTelFixture:
         return reader
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        import bsb_otel as _bsb_otel
+        from bsb_otel import tracer as _bsb_otel
 
         provider = trace.get_tracer_provider()
         provider.shutdown()

@@ -95,7 +95,7 @@ def _instrument_command(cls):
 
     @functools.wraps(cls.handler)
     def handler(self, context):
-        from bsb_otel import get_bsb_tracer
+        from bsb_otel.tracer import get_bsb_tracer
 
         attributes = {
             "bsb.type": "command_handler",
@@ -147,7 +147,7 @@ def _make_otel_handler(cls, base, attr, orig_method):
 
     @functools.wraps(orig_method)
     def handler(self, *args, **kwargs):
-        from bsb_otel import get_bsb_tracer
+        from bsb_otel.tracer import get_bsb_tracer
 
         with get_bsb_tracer("bsb-core").trace(
             f"{cls.__name__}.{attr}",

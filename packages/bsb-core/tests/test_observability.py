@@ -8,7 +8,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from bsb_otel import get_bsb_tracer
+from bsb_otel.tracer import get_bsb_tracer
 from bsb_otel.testing import OTelFixture
 
 from bsb import MPI, handle_command
@@ -255,7 +255,7 @@ class TestTelemetryExitConditions(unittest.TestCase):
     def test_sys_exit_during_span(self):
         """sys.exit() inside a span must not swallow the span."""
         spans = _run_trace_subprocess(
-            "from bsb_otel import get_bsb_tracer\n"
+            "from bsb_otel.tracer import get_bsb_tracer\n"
             "import sys\n"
             "with get_bsb_tracer('bsb-core').trace('work'): sys.exit(0)\n"
         )
@@ -268,7 +268,7 @@ class TestTelemetryExitConditions(unittest.TestCase):
         (with ERROR status).
         """
         spans = _run_trace_subprocess(
-            "from bsb_otel import get_bsb_tracer\n"
+            "from bsb_otel.tracer import get_bsb_tracer\n"
             "with get_bsb_tracer('bsb-core').trace('work'): raise ValueError('boom')\n"
         )
         self.assertEqual(len(spans), 1)
@@ -283,9 +283,9 @@ class TestTelemetryExitConditions(unittest.TestCase):
         """
         spans = _run_trace_subprocess(
             "import signal\n"
-            "import bsb_otel\n"
-            "bsb_otel.ensure_spans_on_exit()\n"
-            "from bsb_otel import get_bsb_tracer\n"
+            "from bsb_otel.tracer import ensure_spans_on_exit\n"
+            "ensure_spans_on_exit()\n"
+            "from bsb_otel.tracer import get_bsb_tracer\n"
             "with get_bsb_tracer('bsb-core').trace('work'):\n"
             "    signal.raise_signal(signal.SIGTERM)\n"
         )
@@ -302,7 +302,7 @@ class TestTelemetryExitConditions(unittest.TestCase):
         """
         spans = _run_trace_subprocess(
             "import os\n"
-            "from bsb_otel import get_bsb_tracer\n"
+            "from bsb_otel.tracer import get_bsb_tracer\n"
             "with get_bsb_tracer('bsb-core').trace('work'): os._exit(1)\n"
         )
         self.assertEqual(len(spans), 1, "Hard exit should not collect spans")

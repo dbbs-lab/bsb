@@ -3,7 +3,7 @@ import inspect
 import json
 import sys
 
-from bsb_otel import get_bsb_tracer
+from bsb_otel.tracer import get_bsb_tracer
 
 from .._contexts import get_cli_context, reset_cli_context
 from ..exceptions import CommandError, DryrunError

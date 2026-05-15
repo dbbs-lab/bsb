@@ -2,8 +2,8 @@ import unittest
 
 from opentelemetry import trace as ot
 
-from bsb_otel.tracer import BsbTracer, _tracer_registry, get_bsb_tracer
 from bsb_otel.testing import OTelFixture
+from bsb_otel.tracer import BsbTracer, _tracer_registry, get_bsb_tracer
 
 
 class TestBsbTracerRegistry(unittest.TestCase):

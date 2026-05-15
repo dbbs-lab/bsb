@@ -108,7 +108,7 @@ class _SpanContextManagerProxy:
         return getattr(self._manager, name)
 
 
-_tracer_registry: dict[str, "BsbTracer"] = {}
+_tracer_registry: dict[str, BsbTracer] = {}
 
 
 class BsbTracer:

@@ -8,11 +8,10 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from bsb_otel.tracer import get_bsb_tracer
-from bsb_otel.testing import OTelFixture
-
 from bsb import MPI, handle_command
 from bsb.profiling import _instrument_node
+from bsb_otel.testing import OTelFixture
+from bsb_otel.tracer import get_bsb_tracer
 
 _tracer = get_bsb_tracer("bsb-core")
 from bsb_test.parallel import skip_parallel, skip_serial  # noqa: E402

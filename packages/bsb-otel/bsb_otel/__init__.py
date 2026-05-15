@@ -18,16 +18,11 @@ reachable from a registered entry point (``bsb_otel._otel_env``,
 unpredictable — ``bsb.services`` may get pulled in by something seemingly
 innocent — so the rule forbids ``bsb`` entirely, not just ``bsb.services``.
 
-Public API: import directly from the submodule that owns each symbol.
+Public API: import directly from the submodule that owns each symbol::
 
-    from bsb_otel.tracer import (
-        BsbTracer,
-        TerminationError,
-        ensure_spans_on_exit,
-        get_bsb_tracer,
-        local_tracing,
-        use_communicator,
-    )
+    from bsb_otel.tracer import BsbTracer, get_bsb_tracer
+    from bsb_otel.tracer import local_tracing, use_communicator
+    from bsb_otel.tracer import TerminationError, ensure_spans_on_exit
     from bsb_otel.exporters import JSONLinesSpanExporter
     from bsb_otel.testing import OTelFixture
 """

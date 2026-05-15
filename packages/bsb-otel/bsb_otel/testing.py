@@ -31,7 +31,7 @@ def _wrap_case(case: unittest.TestCase):
     cls_name = cls.__name__
 
     def wrapped_run(*args, **kwargs):
-        from bsb_otel import get_bsb_tracer
+        from bsb_otel.tracer import get_bsb_tracer
 
         with get_bsb_tracer("bsb-otel").trace(
             case.id(),

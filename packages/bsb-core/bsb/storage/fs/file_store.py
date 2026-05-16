@@ -19,8 +19,11 @@ def _path_to_id(f):
     return base64.urlsafe_b64decode(f).decode("UTF-8")
 
 
-def _atomic_write_bytes(path, data):
-    fd, tmp = tempfile.mkstemp(dir=os.path.dirname(path))
+def _atomic_write_bytes(path, data, staging_dir):
+    # Stage outside `files/` so the half-written tmp filename never appears
+    # in os.listdir(files/) — _path_to_id would crash trying to base64-decode
+    # it. Same filesystem keeps os.replace atomic.
+    fd, tmp = tempfile.mkstemp(dir=staging_dir)
     try:
         with os.fdopen(fd, "wb") as f:
             f.write(data)
@@ -62,15 +65,16 @@ class FileStore(IFileStore):
             meta = {}
         if not overwrite and self.has(id):
             raise FileExistsError(f"Store already contains a file with id {id}")
-        # Write meta first, then content — `all()` keys off os.listdir(files/),
-        # so a concurrent reader only sees the entry once content lands, and by
-        # then the meta file is fully written. Both writes go via tmp+rename so
-        # readers never observe a half-written file.
+        # The store is shared across MPI ranks (Engine.__init__ broadcasts
+        # rank-0's root), and `all()` lists `files/`. Write meta first, then
+        # content, so by the time the content file appears under `files/` the
+        # meta file already exists and reads see a consistent pair.
         meta_blob = json.dumps(
             {"meta": meta, "mtime": time.time(), "encoding": encoding}
         ).encode("utf-8")
-        _atomic_write_bytes(self.id_to_meta_path(id), meta_blob)
-        _atomic_write_bytes(self.id_to_file_path(id), content)
+        staging = self._engine.root
+        _atomic_write_bytes(self.id_to_meta_path(id), meta_blob, staging)
+        _atomic_write_bytes(self.id_to_file_path(id), content, staging)
         return id
 
     def load(self, id):

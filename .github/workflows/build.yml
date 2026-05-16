@@ -43,21 +43,26 @@ jobs:
           path: ${{ env.NEST_FOLDER }}
           key: ${{ runner.os }}-${{ matrix.python-version }}-nest
 
-      - name: Trigger NEST install + dump nest_vars.sh (diagnostic)
-        # Forces install-nest target so nest_vars.sh exists, then dumps it.
-        # We need to understand its format to figure out why bsb-nest test
-        # cannot find nest with --env-file under our workflow.
+      - name: Install NEST + patch nest_vars.sh for uv --env-file
+        # uv's --env-file does not shell-expand the
+        # ${PYTHONPATH:+:$PYTHONPATH} suffix that NEST puts in nest_vars.sh,
+        # so the literal text ends up in the child PYTHONPATH and Python
+        # cannot find the nest module.  Run install-nest now (so the file
+        # exists) and rewrite the offending suffix to empty.
         timeout-minutes: 30
         run: |
           npm install rimraf
           ./nx run bsb-nest:install-nest
-          echo '----- nest_vars.sh content -----'
-          cat .nx/installation/nest/install/bin/nest_vars.sh || true
-          echo '----- end -----'
-          echo '----- ls install/lib -----'
-          ls .nx/installation/nest/install/lib/ || true
-          echo '----- find python module -----'
-          find .nx/installation/nest/install -name 'nest' -type d 2>/dev/null | head -5
+          NEST_VARS=.nx/installation/nest/install/bin/nest_vars.sh
+          if [ -f "$NEST_VARS" ]; then
+            # Replace ${PYTHONPATH:+:$PYTHONPATH} with :$PYTHONPATH so that
+            # uv's basic dotenv substitution picks up the outer PYTHONPATH
+            # value (which carries the OTel sitecustomize entry).
+            sed -i 's|\${PYTHONPATH:+:\$PYTHONPATH}|:\$PYTHONPATH|g' "$NEST_VARS"
+            echo '----- patched nest_vars.sh -----'
+            cat "$NEST_VARS"
+            echo '----- end -----'
+          fi
 
       - name: Verify bsb-otel no-SDK contract
         # Run the dedicated no-SDK contract test *without* the sitecustomize

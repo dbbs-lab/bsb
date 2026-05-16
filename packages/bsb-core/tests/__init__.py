@@ -32,8 +32,11 @@ for _sig in (_signal.SIGTERM, _signal.SIGINT, _signal.SIGHUP):
 # stack dump. Lets us identify which rank stops emitting first → confirms (or
 # disproves) the "rank 0 finishes faster, mpiexec then kills rank 1" theory.
 def _rank_tagged_heartbeat():
+    # 10s heartbeat so at least one fires within the 15s SIGTERM→SIGKILL
+    # grace window from `--mca orte_timeout_usec_between_signals 15000000`,
+    # guaranteeing we capture rank 1's state right before death.
     while True:
-        _time.sleep(30)
+        _time.sleep(10)
         try:
             from bsb import MPI as _MPI
 

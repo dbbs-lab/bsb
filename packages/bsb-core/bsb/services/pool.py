@@ -548,9 +548,22 @@ class PlacementJob(Job):
         _trace(None, f"PlacementJob.execute ENTER name={name!r} chunk={chunk!r}")
         placement = job_owner.placement[name]
         _trace(None, f"PlacementJob.execute got placement={placement!r}")
+        _place_func = getattr(placement.place, "__func__", None)
+        _trace(
+            None,
+            f"PlacementJob.execute placement type={type(placement).__name__} "
+            f"place={placement.place!r} place_func={_place_func!r}",
+        )
         indicators = placement.get_indicators()
         _trace(None, f"PlacementJob.execute got indicators keys={list(indicators)!r}")
         _trace(None, "PlacementJob.execute BEFORE placement.place")
+        import os as _os
+        import sys as _sys
+
+        _sys.stderr.write("[plj] CALLING placement.place NOW\n")
+        _sys.stderr.flush()
+        with contextlib.suppress(Exception):
+            _os.write(2, b"[plj] os.write before call\n")
         result = placement.place(chunk, indicators, **kwargs)
         _trace(None, f"PlacementJob.execute AFTER placement.place -> {result!r}")
         return result

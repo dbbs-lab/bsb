@@ -678,6 +678,13 @@ class TestPoolCache(RandomStorageFixture, unittest.TestCase, engine_name="hdf5")
         @config.node
         class TestNode(PlacementStrategy):
             def place(node, chunk, indicators):
+                # Bypass closure / file-handle paths in case those are the
+                # ones being held / failing.  Write directly to fd 2.
+                import contextlib as _ctx
+                import os as _os
+
+                with _ctx.suppress(Exception):
+                    _os.write(2, b"[TestNode.place] FIRST LINE\n")
                 _outer_p(f"TestNode.place ENTER chunk={chunk!r}")
                 # Get the other job's cache.
                 _outer_p("TestNode.place BEFORE .cache_something.cache_info()")

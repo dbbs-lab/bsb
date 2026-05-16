@@ -31,6 +31,8 @@ def _wrap_case(case: unittest.TestCase):
     cls_name = cls.__name__
 
     def wrapped_run(*args, **kwargs):
+        from opentelemetry.trace import Status, StatusCode
+
         from bsb_otel.tracer import get_bsb_tracer
 
         tracer = get_bsb_tracer("bsb-otel")
@@ -42,12 +44,37 @@ def _wrap_case(case: unittest.TestCase):
                 "python.test_class": case.id().split(".")[2],
                 "python.test_case": case.id().split(".")[3],
             },
-        ):
+        ) as outer_span:
             # Immediately-ended heartbeat span: even if the test body hangs,
             # the BatchSpanProcessor exports this so post-mortem we can
             # identify the last test each rank started.
             with tracer.trace(f"{case.id()}#start"):
                 pass
+            # unittest hands TestResult to TestCase.run; intercept addError /
+            # addFailure on it so the test span gets ERROR status with the
+            # exception recorded.  Without this, FAIL/ERROR outcomes are
+            # invisible to OTel (status stays UNSET because unittest catches
+            # the exception internally).
+            result = args[0] if args else kwargs.get("result")
+            if result is not None:
+                _orig_add_error = result.addError
+                _orig_add_failure = result.addFailure
+
+                def _record(label, err):
+                    outer_span.set_status(Status(StatusCode.ERROR, label))
+                    if err and err[1] is not None:
+                        outer_span.record_exception(err[1])
+
+                def add_error(test, err):
+                    _record("error", err)
+                    return _orig_add_error(test, err)
+
+                def add_failure(test, err):
+                    _record("failure", err)
+                    return _orig_add_failure(test, err)
+
+                result.addError = add_error
+                result.addFailure = add_failure
             return original_run(*args, **kwargs)
 
     case.run = wrapped_run

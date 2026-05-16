@@ -64,8 +64,10 @@ jobs:
             libs/*/traces_rank_*.jsonlines
             packages/*/pool_trace_rank_*.log
             packages/*/tcs_trace_rank_*.log
+            packages/*/mock_trace_rank_*.log
             libs/*/pool_trace_rank_*.log
             libs/*/tcs_trace_rank_*.log
+            libs/*/mock_trace_rank_*.log
           if-no-files-found: warn
 
       - name: Send coverage

@@ -532,15 +532,32 @@ class TestSubmissionContext(
                 self.assertEqual(1, job.context["number"])
 
 
+def _mock_trace(msg):
+    # TEMP investigate: side-file trace for mock_* helpers.
+    import sys as _sys
+
+    rank = MPI.get_rank()
+    line = f"[mock rank={rank}] {msg}\n"
+    _sys.stderr.write(line)
+    _sys.stderr.flush()
+    with open(f"mock_trace_rank_{rank}.log", "a", buffering=1) as f:
+        f.write(line)
+
+
 def mock_free_cache(scaffold, required_cache_items: set[str]):
     # Mock function to test job cache system
 
+    _mock_trace(
+        f"mock_free_cache ENTER required={required_cache_items!r} "
+        f"_pool_cache.keys={list(scaffold._pool_cache.keys())!r}"
+    )
     for stale_key in set(scaffold._pool_cache.keys()) - required_cache_items:
         # Save cleaned items in a file for testing
         with open(f"test_cache_{MPI.get_rank()}.txt", "a") as f:
             f.write(f"{stale_key}\n")
         for cleanup in scaffold._pool_cache.pop(stale_key):
             cleanup()
+    _mock_trace("mock_free_cache EXIT")
 
 
 def mock_read_required_cache_items(self):
@@ -548,14 +565,20 @@ def mock_read_required_cache_items(self):
     # this will guarantee that the main process has the
     # time to update the cache buffer before the child
     # process test it.
+    _mock_trace("mock_read_required_cache_items ENTER, BEFORE sleep(0.01)")
     sleep(0.01)
+    _mock_trace("mock_read_required_cache_items AFTER sleep, BEFORE Lock(0)")
 
     from mpi4py.MPI import UINT64_T
 
     self._cache_window.Lock(0)
+    _mock_trace("mock_read_required_cache_items AFTER Lock(0), BEFORE Get")
     self._cache_window.Get([self._cache_buffer, UINT64_T], 0)
+    _mock_trace("mock_read_required_cache_items AFTER Get, BEFORE Unlock(0)")
     self._cache_window.Unlock(0)
-    return set(self._cache_buffer)
+    _buf = set(self._cache_buffer)
+    _mock_trace(f"mock_read_required_cache_items AFTER Unlock(0), buffer={_buf!r}")
+    return _buf
 
 
 class TestPoolCache(RandomStorageFixture, unittest.TestCase, engine_name="hdf5"):

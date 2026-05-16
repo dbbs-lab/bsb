@@ -253,20 +253,35 @@ def dispatcher(pool_id, job_args):
 
     Before running a job, the cache is checked for eventual cached items to free up.
     """
+    # TEMP investigate: trace job dispatch path on worker.
+    pool_for_trace = JobPool._pools.get(pool_id)
+    comm_for_trace = pool_for_trace._comm if pool_for_trace else None
+    _trace(comm_for_trace, f"dispatcher ENTER pool_id={pool_id} job_args={job_args!r}")
     job_type, args, kwargs = job_args
     # Get the static job execution handler from this module
     handler = globals()[job_type].execute
     # Get the owning scaffold from the JobPool class variables, which act as a registry.
     owner = JobPool.get_owner(pool_id)
+    _trace(comm_for_trace, f"dispatcher got handler+owner for {job_type}")
 
     # Check the pool's cache
     pool = JobPool._pools[pool_id]
+    _trace(comm_for_trace, "dispatcher BEFORE _read_required_cache_items")
     required_cache_items = pool._read_required_cache_items()
+    _trace(
+        comm_for_trace,
+        f"dispatcher AFTER _read_required_cache_items={required_cache_items!r}",
+    )
     # and free any stale cached items
+    _trace(comm_for_trace, "dispatcher BEFORE free_stale_pool_cache")
     free_stale_pool_cache(owner, required_cache_items)
+    _trace(comm_for_trace, "dispatcher AFTER free_stale_pool_cache")
 
     # Execute the job handler.
-    return handler(owner, args, kwargs)
+    _trace(comm_for_trace, f"dispatcher BEFORE handler {job_type}.execute")
+    result = handler(owner, args, kwargs)
+    _trace(comm_for_trace, f"dispatcher AFTER handler {job_type}.execute -> {result!r}")
+    return result
 
 
 class SubmissionContext:
@@ -477,7 +492,9 @@ class Job(abc.ABC):
             # The dispatcher is run on the remote worker and unpacks the data required
             # to execute the job contents.
             self.change_status(JobStatus.QUEUED)
+            _trace(pool._comm, f"MASTER _enqueue BEFORE _submit job={self!r}")
             self._future = pool._submit(dispatcher, self.pool_id, self.serialize())
+            _trace(pool._comm, f"MASTER _enqueue AFTER _submit future={self._future!r}")
         else:
             # We have unfinished dependencies and should wait until we can enqueue
             # ourselves when our dependencies haved all notified us of their completion.

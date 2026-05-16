@@ -82,9 +82,7 @@ class FileStore(IFileStore):
         #      content file is renamed in — we write meta first and content
         #      second, and a reader that sees the new id in `files/` is
         #      guaranteed to find the meta already on disk.
-        # If a future reader ever discovers entries by listing `file_meta/`
-        # instead, flip the order below — or, better, don't: keep `files/`
-        # as the single source of truth.
+        # Always use `files/` as the source of truth for discovery.
         meta_blob = json.dumps(
             {"meta": meta, "mtime": time.time(), "encoding": encoding}
         ).encode("utf-8")

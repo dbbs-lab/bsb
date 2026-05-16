@@ -47,35 +47,13 @@ jobs:
         timeout-minutes: 60
         env:
           BSB_QUIET: true
-          OTEL_TRACES_EXPORTER: jsonlines
-          OTEL_EXPORTER_JSONLINES_PATH: ./traces_rank_*.jsonlines
         run: |
           npm install rimraf
           if [ "${{ github.ref }}" == "refs/heads/main" ]; then
-            uv run --project packages/bsb-core opentelemetry-instrument ./nx run-many -t test ;
+            ./nx run-many -t test ;
           else
-            uv run --project packages/bsb-core opentelemetry-instrument ./nx affected -t test --base=origin/main --head=HEAD;
+            ./nx affected -t test --base=origin/main --head=HEAD;
           fi
-      - name: Upload OTel jsonlines traces
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: otel-traces-py${{ matrix.python-version }}
-          path: |
-            packages/*/traces_rank_*.jsonlines
-            libs/*/traces_rank_*.jsonlines
-          if-no-files-found: warn
-
-      - name: Upload OTel jsonlines traces
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: otel-traces-py${{ matrix.python-version }}
-          path: |
-            packages/*/traces_rank_*.jsonlines
-            libs/*/traces_rank_*.jsonlines
-          if-no-files-found: warn
-
       - name: Send coverage
         uses: codecov/codecov-action@v5
         with:

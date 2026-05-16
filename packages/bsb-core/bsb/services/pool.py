@@ -53,7 +53,6 @@ from contextlib import ExitStack
 from enum import Enum, auto
 
 import numpy as np
-from bsb_otel.tracer import local_tracing
 from exceptiongroup import ExceptionGroup
 
 from .._util import obj_str_insert
@@ -226,6 +225,10 @@ def dispatcher(pool_id, job_args):
 
     Before running a job, the cache is checked for eventual cached items to free up.
     """
+    # Imported here to avoid a circular import when bsb_otel.tracer's own
+    # consumers (eg. bsb-otel tests) load this module via bsb.services.
+    from bsb_otel.tracer import local_tracing
+
     # Stop collective broadcasting of root traces (causes deadlocks).
     with local_tracing():
         job_type, args, kwargs = job_args

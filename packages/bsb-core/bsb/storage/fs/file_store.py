@@ -20,9 +20,10 @@ def _path_to_id(f):
 
 
 def _atomic_write_bytes(path, data, staging_dir):
-    # Stage outside `files/` so the half-written tmp filename never appears
-    # in os.listdir(files/) — _path_to_id would crash trying to base64-decode
-    # it. Same filesystem keeps os.replace atomic.
+    # Stage in `staging_dir`, not in dirname(path), so a half-written
+    # tmpXXXX filename never appears in `files/` (`_path_to_id` would
+    # crash trying to base64-decode it). Caller must pass a staging dir
+    # on the same filesystem so `os.replace` stays atomic.
     fd, tmp = tempfile.mkstemp(dir=staging_dir)
     try:
         with os.fdopen(fd, "wb") as f:
@@ -50,6 +51,11 @@ class FileStore(IFileStore):
         return self.meta_path(path)
 
     def all(self):
+        # `files/` is the canonical discovery directory for this store.
+        # `file_meta/` must NEVER be listed for discovery — `store()` relies
+        # on this to keep concurrent readers consistent (see the comment
+        # there). If you want a meta-only iterator, derive ids from `files/`
+        # and then look up the meta by id.
         return {
             id: self.get_meta(id) for id in map(_path_to_id, os.listdir(self.file_path()))
         }
@@ -66,9 +72,19 @@ class FileStore(IFileStore):
         if not overwrite and self.has(id):
             raise FileExistsError(f"Store already contains a file with id {id}")
         # The store is shared across MPI ranks (Engine.__init__ broadcasts
-        # rank-0's root), and `all()` lists `files/`. Write meta first, then
-        # content, so by the time the content file appears under `files/` the
-        # meta file already exists and reads see a consistent pair.
+        # rank-0's root), so this write can interleave with another rank's
+        # `all()` reading the same directories. Two rules keep readers
+        # consistent:
+        #   1. Each file lands atomically (tmp+rename) — `files/<id>` and
+        #      `file_meta/<id>` never exist on disk in a half-written state.
+        #   2. `all()` discovers entries by listing `files/` only (see the
+        #      comment there). So an id is "visible" exactly when its
+        #      content file is renamed in — we write meta first and content
+        #      second, and a reader that sees the new id in `files/` is
+        #      guaranteed to find the meta already on disk.
+        # If a future reader ever discovers entries by listing `file_meta/`
+        # instead, flip the order below — or, better, don't: keep `files/`
+        # as the single source of truth.
         meta_blob = json.dumps(
             {"meta": meta, "mtime": time.time(), "encoding": encoding}
         ).encode("utf-8")

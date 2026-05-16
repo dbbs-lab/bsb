@@ -41,9 +41,10 @@ class TestBsbTracerSpan(unittest.TestCase):
         # Mirror OTel's "API works without SDK" contract: with no provider
         # configured, BsbTracer.trace must be a usable, non-recording no-op
         # — and the multi-rank broadcast path must not deadlock or raise.
-        self.assertIsNone(
-            ot._TRACER_PROVIDER,
-            "test precondition: no real TracerProvider should be configured",
-        )
+        if ot._TRACER_PROVIDER is not None:
+            self.skipTest(
+                "A TracerProvider is already configured externally "
+                "(eg. by a sitecustomize); skipping the no-SDK contract test."
+            )
         with get_bsb_tracer("bsb-otel").trace("noop") as span:
             self.assertFalse(span.is_recording())

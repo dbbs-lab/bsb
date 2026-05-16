@@ -43,6 +43,35 @@ jobs:
           path: ${{ env.NEST_FOLDER }}
           key: ${{ runner.os }}-${{ matrix.python-version }}-nest
 
+      - name: Trigger NEST install + dump nest_vars.sh (diagnostic)
+        # Forces install-nest target so nest_vars.sh exists, then dumps it.
+        # We need to understand its format to figure out why bsb-nest test
+        # cannot find nest with --env-file under our workflow.
+        timeout-minutes: 30
+        run: |
+          npm install rimraf
+          ./nx run bsb-nest:install-nest
+          echo '----- nest_vars.sh content -----'
+          cat .nx/installation/nest/install/bin/nest_vars.sh || true
+          echo '----- end -----'
+          echo '----- ls install/lib -----'
+          ls .nx/installation/nest/install/lib/ || true
+          echo '----- find python module -----'
+          find .nx/installation/nest/install -name 'nest' -type d 2>/dev/null | head -5
+
+      - name: Verify bsb-otel no-SDK contract
+        # Run the dedicated no-SDK contract test *without* the sitecustomize
+        # that the main test step installs, so the assertion that
+        # opentelemetry has no real TracerProvider configured can actually
+        # fire.  Kept tiny and fast (single test method).
+        timeout-minutes: 5
+        env:
+          BSB_QUIET: true
+        run: |
+          cd packages/bsb-otel
+          uv run python -m unittest -v \
+            tests.test_bsb_otel.TestBsbTracerSpan.test_trace_no_ops_without_sdk_provider
+
       - name: Run unittests
         timeout-minutes: 60
         env:

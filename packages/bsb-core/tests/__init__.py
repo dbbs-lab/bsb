@@ -9,6 +9,7 @@
 #     unittest didn't report.
 # Both are no-ops in passing runs. REMOVE THIS BLOCK once the cause is fixed.
 import atexit as _atexit
+import contextlib as _contextlib
 import faulthandler as _faulthandler
 import os as _os
 import signal as _signal
@@ -16,14 +17,15 @@ import sys as _sys
 
 # Default faulthandler set: SIGSEGV/SIGABRT/SIGBUS/SIGFPE/SIGILL.
 # Add SIGTERM/SIGINT/SIGHUP so a peer-rank kill from mpiexec dumps a stack
-# instead of vanishing — this is the case the previous diagnostic run hit
-# (rank 0 reached atexit normally, rank 1 did not).
+# instead of vanishing. Plus dump_traceback_later for a periodic 30s heartbeat
+# so we see what each rank is doing right up to the moment it dies — useful
+# when the death is SIGKILL (uncatchable) or os._exit (bypasses handlers).
 _faulthandler.enable(file=_sys.stderr, all_threads=True)
 for _sig in (_signal.SIGTERM, _signal.SIGINT, _signal.SIGHUP):
-    try:
+    with _contextlib.suppress(Exception):
         _faulthandler.register(_sig, file=_sys.stderr, all_threads=True, chain=True)
-    except Exception:
-        pass
+with _contextlib.suppress(Exception):
+    _faulthandler.dump_traceback_later(30, repeat=True, file=_sys.stderr)
 
 
 def _debug_rank_atexit_marker():

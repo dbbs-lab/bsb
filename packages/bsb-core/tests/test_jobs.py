@@ -638,9 +638,15 @@ class TestPoolCache(RandomStorageFixture, unittest.TestCase, engine_name="hdf5")
         """
         import sys as _sys
 
+        _rank = MPI.get_rank()
+        _tcs_fh = open(f"tcs_trace_rank_{_rank}.log", "a", buffering=1)  # noqa: SIM115
+
         def _p(msg):
-            _sys.stderr.write(f"[tcs rank={MPI.get_rank()}] {msg}\n")
+            line = f"[tcs rank={_rank}] {msg}\n"
+            _sys.stderr.write(line)
             _sys.stderr.flush()
+            _tcs_fh.write(line)
+            _tcs_fh.flush()
 
         _p("ENTER test_cache_survival body")
 

@@ -62,6 +62,10 @@ jobs:
           path: |
             packages/*/traces_rank_*.jsonlines
             libs/*/traces_rank_*.jsonlines
+            packages/*/pool_trace_rank_*.log
+            packages/*/tcs_trace_rank_*.log
+            libs/*/pool_trace_rank_*.log
+            libs/*/tcs_trace_rank_*.log
           if-no-files-found: warn
 
       - name: Send coverage

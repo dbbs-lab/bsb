@@ -68,16 +68,32 @@ if typing.TYPE_CHECKING:  # pragma: nocover
     from mpipool import MPIExecutor
 
 
+_TRACE_FH = None
+
+
 def _trace(comm, msg):
-    # TEMP investigate: rank-tagged stderr prints for pool.execute() flow.
+    # TEMP investigate: rank-tagged trace for pool.execute() flow.
+    # Writes to BOTH stderr (for live tailing) and a per-rank side file
+    # (pool_trace_rank_<rank>.log in cwd) so nx output buffering doesn't
+    # truncate diagnostic output before we can upload it as a CI artifact.
     import sys as _sys
 
+    global _TRACE_FH
     try:
         rank = comm.get_rank()
     except Exception:
         rank = "?"
-    _sys.stderr.write(f"[pool rank={rank}] {msg}\n")
+    line = f"[pool rank={rank}] {msg}\n"
+    _sys.stderr.write(line)
     _sys.stderr.flush()
+    if _TRACE_FH is None:
+        try:
+            _TRACE_FH = open(f"pool_trace_rank_{rank}.log", "a", buffering=1)  # noqa: SIM115
+        except Exception:
+            _TRACE_FH = False
+    if _TRACE_FH:
+        _TRACE_FH.write(line)
+        _TRACE_FH.flush()
 
 
 class WorkflowError(ExceptionGroup):
@@ -861,7 +877,8 @@ class JobPool:
             self._mpipool.shutdown(wait=False, cancel_futures=True)
             _trace(
                 self._comm,
-                f"MASTER finally: bcast(workers_raise_unhandled={self._workers_raise_unhandled})",
+                "MASTER finally: bcast(workers_raise_unhandled="
+                f"{self._workers_raise_unhandled})",
             )
             # Broadcast whether the worker nodes should raise an unhandled error.
             self._comm.bcast(self._workers_raise_unhandled)

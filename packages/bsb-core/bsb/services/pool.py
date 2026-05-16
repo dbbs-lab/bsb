@@ -76,13 +76,21 @@ def _trace(comm, msg):
     # Writes to BOTH stderr (for live tailing) and a per-rank side file
     # (pool_trace_rank_<rank>.log in cwd) so nx output buffering doesn't
     # truncate diagnostic output before we can upload it as a CI artifact.
+    import os as _os
     import sys as _sys
 
     global _TRACE_FH
-    try:
-        rank = comm.get_rank()
-    except Exception:
-        rank = "?"
+    rank = None
+    if comm is not None:
+        try:
+            rank = comm.get_rank()
+        except Exception:
+            rank = None
+    if rank is None:
+        # Fall back to OMPI env var (set only in mpiexec children).  In SERIAL,
+        # default to 'serial' so we never construct a filename containing '?',
+        # which is invalid on NTFS/upload-artifact paths.
+        rank = _os.environ.get("OMPI_COMM_WORLD_RANK", "serial")
     line = f"[pool rank={rank}] {msg}\n"
     _sys.stderr.write(line)
     _sys.stderr.flush()

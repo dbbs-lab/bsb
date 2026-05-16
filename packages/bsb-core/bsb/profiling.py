@@ -147,6 +147,12 @@ def _make_otel_handler(cls, base, attr, orig_method):
 
     @functools.wraps(orig_method)
     def handler(self, *args, **kwargs):
+        from opentelemetry import trace as _ot
+
+        # Fast path: no SDK provider, nothing will record anyway.
+        if _ot._TRACER_PROVIDER is None:
+            return orig_method(self, *args, **kwargs)
+
         from bsb_otel.tracer import get_bsb_tracer
 
         with get_bsb_tracer("bsb-core").trace(
@@ -156,9 +162,12 @@ def _make_otel_handler(cls, base, attr, orig_method):
                 "bsb.component_type": base.__name__,
                 "bsb.component_class": cls.__name__,
                 "bsb.component_method": attr,
-                "bsb.component_attributes": json.dumps(self.__tree__()),
             },
-        ):
+        ) as span:
+            if span.is_recording():
+                span.set_attribute(
+                    "bsb.component_attributes", json.dumps(self.__tree__())
+                )
             return orig_method(self, *args, **kwargs)
 
     return handler

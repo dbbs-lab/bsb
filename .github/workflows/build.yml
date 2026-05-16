@@ -52,9 +52,9 @@ jobs:
         run: |
           npm install rimraf
           if [ "${{ github.ref }}" == "refs/heads/main" ]; then
-            uv run opentelemetry-instrument ./nx run-many -t test ;
+            uv run --project packages/bsb-core opentelemetry-instrument ./nx run-many -t test ;
           else
-            uv run opentelemetry-instrument ./nx affected -t test --base=origin/main --head=HEAD;
+            uv run --project packages/bsb-core opentelemetry-instrument ./nx affected -t test --base=origin/main --head=HEAD;
           fi
       - name: Upload OTel jsonlines traces
         if: always()

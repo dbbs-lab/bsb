@@ -112,14 +112,26 @@ class TestTelemetryCliCommand(unittest.TestCase):
         """
         Tests whether traces are collected for a normal CLI command.
         """
-        with (
-            # Silence output of --version to stdout
-            open(os.devnull, "w") as devnull,
-            contextlib.redirect_stdout(devnull),
-            # Capture otel output
-            OTelFixture() as results,
-        ):
-            handle_command(["--version"])
+        from opentelemetry import context as otel_context
+        from opentelemetry.trace import INVALID_SPAN, set_span_in_context
+
+        # Detach the test wrapper's parent span so handle_command's internal
+        # BsbTracer.trace("cli") takes the no-parent broadcast branch
+        # (rank 0 records, non-root gets a NonRecordingSpan).  Without this
+        # the cli span becomes a child of the wrap span and is recorded on
+        # every rank.
+        _token = otel_context.attach(set_span_in_context(INVALID_SPAN))
+        try:
+            with (
+                # Silence output of --version to stdout
+                open(os.devnull, "w") as devnull,
+                contextlib.redirect_stdout(devnull),
+                # Capture otel output
+                OTelFixture() as results,
+            ):
+                handle_command(["--version"])
+        finally:
+            otel_context.detach(_token)
 
         spans = results()
         if MPI.get_rank() == 0:

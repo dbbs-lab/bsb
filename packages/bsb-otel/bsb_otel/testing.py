@@ -31,18 +31,33 @@ def _wrap_case(case: unittest.TestCase):
     cls_name = cls.__name__
 
     def wrapped_run(*args, **kwargs):
+        import os as _os
+        import sys as _sys
+
         from bsb_otel.tracer import get_bsb_tracer
 
-        with get_bsb_tracer("bsb-otel").trace(
-            case.id(),
-            attributes={
-                "python.test_package": case.id().split(".")[0],
-                "python.test_module": case.id().split(".")[1],
-                "python.test_class": case.id().split(".")[2],
-                "python.test_case": case.id().split(".")[3],
-            },
-        ):
-            return original_run(*args, **kwargs)
+        # TEMP investigate: rank-tagged stderr markers so we can see exactly
+        # which test was running on each rank at the moment of an abrupt
+        # exit (SIGKILL bypasses Python shutdown and the OTel batch
+        # exporter, so spans for an in-flight test may never reach the
+        # jsonlines file). Prints flush immediately on every test.
+        _rank = _os.environ.get("OMPI_COMM_WORLD_RANK", "?")
+        _sys.stderr.write(f"[test-start rank={_rank}] {case.id()}\n")
+        _sys.stderr.flush()
+        try:
+            with get_bsb_tracer("bsb-otel").trace(
+                case.id(),
+                attributes={
+                    "python.test_package": case.id().split(".")[0],
+                    "python.test_module": case.id().split(".")[1],
+                    "python.test_class": case.id().split(".")[2],
+                    "python.test_case": case.id().split(".")[3],
+                },
+            ):
+                return original_run(*args, **kwargs)
+        finally:
+            _sys.stderr.write(f"[test-end rank={_rank}] {case.id()}\n")
+            _sys.stderr.flush()
 
     case.run = wrapped_run
 

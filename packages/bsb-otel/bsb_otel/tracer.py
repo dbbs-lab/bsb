@@ -158,14 +158,11 @@ class BsbTracer:
             def bcast(obj, root=0):
                 return comm.bcast(obj, root=root)
 
-        _btrace(f"trace[{name!r}] enter bcast_rank={rank}/{size}")
-
         # In serial mode the broadcast dance is dead weight: bcast is a no-op
         # and the rank>0 branch is unreachable. Just create a normal span.
         # This is also the path taken when ``local_tracing()`` is active,
         # since COMM_SELF reports size 1.
         if size == 1:
-            _btrace(f"trace[{name!r}] serial fast-path")
             return self._otel_tracer.start_as_current_span(name, attributes=attributes)
 
         # No SDK provider configured: nothing meaningful to broadcast, and
@@ -173,11 +170,9 @@ class BsbTracer:
         # any rank-divergent caller. Stay true to OTel's "API works without
         # SDK" contract — each rank traces locally as a no-op.
         if trace._TRACER_PROVIDER is None:
-            _btrace(f"trace[{name!r}] no SDK provider, local-only")
             return self._otel_tracer.start_as_current_span(name, attributes=attributes)
 
         if not get_current_span().get_span_context().is_valid:
-            _btrace(f"trace[{name!r}] no parent → broadcast branch")
             if rank == 0:
                 parent_span_ctx_mgr = self._otel_tracer.start_as_current_span(
                     name, attributes=attributes
@@ -189,22 +184,13 @@ class BsbTracer:
                 # context is invalid and there's nothing meaningful to share;
                 # broadcast None instead so non-root ranks also fall through
                 # to a local no-op span.
-                _btrace(
-                    f"trace[{name!r}] rank0 pre-bcast "
-                    f"valid={parent_span_context.is_valid}"
-                )
                 bcast(
                     parent_span_context if parent_span_context.is_valid else None,
                     root=0,
                 )
-                _btrace(f"trace[{name!r}] rank0 post-bcast")
                 return _SpanContextManagerProxy(parent_span_ctx_mgr, parent_span)
             else:
-                _btrace(f"trace[{name!r}] rank{rank} pre-bcast (waiting on root)")
                 parent_span_context = bcast(None, root=0)
-                _btrace(
-                    f"trace[{name!r}] rank{rank} post-bcast got={parent_span_context!r}"
-                )
                 if parent_span_context is None:
                     return self._otel_tracer.start_as_current_span(
                         name, attributes=attributes
@@ -213,24 +199,7 @@ class BsbTracer:
                     NonRecordingSpan(parent_span_context), end_on_exit=False
                 )
 
-        _btrace(f"trace[{name!r}] inherit parent → child span")
         return self._otel_tracer.start_as_current_span(name, attributes=attributes)
-
-
-def _btrace(msg):
-    """Diagnostic trace to stderr; gated on $BSB_OTEL_TRACE."""
-    import os
-    import sys
-    import time
-
-    if not os.environ.get("BSB_OTEL_TRACE"):
-        return
-    rank = os.environ.get("OMPI_COMM_WORLD_RANK", "?")
-    print(
-        f"[bsb_otel t={time.monotonic():.3f}s rank={rank}] {msg}",
-        file=sys.stderr,
-        flush=True,
-    )
 
 
 def get_bsb_tracer(package_name: str, version: str = None) -> BsbTracer:

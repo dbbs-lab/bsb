@@ -100,7 +100,6 @@ class _SpannedHandle:
         self._wait_ms = wait_ms
 
     def __enter__(self):
-        _shtrace(f"_SpannedHandle.__enter__ path={self._path} mode={self._mode}")
         self._span_ctx = _hdf5_tracer.trace(
             "hdf5.file.open",
             attributes={
@@ -110,35 +109,14 @@ class _SpannedHandle:
                 "hdf5.file.slow_lock": self._wait_ms > 0,
             },
         )
-        _shtrace("_SpannedHandle.__enter__ trace() returned, entering span")
         self._span_ctx.__enter__()
-        _shtrace("_SpannedHandle.__enter__ entering h5py file")
         return self._file.__enter__()
 
     def __exit__(self, *args):
-        _shtrace(f"_SpannedHandle.__exit__ exc={args[0]}")
         try:
             self._file.__exit__(*args)
         finally:
-            _shtrace("_SpannedHandle.__exit__ exiting span")
             self._span_ctx.__exit__(*args)
-            _shtrace("_SpannedHandle.__exit__ done")
-
-
-def _shtrace(msg):
-    """Diagnostic trace to stderr; gated on $BSB_OTEL_TRACE."""
-    import os
-    import sys
-    import time
-
-    if not os.environ.get("BSB_OTEL_TRACE"):
-        return
-    rank = os.environ.get("OMPI_COMM_WORLD_RANK", "?")
-    print(
-        f"[bsb_hdf5 t={time.monotonic():.3f}s rank={rank}] {msg}",
-        file=sys.stderr,
-        flush=True,
-    )
 
 
 class HDF5Engine(Engine):

@@ -147,23 +147,17 @@ def _make_otel_handler(cls, base, attr, orig_method):
 
     @functools.wraps(orig_method)
     def handler(self, *args, **kwargs):
-        import os
-
         from bsb_otel.tracer import get_bsb_tracer
 
-        attributes = {
-            "bsb.type": "component_method",
-            "bsb.component_type": base.__name__,
-            "bsb.component_class": cls.__name__,
-            "bsb.component_method": attr,
-        }
-        # Skip the expensive __tree__ serialization in CI/load-sensitive
-        # contexts.  Set BSB_OTEL_O=1 to opt into the lightweight span shape.
-        if not os.environ.get("BSB_OTEL_O"):
-            attributes["bsb.component_attributes"] = json.dumps(self.__tree__())
         with get_bsb_tracer("bsb-core").trace(
             f"{cls.__name__}.{attr}",
-            attributes=attributes,
+            attributes={
+                "bsb.type": "component_method",
+                "bsb.component_type": base.__name__,
+                "bsb.component_class": cls.__name__,
+                "bsb.component_method": attr,
+                "bsb.component_attributes": json.dumps(self.__tree__()),
+            },
         ):
             return orig_method(self, *args, **kwargs)
 

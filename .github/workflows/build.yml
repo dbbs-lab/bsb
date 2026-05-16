@@ -48,7 +48,6 @@ jobs:
         env:
           BSB_QUIET: true
           BSB_OTEL_JSONLINES: "1"
-          BSB_OTEL_O: "1"
           OTEL_EXPORTER_JSONLINES_PATH: ./traces_rank_*.jsonlines
         run: |
           npm install rimraf

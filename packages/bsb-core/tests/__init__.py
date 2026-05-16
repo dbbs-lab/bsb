@@ -14,18 +14,40 @@ import faulthandler as _faulthandler
 import os as _os
 import signal as _signal
 import sys as _sys
+import threading as _threading
+import time as _time
 
 # Default faulthandler set: SIGSEGV/SIGABRT/SIGBUS/SIGFPE/SIGILL.
 # Add SIGTERM/SIGINT/SIGHUP so a peer-rank kill from mpiexec dumps a stack
-# instead of vanishing. Plus dump_traceback_later for a periodic 30s heartbeat
-# so we see what each rank is doing right up to the moment it dies — useful
-# when the death is SIGKILL (uncatchable) or os._exit (bypasses handlers).
+# instead of vanishing. The bsb-core test target also sets the OpenMPI MCA
+# parameter `orte_timeout_usec_between_signals` to 15s so the SIGTERM
+# handler has time to actually run before SIGKILL arrives.
 _faulthandler.enable(file=_sys.stderr, all_threads=True)
 for _sig in (_signal.SIGTERM, _signal.SIGINT, _signal.SIGHUP):
     with _contextlib.suppress(Exception):
         _faulthandler.register(_sig, file=_sys.stderr, all_threads=True, chain=True)
-with _contextlib.suppress(Exception):
-    _faulthandler.dump_traceback_later(30, repeat=True, file=_sys.stderr)
+
+
+# Rank-tagged heartbeat: every 30s prints [heartbeat rank=N pid=P] then a full
+# stack dump. Lets us identify which rank stops emitting first → confirms (or
+# disproves) the "rank 0 finishes faster, mpiexec then kills rank 1" theory.
+def _rank_tagged_heartbeat():
+    while True:
+        _time.sleep(30)
+        try:
+            from bsb import MPI as _MPI
+
+            _rank = _MPI.get_rank()
+        except Exception:
+            _rank = "?"
+        _sys.stderr.write(
+            f"[heartbeat rank={_rank} pid={_os.getpid()} t={_time.monotonic():.1f}s]\n"
+        )
+        _sys.stderr.flush()
+        _faulthandler.dump_traceback(file=_sys.stderr, all_threads=True)
+
+
+_threading.Thread(target=_rank_tagged_heartbeat, daemon=True).start()
 
 
 def _debug_rank_atexit_marker():

@@ -675,16 +675,25 @@ class TestPoolCache(RandomStorageFixture, unittest.TestCase, engine_name="hdf5")
 
         _outer_p = _p
 
+        # Capture closed-over rank for raw side-file writes inside TestNode.place,
+        # bypassing the closure's _p/_tcs_fh path in case those become stuck.
+        _outer_rank = _rank
+
         @config.node
         class TestNode(PlacementStrategy):
             def place(node, chunk, indicators):
-                # Bypass closure / file-handle paths in case those are the
-                # ones being held / failing.  Write directly to fd 2.
-                import contextlib as _ctx
-                import os as _os
-
-                with _ctx.suppress(Exception):
-                    _os.write(2, b"[TestNode.place] FIRST LINE\n")
+                # Direct side-file write that does not depend on the test
+                # closure's file handle.  If TestNode.place runs at all this
+                # line proves it.
+                try:
+                    with open(
+                        f"tnplace_marker_rank_{_outer_rank}.log",
+                        "a",
+                        buffering=1,
+                    ) as _mf:
+                        _mf.write(f"[tnplace rank={_outer_rank}] FIRST LINE called\n")
+                except Exception:
+                    pass
                 _outer_p(f"TestNode.place ENTER chunk={chunk!r}")
                 # Get the other job's cache.
                 _outer_p("TestNode.place BEFORE .cache_something.cache_info()")

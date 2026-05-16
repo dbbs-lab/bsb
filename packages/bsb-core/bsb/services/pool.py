@@ -556,15 +556,12 @@ class PlacementJob(Job):
         )
         indicators = placement.get_indicators()
         _trace(None, f"PlacementJob.execute got indicators keys={list(indicators)!r}")
-        _trace(None, "PlacementJob.execute BEFORE placement.place")
-        import os as _os
-        import sys as _sys
-
-        _sys.stderr.write("[plj] CALLING placement.place NOW\n")
-        _sys.stderr.flush()
-        with contextlib.suppress(Exception):
-            _os.write(2, b"[plj] os.write before call\n")
-        result = placement.place(chunk, indicators, **kwargs)
+        _trace(None, "PlacementJob.execute BEFORE placement.place call expr")
+        _trace(None, "PlacementJob.execute step 1: about to evaluate kwargs unpacking")
+        _kw = dict(kwargs)
+        _trace(None, f"PlacementJob.execute step 2: kwargs OK len={len(_kw)}")
+        _trace(None, "PlacementJob.execute step 3: about to invoke bound .place()")
+        result = placement.place(chunk, indicators, **_kw)
         _trace(None, f"PlacementJob.execute AFTER placement.place -> {result!r}")
         return result
 

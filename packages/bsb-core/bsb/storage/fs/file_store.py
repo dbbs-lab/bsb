@@ -1,6 +1,8 @@
 import base64
+import contextlib
 import json
 import os
+import tempfile
 import time
 import typing
 from uuid import uuid4
@@ -15,6 +17,18 @@ def _id_to_path(url):
 
 def _path_to_id(f):
     return base64.urlsafe_b64decode(f).decode("UTF-8")
+
+
+def _atomic_write_bytes(path, data):
+    fd, tmp = tempfile.mkstemp(dir=os.path.dirname(path))
+    try:
+        with os.fdopen(fd, "wb") as f:
+            f.write(data)
+        os.replace(tmp, path)
+    except BaseException:
+        with contextlib.suppress(OSError):
+            os.unlink(tmp)
+        raise
 
 
 class FileStore(IFileStore):
@@ -48,10 +62,15 @@ class FileStore(IFileStore):
             meta = {}
         if not overwrite and self.has(id):
             raise FileExistsError(f"Store already contains a file with id {id}")
-        with open(self.id_to_file_path(id), "wb") as f:
-            f.write(content)
-        with open(self.id_to_meta_path(id), "w") as f:
-            json.dump({"meta": meta, "mtime": time.time(), "encoding": encoding}, f)
+        # Write meta first, then content — `all()` keys off os.listdir(files/),
+        # so a concurrent reader only sees the entry once content lands, and by
+        # then the meta file is fully written. Both writes go via tmp+rename so
+        # readers never observe a half-written file.
+        meta_blob = json.dumps(
+            {"meta": meta, "mtime": time.time(), "encoding": encoding}
+        ).encode("utf-8")
+        _atomic_write_bytes(self.id_to_meta_path(id), meta_blob)
+        _atomic_write_bytes(self.id_to_file_path(id), content)
         return id
 
     def load(self, id):

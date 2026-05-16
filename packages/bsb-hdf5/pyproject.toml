@@ -28,7 +28,7 @@ dependencies = [ "bsb-core~=7.0", "bsb-otel~=7.2", "opentelemetry-api~=1.0" ]
 hdf5 = "bsb_hdf5"
 
 [dependency-groups]
-test = [ "bsb-core[parallel]", "bsb-test~=7.0", "coverage>=7.3" ]
+test = [ "bsb-core[parallel]", "bsb-otel[sdk]~=7.2", "bsb-test~=7.0", "coverage>=7.3" ]
 docs = [
   "sphinxemoji~=0.2",
   "toml~=0.10",

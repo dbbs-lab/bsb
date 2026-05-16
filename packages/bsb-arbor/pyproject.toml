@@ -37,6 +37,7 @@ arbor = "bsb_arbor"
 test = [
   "bsb-core[parallel]",
   "bsb-hdf5~=7.0",
+  "bsb-otel[sdk]~=7.2",
   "bsb-test~=7.0",
   "coverage>=7.3"
 ]

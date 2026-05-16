@@ -36,6 +36,7 @@ test = [
   "bsb-test~=7.0",
   "bsb-hdf5~=7.0",
   "bsb-arbor~=7.0",
+  "bsb-otel[sdk]~=7.2",
   "coverage~=7.0"
 ]
 docs = [ "furo~=2024.0", "sphinxext-bsb~=7.0" ]

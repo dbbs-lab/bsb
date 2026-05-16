@@ -10,9 +10,20 @@
 # Both are no-ops in passing runs. REMOVE THIS BLOCK once the cause is fixed.
 import atexit as _atexit
 import faulthandler as _faulthandler
+import os as _os
+import signal as _signal
 import sys as _sys
 
+# Default faulthandler set: SIGSEGV/SIGABRT/SIGBUS/SIGFPE/SIGILL.
+# Add SIGTERM/SIGINT/SIGHUP so a peer-rank kill from mpiexec dumps a stack
+# instead of vanishing — this is the case the previous diagnostic run hit
+# (rank 0 reached atexit normally, rank 1 did not).
 _faulthandler.enable(file=_sys.stderr, all_threads=True)
+for _sig in (_signal.SIGTERM, _signal.SIGINT, _signal.SIGHUP):
+    try:
+        _faulthandler.register(_sig, file=_sys.stderr, all_threads=True, chain=True)
+    except Exception:
+        pass
 
 
 def _debug_rank_atexit_marker():
@@ -24,9 +35,16 @@ def _debug_rank_atexit_marker():
         _rank = "?"
     _last_type = getattr(_sys, "last_type", None)
     _last_value = getattr(_sys, "last_value", None)
+    # Best-effort exit code: SystemExit value if propagating, else None.
+    _exit_code = (
+        _last_value.code
+        if isinstance(_last_value, SystemExit)
+        else None
+    )
     _sys.stderr.write(
-        f"[atexit-debug rank={_rank}] "
-        f"last_exc={_last_type.__name__ if _last_type else None}: {_last_value}\n"
+        f"[atexit-debug rank={_rank} pid={_os.getpid()}] "
+        f"last_exc={_last_type.__name__ if _last_type else None}: {_last_value} "
+        f"exit_code={_exit_code}\n"
     )
     _sys.stderr.flush()
 

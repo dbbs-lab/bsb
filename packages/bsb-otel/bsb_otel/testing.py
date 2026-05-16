@@ -46,7 +46,7 @@ def _wrap_case(case: unittest.TestCase):
             },
         ) as outer_span:
             # Immediately-ended heartbeat span: even if the test body hangs,
-            # the BatchSpanProcessor exports this so post-mortem we can
+            # the processor exports this so post-mortem we can
             # identify the last test each rank started.
             with tracer.trace(f"{case.id()}#start"):
                 pass

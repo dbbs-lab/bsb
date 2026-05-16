@@ -673,15 +673,21 @@ class TestPoolCache(RandomStorageFixture, unittest.TestCase, engine_name="hdf5")
 
         _p("ENTER test_cache_survival body")
 
+        _outer_p = _p
+
         @config.node
         class TestNode(PlacementStrategy):
             def place(node, chunk, indicators):
+                _outer_p(f"TestNode.place ENTER chunk={chunk!r}")
                 # Get the other job's cache.
+                _outer_p("TestNode.place BEFORE .cache_something.cache_info()")
                 cache = node.scaffold.placement.withcache.cache_something.cache_info()
+                _outer_p(f"TestNode.place got cache_info={cache!r}")
                 # Assert that both times this job is called, the cache has no items in it,
                 # even though the other job was executed and cached in between.
                 # This confirms that the cache is cleared once its dependents are done.
                 self.assertEqual(cache.misses, 0)
+                _outer_p("TestNode.place EXIT")
 
         _p("BEFORE assign withoutcache TestNode")
         self.network.placement["withoutcache"] = TestNode(cell_types=[], partitions=[])

@@ -537,9 +537,15 @@ class PlacementJob(Job):
     @staticmethod
     def execute(job_owner, args, kwargs):
         name, chunk = args
+        _trace(None, f"PlacementJob.execute ENTER name={name!r} chunk={chunk!r}")
         placement = job_owner.placement[name]
+        _trace(None, f"PlacementJob.execute got placement={placement!r}")
         indicators = placement.get_indicators()
-        return placement.place(chunk, indicators, **kwargs)
+        _trace(None, f"PlacementJob.execute got indicators keys={list(indicators)!r}")
+        _trace(None, "PlacementJob.execute BEFORE placement.place")
+        result = placement.place(chunk, indicators, **kwargs)
+        _trace(None, f"PlacementJob.execute AFTER placement.place -> {result!r}")
+        return result
 
 
 class ConnectivityJob(Job):

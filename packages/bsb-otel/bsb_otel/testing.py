@@ -62,9 +62,20 @@ def _wrap_case(case: unittest.TestCase):
             if result is not None:
 
                 def _record(label, err):
+                    # outer_span is NonRecordingSpan on non-root ranks (the
+                    # bcast'd test parent), so set_status/record_exception
+                    # on it would be no-ops there.  Emit a short-lived child
+                    # span via the SDK tracer directly so the failure is
+                    # recorded on every rank.
+                    with tracer._otel_tracer.start_as_current_span(
+                        f"{case.id()}#{label}",
+                    ) as fail_span:
+                        fail_span.set_status(Status(StatusCode.ERROR, label))
+                        if err and err[1] is not None:
+                            fail_span.record_exception(err[1])
+                    # Also mark the outer span on rank 0 so a single query
+                    # for bad parent spans surfaces the failure too.
                     outer_span.set_status(Status(StatusCode.ERROR, label))
-                    if err and err[1] is not None:
-                        outer_span.record_exception(err[1])
 
                 def add_error(test, err):
                     _record("error", err)

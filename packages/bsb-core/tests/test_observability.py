@@ -195,13 +195,24 @@ class TestTelemetryMPI(unittest.TestCase):
         This verifies the full "back all the way up to the single broadcasted
         root" property.
         """
-        with (
-            OTelFixture() as results,
-            _tracer.trace("broadcast_root"),
-            _tracer.trace("rank_child"),
-            _tracer.trace("rank_grandchild"),
-        ):
-            pass
+        from opentelemetry import context as otel_context
+        from opentelemetry.trace import INVALID_SPAN, set_span_in_context
+
+        # Detach the current span context so ``broadcast_root`` is created
+        # without a parent and BsbTracer.trace takes the broadcast branch.
+        # Outer span (the test wrapper) would otherwise turn broadcast_root
+        # into a plain per-rank child span.
+        token = otel_context.attach(set_span_in_context(INVALID_SPAN))
+        try:
+            with (
+                OTelFixture() as results,
+                _tracer.trace("broadcast_root"),
+                _tracer.trace("rank_child"),
+                _tracer.trace("rank_grandchild"),
+            ):
+                pass
+        finally:
+            otel_context.detach(token)
 
         my_spans = results()
         all_spans = MPI.allgather(my_spans)

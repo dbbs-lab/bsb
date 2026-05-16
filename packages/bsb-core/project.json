@@ -59,8 +59,8 @@
       "options": {
         "commands": [
           "npx -y rimraf .coverage*",
-          "uv run coverage run -p -m unittest discover -v -s ./tests -t .",
-          "OTEL_EXPORTER_JSONLINES_PATH=./traces_rank_*.jsonlines OTEL_BSP_SCHEDULE_DELAY=100 OTEL_BSP_MAX_EXPORT_BATCH_SIZE=1 mpiexec --mca orte_timeout_usec_between_signals 15000000 --mca state_base_verbose 5 --mca errmgr_base_verbose 5 --mca odls_base_verbose 5 --mca plm_base_verbose 5 -x OTEL_EXPORTER_JSONLINES_PATH -x OTEL_BSP_SCHEDULE_DELAY -x OTEL_BSP_MAX_EXPORT_BATCH_SIZE -n 2 uv run opentelemetry-instrument --traces_exporter jsonlines coverage run -p -m unittest discover -v -s ./tests -t .",
+          "uv run coverage run -p -m unittest discover -v -s ./tests",
+          "mpiexec -n 2 uv run coverage run -p -m unittest discover -v -s ./tests",
           "uv run coverage combine",
           "uv run coverage xml -i -o ../../coverage/packages/bsb-core/coverage.xml",
           "uv run coverage html -i -d ../../coverage/packages/bsb-core/html"

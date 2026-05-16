@@ -53,6 +53,7 @@ from contextlib import ExitStack
 from enum import Enum, auto
 
 import numpy as np
+from bsb_otel.tracer import local_tracing
 from exceptiongroup import ExceptionGroup
 
 from .._util import obj_str_insert
@@ -66,42 +67,6 @@ from ._util import ErrorModule, MockModule
 
 if typing.TYPE_CHECKING:  # pragma: nocover
     from mpipool import MPIExecutor
-
-
-_TRACE_FH = None
-
-
-def _trace(comm, msg):
-    # TEMP investigate: rank-tagged trace for pool.execute() flow.
-    # Writes to BOTH stderr (for live tailing) and a per-rank side file
-    # (pool_trace_rank_<rank>.log in cwd) so nx output buffering doesn't
-    # truncate diagnostic output before we can upload it as a CI artifact.
-    import os as _os
-    import sys as _sys
-
-    global _TRACE_FH
-    rank = None
-    if comm is not None:
-        try:
-            rank = comm.get_rank()
-        except Exception:
-            rank = None
-    if rank is None:
-        # Fall back to OMPI env var (set only in mpiexec children).  In SERIAL,
-        # default to 'serial' so we never construct a filename containing '?',
-        # which is invalid on NTFS/upload-artifact paths.
-        rank = _os.environ.get("OMPI_COMM_WORLD_RANK", "serial")
-    line = f"[pool rank={rank}] {msg}\n"
-    _sys.stderr.write(line)
-    _sys.stderr.flush()
-    if _TRACE_FH is None:
-        try:
-            _TRACE_FH = open(f"pool_trace_rank_{rank}.log", "a", buffering=1)  # noqa: SIM115
-        except Exception:
-            _TRACE_FH = False
-    if _TRACE_FH:
-        _TRACE_FH.write(line)
-        _TRACE_FH.flush()
 
 
 class WorkflowError(ExceptionGroup):
@@ -261,35 +226,23 @@ def dispatcher(pool_id, job_args):
 
     Before running a job, the cache is checked for eventual cached items to free up.
     """
-    # TEMP investigate: trace job dispatch path on worker.
-    pool_for_trace = JobPool._pools.get(pool_id)
-    comm_for_trace = pool_for_trace._comm if pool_for_trace else None
-    _trace(comm_for_trace, f"dispatcher ENTER pool_id={pool_id} job_args={job_args!r}")
-    job_type, args, kwargs = job_args
-    # Get the static job execution handler from this module
-    handler = globals()[job_type].execute
-    # Get the owning scaffold from the JobPool class variables, which act as a registry.
-    owner = JobPool.get_owner(pool_id)
-    _trace(comm_for_trace, f"dispatcher got handler+owner for {job_type}")
+    # Stop collective broadcasting of root traces (causes deadlocks).
+    with local_tracing():
+        job_type, args, kwargs = job_args
+        # Get the static job execution handler from this module
+        handler = globals()[job_type].execute
+        # Get the owning scaffold from the JobPool class variables, which act as a
+        # registry.
+        owner = JobPool.get_owner(pool_id)
 
-    # Check the pool's cache
-    pool = JobPool._pools[pool_id]
-    _trace(comm_for_trace, "dispatcher BEFORE _read_required_cache_items")
-    required_cache_items = pool._read_required_cache_items()
-    _trace(
-        comm_for_trace,
-        f"dispatcher AFTER _read_required_cache_items={required_cache_items!r}",
-    )
-    # and free any stale cached items
-    _trace(comm_for_trace, "dispatcher BEFORE free_stale_pool_cache")
-    free_stale_pool_cache(owner, required_cache_items)
-    _trace(comm_for_trace, "dispatcher AFTER free_stale_pool_cache")
+        # Check the pool's cache
+        pool = JobPool._pools[pool_id]
+        required_cache_items = pool._read_required_cache_items()
+        # and free any stale cached items
+        free_stale_pool_cache(owner, required_cache_items)
 
-    # Execute the job handler.
-    _trace(comm_for_trace, f"dispatcher BEFORE handler {job_type}.execute")
-    result = handler(owner, args, kwargs)
-    _trace(comm_for_trace, f"dispatcher AFTER handler {job_type}.execute -> {result!r}")
-    return result
+        # Execute the job handler.
+        return handler(owner, args, kwargs)
 
 
 class SubmissionContext:
@@ -500,9 +453,7 @@ class Job(abc.ABC):
             # The dispatcher is run on the remote worker and unpacks the data required
             # to execute the job contents.
             self.change_status(JobStatus.QUEUED)
-            _trace(pool._comm, f"MASTER _enqueue BEFORE _submit job={self!r}")
             self._future = pool._submit(dispatcher, self.pool_id, self.serialize())
-            _trace(pool._comm, f"MASTER _enqueue AFTER _submit future={self._future!r}")
         else:
             # We have unfinished dependencies and should wait until we can enqueue
             # ourselves when our dependencies haved all notified us of their completion.
@@ -545,25 +496,9 @@ class PlacementJob(Job):
     @staticmethod
     def execute(job_owner, args, kwargs):
         name, chunk = args
-        _trace(None, f"PlacementJob.execute ENTER name={name!r} chunk={chunk!r}")
         placement = job_owner.placement[name]
-        _trace(None, f"PlacementJob.execute got placement={placement!r}")
-        _place_func = getattr(placement.place, "__func__", None)
-        _trace(
-            None,
-            f"PlacementJob.execute placement type={type(placement).__name__} "
-            f"place={placement.place!r} place_func={_place_func!r}",
-        )
         indicators = placement.get_indicators()
-        _trace(None, f"PlacementJob.execute got indicators keys={list(indicators)!r}")
-        _trace(None, "PlacementJob.execute BEFORE placement.place call expr")
-        _trace(None, "PlacementJob.execute step 1: about to evaluate kwargs unpacking")
-        _kw = dict(kwargs)
-        _trace(None, f"PlacementJob.execute step 2: kwargs OK len={len(_kw)}")
-        _trace(None, "PlacementJob.execute step 3: about to invoke bound .place()")
-        result = placement.place(chunk, indicators, **_kw)
-        _trace(None, f"PlacementJob.execute AFTER placement.place -> {result!r}")
-        return result
+        return placement.place(chunk, indicators, **kwargs)
 
 
 class ConnectivityJob(Job):
@@ -809,26 +744,21 @@ class JobPool:
     def _execute_parallel(self):
         import bsb.options
 
-        _trace(self._comm, "_execute_parallel ENTER")
         # Enable full mpipool debugging
         if bsb.options.debug_pool:
             _MPIPool.enable_serde_logging()
-        _trace(self._comm, "BEFORE _MPIPool.MPIExecutor() construct")
         # Create the MPI pool
         self._mpipool = _MPIPool.MPIExecutor(
             loglevel=logging.DEBUG if bsb.options.debug_pool else logging.CRITICAL
         )
-        _trace(self._comm, "AFTER _MPIPool.MPIExecutor() construct")
 
         if self._mpipool.is_worker():
-            _trace(self._comm, "WORKER path entered, BEFORE bcast(abort)")
             # The workers will return out of the pool constructor when they receive
             # the shutdown signal from the master, they return here skipping the
             # master logic.
 
             # Check if we need to abort our process due to errors etc.
             abort = self._comm.bcast(None)
-            _trace(self._comm, f"WORKER bcast(abort)={abort}")
             if abort:
                 raise WorkflowError(
                     "Unhandled exceptions during parallel execution.",
@@ -836,39 +766,26 @@ class JobPool:
                 )
 
             # Free all cached items
-            _trace(self._comm, "WORKER BEFORE free_stale_pool_cache")
             free_stale_pool_cache(self.owner, set())
-            _trace(self._comm, "WORKER AFTER free_stale_pool_cache, returning")
 
             return
 
-        _trace(self._comm, "MASTER path entered")
         try:
             # Tell the listeners execution is running
             self.change_status(PoolStatus.EXECUTING)
             # Kickstart the workers with the queued jobs
-            _trace(self._comm, f"MASTER enqueueing {len(self._job_queue)} jobs")
             for job in self._job_queue:
                 job._enqueue(self)
             # Add the scheduling futures to the running futures, to await them.
             self._running_futures.extend(self._schedulers)
             # Start tracking cached items
             self._update_cache_window()
-            _trace(self._comm, "MASTER entering wait loop")
 
-            _iter = 0
             # Keep executing as long as any of the schedulers or jobs aren't done yet.
             while self.scheduling or any(
                 job.status == JobStatus.PENDING or job.status == JobStatus.QUEUED
                 for job in self._job_queue
             ):
-                _iter += 1
-                if _iter <= 5 or _iter % 50 == 0:
-                    _trace(
-                        self._comm,
-                        f"MASTER loop iter={_iter} scheduling={self.scheduling} "
-                        f"job_statuses={[j.status.value for j in self._job_queue]}",
-                    )
                 try:
                     done, not_done = concurrent.futures.wait(
                         self._running_futures,
@@ -898,32 +815,20 @@ class JobPool:
                 # Notify all the listeners, and store/raise any unhandled errors
                 self.notify()
 
-            _trace(self._comm, f"MASTER exited wait loop after {_iter} iters")
             # Notify listeners that execution is over
             self.change_status(PoolStatus.CLOSING)
             # Raise any unhandled errors
             self.raise_unhandled()
-        except BaseException as _e:
-            _trace(
-                self._comm,
-                f"MASTER caught {type(_e).__name__}: {_e!r} — broadcasting abort",
-            )
+        except:
             # If any exception (including SystemExit and KeyboardInterrupt) happen on main
             # we should broadcast the abort to all worker nodes.
             self._workers_raise_unhandled = True
             raise
         finally:
-            _trace(self._comm, "MASTER finally: shutdown(wait=False)")
             # Shut down our internal pool
             self._mpipool.shutdown(wait=False, cancel_futures=True)
-            _trace(
-                self._comm,
-                "MASTER finally: bcast(workers_raise_unhandled="
-                f"{self._workers_raise_unhandled})",
-            )
             # Broadcast whether the worker nodes should raise an unhandled error.
             self._comm.bcast(self._workers_raise_unhandled)
-            _trace(self._comm, "MASTER finally: bcast done, _execute_parallel EXIT")
 
     def _execute_serial(self):
         # Wait for jobs to finish scheduling

@@ -47,14 +47,16 @@ jobs:
         timeout-minutes: 60
         env:
           BSB_QUIET: true
+          OTEL_TRACES_EXPORTER: jsonlines
+          OTEL_EXPORTER_JSONLINES_PATH: ./traces_rank_*.jsonlines
         run: |
           npm install rimraf
           if [ "${{ github.ref }}" == "refs/heads/main" ]; then
-            ./nx run-many -t test ;
+            uv run opentelemetry-instrument ./nx run-many -t test ;
           else
-            ./nx affected -t test --base=origin/main --head=HEAD;
+            uv run opentelemetry-instrument ./nx affected -t test --base=origin/main --head=HEAD;
           fi
-      - name: Upload OTel jsonlines traces (temp investigation)
+      - name: Upload OTel jsonlines traces
         if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -62,14 +64,16 @@ jobs:
           path: |
             packages/*/traces_rank_*.jsonlines
             libs/*/traces_rank_*.jsonlines
-            packages/*/pool_trace_rank_*.log
-            packages/*/tcs_trace_rank_*.log
-            packages/*/mock_trace_rank_*.log
-            packages/*/tnplace_marker_rank_*.log
-            libs/*/pool_trace_rank_*.log
-            libs/*/tcs_trace_rank_*.log
-            libs/*/mock_trace_rank_*.log
-            libs/*/tnplace_marker_rank_*.log
+          if-no-files-found: warn
+
+      - name: Upload OTel jsonlines traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: otel-traces-py${{ matrix.python-version }}
+          path: |
+            packages/*/traces_rank_*.jsonlines
+            libs/*/traces_rank_*.jsonlines
           if-no-files-found: warn
 
       - name: Send coverage

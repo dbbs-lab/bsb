@@ -532,32 +532,15 @@ class TestSubmissionContext(
                 self.assertEqual(1, job.context["number"])
 
 
-def _mock_trace(msg):
-    # TEMP investigate: side-file trace for mock_* helpers.
-    import sys as _sys
-
-    rank = MPI.get_rank()
-    line = f"[mock rank={rank}] {msg}\n"
-    _sys.stderr.write(line)
-    _sys.stderr.flush()
-    with open(f"mock_trace_rank_{rank}.log", "a", buffering=1) as f:
-        f.write(line)
-
-
 def mock_free_cache(scaffold, required_cache_items: set[str]):
     # Mock function to test job cache system
 
-    _mock_trace(
-        f"mock_free_cache ENTER required={required_cache_items!r} "
-        f"_pool_cache.keys={list(scaffold._pool_cache.keys())!r}"
-    )
     for stale_key in set(scaffold._pool_cache.keys()) - required_cache_items:
         # Save cleaned items in a file for testing
         with open(f"test_cache_{MPI.get_rank()}.txt", "a") as f:
             f.write(f"{stale_key}\n")
         for cleanup in scaffold._pool_cache.pop(stale_key):
             cleanup()
-    _mock_trace("mock_free_cache EXIT")
 
 
 def mock_read_required_cache_items(self):
@@ -565,20 +548,14 @@ def mock_read_required_cache_items(self):
     # this will guarantee that the main process has the
     # time to update the cache buffer before the child
     # process test it.
-    _mock_trace("mock_read_required_cache_items ENTER, BEFORE sleep(0.01)")
     sleep(0.01)
-    _mock_trace("mock_read_required_cache_items AFTER sleep, BEFORE Lock(0)")
 
     from mpi4py.MPI import UINT64_T
 
     self._cache_window.Lock(0)
-    _mock_trace("mock_read_required_cache_items AFTER Lock(0), BEFORE Get")
     self._cache_window.Get([self._cache_buffer, UINT64_T], 0)
-    _mock_trace("mock_read_required_cache_items AFTER Get, BEFORE Unlock(0)")
     self._cache_window.Unlock(0)
-    _buf = set(self._cache_buffer)
-    _mock_trace(f"mock_read_required_cache_items AFTER Unlock(0), buffer={_buf!r}")
-    return _buf
+    return set(self._cache_buffer)
 
 
 class TestPoolCache(RandomStorageFixture, unittest.TestCase, engine_name="hdf5"):
@@ -654,66 +631,26 @@ class TestPoolCache(RandomStorageFixture, unittest.TestCase, engine_name="hdf5")
         "bsb.services.pool.JobPool._read_required_cache_items",
         lambda self: mock_read_required_cache_items(self),
     )
-    @timeout(3, abort=True)
+    @timeout(3)
     def test_cache_survival(self):
         """
         Test that the required cache items survive until the jobs are done.
         """
-        import sys as _sys
-
-        _rank = MPI.get_rank()
-        _tcs_fh = open(f"tcs_trace_rank_{_rank}.log", "a", buffering=1)  # noqa: SIM115
-
-        def _p(msg):
-            line = f"[tcs rank={_rank}] {msg}\n"
-            _sys.stderr.write(line)
-            _sys.stderr.flush()
-            _tcs_fh.write(line)
-            _tcs_fh.flush()
-
-        _p("ENTER test_cache_survival body")
-
-        _outer_p = _p
-
-        # Capture closed-over rank for raw side-file writes inside TestNode.place,
-        # bypassing the closure's _p/_tcs_fh path in case those become stuck.
-        _outer_rank = _rank
 
         @config.node
         class TestNode(PlacementStrategy):
             def place(node, chunk, indicators):
-                # Direct side-file write that does not depend on the test
-                # closure's file handle.  If TestNode.place runs at all this
-                # line proves it.
-                try:
-                    with open(
-                        f"tnplace_marker_rank_{_outer_rank}.log",
-                        "a",
-                        buffering=1,
-                    ) as _mf:
-                        _mf.write(f"[tnplace rank={_outer_rank}] FIRST LINE called\n")
-                except Exception:
-                    pass
-                _outer_p(f"TestNode.place ENTER chunk={chunk!r}")
                 # Get the other job's cache.
-                _outer_p("TestNode.place BEFORE .cache_something.cache_info()")
                 cache = node.scaffold.placement.withcache.cache_something.cache_info()
-                _outer_p(f"TestNode.place got cache_info={cache!r}")
                 # Assert that both times this job is called, the cache has no items in it,
                 # even though the other job was executed and cached in between.
                 # This confirms that the cache is cleared once its dependents are done.
                 self.assertEqual(cache.misses, 0)
-                _outer_p("TestNode.place EXIT")
 
-        _p("BEFORE assign withoutcache TestNode")
         self.network.placement["withoutcache"] = TestNode(cell_types=[], partitions=[])
-        _p("BEFORE create_job_pool")
         pool = self.network.create_job_pool()
-        _p("AFTER create_job_pool, BEFORE with pool")
         with pool:
-            _p("INSIDE with pool, BEFORE queue first")
             first = pool.queue_placement(self.network.placement.withoutcache, [0, 0, 0])
-            _p("queued first, queuing 4 cached jobs")
             # create 4 jobs with cache to check that the cache is deleted only once.
             job0 = pool.queue_placement(
                 self.network.placement.withcache, [0, 0, 0], deps=[first]
@@ -727,16 +664,12 @@ class TestPoolCache(RandomStorageFixture, unittest.TestCase, engine_name="hdf5")
             job3 = pool.queue_placement(
                 self.network.placement.withcache, [1, 0, 0], deps=[first]
             )
-            _p("queuing final withoutcache job")
             pool.queue_placement(
                 self.network.placement.withoutcache,
                 [0, 0, 0],
                 deps=[job0, job1, job2, job3],
             )
-            _p("BEFORE pool.execute()")
             pool.execute()
-            _p("AFTER pool.execute() returned")
-        _p("EXITED with pool block")
         # withcache.get_indicators and withcache.cache_something first because
         # the withcache jobs are done first. then, withoutcache.get_indicators
         ids_cache_freed = [

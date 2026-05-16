@@ -77,11 +77,15 @@ jobs:
               try:
                   from opentelemetry import trace
                   from opentelemetry.sdk.trace import TracerProvider
-                  from opentelemetry.sdk.trace.export import BatchSpanProcessor
+                  from opentelemetry.sdk.trace.export import SimpleSpanProcessor
                   from bsb_otel.exporters import JSONLinesSpanExporter
+                  # SimpleSpanProcessor has no daemon thread; on Python 3.12
+                  # BatchSpanProcessor's export thread + mpi4py's atexit
+                  # MPI_Finalize can deadlock on shutdown.  Synchronous
+                  # export is slower per span but eliminates that hang.
                   provider = TracerProvider()
                   provider.add_span_processor(
-                      BatchSpanProcessor(JSONLinesSpanExporter())
+                      SimpleSpanProcessor(JSONLinesSpanExporter())
                   )
                   trace.set_tracer_provider(provider)
               except Exception:

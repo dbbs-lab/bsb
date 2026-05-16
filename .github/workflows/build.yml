@@ -44,10 +44,9 @@ jobs:
           key: ${{ runner.os }}-${{ matrix.python-version }}-nest
 
       - name: Verify bsb-otel no-SDK contract
-        # Run the dedicated no-SDK contract test *without* the sitecustomize
-        # that the main test step installs, so the assertion that
-        # opentelemetry has no real TracerProvider configured can actually
-        # fire.  Kept tiny and fast (single test method).
+        # Runs the no-SDK contract test outside the opentelemetry-instrument
+        # wrapper so the bsb_jsonlines distro is not loaded and the test's
+        # "no TracerProvider configured" precondition actually holds.
         timeout-minutes: 5
         env:
           BSB_QUIET: true
@@ -60,48 +59,14 @@ jobs:
         timeout-minutes: 60
         env:
           BSB_QUIET: true
-          BSB_OTEL_JSONLINES: "1"
+          OTEL_PYTHON_DISTRO: bsb_jsonlines
           OTEL_EXPORTER_JSONLINES_PATH: ./traces_rank_*.jsonlines
         run: |
           npm install rimraf
-          # Drop a sitecustomize.py that every Python subprocess
-          # (including mpiexec ranks) auto-loads on startup; it wires
-          # bsb-otel's JSONLinesSpanExporter when BSB_OTEL_JSONLINES is
-          # set.  Lives outside the repo so the nx test target stays a
-          # plain mpiexec command.
-          SITE="$RUNNER_TEMP/otel-sitecustomize"
-          mkdir -p "$SITE"
-          cat > "$SITE/sitecustomize.py" <<'PYEOF'
-          import os
-          if os.environ.get("BSB_OTEL_JSONLINES"):
-              try:
-                  from opentelemetry import trace
-                  from opentelemetry.sdk.trace import TracerProvider
-                  from opentelemetry.sdk.trace.export import SimpleSpanProcessor
-                  from bsb_otel.exporters import JSONLinesSpanExporter
-                  # SimpleSpanProcessor has no daemon thread; on Python 3.12
-                  # BatchSpanProcessor's export thread + mpi4py's atexit
-                  # MPI_Finalize can deadlock on shutdown.  Synchronous
-                  # export is slower per span but eliminates that hang.
-                  provider = TracerProvider()
-                  provider.add_span_processor(
-                      SimpleSpanProcessor(JSONLinesSpanExporter())
-                  )
-                  trace.set_tracer_provider(provider)
-              except Exception:
-                  pass
-          PYEOF
-          # uv 0.11 --env-file does NOT override env vars already set
-          # in the parent shell.  So if we set PYTHONPATH for the
-          # sitecustomize, uv run --env-file nest_vars.sh keeps our
-          # outer value and ignores nest_vars.sh's PYTHONPATH.  Prepend
-          # NEST's pyste-packages so bsb-nest tests can still import nest.
-          NEST_LIB="$GITHUB_WORKSPACE/.nx/installation/nest/install/lib/python${{ matrix.python-version }}/site-packages"
-          export PYTHONPATH="$SITE:$NEST_LIB${PYTHONPATH:+:$PYTHONPATH}"
           if [ "${{ github.ref }}" == "refs/heads/main" ]; then
-            ./nx run-many -t test ;
+            uv run --project packages/bsb-core opentelemetry-instrument ./nx run-many -t test ;
           else
-            ./nx affected -t test --base=origin/main --head=HEAD;
+            uv run --project packages/bsb-core opentelemetry-instrument ./nx affected -t test --base=origin/main --head=HEAD;
           fi
       - name: Upload OTel jsonlines traces
         if: always()

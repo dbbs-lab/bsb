@@ -41,6 +41,12 @@ jsonlines = "bsb_otel.exporters:JSONLinesSpanExporter"
 [project.entry-points.opentelemetry_environment_variables]
 bsb = "bsb_otel._otel_env"
 
+[project.entry-points.opentelemetry_distro]
+bsb_jsonlines = "bsb_otel._distro:BsbJsonlinesDistro"
+
+[project.entry-points.opentelemetry_configurator]
+bsb_jsonlines = "bsb_otel._distro:BsbJsonlinesConfigurator"
+
 [dependency-groups]
 test = [
   "bsb-core[parallel]",

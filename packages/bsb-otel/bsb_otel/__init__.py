@@ -3,8 +3,8 @@ BSB OpenTelemetry integration package.
 
 Entry-point DMZ. This module is loaded eagerly by ``opentelemetry-instrument``
 whenever it discovers any of ``bsb_otel``'s entry points (env vars,
-exporters). Keeping this file empty — no module-level imports beyond the
-standard library — guarantees the DMZ rule: nothing here can drag in
+exporters, distro). Keeping this file empty — no module-level imports beyond
+the standard library — guarantees the DMZ rule: nothing here can drag in
 ``bsb``, which would fire ``MPI_Init`` prematurely.
 
 Under ``opentelemetry-instrument``'s two-phase startup (entry-point
@@ -14,9 +14,10 @@ init fails with PMI2 error 14.
 
 The DMZ rule: no top-level ``bsb*`` import in this file or any module
 reachable from a registered entry point (``bsb_otel._otel_env``,
-``bsb_otel.exporters``). Transitive imports through ``bsb`` are
-unpredictable — ``bsb.services`` may get pulled in by something seemingly
-innocent — so the rule forbids ``bsb`` entirely, not just ``bsb.services``.
+``bsb_otel.exporters``, ``bsb_otel._distro``). Transitive imports through
+``bsb`` are unpredictable — ``bsb.services`` may get pulled in by something
+seemingly innocent — so the rule forbids ``bsb`` entirely, not just
+``bsb.services``.
 
 Public API: import directly from the submodule that owns each symbol::
 

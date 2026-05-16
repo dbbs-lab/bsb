@@ -33,7 +33,8 @@ def _wrap_case(case: unittest.TestCase):
     def wrapped_run(*args, **kwargs):
         from bsb_otel.tracer import get_bsb_tracer
 
-        with get_bsb_tracer("bsb-otel").trace(
+        tracer = get_bsb_tracer("bsb-otel")
+        with tracer.trace(
             case.id(),
             attributes={
                 "python.test_package": case.id().split(".")[0],
@@ -42,6 +43,11 @@ def _wrap_case(case: unittest.TestCase):
                 "python.test_case": case.id().split(".")[3],
             },
         ):
+            # Immediately-ended heartbeat span: even if the test body hangs,
+            # the BatchSpanProcessor exports this so post-mortem we can
+            # identify the last test each rank started.
+            with tracer.trace(f"{case.id()}#start"):
+                pass
             return original_run(*args, **kwargs)
 
     case.run = wrapped_run

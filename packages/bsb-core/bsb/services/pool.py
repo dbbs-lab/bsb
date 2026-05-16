@@ -68,6 +68,18 @@ if typing.TYPE_CHECKING:  # pragma: nocover
     from mpipool import MPIExecutor
 
 
+def _trace(comm, msg):
+    # TEMP investigate: rank-tagged stderr prints for pool.execute() flow.
+    import sys as _sys
+
+    try:
+        rank = comm.get_rank()
+    except Exception:
+        rank = "?"
+    _sys.stderr.write(f"[pool rank={rank}] {msg}\n")
+    _sys.stderr.flush()
+
+
 class WorkflowError(ExceptionGroup):
     pass
 
@@ -740,21 +752,26 @@ class JobPool:
     def _execute_parallel(self):
         import bsb.options
 
+        _trace(self._comm, "_execute_parallel ENTER")
         # Enable full mpipool debugging
         if bsb.options.debug_pool:
             _MPIPool.enable_serde_logging()
+        _trace(self._comm, "BEFORE _MPIPool.MPIExecutor() construct")
         # Create the MPI pool
         self._mpipool = _MPIPool.MPIExecutor(
             loglevel=logging.DEBUG if bsb.options.debug_pool else logging.CRITICAL
         )
+        _trace(self._comm, "AFTER _MPIPool.MPIExecutor() construct")
 
         if self._mpipool.is_worker():
+            _trace(self._comm, "WORKER path entered, BEFORE bcast(abort)")
             # The workers will return out of the pool constructor when they receive
             # the shutdown signal from the master, they return here skipping the
             # master logic.
 
             # Check if we need to abort our process due to errors etc.
             abort = self._comm.bcast(None)
+            _trace(self._comm, f"WORKER bcast(abort)={abort}")
             if abort:
                 raise WorkflowError(
                     "Unhandled exceptions during parallel execution.",
@@ -762,26 +779,39 @@ class JobPool:
                 )
 
             # Free all cached items
+            _trace(self._comm, "WORKER BEFORE free_stale_pool_cache")
             free_stale_pool_cache(self.owner, set())
+            _trace(self._comm, "WORKER AFTER free_stale_pool_cache, returning")
 
             return
 
+        _trace(self._comm, "MASTER path entered")
         try:
             # Tell the listeners execution is running
             self.change_status(PoolStatus.EXECUTING)
             # Kickstart the workers with the queued jobs
+            _trace(self._comm, f"MASTER enqueueing {len(self._job_queue)} jobs")
             for job in self._job_queue:
                 job._enqueue(self)
             # Add the scheduling futures to the running futures, to await them.
             self._running_futures.extend(self._schedulers)
             # Start tracking cached items
             self._update_cache_window()
+            _trace(self._comm, "MASTER entering wait loop")
 
+            _iter = 0
             # Keep executing as long as any of the schedulers or jobs aren't done yet.
             while self.scheduling or any(
                 job.status == JobStatus.PENDING or job.status == JobStatus.QUEUED
                 for job in self._job_queue
             ):
+                _iter += 1
+                if _iter <= 5 or _iter % 50 == 0:
+                    _trace(
+                        self._comm,
+                        f"MASTER loop iter={_iter} scheduling={self.scheduling} "
+                        f"job_statuses={[j.status.value for j in self._job_queue]}",
+                    )
                 try:
                     done, not_done = concurrent.futures.wait(
                         self._running_futures,
@@ -811,20 +841,31 @@ class JobPool:
                 # Notify all the listeners, and store/raise any unhandled errors
                 self.notify()
 
+            _trace(self._comm, f"MASTER exited wait loop after {_iter} iters")
             # Notify listeners that execution is over
             self.change_status(PoolStatus.CLOSING)
             # Raise any unhandled errors
             self.raise_unhandled()
-        except:
+        except BaseException as _e:
+            _trace(
+                self._comm,
+                f"MASTER caught {type(_e).__name__}: {_e!r} — broadcasting abort",
+            )
             # If any exception (including SystemExit and KeyboardInterrupt) happen on main
             # we should broadcast the abort to all worker nodes.
             self._workers_raise_unhandled = True
             raise
         finally:
+            _trace(self._comm, "MASTER finally: shutdown(wait=False)")
             # Shut down our internal pool
             self._mpipool.shutdown(wait=False, cancel_futures=True)
+            _trace(
+                self._comm,
+                f"MASTER finally: bcast(workers_raise_unhandled={self._workers_raise_unhandled})",
+            )
             # Broadcast whether the worker nodes should raise an unhandled error.
             self._comm.bcast(self._workers_raise_unhandled)
+            _trace(self._comm, "MASTER finally: bcast done, _execute_parallel EXIT")
 
     def _execute_serial(self):
         # Wait for jobs to finish scheduling

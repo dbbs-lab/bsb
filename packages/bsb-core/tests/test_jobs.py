@@ -631,11 +631,18 @@ class TestPoolCache(RandomStorageFixture, unittest.TestCase, engine_name="hdf5")
         "bsb.services.pool.JobPool._read_required_cache_items",
         lambda self: mock_read_required_cache_items(self),
     )
-    @timeout(3)
+    @timeout(3, abort=True)
     def test_cache_survival(self):
         """
         Test that the required cache items survive until the jobs are done.
         """
+        import sys as _sys
+
+        def _p(msg):
+            _sys.stderr.write(f"[tcs rank={MPI.get_rank()}] {msg}\n")
+            _sys.stderr.flush()
+
+        _p("ENTER test_cache_survival body")
 
         @config.node
         class TestNode(PlacementStrategy):
@@ -647,10 +654,15 @@ class TestPoolCache(RandomStorageFixture, unittest.TestCase, engine_name="hdf5")
                 # This confirms that the cache is cleared once its dependents are done.
                 self.assertEqual(cache.misses, 0)
 
+        _p("BEFORE assign withoutcache TestNode")
         self.network.placement["withoutcache"] = TestNode(cell_types=[], partitions=[])
+        _p("BEFORE create_job_pool")
         pool = self.network.create_job_pool()
+        _p("AFTER create_job_pool, BEFORE with pool")
         with pool:
+            _p("INSIDE with pool, BEFORE queue first")
             first = pool.queue_placement(self.network.placement.withoutcache, [0, 0, 0])
+            _p("queued first, queuing 4 cached jobs")
             # create 4 jobs with cache to check that the cache is deleted only once.
             job0 = pool.queue_placement(
                 self.network.placement.withcache, [0, 0, 0], deps=[first]
@@ -664,12 +676,16 @@ class TestPoolCache(RandomStorageFixture, unittest.TestCase, engine_name="hdf5")
             job3 = pool.queue_placement(
                 self.network.placement.withcache, [1, 0, 0], deps=[first]
             )
+            _p("queuing final withoutcache job")
             pool.queue_placement(
                 self.network.placement.withoutcache,
                 [0, 0, 0],
                 deps=[job0, job1, job2, job3],
             )
+            _p("BEFORE pool.execute()")
             pool.execute()
+            _p("AFTER pool.execute() returned")
+        _p("EXITED with pool block")
         # withcache.get_indicators and withcache.cache_something first because
         # the withcache jobs are done first. then, withoutcache.get_indicators
         ids_cache_freed = [

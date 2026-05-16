@@ -23,8 +23,8 @@ from bsb_otel.exporters import JSONLinesSpanExporter
 class BsbJsonlinesDistro(BaseDistro):
     def _configure(self, **kwargs):
         os.environ.setdefault(OTEL_TRACES_EXPORTER, "jsonlines")
-        # OTEL_PYTHON_CONFIGURATOR isn't re-exported as a constant in older
-        # opentelemetry-api versions, use the literal env var name.
+        # opentelemetry-api does not re-export OTEL_PYTHON_CONFIGURATOR as a
+        # constant (checked up to main); use the literal env var name.
         os.environ.setdefault("OTEL_PYTHON_CONFIGURATOR", "bsb_jsonlines")
 
 

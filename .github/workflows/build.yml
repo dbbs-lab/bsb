@@ -43,27 +43,6 @@ jobs:
           path: ${{ env.NEST_FOLDER }}
           key: ${{ runner.os }}-${{ matrix.python-version }}-nest
 
-      - name: Install NEST + patch nest_vars.sh for uv --env-file
-        # uv's --env-file does not shell-expand the
-        # ${PYTHONPATH:+:$PYTHONPATH} suffix that NEST puts in nest_vars.sh,
-        # so the literal text ends up in the child PYTHONPATH and Python
-        # cannot find the nest module.  Run install-nest now (so the file
-        # exists) and rewrite the offending suffix to empty.
-        timeout-minutes: 30
-        run: |
-          npm install rimraf
-          ./nx run bsb-nest:install-nest
-          NEST_VARS=.nx/installation/nest/install/bin/nest_vars.sh
-          if [ -f "$NEST_VARS" ]; then
-            # Replace ${PYTHONPATH:+:$PYTHONPATH} with :$PYTHONPATH so that
-            # uv's basic dotenv substitution picks up the outer PYTHONPATH
-            # value (which carries the OTel sitecustomize entry).
-            sed -i 's|\${PYTHONPATH:+:\$PYTHONPATH}|:\$PYTHONPATH|g' "$NEST_VARS"
-            echo '----- patched nest_vars.sh -----'
-            cat "$NEST_VARS"
-            echo '----- end -----'
-          fi
-
       - name: Verify bsb-otel no-SDK contract
         # Run the dedicated no-SDK contract test *without* the sitecustomize
         # that the main test step installs, so the assertion that
@@ -108,7 +87,13 @@ jobs:
               except Exception:
                   pass
           PYEOF
-          export PYTHONPATH="$SITE${PYTHONPATH:+:$PYTHONPATH}"
+          # uv 0.11 --env-file does NOT override env vars already set
+          # in the parent shell.  So if we set PYTHONPATH for the
+          # sitecustomize, uv run --env-file nest_vars.sh keeps our
+          # outer value and ignores nest_vars.sh's PYTHONPATH.  Prepend
+          # NEST's pyste-packages so bsb-nest tests can still import nest.
+          NEST_LIB="$GITHUB_WORKSPACE/.nx/installation/nest/install/lib/python${{ matrix.python-version }}/site-packages"
+          export PYTHONPATH="$SITE:$NEST_LIB${PYTHONPATH:+:$PYTHONPATH}"
           if [ "${{ github.ref }}" == "refs/heads/main" ]; then
             ./nx run-many -t test ;
           else

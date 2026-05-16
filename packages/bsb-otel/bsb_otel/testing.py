@@ -54,11 +54,12 @@ def _wrap_case(case: unittest.TestCase):
             # addFailure on it so the test span gets ERROR status with the
             # exception recorded.  Without this, FAIL/ERROR outcomes are
             # invisible to OTel (status stays UNSET because unittest catches
-            # the exception internally).
+            # the exception internally).  Restore the originals before
+            # returning so wrappers don't accumulate across tests.
             result = args[0] if args else kwargs.get("result")
+            _orig_add_error = result.addError if result is not None else None
+            _orig_add_failure = result.addFailure if result is not None else None
             if result is not None:
-                _orig_add_error = result.addError
-                _orig_add_failure = result.addFailure
 
                 def _record(label, err):
                     outer_span.set_status(Status(StatusCode.ERROR, label))
@@ -75,7 +76,12 @@ def _wrap_case(case: unittest.TestCase):
 
                 result.addError = add_error
                 result.addFailure = add_failure
-            return original_run(*args, **kwargs)
+            try:
+                return original_run(*args, **kwargs)
+            finally:
+                if result is not None:
+                    result.addError = _orig_add_error
+                    result.addFailure = _orig_add_failure
 
     case.run = wrapped_run
 

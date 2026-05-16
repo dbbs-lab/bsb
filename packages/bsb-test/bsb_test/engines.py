@@ -408,12 +408,32 @@ class TestPlacementSet(
         )
 
     def test_label(self):
+        import sys as _sys
+
         self.network.compile()
         ps = self.network.get_placement_set("test_cell")
         cells_to_label = [33, 12, 0, 3, 77]
         labels = ["label1", "label2"]
         # Test empty labeling
-        ps.label(labels, np.full(len(ps), False))
+        _len_before = len(ps)
+        _ids_before = ps.load_ids()
+        _labels_before = ps.get_unique_labels()
+        _mask = np.full(_len_before, False)
+        _sys.stderr.write(
+            f"[test_label rank={MPI.get_rank()}] BEFORE empty label: "
+            f"len={_len_before} ids={list(_ids_before)[:5]}... "
+            f"unique_labels={list(_labels_before)} "
+            f"mask.shape={_mask.shape} mask.any={bool(_mask.any())}\n"
+        )
+        _sys.stderr.flush()
+        ps.label(labels, _mask)
+        _labels_after = ps.get_unique_labels()
+        _sys.stderr.write(
+            f"[test_label rank={MPI.get_rank()}] AFTER empty label: "
+            f"len={len(ps)} unique_labels={list(_labels_after)} "
+            f"label_mask={ps.get_label_mask().tolist()[:10]}...\n"
+        )
+        _sys.stderr.flush()
         self.assertAll(
             np.asarray(ps.get_unique_labels()) == np.asarray([set()]),
             "No cells should have been labelled.",

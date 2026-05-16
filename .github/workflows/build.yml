@@ -47,13 +47,48 @@ jobs:
         timeout-minutes: 60
         env:
           BSB_QUIET: true
+          BSB_OTEL_JSONLINES: "1"
+          OTEL_EXPORTER_JSONLINES_PATH: ./traces_rank_*.jsonlines
         run: |
           npm install rimraf
+          # Drop a sitecustomize.py that every Python subprocess
+          # (including mpiexec ranks) auto-loads on startup; it wires
+          # bsb-otel's JSONLinesSpanExporter when BSB_OTEL_JSONLINES is
+          # set.  Lives outside the repo so the nx test target stays a
+          # plain mpiexec command.
+          SITE="$RUNNER_TEMP/otel-sitecustomize"
+          mkdir -p "$SITE"
+          cat > "$SITE/sitecustomize.py" <<'PYEOF'
+          import os
+          if os.environ.get("BSB_OTEL_JSONLINES"):
+              try:
+                  from opentelemetry import trace
+                  from opentelemetry.sdk.trace import TracerProvider
+                  from opentelemetry.sdk.trace.export import BatchSpanProcessor
+                  from bsb_otel.exporters import JSONLinesSpanExporter
+                  provider = TracerProvider()
+                  provider.add_span_processor(
+                      BatchSpanProcessor(JSONLinesSpanExporter())
+                  )
+                  trace.set_tracer_provider(provider)
+              except Exception:
+                  pass
+          PYEOF
+          export PYTHONPATH="$SITE${PYTHONPATH:+:$PYTHONPATH}"
           if [ "${{ github.ref }}" == "refs/heads/main" ]; then
             ./nx run-many -t test ;
           else
             ./nx affected -t test --base=origin/main --head=HEAD;
           fi
+      - name: Upload OTel jsonlines traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: otel-traces-py${{ matrix.python-version }}
+          path: |
+            packages/*/traces_rank_*.jsonlines
+            libs/*/traces_rank_*.jsonlines
+          if-no-files-found: warn
       - name: Send coverage
         uses: codecov/codecov-action@v5
         with:

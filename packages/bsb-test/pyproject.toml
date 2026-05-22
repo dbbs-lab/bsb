@@ -40,6 +40,10 @@ editable = true
 path = "../bsb-hdf5"
 editable = true
 
+[tool.uv.sources.bsb-otel]
+path = "../bsb-otel"
+editable = true
+
 [tool.uv.sources.sphinxext-bsb]
 path = "../../libs/sphinxext-bsb"
 editable = true

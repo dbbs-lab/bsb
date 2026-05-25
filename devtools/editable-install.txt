@@ -33,4 +33,4 @@
 -e ./packages/bsb-nest
 -e ./packages/bsb-neuron
 -e ./packages/bsb-test
--e ./packages/bsb-otel
+-e ./packages/bsb-otel[sdk]

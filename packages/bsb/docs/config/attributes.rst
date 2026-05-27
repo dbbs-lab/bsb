@@ -27,6 +27,38 @@ classes to define your attribute:
     }
   }
 
+.. _config_attrs_required_callable:
+
+Conditionally required attributes
+=================================
+
+``required=`` accepts a callable as well as a bool. The callable receives the
+node's input ``kwargs`` (a dict subclass with an ``instance`` reference to the
+node being built) and returns ``True`` to require the attribute or ``False``
+to make it optional. This is useful when whether the attribute is required
+depends on the value of a sibling — or on external state that you query via
+the :ref:`build context <config_build_lifecycle>`:
+
+.. code-block:: python
+
+  from bsb import config
+
+  def _delay_required_for(kwargs):
+      # `kwargs` is the synapse node's input dict; `kwargs.instance` is the
+      # synapse being built, with `_config_parent` set.
+      return kwargs.get("model", "static_synapse") != "gap_junction"
+
+  @config.node
+  class SynapseSettings:
+      model = config.attr(type=str, default="static_synapse")
+      delay = config.attr(type=float, required=_delay_required_for, default=None)
+
+The checker runs during the build phase; if it raises, the exception
+propagates with node context. For checkers that need to consult
+out-of-process resources (a remote API, a kernel running in a subprocess,
+...), see :ref:`config_build_lifecycle` for how to register and look up
+shared resources on the active build context.
+
 .. _config_dict:
 
 Configuration dictionaries

@@ -1,4 +1,3 @@
-import nest
 import numpy as np
 import quantities as pq
 from bsb import ConfigurationError, _util, config, types
@@ -24,6 +23,8 @@ class Multimeter(NestDevice, classmap_entry="multimeter"):
                 )
 
     def implement(self, adapter, simulation, simdata):
+        import nest
+
         targets_dict = self.get_dict_targets(adapter, simulation, simdata)
         nodes = self._flatten_nodes_ids(targets_dict)
         inv_targets = self._invert_targets_dict(targets_dict)

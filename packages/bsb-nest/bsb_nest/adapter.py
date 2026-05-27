@@ -2,7 +2,6 @@ import contextlib
 import sys
 import typing
 
-import nest
 from bsb import (
     AdapterError,
     SimulationData,
@@ -25,6 +24,8 @@ class NestResult(SimulationResult):
     # It seems that the record method is not used,
     # probably we will have to uniform the behavior with NeuronResult
     def record(self, nc, **annotations):
+        import nest
+
         recorder = nest.Create("spike_recorder", params={"record_to": "memory"})
         nest.Connect(nc, recorder)
 
@@ -99,12 +100,16 @@ class NestAdapter(SimulatorAdapter):
             raise
 
     def reset_kernel(self):
+        import nest
+
         nest.ResetKernel()
         # Reset which modules we should consider explicitly loaded by the user
         # to appropriately warn them when they load them twice.
         self.loaded_modules = set()
 
     def run(self, *simulations):
+        import nest
+
         unprepared = [sim for sim in simulations if sim not in self.simdata]
         if unprepared:
             raise AdapterError(f"Unprepared for simulations: {', '.join(unprepared)}")
@@ -127,6 +132,8 @@ class NestAdapter(SimulatorAdapter):
         return results
 
     def load_modules(self, simulation):
+        import nest
+
         for module in simulation.modules:
             try:
                 nest.Install(module)
@@ -189,6 +196,8 @@ class NestAdapter(SimulatorAdapter):
                 raise NestConnectError(f"{connection_model} error during connect.") from e
 
     def set_settings(self, simulation: "NestSimulation"):
+        import nest
+
         nest.set_verbosity(simulation.verbosity)
         nest.resolution = simulation.resolution
         nest.overwrite_files = True

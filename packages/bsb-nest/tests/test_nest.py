@@ -3,8 +3,8 @@ from unittest.mock import patch
 
 import nest
 import numpy as np
-from bsb import BootError, CastError, ConfigurationError
-from bsb.config import Configuration
+from bsb import BootError, CastError, ConfigurationError, RequirementError
+from bsb.config import Configuration, build_context
 from bsb.core import Scaffold
 from bsb.services import MPI
 from bsb_test import NumpyTestCase, RandomStorageFixture, get_test_config
@@ -12,6 +12,7 @@ from nest.lib.hl_api_exceptions import NESTErrors
 from scipy.optimize import curve_fit
 
 from bsb_nest import NestAdapter
+from bsb_nest.exceptions import KernelWarning
 
 
 def _conf_single_cell():
@@ -852,31 +853,35 @@ class TestNest(
             _ = Scaffold(cfg, self.storage)
 
     def test_unknown_synapse(self):
+        # Unknown synapse models no longer hard-fail at config time: the delay
+        # required-checker hits the out-of-process kernel, can't resolve the
+        # model, warns, and treats delay as optional. NEST surfaces the unknown
+        # model at simulation time. See dbbs-lab/bsb#227.
         duration = 100
         resolution = 0.1
         cfg = _conf_two_cells()
-        with self.assertRaises(BootError):
-            cfg.simulations = {
-                "test": {
-                    "simulator": "nest",
-                    "duration": duration,
-                    "resolution": resolution,
-                    "seed": 1234,
-                    "cell_models": {
-                        "A": {"model": "iaf_cond_alpha"},
-                        "C": {"model": "parrot_neuron"},
-                    },
-                    "connection_models": {
-                        "C_to_A": {
-                            "synapses": [
-                                {"model": "blabla", "weight": -20.25, "delay": 1},
-                            ],
-                        }
-                    },
-                    "devices": {},
+        with self.assertWarns(KernelWarning):
+            with build_context():
+                cfg.simulations = {
+                    "test": {
+                        "simulator": "nest",
+                        "duration": duration,
+                        "resolution": resolution,
+                        "seed": 1234,
+                        "cell_models": {
+                            "A": {"model": "iaf_cond_alpha"},
+                            "C": {"model": "parrot_neuron"},
+                        },
+                        "connection_models": {
+                            "C_to_A": {
+                                "synapses": [
+                                    {"model": "blabla", "weight": -20.25, "delay": 1},
+                                ],
+                            }
+                        },
+                        "devices": {},
+                    }
                 }
-            }
-            _ = Scaffold(cfg, self.storage)
 
     def test_unknown_cell(self):
         duration = 100
@@ -934,31 +939,35 @@ class TestNest(
         scaffold.run_simulation("test")
 
     def test_error_gap_junctions_syn(self):
+        # Static synapses need a delay; missing one is now caught at config-build
+        # time by the `delay` required-checker hitting the out-of-process kernel.
+        # We wrap the mutation in `build_context()` so the proxy is reachable;
+        # without it the checker would warn-and-fall-back (see #227).
         duration = 100
         resolution = 0.1
         cfg = _conf_two_cells()
-        with self.assertRaises(BootError):
-            cfg.simulations = {
-                "test": {
-                    "simulator": "nest",
-                    "duration": duration,
-                    "resolution": resolution,
-                    "seed": 1234,
-                    "cell_models": {
-                        "A": {"model": "hh_psc_alpha_gap"},
-                        "C": {"model": "hh_psc_alpha_gap"},
-                    },
-                    "connection_models": {
-                        "C_to_A": {
-                            "synapses": [
-                                {"weight": -20.25},
-                            ],
-                        }
-                    },
-                    "devices": {},
+        with self.assertRaises(RequirementError):
+            with build_context():
+                cfg.simulations = {
+                    "test": {
+                        "simulator": "nest",
+                        "duration": duration,
+                        "resolution": resolution,
+                        "seed": 1234,
+                        "cell_models": {
+                            "A": {"model": "hh_psc_alpha_gap"},
+                            "C": {"model": "hh_psc_alpha_gap"},
+                        },
+                        "connection_models": {
+                            "C_to_A": {
+                                "synapses": [
+                                    {"weight": -20.25},
+                                ],
+                            }
+                        },
+                        "devices": {},
+                    }
                 }
-            }
-            _ = Scaffold(cfg, self.storage)
 
     def test_multisyn_collocation(self):
         cfg = _conf_single_cell()

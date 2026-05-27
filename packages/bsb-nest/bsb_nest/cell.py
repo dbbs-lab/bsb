@@ -1,4 +1,3 @@
-import nest
 from bsb import CellModel, ConfigurationError, config
 
 from .distributions import NestRandomDistribution, nest_parameter
@@ -18,6 +17,8 @@ class NestCell(CellModel):
             raise ConfigurationError(f"Unknown cell model '{self.model}'.")
 
     def create_population(self, simdata):
+        import nest
+
         n = len(simdata.placement[self])
         population = nest.Create(self.model, n) if n else nest.NodeCollection([])
         self.set_constants(population)

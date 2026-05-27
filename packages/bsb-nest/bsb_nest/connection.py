@@ -3,10 +3,58 @@ import sys
 
 import numpy as np
 import psutil
-from bsb import ConfigurationError, ConnectionModel, compose_nodes, config, options, types
+from bsb import ConnectionModel, compose_nodes, config, options, types, warn
 from tqdm import tqdm
 
+from ._kernel_proxy import get_nest_kernel_proxy
 from .distributions import nest_parameter
+from .exceptions import KernelWarning
+
+
+def _is_delay_required(kwargs):
+    """
+    ``required=`` checker for :attr:`NestSynapseSettings.delay`.
+
+    Asks the out-of-process NEST kernel whether the configured synapse model
+    needs a delay. Any failure to reach the kernel, install the user's modules,
+    or look up the model is downgraded to a warning + ``required=False`` so
+    config loading stays robust; the real error surfaces at simulation time.
+    """
+    model_name = kwargs.get("model", NestSynapseSettings.model.default)
+    try:
+        proxy = get_nest_kernel_proxy()
+        if proxy is None:
+            warn(
+                "No active build context; cannot check whether synapse"
+                f" '{model_name}' requires a delay.",
+                KernelWarning,
+            )
+            return False
+        _install_simulation_modules(kwargs, proxy)
+        if model_name not in proxy.models(mtype="synapses"):
+            warn(f"Unknown synapse model '{model_name}'.", KernelWarning)
+            return False
+        return proxy.has_delay(model_name)
+    except Exception as e:
+        warn(
+            f"Could not determine if delay is required for synapse"
+            f" '{model_name}': {e}",
+            KernelWarning,
+        )
+        return False
+
+
+def _install_simulation_modules(kwargs, proxy):
+    """Walk up to the enclosing :class:`NestSimulation` and install its modules."""
+    instance = getattr(kwargs, "instance", None)
+    parent = getattr(instance, "_config_parent", None)
+    while parent is not None:
+        modules = getattr(parent, "modules", None)
+        if isinstance(modules, (list, tuple)):
+            for module in modules:
+                proxy.install(module)
+            return
+        parent = getattr(parent, "_config_parent", None)
 
 
 @config.node
@@ -19,20 +67,12 @@ class NestSynapseSettings:
     """Importable reference to the NEST model describing the synapse type."""
     weight = config.attr(type=float, required=True)
     """Weight of the connection between the presynaptic and the postsynaptic cells."""
-    delay = config.attr(type=float, default=None)
+    delay = config.attr(type=float, required=_is_delay_required, default=None)
     """Delay of the transmission between the presynaptic and the postsynaptic cells."""
     receptor_type = config.attr(type=int)
     """Index of the postsynaptic receptor to target."""
     constants = config.catch_all(type=nest_parameter())
     """Dictionary of the constants values to assign to the synapse model."""
-
-    def __boot__(self):
-        import nest
-
-        if self.model not in nest.Models(mtype="synapses"):
-            raise ConfigurationError(f"Unknown synapse model '{self.model}'.")
-        if nest.GetDefaults(self.model)["has_delay"] and self.delay is None:
-            raise ConfigurationError("Synapse model requires 'delay' to be set.")
 
 
 @config.node

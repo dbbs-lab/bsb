@@ -119,6 +119,7 @@ class NodeKwargs(dict):
     def __init__(self, instance, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.is_shortform = getattr(instance, "_config_pos_init", False)
+        self.instance = instance
 
 
 def compose_nodes(*node_classes):
@@ -323,26 +324,29 @@ def compile_postnew(cls):
 
 def wrap_root_postnew(post_new):
     def __post_new__(self, *args, _parent=None, _key=None, _store=None, **kwargs):
+        from ._build_context import build_context
+
         if not hasattr(self, "_meta"):
             self._meta = {"path": None, "produced": True}
 
-        try:
-            # Root node bootstrapping sequence
-            _bootstrap_components(kwargs.get("components", []), file_store=_store)
-            warn_missing_packages(kwargs.get("packages", []))
-        except Exception as e:
-            raise BootError("Failed to bootstrap configuration.") from e
+        with build_context():
+            try:
+                # Root node bootstrapping sequence
+                _bootstrap_components(kwargs.get("components", []), file_store=_store)
+                warn_missing_packages(kwargs.get("packages", []))
+            except Exception as e:
+                raise BootError("Failed to bootstrap configuration.") from e
 
-        try:
-            with warnings.catch_warnings(record=True) as log:
-                try:
-                    post_new(self, *args, _parent=None, _key=None, **kwargs)
-                except (CastError, RequirementError) as e:
-                    _bubble_up_exc(e, self._meta)
-                self._config_isfinished = True
-                _resolve_references(self)
-        finally:
-            _bubble_up_warnings(log)
+            try:
+                with warnings.catch_warnings(record=True) as log:
+                    try:
+                        post_new(self, *args, _parent=None, _key=None, **kwargs)
+                    except (CastError, RequirementError) as e:
+                        _bubble_up_exc(e, self._meta)
+                    self._config_isfinished = True
+                    _resolve_references(self)
+            finally:
+                _bubble_up_warnings(log)
 
     return __post_new__
 

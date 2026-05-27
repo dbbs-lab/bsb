@@ -12,7 +12,6 @@ from nest.lib.hl_api_exceptions import NESTErrors
 from scipy.optimize import curve_fit
 
 from bsb_nest import NestAdapter
-from bsb_nest.exceptions import KernelWarning
 
 
 def _conf_single_cell():
@@ -860,28 +859,27 @@ class TestNest(
         duration = 100
         resolution = 0.1
         cfg = _conf_two_cells()
-        with self.assertRaises(ConfigurationError):
-            with build_context():
-                cfg.simulations = {
-                    "test": {
-                        "simulator": "nest",
-                        "duration": duration,
-                        "resolution": resolution,
-                        "seed": 1234,
-                        "cell_models": {
-                            "A": {"model": "iaf_cond_alpha"},
-                            "C": {"model": "parrot_neuron"},
-                        },
-                        "connection_models": {
-                            "C_to_A": {
-                                "synapses": [
-                                    {"model": "blabla", "weight": -20.25, "delay": 1},
-                                ],
-                            }
-                        },
-                        "devices": {},
-                    }
+        with self.assertRaises(ConfigurationError), build_context():
+            cfg.simulations = {
+                "test": {
+                    "simulator": "nest",
+                    "duration": duration,
+                    "resolution": resolution,
+                    "seed": 1234,
+                    "cell_models": {
+                        "A": {"model": "iaf_cond_alpha"},
+                        "C": {"model": "parrot_neuron"},
+                    },
+                    "connection_models": {
+                        "C_to_A": {
+                            "synapses": [
+                                {"model": "blabla", "weight": -20.25, "delay": 1},
+                            ],
+                        }
+                    },
+                    "devices": {},
                 }
+            }
 
     def test_unknown_cell(self):
         duration = 100
@@ -946,28 +944,27 @@ class TestNest(
         duration = 100
         resolution = 0.1
         cfg = _conf_two_cells()
-        with self.assertRaises(RequirementError):
-            with build_context():
-                cfg.simulations = {
-                    "test": {
-                        "simulator": "nest",
-                        "duration": duration,
-                        "resolution": resolution,
-                        "seed": 1234,
-                        "cell_models": {
-                            "A": {"model": "hh_psc_alpha_gap"},
-                            "C": {"model": "hh_psc_alpha_gap"},
-                        },
-                        "connection_models": {
-                            "C_to_A": {
-                                "synapses": [
-                                    {"weight": -20.25},
-                                ],
-                            }
-                        },
-                        "devices": {},
-                    }
+        with self.assertRaises(RequirementError), build_context():
+            cfg.simulations = {
+                "test": {
+                    "simulator": "nest",
+                    "duration": duration,
+                    "resolution": resolution,
+                    "seed": 1234,
+                    "cell_models": {
+                        "A": {"model": "hh_psc_alpha_gap"},
+                        "C": {"model": "hh_psc_alpha_gap"},
+                    },
+                    "connection_models": {
+                        "C_to_A": {
+                            "synapses": [
+                                {"weight": -20.25},
+                            ],
+                        }
+                    },
+                    "devices": {},
                 }
+            }
 
     def test_multisyn_collocation(self):
         cfg = _conf_single_cell()

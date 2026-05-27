@@ -31,10 +31,9 @@ class TestBuildContextPrimitive(unittest.TestCase):
         self.assertIsNone(get_config_build_context())
 
     def test_build_context_manager_clears_on_exception(self):
-        with self.assertRaises(RuntimeError):
-            with build_context():
-                self.assertIsNotNone(get_config_build_context())
-                raise RuntimeError("boom")
+        with self.assertRaises(RuntimeError), build_context():
+            self.assertIsNotNone(get_config_build_context())
+            raise RuntimeError("boom")
         self.assertIsNone(get_config_build_context())
 
     def test_namespace_auto_vivifies(self):
@@ -62,10 +61,9 @@ class TestBuildContextPrimitive(unittest.TestCase):
 
     def test_cleanups_run_on_exception(self):
         order = []
-        with self.assertRaises(RuntimeError):
-            with build_context() as ctx:
-                ctx.add_cleanup(lambda: order.append("ran"))
-                raise RuntimeError("boom")
+        with self.assertRaises(RuntimeError), build_context() as ctx:
+            ctx.add_cleanup(lambda: order.append("ran"))
+            raise RuntimeError("boom")
         self.assertEqual(order, ["ran"])
 
 

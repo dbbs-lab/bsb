@@ -3,7 +3,15 @@ import sys
 
 import numpy as np
 import psutil
-from bsb import ConfigurationError, ConnectionModel, compose_nodes, config, options, types, warn
+from bsb import (
+    ConfigurationError,
+    ConnectionModel,
+    compose_nodes,
+    config,
+    options,
+    types,
+    warn,
+)
 from tqdm import tqdm
 
 from ._kernel_proxy import get_nest_kernel_proxy

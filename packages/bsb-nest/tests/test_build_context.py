@@ -4,7 +4,7 @@ import warnings
 from unittest.mock import patch
 
 from bsb import ConfigurationError, RequirementError
-from bsb.config import build_context, get_config_build_context
+from bsb.config import build_context
 
 from bsb_nest import get_nest_kernel_proxy
 from bsb_nest._kernel_proxy import _NestKernel
@@ -56,8 +56,8 @@ class TestDelayRequiredChecker(unittest.TestCase):
     def setUpClass(cls):
         try:
             import nest  # noqa: F401
-        except ImportError:
-            raise unittest.SkipTest("NEST is not installed")
+        except ImportError as e:
+            raise unittest.SkipTest("NEST is not installed") from e
 
     def _make_stub_manager(self):
         kernel = _NestKernel()
@@ -80,12 +80,11 @@ class TestDelayRequiredChecker(unittest.TestCase):
         with patch(
             "bsb_nest._kernel_proxy._start_kernel_manager",
             side_effect=self._make_stub_manager,
-        ):
-            with build_context():
-                kwargs = {"model": model}
-                if delay is not None:
-                    kwargs["delay"] = delay
-                return NestSynapseSettings(kwargs)
+        ), build_context():
+            kwargs = {"model": model}
+            if delay is not None:
+                kwargs["delay"] = delay
+            return NestSynapseSettings(kwargs)
 
     def test_static_synapse_requires_delay(self):
         from bsb_nest.connection import NestSynapseSettings
@@ -93,12 +92,10 @@ class TestDelayRequiredChecker(unittest.TestCase):
         with patch(
             "bsb_nest._kernel_proxy._start_kernel_manager",
             side_effect=self._make_stub_manager,
-        ):
-            with build_context():
-                with self.assertRaises(RequirementError):
-                    NestSynapseSettings(
-                        {"model": "static_synapse", "weight": 1.0},
-                    )
+        ), build_context(), self.assertRaises(RequirementError):
+            NestSynapseSettings(
+                {"model": "static_synapse", "weight": 1.0},
+            )
 
     def test_gap_junction_does_not_require_delay(self):
         # gap_junction is a real NEST synapse model with has_delay=False.
@@ -107,12 +104,11 @@ class TestDelayRequiredChecker(unittest.TestCase):
         with patch(
             "bsb_nest._kernel_proxy._start_kernel_manager",
             side_effect=self._make_stub_manager,
-        ):
-            with build_context():
-                # No delay supplied — must not raise.
-                NestSynapseSettings(
-                    {"model": "gap_junction", "weight": 1.0},
-                )
+        ), build_context():
+            # No delay supplied — must not raise.
+            NestSynapseSettings(
+                {"model": "gap_junction", "weight": 1.0},
+            )
 
     def test_unknown_synapse_is_hard_error_when_proxy_reachable(self):
         # When the proxy IS reachable, an unknown model name is a real config
@@ -123,16 +119,14 @@ class TestDelayRequiredChecker(unittest.TestCase):
         with patch(
             "bsb_nest._kernel_proxy._start_kernel_manager",
             side_effect=self._make_stub_manager,
-        ):
-            with build_context():
-                with self.assertRaises(ConfigurationError):
-                    NestSynapseSettings(
-                        {
-                            "model": "definitely_not_a_real_model",
-                            "weight": 1.0,
-                            "delay": 0.5,
-                        },
-                    )
+        ), build_context(), self.assertRaises(ConfigurationError):
+            NestSynapseSettings(
+                {
+                    "model": "definitely_not_a_real_model",
+                    "weight": 1.0,
+                    "delay": 0.5,
+                },
+            )
 
     def test_no_context_warns_and_falls_back(self):
         from bsb_nest.connection import _is_delay_required
@@ -158,11 +152,9 @@ class TestDelayRequiredChecker(unittest.TestCase):
         with patch(
             "bsb_nest._kernel_proxy._start_kernel_manager",
             side_effect=boom,
-        ):
-            with build_context():
-                with warnings.catch_warnings(record=True) as log:
-                    warnings.simplefilter("always", KernelWarning)
-                    result = _is_delay_required({"model": "static_synapse"})
+        ), build_context(), warnings.catch_warnings(record=True) as log:
+            warnings.simplefilter("always", KernelWarning)
+            result = _is_delay_required({"model": "static_synapse"})
         self.assertFalse(result)
         self.assertTrue(
             any(issubclass(w.category, KernelWarning) for w in log),

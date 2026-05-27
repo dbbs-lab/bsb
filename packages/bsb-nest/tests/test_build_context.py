@@ -3,7 +3,7 @@ import unittest
 import warnings
 from unittest.mock import patch
 
-from bsb import RequirementError
+from bsb import ConfigurationError, RequirementError
 from bsb.config import build_context, get_config_build_context
 
 from bsb_nest import get_nest_kernel_proxy
@@ -114,26 +114,25 @@ class TestDelayRequiredChecker(unittest.TestCase):
                     {"model": "gap_junction", "weight": 1.0},
                 )
 
-    def test_unknown_synapse_warns_and_falls_back(self):
+    def test_unknown_synapse_is_hard_error_when_proxy_reachable(self):
+        # When the proxy IS reachable, an unknown model name is a real config
+        # error — the soft warn-and-fall-back is only for cases where we
+        # genuinely can't reach the kernel.
         from bsb_nest.connection import NestSynapseSettings
-        from bsb_nest.exceptions import KernelWarning
 
         with patch(
             "bsb_nest._kernel_proxy._start_kernel_manager",
             side_effect=self._make_stub_manager,
         ):
             with build_context():
-                with warnings.catch_warnings(record=True) as log:
-                    warnings.simplefilter("always", KernelWarning)
-                    # Unknown model — checker must warn and treat delay as optional,
-                    # so building without delay succeeds.
+                with self.assertRaises(ConfigurationError):
                     NestSynapseSettings(
-                        {"model": "definitely_not_a_real_model", "weight": 1.0},
+                        {
+                            "model": "definitely_not_a_real_model",
+                            "weight": 1.0,
+                            "delay": 0.5,
+                        },
                     )
-                self.assertTrue(
-                    any(issubclass(w.category, KernelWarning) for w in log),
-                    f"Expected a KernelWarning, got: {[w.message for w in log]}",
-                )
 
     def test_no_context_warns_and_falls_back(self):
         from bsb_nest.connection import _is_delay_required

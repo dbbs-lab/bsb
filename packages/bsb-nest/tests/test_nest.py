@@ -853,14 +853,14 @@ class TestNest(
             _ = Scaffold(cfg, self.storage)
 
     def test_unknown_synapse(self):
-        # Unknown synapse models no longer hard-fail at config time: the delay
-        # required-checker hits the out-of-process kernel, can't resolve the
-        # model, warns, and treats delay as optional. NEST surfaces the unknown
-        # model at simulation time. See dbbs-lab/bsb#227.
+        # The kernel proxy spawned by `build_context()` confirms the model
+        # doesn't exist, which is a hard config error. Without an active
+        # build context the checker would warn-and-fall-back instead — see
+        # dbbs-lab/bsb#227.
         duration = 100
         resolution = 0.1
         cfg = _conf_two_cells()
-        with self.assertWarns(KernelWarning):
+        with self.assertRaises(ConfigurationError):
             with build_context():
                 cfg.simulations = {
                     "test": {

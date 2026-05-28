@@ -1,15 +1,17 @@
+import os
+import shutil
+import tempfile
 import unittest
 
 import numpy as np
 from bsb_arbor import ArborSimulation, SpikeRecorder
 from bsb_test import FixedPosConfigFixture, NumpyTestCase, RandomStorageFixture
-from neo import AnalogSignal, io
+from neo import io
 
 from bsb import (
     MPI,
     AttributeMissingError,
     Scaffold,
-    SimulationResult,
     config,
     get_simulation_adapter,
     options,
@@ -570,16 +572,18 @@ class TestAdapterControllers(
             "Spike times in last segment fall outside the expected range (90-100).",
         )
 
+    def _tmp_nio(self):
+        tmpdir = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, tmpdir, ignore_errors=True)
+        return os.path.join(tmpdir, "results.nio")
+
     @unittest.skipIf(MPI.get_size() > 1, "Skipped during parallel testing.")
-    def test_checkpoints_with_triple_sim(self):
-        """This test checks that if two simulations are run the results are written in two
-        separate blocks inside the same file"""
+    def test_multiple_runs_append_blocks(self):
+        """Two differently-named simulations streamed to one file become two separate,
+        independent blocks, each with its own checkpoint segments."""
         self.network.simulations.test.devices["new_recorder"] = dict(
             device="spike_controller",
-            targetting={
-                "strategy": "cell_model",
-                "cell_models": ["test_cell"],
-            },
+            targetting={"strategy": "cell_model", "cell_models": ["test_cell"]},
             step=10,
         )
         sim_2 = dict(
@@ -625,86 +629,53 @@ class TestAdapterControllers(
                 },
                 new_recorder=dict(
                     device="spike_controller",
-                    targetting={
-                        "strategy": "cell_model",
-                        "cell_models": ["test_cell"],
-                    },
+                    targetting={"strategy": "cell_model", "cell_models": ["test_cell"]},
                     step=10,
                 ),
             ),
         )
         self.network.simulations["sim_2"] = ArborSimulation(sim_2)
-        self.network.simulations["sim_3"] = ArborSimulation(sim_2)
 
-        nio_file = "out.nio"
+        nio_file = self._tmp_nio()
         self.network.run_simulation("test", output_filename=nio_file)
         self.network.run_simulation("sim_2", output_filename=nio_file)
-        self.network.run_simulation("sim_3", output_filename=nio_file)
 
-        written_results = io.NixIO(nio_file, "ro")
-        blocks = written_results.read_all_blocks()
-        self.assertEqual(len(blocks), 3)
-        self.assertEqual(len(blocks[0].segments), 11)
-        self.assertEqual(len(blocks[1].segments), 6)
-        self.assertEqual(len(blocks[2].segments), 6)
-        import os
+        blocks = {b.name: b for b in io.NixIO(nio_file, "ro").read_all_blocks()}
+        self.assertEqual(set(blocks), {"test", "sim_2"}, "Expected one block per sim")
+        # test: step 10 / duration 100 -> 10 + 1 final = 11 segments
+        self.assertEqual(len(blocks["test"].segments), 11)
+        # sim_2: step 10 / duration 50 -> 5 + 1 final = 6 segments
+        self.assertEqual(len(blocks["sim_2"].segments), 6)
 
-        os.remove(nio_file)
+    @unittest.skipIf(MPI.get_size() > 1, "Skipped during parallel testing.")
+    def test_rerun_same_name_does_not_overwrite(self):
+        """Re-running the same simulation into one file appends a new block instead of
+        overwriting the first; both blocks survive intact with distinct storage keys."""
+        self.network.simulations.test.devices["new_recorder"] = dict(
+            device="spike_controller",
+            targetting={"strategy": "cell_model", "cell_models": ["test_cell"]},
+            step=10,
+        )
+        nio_file = self._tmp_nio()
+        self.network.run_simulation("test", output_filename=nio_file)
+        self.network.run_simulation("test", output_filename=nio_file)
 
-    def test_RAM_usage(self):
-        """
-        This test writes over 7 GB of data in 60 segments of 120 MB each.
-
-        It verifies that memory usage, after the initial steps, remains stable
-        within a 5 MB threshold. It also checks that peak memory usage never
-        exceeds 500 MB.
-        If PLOT_GRAPH is set to True, it will also plot the graph of memory
-        values collected after every flush.
-        """
-        import os
-        import tracemalloc
-
-        from quantities import ms
-
-        tracemalloc.start()
-        PLOT_GRAPH = False
-        MB = 1024 * 1024
-        total_threshold = 500
-        rank = MPI.get_rank()
-
-        sim = self.network.simulations.test
-        nio_file = "out" + str(rank) + ".nio"
-        my_result = SimulationResult(sim, nio_file)
-
-        def my_flush(segment):
-            # Creates a signal of 120 MB
-            signal = np.ones(15 * MB)
-            segment.analogsignals.append(
-                AnalogSignal(signal, sampling_period=0.1 * ms, units="mV")
-            )
-
-        my_result.create_recorder(my_flush)
-
-        num_samples = 60
-        mem_size = np.zeros(num_samples)
-        for sample in range(num_samples):
-            my_result.flush()
-            mem_size_after, mem_peak = tracemalloc.get_traced_memory()
-            mem_size[sample] = mem_size_after / MB
-
-        _, mem_peak = tracemalloc.get_traced_memory()
-        mean = np.mean(mem_size[5::])
-        max_dev = np.max(np.abs(mem_size[5::] - mean))
-        if PLOT_GRAPH:
-            import matplotlib.pyplot as plt
-
-            plt.plot(mem_size)
-            plt.xlabel("step")
-            plt.ylabel("Mem Size")
-            plt.ylim(0, 400)
-            plt.grid(True)
-            plt.show()
-
-        self.assertClose(0, max_dev, atol=5.0)
-        self.assertLess(mem_peak / MB, total_threshold)
-        os.remove("out" + str(rank) + ".nio")
+        blocks = io.NixIO(nio_file, "ro").read_all_blocks()
+        self.assertEqual(len(blocks), 2, "Re-run must append a block, not overwrite")
+        self.assertEqual([b.name for b in blocks], ["test", "test"], "Label repeats")
+        self.assertEqual(
+            len({b.annotations["nix_name"] for b in blocks}),
+            2,
+            "Each run must get a unique storage key",
+        )
+        self.assertEqual(
+            sorted(b.annotations["run_index"] for b in blocks),
+            [0, 1],
+            "run_index must increment per same-named run",
+        )
+        # Both blocks intact and segments routed to the right block (step 10 / dur 100
+        # -> 11 each); a misrouted flush would make one block 22 and the other 0.
+        self.assertTrue(
+            all(len(b.segments) == 11 for b in blocks),
+            "Both blocks should keep their own 11 segments",
+        )

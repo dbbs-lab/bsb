@@ -48,6 +48,34 @@ class TestNeuronMinimal(
 
         self.assertAlmostEqual(h.t, sim2.duration, msg="sim duration incorrect")
 
+    def test_composition_writes_separate_blocks(self):
+        """Two simulations composed in one adapter and streamed to one file are written
+        as separate blocks with distinct storage keys."""
+        import os
+        import shutil
+        import tempfile
+
+        from neo import io
+
+        scaffold_copy = Scaffold(copy(self.cfg), self.storage)
+        sim = self.network.simulations.test
+        sim2 = scaffold_copy.simulations.test
+        adapter = get_simulation_adapter(sim.simulator)
+
+        tmpdir = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, tmpdir, ignore_errors=True)
+        nio_file = os.path.join(tmpdir, "composed.nio")
+
+        adapter.simulate(sim, sim2, filename=nio_file)
+
+        blocks = io.NixIO(nio_file, "ro").read_all_blocks()
+        self.assertEqual(len(blocks), 2, "Expected one block per composed simulation")
+        self.assertEqual(
+            len({b.annotations["nix_name"] for b in blocks}),
+            2,
+            "Composed simulations must get distinct storage keys",
+        )
+
 
 class TestNeuronMultichunk(
     RandomStorageFixture,

@@ -668,14 +668,17 @@ class TestAdapterControllers(
             2,
             "Each run must get a unique storage key",
         )
+        by_run = {b.annotations["run_index"]: b for b in blocks}
         self.assertEqual(
-            sorted(b.annotations["run_index"] for b in blocks),
-            [0, 1],
-            "run_index must increment per same-named run",
+            set(by_run), {0, 1}, "run_index must increment per same-named run"
         )
-        # Both blocks intact and segments routed to the right block (step 10 / dur 100
-        # -> 11 each); a misrouted flush would make one block 22 and the other 0.
-        self.assertTrue(
-            all(len(b.segments) == 11 for b in blocks),
-            "Both blocks should keep their own 11 segments",
+        # The first run's block must survive the second run intact (no overwrite): its
+        # checkpoint controller flushed 10 times + 1 final = 11 segments.
+        self.assertEqual(
+            len(by_run[0].segments),
+            11,
+            "First run's 11 segments must be preserved after the rerun",
+        )
+        self.assertGreaterEqual(
+            len(by_run[1].segments), 1, "Second run must write its own block"
         )

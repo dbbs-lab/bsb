@@ -33,8 +33,8 @@ Conditionally required attributes
 =================================
 
 ``required=`` accepts a callable as well as a bool. The callable receives the
-node's input ``kwargs`` (a dict subclass with an ``instance`` reference to the
-node being built) and returns ``True`` to require the attribute or ``False``
+node's input ``kwargs`` (a dict subclass with a ``partial_node`` reference to
+the node being built) and returns ``True`` to require the attribute or ``False``
 to make it optional. This is useful when whether the attribute is required
 depends on the value of a sibling, or on external state that you query via
 the :ref:`build context <config_build_lifecycle>`:
@@ -44,7 +44,7 @@ the :ref:`build context <config_build_lifecycle>`:
   from bsb import config
 
   def _delay_required_for(kwargs):
-      # `kwargs` is the synapse node's input dict; `kwargs.instance` is the
+      # `kwargs` is the synapse node's input dict; `kwargs.partial_node` is the
       # synapse being built, with `_config_parent` set.
       return kwargs.get("model", "static_synapse") != "gap_junction"
 

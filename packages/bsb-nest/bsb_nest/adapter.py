@@ -15,7 +15,13 @@ from bsb import (
 from neo import SpikeTrain
 from tqdm import tqdm
 
-from .exceptions import KernelWarning, NestConnectError, NestModelError, NestModuleError
+from .exceptions import (
+    KernelWarning,
+    NestConnectError,
+    NestKernelError,
+    NestModelError,
+    NestModuleError,
+)
 
 if typing.TYPE_CHECKING:  # pragma: nocover
     from .simulation import NestSimulation
@@ -54,11 +60,24 @@ class NestAdapter(SimulatorAdapter):
     def simulate(self, *simulations, post_prepare=None, filename=None):
         try:
             self.reset_kernel()
+            self._set_resolution(simulations)
             return super().simulate(
                 *simulations, post_prepare=post_prepare, filename=filename
             )
         finally:
             self.reset_kernel()
+
+    def _set_resolution(self, simulations):
+        # NEST has a single kernel resolution that is frozen once nodes are created, so
+        # it must be set once, up front, before any simulation creates its neurons.
+        resolutions = {simulation.resolution for simulation in simulations}
+        if len(resolutions) > 1:
+            raise NestKernelError(
+                "NEST uses a single kernel resolution; cannot compose simulations with "
+                f"differing resolutions {sorted(resolutions)}."
+            )
+        if resolutions:
+            nest.resolution = resolutions.pop()
 
     def prepare(self, simulation, filename=None):
         """
@@ -191,8 +210,9 @@ class NestAdapter(SimulatorAdapter):
                 raise NestConnectError(f"{connection_model} error during connect.") from e
 
     def set_settings(self, simulation: "NestSimulation"):
+        # Resolution is set once up front in `_set_resolution`, before any neurons are
+        # created, because NEST freezes the kernel resolution after node creation.
         nest.set_verbosity(simulation.verbosity)
-        nest.resolution = simulation.resolution
         nest.overwrite_files = True
         # When simulating with MUSIC the following line might cause issue.
         # Set the MPI communicator for NEST manually in your script once

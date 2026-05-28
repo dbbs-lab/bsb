@@ -1,3 +1,6 @@
+import os
+import shutil
+import tempfile
 import unittest
 from unittest.mock import patch
 
@@ -8,6 +11,7 @@ from bsb.config import Configuration
 from bsb.core import Scaffold
 from bsb.services import MPI
 from bsb_test import NumpyTestCase, RandomStorageFixture, get_test_config
+from neo import io
 from packaging.version import Version
 
 if Version(nest.__version__) >= Version("3.10"):
@@ -17,6 +21,7 @@ else:
 from scipy.optimize import curve_fit
 
 from bsb_nest import NestAdapter
+from bsb_nest.exceptions import NestKernelError
 
 
 def _conf_single_cell():
@@ -1100,3 +1105,118 @@ class TestNest(
             )
             <= 1e-5
         )
+
+    @unittest.skipIf(MPI.get_size() > 1, "Skipped during parallel testing.")
+    def test_composition_writes_separate_blocks(self):
+        """Two NEST simulations sharing one resolution, composed in a single adapter and
+        streamed to one file, are written as separate blocks with distinct keys."""
+        dt = 0.1
+        spike_times = np.array([100, 150, 200])
+
+        def _sim(duration):
+            return {
+                "duration": duration,
+                "resolution": dt,
+                "simulator": "nest",
+                "cell_models": {"cell_A": {"model": "parrot_neuron"}},
+                "connection_models": {},
+                "devices": {
+                    "gen": {
+                        "delay": dt,
+                        "device": "external",
+                        "nest_model": "spike_generator",
+                        "constants": {"spike_times": spike_times},
+                        "targetting": {
+                            "cell_models": ["cell_A"],
+                            "strategy": "cell_model",
+                        },
+                        "weight": 1,
+                    },
+                    "rec": {
+                        "delay": dt,
+                        "device": "spike_recorder",
+                        "targetting": {
+                            "cell_models": ["cell_A"],
+                            "strategy": "cell_model",
+                        },
+                    },
+                },
+            }
+
+        cfg = Configuration.default(
+            **{
+                "network": {"chunk_size": 200},
+                "storage": {"engine": "hdf5"},
+                "partitions": {"my_layer": {"thickness": 40.0}},
+                "cell_types": {"cell_A": {"spatial": {"count": 1, "radius": 1.0}}},
+                "placement": {
+                    "cell_A_placement": {
+                        "cell_types": ["cell_A"],
+                        "partitions": ["my_layer"],
+                        "strategy": "bsb.placement.RandomPlacement",
+                    }
+                },
+                "simulations": {"sim_a": _sim(300), "sim_b": _sim(500)},
+            }
+        )
+        scaffold = Scaffold(cfg, storage=self.storage)
+        scaffold.compile(clear=True)
+
+        tmpdir = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, tmpdir, ignore_errors=True)
+        nio_file = os.path.join(tmpdir, "composed.nio")
+
+        NestAdapter().simulate(
+            scaffold.simulations["sim_a"],
+            scaffold.simulations["sim_b"],
+            filename=nio_file,
+        )
+
+        blocks = {b.name: b for b in io.NixIO(nio_file, "ro").read_all_blocks()}
+        self.assertEqual(
+            set(blocks), {"sim_a", "sim_b"}, "Expected one block per composed simulation"
+        )
+        self.assertEqual(
+            len({b.annotations["nix_name"] for b in blocks.values()}),
+            2,
+            "Composed simulations must get distinct storage keys",
+        )
+
+    @unittest.skipIf(MPI.get_size() > 1, "Skipped during parallel testing.")
+    def test_composition_differing_resolution_raises(self):
+        """NEST has a single kernel resolution, so composing simulations that ask for
+        different resolutions is rejected up front rather than failing in the kernel."""
+
+        def _sim(resolution):
+            return {
+                "duration": 100,
+                "resolution": resolution,
+                "simulator": "nest",
+                "cell_models": {"cell_A": {"model": "parrot_neuron"}},
+                "connection_models": {},
+                "devices": {},
+            }
+
+        cfg = Configuration.default(
+            **{
+                "network": {"chunk_size": 200},
+                "storage": {"engine": "hdf5"},
+                "partitions": {"my_layer": {"thickness": 40.0}},
+                "cell_types": {"cell_A": {"spatial": {"count": 1, "radius": 1.0}}},
+                "placement": {
+                    "cell_A_placement": {
+                        "cell_types": ["cell_A"],
+                        "partitions": ["my_layer"],
+                        "strategy": "bsb.placement.RandomPlacement",
+                    }
+                },
+                "simulations": {"sim_a": _sim(0.1), "sim_b": _sim(0.5)},
+            }
+        )
+        scaffold = Scaffold(cfg, storage=self.storage)
+        scaffold.compile(clear=True)
+
+        with self.assertRaises(NestKernelError):
+            NestAdapter().simulate(
+                scaffold.simulations["sim_a"], scaffold.simulations["sim_b"]
+            )

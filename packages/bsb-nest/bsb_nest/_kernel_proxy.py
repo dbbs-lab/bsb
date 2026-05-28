@@ -14,6 +14,7 @@ context exits.
 
 from multiprocessing.managers import BaseManager
 
+from bsb import ConfigurationError
 from bsb.config import get_config_build_context
 
 
@@ -29,6 +30,7 @@ class _NestKernel:
         import nest  # imported in the child process only
 
         self._nest = nest
+        self._loaded = set()
 
     def install(self, module):
         try:
@@ -40,6 +42,31 @@ class _NestKernel:
             ):
                 return
             raise
+
+    def load_modules(self, modules):
+        """Install NEST *modules*, skipping any already loaded for this build.
+
+        Returns the names of any *modules* that could not be found, so the
+        caller can turn them into a configuration error. One proxy is reused for
+        the whole build, so several validators may ask for the same simulation's
+        modules; tracking what is loaded keeps each module's ``Install`` to a
+        single call.
+        """
+        missing = []
+        for module in modules:
+            if module in self._loaded:
+                continue
+            try:
+                self.install(module)
+            except Exception as e:
+                if getattr(e, "errorname", "") == "DynamicModuleManagementError" and (
+                    "file not found" in getattr(e, "message", "")
+                ):
+                    missing.append(module)
+                    continue
+                raise
+            self._loaded.add(module)
+        return missing
 
     def has_delay(self, model):
         return bool(self._nest.GetDefaults(model)["has_delay"])
@@ -58,7 +85,7 @@ class NestKernelManager(BaseManager):
 NestKernelManager.register(
     "kernel",
     _NestKernel,
-    exposed=("install", "has_delay", "models"),
+    exposed=("install", "load_modules", "has_delay", "models"),
 )
 
 
@@ -91,3 +118,25 @@ def get_nest_kernel_proxy():
     ns.kernel_manager = manager
     ctx.add_cleanup(manager.shutdown)
     return proxy
+
+
+def load_simulation_modules(node, proxy):
+    """Install a config *node*'s enclosing simulation modules into the *proxy*.
+
+    Walks up from *node* to the owning ``NestSimulation`` and hands its
+    ``modules`` to :meth:`_NestKernel.load_modules`, which installs each module
+    only once per build. Raises :class:`~bsb.exceptions.ConfigurationError` if a
+    module can't be found. No-op when *node* has no enclosing simulation, e.g. a
+    model built in isolation.
+    """
+    parent = getattr(node, "_config_parent", None)
+    while parent is not None:
+        modules = getattr(parent, "modules", None)
+        if isinstance(modules, (list, tuple)):
+            missing = proxy.load_modules(list(modules))
+            if missing:
+                raise ConfigurationError(
+                    f"NEST module(s) not found: {', '.join(missing)}."
+                )
+            return
+        parent = getattr(parent, "_config_parent", None)

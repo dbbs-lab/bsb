@@ -14,7 +14,7 @@ from bsb import (
 )
 from tqdm import tqdm
 
-from ._kernel_proxy import get_nest_kernel_proxy
+from ._kernel_proxy import get_nest_kernel_proxy, load_simulation_modules
 from .distributions import nest_parameter
 from .exceptions import KernelWarning
 
@@ -41,7 +41,7 @@ def _is_delay_required(kwargs):
                 KernelWarning,
             )
             return False
-        _install_simulation_modules(kwargs, proxy)
+        load_simulation_modules(getattr(kwargs, "partial_node", None), proxy)
         synapse_models = proxy.models(mtype="synapses")
     except ConfigurationError:
         raise
@@ -65,19 +65,6 @@ def _is_delay_required(kwargs):
             KernelWarning,
         )
         return False
-
-
-def _install_simulation_modules(kwargs, proxy):
-    """Walk up to the enclosing :class:`NestSimulation` and install its modules."""
-    node = getattr(kwargs, "partial_node", None)
-    parent = getattr(node, "_config_parent", None)
-    while parent is not None:
-        modules = getattr(parent, "modules", None)
-        if isinstance(modules, (list, tuple)):
-            for module in modules:
-                proxy.install(module)
-            return
-        parent = getattr(parent, "_config_parent", None)
 
 
 @config.node

@@ -303,6 +303,8 @@ class SpikeController(
     def implement(self, adapter, simulation, simdata):
         super().implement(adapter, simulation, simdata)
         self._simdata = simdata
+        # Reset the checkpoint counter per run so a reused simulation re-checkpoints.
+        self._status = 0
 
     def get_next_checkpoint(self):
         return self._status + self.step
@@ -668,17 +670,15 @@ class TestAdapterControllers(
             2,
             "Each run must get a unique storage key",
         )
-        by_run = {b.annotations["run_index"]: b for b in blocks}
         self.assertEqual(
-            set(by_run), {0, 1}, "run_index must increment per same-named run"
+            sorted(b.annotations["run_index"] for b in blocks),
+            [0, 1],
+            "run_index must increment per same-named run",
         )
-        # The first run's block must survive the second run intact (no overwrite): its
-        # checkpoint controller flushed 10 times + 1 final = 11 segments.
+        # Each run resets its checkpoint controller, so both blocks keep the full 10
+        # checkpoint flushes + 1 final = 11 segments; neither run overwrote the other.
         self.assertEqual(
-            len(by_run[0].segments),
-            11,
-            "First run's 11 segments must be preserved after the rerun",
-        )
-        self.assertGreaterEqual(
-            len(by_run[1].segments), 1, "Second run must write its own block"
+            [len(b.segments) for b in blocks],
+            [11, 11],
+            "Both runs must keep their own 11 segments",
         )

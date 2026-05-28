@@ -1,11 +1,10 @@
 """
 Out-of-process NEST kernel proxy.
 
-NEST mutates global state on import; doing it in the user's main process at
-configuration-build time is the surprise documented in dbbs-lab/bsb#227. This
-module runs NEST in a child process behind a
+Runs NEST in a child process behind a
 :class:`multiprocessing.managers.BaseManager` so the main process can query
-``GetDefaults`` / ``Install`` / ``Models`` without ever importing ``nest``.
+``GetDefaults`` / ``Install`` / ``Models`` during configuration building
+without mutating an in-process NEST kernel.
 
 The proxy is created lazily on first call to :func:`get_nest_kernel_proxy`,
 stored on the active :class:`~bsb.config.BuildContext` at
@@ -22,8 +21,8 @@ class _NestKernel:
     """In-subprocess wrapper around ``nest`` so its global state stays there.
 
     Methods return only basic Python types so multiprocessing can pickle them
-    back to the parent — NEST's SLI objects (``SLIDict``, ``SLIDatum``) are
-    not picklable.
+    back to the parent. NEST's SLI objects (``SLIDict``, ``SLIDatum``) are not
+    picklable.
     """
 
     def __init__(self):

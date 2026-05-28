@@ -51,6 +51,10 @@ Conventions
 * Values are marked as ``5`` or ``"hello"`` using double backticks (\`\` \`\`).
 * Configuration attributes are marked as :guilabel:`attribute` using the guilabel
   directive (``:guilabel:`attribute```)
+* Use short-circuited cross-references: prefix the target with ``~`` so only the
+  final component is shown, e.g. ``:class:`~bsb.config.BuildContext``` renders as
+  :class:`~bsb.config.BuildContext` instead of the full dotted path. Omit the
+  ``~`` only when the surrounding sentence genuinely needs the full path.
 * No em dashes, and no en dashes outside numeric ranges. Use a colon, period,
   comma, or parentheses, or rewrite the sentence. This includes ``---`` typed in
   flowing prose, which Sphinx auto-converts to an em dash.

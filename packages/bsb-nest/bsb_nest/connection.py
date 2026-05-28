@@ -69,8 +69,8 @@ def _is_delay_required(kwargs):
 
 def _install_simulation_modules(kwargs, proxy):
     """Walk up to the enclosing :class:`NestSimulation` and install its modules."""
-    instance = getattr(kwargs, "instance", None)
-    parent = getattr(instance, "_config_parent", None)
+    node = getattr(kwargs, "partial_node", None)
+    parent = getattr(node, "_config_parent", None)
     while parent is not None:
         modules = getattr(parent, "modules", None)
         if isinstance(modules, (list, tuple)):

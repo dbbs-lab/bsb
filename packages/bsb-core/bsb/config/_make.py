@@ -116,10 +116,23 @@ def make_metaclass(cls):
 
 
 class NodeKwargs(dict):
-    def __init__(self, instance, *args, **kwargs):
+    """
+    The raw input kwargs of a node, plus a handle to the node being built.
+
+    Passed to ``required=`` callables. ``partial_node`` is the node instance
+    under construction: its identity, ``_config_parent`` and ``_config_key`` are
+    set, but its own configuration attributes are not assigned yet, because the
+    requirement check runs before attribute casting. Construction is depth-first
+    and parent-first, so ancestors reached via ``_config_parent`` exist as
+    objects but are themselves only built up to the attribute whose subtree is
+    currently under construction. Rely on identity and parent/key, not on the
+    completeness of any node's attributes.
+    """
+
+    def __init__(self, partial_node, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.is_shortform = getattr(instance, "_config_pos_init", False)
-        self.instance = instance
+        self.is_shortform = getattr(partial_node, "_config_pos_init", False)
+        self.partial_node = partial_node
 
 
 def compose_nodes(*node_classes):

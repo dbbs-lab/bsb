@@ -40,7 +40,7 @@ class SimulationResult:
             self._block = block
 
     @property
-    def block(self) -> "neo.Block":
+    def block(self):
         if self._block is None:
             raise RuntimeError(
                 f"Results were streamed to '{self.filename}'; read them back from "

@@ -304,7 +304,7 @@ class DistributionPlacement(PlacementStrategy):
     interval_probability: float = config.attr(
         type=types.float(min=1e-9, max=1e-3), required=False, default=1e-9
     )
-    """Probability used to limit the interval of the distribution sampled values. This 
+    """Tail probability used to clip the distribution to a finite interval. This 
     value corresponds to probability for a sampled value to be out of the interval."""
 
     def draw_interval(self, n, lower, upper):

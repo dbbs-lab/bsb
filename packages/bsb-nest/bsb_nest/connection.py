@@ -14,9 +14,20 @@ from bsb import (
 )
 from tqdm import tqdm
 
-from ._kernel_proxy import get_nest_kernel_proxy, load_simulation_modules
+from ._kernel_proxy import (
+    NestModelTypeHandler,
+    get_nest_kernel_proxy,
+    load_simulation_modules,
+)
 from .distributions import nest_parameter
 from .exceptions import KernelWarning
+
+
+class nest_synapse_model(NestModelTypeHandler):
+    """Validate a NEST synapse model name against the build's kernel."""
+
+    mtype = "synapses"
+    kind = "synapse"
 
 
 def _is_delay_required(kwargs):
@@ -24,12 +35,12 @@ def _is_delay_required(kwargs):
     ``required=`` checker for :attr:`NestSynapseSettings.delay`.
 
     Asks the out-of-process NEST kernel whether the configured synapse model
-    needs a delay. When the proxy is reachable, an unknown model name is a
-    hard :class:`ConfigurationError` (matches the pre-#228 boot-time check).
-    When the proxy can't be reached at all (no active build context, kernel
-    spawn failed, IPC error), the checker downgrades to a warning + returns
-    ``False`` so config loading stays robust; the real error surfaces later
-    at adapter prepare/connect time.
+    needs a delay. The model name itself is validated by
+    :class:`~bsb_nest._kernel_proxy.NestModelTypeHandler` on the ``model``
+    attribute. When the kernel can't be reached (no active build context,
+    kernel spawn failed, IPC error), the checker downgrades to a warning and
+    returns ``False`` so config loading stays robust; the real error surfaces
+    later at adapter prepare/connect time.
     """
     model_name = kwargs.get("model", NestSynapseSettings.model.default)
     try:
@@ -42,22 +53,9 @@ def _is_delay_required(kwargs):
             )
             return False
         load_simulation_modules(getattr(kwargs, "partial_node", None), proxy)
-        synapse_models = proxy.models(mtype="synapses")
+        return proxy.has_delay(model_name)
     except ConfigurationError:
         raise
-    except Exception as e:
-        warn(
-            f"Could not determine if delay is required for synapse"
-            f" '{model_name}': {e}",
-            KernelWarning,
-        )
-        return False
-    # Model-name validation is independent of the soft delay-required check:
-    # if we *can* reach the kernel, an unknown model is a real config error.
-    if model_name not in synapse_models:
-        raise ConfigurationError(f"Unknown synapse model '{model_name}'.")
-    try:
-        return proxy.has_delay(model_name)
     except Exception as e:
         warn(
             f"Could not determine if delay is required for synapse"
@@ -73,7 +71,7 @@ class NestSynapseSettings:
     Class interfacing a NEST synapse model.
     """
 
-    model = config.attr(type=str, default="static_synapse")
+    model = config.attr(type=nest_synapse_model(), default="static_synapse")
     """Importable reference to the NEST model describing the synapse type."""
     weight = config.attr(type=float, required=True)
     """Weight of the connection between the presynaptic and the postsynaptic cells."""

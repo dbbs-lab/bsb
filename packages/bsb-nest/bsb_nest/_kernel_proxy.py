@@ -14,8 +14,10 @@ context exits.
 
 from multiprocessing.managers import BaseManager
 
-from bsb import ConfigurationError
+from bsb import ConfigurationError, TypeHandler, warn
 from bsb.config import get_config_build_context
+
+from .exceptions import KernelWarning
 
 
 class _NestKernel:
@@ -140,3 +142,41 @@ def load_simulation_modules(node, proxy):
                 )
             return
         parent = getattr(parent, "_config_parent", None)
+
+
+class NestModelTypeHandler(TypeHandler):
+    """Validate a NEST model name against the build's out-of-process kernel.
+
+    Subclasses set :attr:`mtype` (the NEST model class, ``"nodes"`` or
+    ``"synapses"``) and :attr:`kind` (used in messages). An unknown model is a
+    hard :class:`~bsb.exceptions.ConfigurationError` when the kernel is
+    reachable; when it can't be reached the name passes through and the real
+    error surfaces later at ``nest.Create`` time.
+    """
+
+    mtype = None
+    kind = "model"
+
+    def __call__(self, value, _key=None, _parent=None):
+        value = str(value)
+        try:
+            proxy = get_nest_kernel_proxy()
+            if proxy is None:
+                return value
+            load_simulation_modules(_parent, proxy)
+            models = proxy.models(mtype=self.mtype)
+        except ConfigurationError:
+            raise
+        except Exception as e:
+            warn(f"Could not validate {self.kind} model '{value}': {e}", KernelWarning)
+            return value
+        if value not in models:
+            raise ConfigurationError(f"Unknown {self.kind} model '{value}'.")
+        return value
+
+    @property
+    def __name__(self):  # pragma: nocover
+        return f"nest {self.kind} model"
+
+    def __inv__(self, value):
+        return value

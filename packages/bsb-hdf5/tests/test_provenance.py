@@ -4,6 +4,7 @@ import unittest
 import warnings
 
 import h5py
+from bsb_test import skip_parallel
 
 
 class TestHDF5Provenance(unittest.TestCase):
@@ -66,6 +67,7 @@ class TestHDF5Provenance(unittest.TestCase):
             Scaffold(Configuration.default(), storage=s)
             self.assertGreater(s._engine.state_id, before)
 
+    @skip_parallel  # warning is emitted on the main rank only; asserts single-rank
     def test_auto_upgrade_of_legacy_file(self):
         from bsb import BsbProvenanceUpgradeWarning
         from bsb.services import MPI
@@ -111,6 +113,7 @@ class TestFSProvenance(unittest.TestCase):
             self.assertIn("storage_id", md)
             self.assertEqual(md["state_id"], 0)
 
+    @skip_parallel  # asserts an exact per-rank bump count from direct calls
     def test_state_bumps(self):
         with tempfile.TemporaryDirectory() as tmp:
             path = os.path.join(tmp, "fsroot")
@@ -119,6 +122,7 @@ class TestFSProvenance(unittest.TestCase):
             s._engine._bump_state()
             self.assertEqual(s._engine.state_id, 2)
 
+    @skip_parallel  # warning + rank-local temp path; asserts single-rank
     def test_auto_upgrades_versions_txt(self):
         """Legacy roots that only have versions.txt are upgraded on open."""
         from bsb import BsbProvenanceUpgradeWarning

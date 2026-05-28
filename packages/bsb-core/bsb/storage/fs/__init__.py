@@ -88,37 +88,45 @@ class FileSystemEngine(Engine):
     def _bump_state(self) -> None:
         if self._readonly:
             return
-        md = self.metadata
-        if not md:
-            return
-        md["state_id"] = int(md.get("state_id", 0)) + 1
-        md["modified_at"] = iso_now()
-        _atomic_write_json(_metadata_path(self._root), md)
+        # Serialise the read-modify-write through the engine lock so concurrent
+        # ranks can't clobber each other's metadata.json.
+        with self._write():
+            md = self.metadata
+            if not md:
+                return
+            md["state_id"] = int(md.get("state_id", 0)) + 1
+            md["modified_at"] = iso_now()
+            _atomic_write_json(_metadata_path(self._root), md)
 
     def _upgrade_if_needed(self):
         if self._readonly or not self.exists():
             return
         if _metadata_path(self._root).exists():
             return
-        bundle = build_root_metadata(
-            engine_name="fs",
-            engine_version=importlib.metadata.version("bsb-core"),
-            mpi_size=self.comm.get_size(),
-        )
-        bundle["state_id"] = 1
-        _atomic_write_json(_metadata_path(self._root), bundle)
-        legacy = _legacy_versions_path(self._root)
-        if legacy.exists():
-            try:
-                legacy.unlink()
-            except OSError:
-                pass
-        warnings.warn(
-            "Auto-upgraded legacy FS storage with a fresh storage_id and "
-            "provenance bundle.",
-            category=BsbProvenanceUpgradeWarning,
-            stacklevel=3,
-        )
+        with self._write():
+            # Re-check under the lock: another rank may have upgraded already,
+            # so only the first rank in writes the bundle and warns.
+            if _metadata_path(self._root).exists():
+                return
+            bundle = build_root_metadata(
+                engine_name="fs",
+                engine_version=importlib.metadata.version("bsb-core"),
+                mpi_size=self.comm.get_size(),
+            )
+            bundle["state_id"] = 1
+            _atomic_write_json(_metadata_path(self._root), bundle)
+            legacy = _legacy_versions_path(self._root)
+            if legacy.exists():
+                try:
+                    legacy.unlink()
+                except OSError:
+                    pass
+            warnings.warn(
+                "Auto-upgraded legacy FS storage with a fresh storage_id and "
+                "provenance bundle.",
+                category=BsbProvenanceUpgradeWarning,
+                stacklevel=3,
+            )
 
     @staticmethod
     def recognizes(root, comm):

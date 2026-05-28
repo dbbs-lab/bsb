@@ -120,13 +120,20 @@ class NodeKwargs(dict):
     The raw input kwargs of a node, plus a handle to the node being built.
 
     Passed to ``required=`` callables. ``partial_node`` is the node instance
-    under construction: its identity, ``_config_parent`` and ``_config_key`` are
-    set, but its own configuration attributes are not assigned yet, because the
-    requirement check runs before attribute casting. Construction is depth-first
-    and parent-first, so ancestors reached via ``_config_parent`` exist as
-    objects but are themselves only built up to the attribute whose subtree is
-    currently under construction. Rely on identity and parent/key, not on the
-    completeness of any node's attributes.
+    under construction; use it to inspect identity, ``_config_parent`` and
+    ``_config_key``.
+
+    .. warning::
+
+        The node is only partially built when a ``required=`` checker runs. The
+        requirement check happens before attribute casting, so the node's own
+        configuration attributes are not assigned yet. Construction is
+        depth-first and parent-first: ancestors reached via ``_config_parent``
+        exist as objects, but each is only built up to the attribute whose
+        subtree is currently under construction. A sibling attribute is
+        therefore visible on an ancestor only if it is declared before the
+        branch you are in. Rely on identity and parent/key, never on the
+        completeness of any node's attributes.
     """
 
     def __init__(self, partial_node, *args, **kwargs):

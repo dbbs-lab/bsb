@@ -48,7 +48,6 @@ class TestNeuronMinimal(
 
         self.assertAlmostEqual(h.t, sim2.duration, msg="sim duration incorrect")
 
-    @unittest.skipIf(MPI.get_size() > 1, "Skipped during parallel testing.")
     def test_composition_writes_separate_blocks(self):
         """Two simulations composed in one adapter and streamed to one file are written
         as separate blocks with distinct storage keys."""

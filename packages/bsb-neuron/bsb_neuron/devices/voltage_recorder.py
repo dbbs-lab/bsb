@@ -12,21 +12,52 @@ class VoltageRecorder(NeuronDevice, classmap_entry="voltage_recorder"):
     """Device to record membrane voltage from specified neuron locations."""
 
     def implement(self, adapter, simulation, simdata):
-        for _model, pop in self.targetting.get_targets(
+        for cell_model, pop in self.targetting.get_targets(
             adapter, simulation, simdata
         ).items():
+            ps_name = simdata.placement[cell_model].cell_type.name
             for target in pop:
                 for location in self.locations.get_locations(target):
                     self._add_voltage_recorder(
-                        simdata.result,
+                        simulation,
+                        simdata,
                         location,
-                        name=self.name,
-                        cell_type=target.cell_model.name,
+                        cell_model=cell_model,
+                        ps_name=ps_name,
                         cell_id=target.id,
                     )
 
     @ignore_arborize_proxy_warnings()
-    def _add_voltage_recorder(self, results, location, **annotations):
+    def _add_voltage_recorder(
+        self, simulation, simdata, location, *, cell_model, ps_name, cell_id
+    ):
+        from patch import p
+        from quantities import ms, mV
+
         section = location.section
         x = location.arc(0)
-        results.record(section(x)._ref_v, **annotations)
+        vec = p.record(section(x)._ref_v)
+        loc = {
+            "section": getattr(section, "name", str(section)),
+            "x": float(x),
+            "compartment_index": getattr(location, "compartment_index", None),
+        }
+
+        def flush(segment):
+            segment.analogsignals.append(
+                simdata.result.analog_signal(
+                    data=list(vec),
+                    units=mV,
+                    sampling_period=p.dt * ms,
+                    name="V_m",
+                    ps_name=ps_name,
+                    cell_id=cell_id,
+                    cell_model=cell_model,
+                    device=self,
+                    location=loc,
+                )
+            )
+            if vec.size():
+                vec.remove(0, vec.size() - 1)
+
+        simdata.result.create_recorder(flush)

@@ -1,4 +1,6 @@
 import base64
+import hashlib
+import importlib.metadata
 import json
 import os
 import time
@@ -46,12 +48,17 @@ class FileStore(IFileStore):
             id = str(uuid4())
         if meta is None:
             meta = {}
+        meta.setdefault("content_sha256", hashlib.sha256(content).hexdigest())
         if not overwrite and self.has(id):
             raise FileExistsError(f"Store already contains a file with id {id}")
         with open(self.id_to_file_path(id), "wb") as f:
             f.write(content)
         with open(self.id_to_meta_path(id), "w") as f:
             json.dump({"meta": meta, "mtime": time.time(), "encoding": encoding}, f)
+        try:
+            self._engine._bump_state()
+        except Exception:
+            pass
         return id
 
     def load(self, id):
@@ -81,6 +88,10 @@ class FileStore(IFileStore):
         """
         os.unlink(self.id_to_file_path(id))
         os.unlink(self.id_to_meta_path(id))
+        try:
+            self._engine._bump_state()
+        except Exception:
+            pass
 
     def store_active_config(self, config):
         """
@@ -92,7 +103,14 @@ class FileStore(IFileStore):
         :returns: The id the config was stored under
         :rtype: str
         """
-        return self.store(json.dumps(config.__tree__()), meta={"active_config": True})
+        meta = {
+            "active_config": True,
+            "producer": {
+                "package": "bsb-core",
+                "version": importlib.metadata.version("bsb-core"),
+            },
+        }
+        return self.store(json.dumps(config.__tree__()), meta=meta)
 
     def load_active_config(self):
         """

@@ -192,73 +192,157 @@ The following attributes can be added to the configuration to define the filteri
 Simulation results
 ==================
 
-The results of a simulation are stored in ``.nio`` files.
-These files are read and written using the :doc:`Neo Python package <neo:index>`, which is specifically
-designed for managing electrophysiology data. The files utilize the HDF5 (Hierarchical Data Format version 5)
-structure, which organizes data in a hierarchical manner, similar to a dictionary.
-The data is organized into blocks, where each block represents a recording session (i.e., a simulation block).
-Each block is further subdivided into segments, with each segment representing a specific timeframe within the session.
-To retrieve the blocks from a ``.nio`` file:
+The results of a simulation are stored in ``.nio`` files, read and written via the
+:doc:`Neo Python package <neo:index>` on top of an HDF5 container. Each file holds
+one :class:`neo:neo.core.Block` containing one or more :class:`neo:neo.core.Segment`
+objects (one per
+:meth:`flush <bsb:bsb.simulation.results.SimulationResult.flush>`, typically one per
+simulation run, more if checkpoints are emitted). Each segment carries the
+:class:`neo:neo.core.SpikeTrain` and :class:`neo:neo.core.AnalogSignal` objects
+produced by every recorder that ran during that flush.
+
+The easiest entry point is the reader helper:
 
 .. code-block:: python
 
-  from neo import io
+   from bsb import read_nio, iter_recordings
 
-  neo_obj = io.NixIO("NAME_OF_YOUR_NEO_FILE.nio", mode="ro")
-  blocks = neo_obj.read_all_blocks()
+   block = read_nio("output.nio")
+   for rec in iter_recordings(block):
+       # rec.kind is neo.SpikeTrain or neo.AnalogSignal
+       # rec.ps_name, rec.cell_id, rec.device, rec.name, rec.units, rec.data, rec.annotations
+       ...
 
-  for block in blocks:
-    list_of_segments = blocks.segments
+:func:`iter_recordings <bsb:bsb.simulation.results.iter_recordings>` skips any Neo
+object that does not carry a ``bsb_ps_name`` annotation (e.g. output from
+third-party plugin devices that opted out of the convention). See the
+:ref:`recorder convention <recorder-convention>` below. The yielded record is a
+:class:`Recording <bsb:bsb.simulation.results.Recording>`;
+:func:`read_nio <bsb:bsb.simulation.results.read_nio>` opens and returns the
+underlying :class:`neo:neo.core.Block`.
 
+Block-level provenance
+----------------------
 
-For more information, please refer to the :doc:`Neo documentation <neo:read_and_analyze>`.
-
-Spike Trains
-------------
-
-Within a segment, you can access all the :class:`SpikeTrain <neo.core.SpikeTrain>` objects recorded during
-that particular timeframe. A ``SpikeTrain`` represents the collection of spikes emitted by the target population,
-and it includes metadata about the device name, the size of the cell population, and the IDs of the spiking cells.
-This information is stored in the :guilabel:`annotations` attribute:
-
-.. code-block:: python
-
-  for spiketrain in segment.spiketrains:
-      spiketrain_array = spiketrain.magnitude
-      unit_of_measure = spiketrain.units
-      device_name = spiketrain.annotations["device"]
-      list_of_spiking_cell_ids = spiketrain.annotations["senders"]
-      end_time_of_the_simulation = spiketrain.annotations["t_stop"]
-      population_size = spiketrain.annotations["pop_size"]
-
-.. note::
-
-  To retrieve the spike train for a specific cell, the spike time at index i in the ``spiketrain_array[i]``
-  corresponds to the cell with ID ``list_of_spiking_cell_ids[i]``.
-
-Analog Signals
---------------
-
-Each segment also contains an :guilabel:`analogsignals` attribute, which holds a list of Neo :class:`AnalogSignal <neo.core.AnalogSignal>` objects.
-These objects contain the trace of the recorded property, along with the associated time points.
-They are also annotated with information such as the device name, the type of cell recorded, and the cell ID,
-which can be accessed through the :guilabel:`annotations` attribute:
+Every simulation result :class:`neo:neo.core.Block` carries a ``bsb_provenance``
+annotation: a single dict recording who, where and when produced the file, and
+which reconstruction it was run against.
 
 .. code-block:: python
 
-  for signal in segment.analogsignals:
-    trace_of_the_signal = signal.magnitude
-    unit_of_measure = signal.units
-    time_signature = signal.times
-    time_unit = signal.times.units
-    device_name = signal.annotations['name']
-    cell_type = signal.annotations['cell_type']
-    cell_id = signal.annotations['cell_id']
+   prov = block.annotations["bsb_provenance"]
+   prov["simulation_id"]                  # UUID4 for this run
+   prov["scaffold"]["storage_id"]         # back-pointer to the reconstruction file
+   prov["scaffold"]["state_id"]           # revision of that reconstruction at run time
+   prov["simulator"]                      # {"name": "nest"|"neuron"|"arbor", "version": ..., "extra": {...}}
+   prov["plugins"]                        # {category: {entry_name: {package, version}}}
+   prov["seed"], prov["duration_ms"], prov["resolution_ms"]
+   prov["started_at"], prov["finished_at"], prov["wall_seconds"]
+   prov["host"]                           # platform, hostname, user, python_version, cwd
+   prov["mpi_size"]
 
-.. note::
+Each :class:`neo:neo.core.Segment` additionally carries ``segment_id`` (UUID4),
+``checkpoint_index``, ``t_start_ms`` and ``t_stop_ms`` in its own annotations.
 
-  Unlike the spike train case, the :guilabel:`analogsignals` attribute contains a separate ``AnalogSignal``
-  object for each target of the device.
+.. _recorder-convention:
+
+The recorder annotation convention
+----------------------------------
+
+The BSB does **not** validate or constrain what recorders emit. A recorder is free
+to add as many (or as few) Neo objects to a segment as it wants, of either kind, in
+any shape it likes. The convention only describes what each emitted object's
+``bsb_*`` annotations *assert*:
+
+``bsb_ps_name`` (str), ``bsb_cell_id`` (int), ``bsb_cell_model`` (str)
+    Identify the source **cell**: which placement set it belongs to, its index within
+    that placement set, and the cell model it was wired up as. The placement-set name
+    is the BSB identity; the BSB does not use simulator-internal GIDs in its data
+    model.
+
+``bsb_device_name`` (str), ``bsb_device_kind`` (str)
+    Identify the **device** that emitted the object: its configured name and its
+    ``classmap_entry`` (``"spike_recorder"``, ``"multimeter"``, ``"voltage_recorder"``,
+    ``"synapse_recorder"``, …). Two devices targetting the same cell produce objects
+    distinguishable by these keys.
+
+``bsb_simulation_id`` (str), ``bsb_segment_id`` (str)
+    Mirrors of the :class:`neo:neo.core.Block`- and :class:`neo:neo.core.Segment`-
+    level UUIDs, denormalised onto each object so individual Neo objects stay
+    self-identifying when extracted from the Block.
+
+``bsb_location`` (dict | None)
+    Free-form: **the recorder author chooses the keys**. For a ``voltage_recorder``
+    this is typically ``{"section": ..., "x": ...}``; a ``synapse_recorder`` may add
+    ``{"synapse_type": ..., "compartment_index": ...}``; a probe-style recorder may
+    use a different vocabulary entirely. There is no fixed schema, so downstream code
+    that needs site-level filtering must agree with the recorder author on what keys
+    to look for.
+
+Neo's native fields keep their normal meaning:
+
+``obj.name``
+    Label for *what* is recorded (e.g. ``"V_m"``, ``"I_syn"``, ``"AMPA.g"``,
+    ``"NaV.m"``). For :class:`neo:neo.core.SpikeTrain` it is conventionally left
+    blank.
+
+``obj.units``
+    The recorded dimension (a ``quantities`` unit, e.g. ``mV``, ``nA``).
+
+Examples
+^^^^^^^^
+
+All spikes from cell 17 of placement set ``pc``:
+
+.. code-block:: python
+
+   import neo
+   from bsb import iter_recordings, read_nio
+
+   block = read_nio("output.nio")
+   for rec in iter_recordings(block):
+       if rec.kind is neo.SpikeTrain and rec.ps_name == "pc" and rec.cell_id == 17:
+           print(rec.data)
+
+All membrane voltage traces from a specific device, grouped by cell:
+
+.. code-block:: python
+
+   from collections import defaultdict
+
+   per_cell = defaultdict(list)
+   for rec in iter_recordings(block):
+       if rec.kind is neo.AnalogSignal and rec.device == "v_recorder_pc" and rec.name == "V_m":
+           per_cell[rec.cell_id].append(rec)
+
+All synaptic currents on the soma of any cell, when the responsible
+``synapse_recorder`` filled ``bsb_location`` with a ``"section"`` key:
+
+.. code-block:: python
+
+   for rec in iter_recordings(block):
+       if (
+           rec.kind is neo.AnalogSignal
+           and rec.annotations.get("bsb_device_kind") == "synapse_recorder"
+           and (rec.annotations.get("bsb_location") or {}).get("section") == "soma"
+       ):
+           ...
+
+Writing custom recorders
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+Custom recorder devices may follow the convention by setting the ``bsb_*``
+annotations explicitly (easiest via the
+:meth:`SimulationResult.spike_train
+<bsb:bsb.simulation.results.SimulationResult.spike_train>` and
+:meth:`SimulationResult.analog_signal
+<bsb:bsb.simulation.results.SimulationResult.analog_signal>` convenience
+constructors on
+:attr:`simdata.result <bsb:bsb.simulation.adapter.SimulationData.result>`), or
+ignore the convention entirely. Non-compliant objects still flow through and land
+in the file;
+:func:`iter_recordings <bsb:bsb.simulation.results.iter_recordings>` just skips
+them.
 
 Advanced Features
 =================

@@ -111,6 +111,44 @@ class Engine(Interface):
 
     @property
     @abc.abstractmethod
+    def metadata(self) -> dict:  # pragma: nocover
+        """
+        :guilabel:`readonly` Must return the full provenance bundle stored at the
+        root of the engine, as a plain JSON-serialisable dict. See
+        :mod:`bsb.storage.provenance` for the canonical layout.
+
+        Returns an empty dict if the engine is opened read-only against a legacy
+        file that lacks provenance and could not be upgraded.
+        """
+        pass
+
+    @property
+    def storage_id(self) -> str | None:
+        """
+        Permanent UUID identifying this storage root. ``None`` for read-only legacy
+        files that could not be auto-upgraded.
+        """
+        return self.metadata.get("storage_id")
+
+    @property
+    def state_id(self) -> int | None:
+        """
+        Monotonic revision counter, bumped on every mutating write. ``None`` for
+        read-only legacy files that could not be auto-upgraded.
+        """
+        return self.metadata.get("state_id")
+
+    @abc.abstractmethod
+    def _bump_state(self) -> None:  # pragma: nocover
+        """
+        :guilabel:`collective` Must increment the engine's ``state_id`` and update
+        ``modified_at``. Called by every mutating operation; engines invoke this
+        themselves so it does not need to be called from user code.
+        """
+        pass
+
+    @property
+    @abc.abstractmethod
     def root_slug(self):  # pragma: nocover
         """
         Must return a pathlike unique identifier for the root of the storage object.

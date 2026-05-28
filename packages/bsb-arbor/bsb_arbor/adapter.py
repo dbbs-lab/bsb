@@ -380,6 +380,10 @@ class ArborAdapter(SimulatorAdapter):
         Prepares the arbor simulation engine with the given simulation.
         """
         simdata = self._create_simdata(simulation)
+        simdata.result.set_simulator(
+            "arbor",
+            version=getattr(arbor, "__version__", None),
+        )
         try:
             context = arbor.context(arbor.proc_allocation(threads=simulation.threads))
             if self.comm.get_size() > 1:

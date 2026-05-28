@@ -824,10 +824,14 @@ class TestNest(
         )
 
     def test_unknown_modules(self):
+        # The kernel proxy spawned by `build_context()` installs the simulation's
+        # modules out-of-process; a module that can't be found is a hard config
+        # error. Without an active build context the install is deferred to
+        # adapter prepare time instead.
         duration = 100
         resolution = 0.1
         cfg = _conf_two_cells()
-        with self.assertRaises(BootError):
+        with self.assertRaises(ConfigurationError), build_context():
             cfg.simulations = {
                 "test": {
                     "simulator": "nest",
@@ -849,7 +853,6 @@ class TestNest(
                     "devices": {},
                 }
             }
-            _ = Scaffold(cfg, self.storage)
 
     def test_unknown_synapse(self):
         # The kernel proxy spawned by `build_context()` confirms the model
@@ -882,10 +885,14 @@ class TestNest(
             }
 
     def test_unknown_cell(self):
+        # The kernel proxy spawned by `build_context()` confirms the cell model
+        # doesn't exist, which is a hard config error. Without an active build
+        # context the checker would pass the name through and the error would
+        # surface later at `nest.Create` time.
         duration = 100
         resolution = 0.1
         cfg = _conf_two_cells()
-        with self.assertRaises(BootError):
+        with self.assertRaises(ConfigurationError), build_context():
             cfg.simulations = {
                 "test": {
                     "simulator": "nest",
@@ -906,7 +913,6 @@ class TestNest(
                     "devices": {},
                 }
             }
-            _ = Scaffold(cfg, self.storage)
 
     def test_gap_junctions_syn(self):
         duration = 100

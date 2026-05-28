@@ -36,7 +36,7 @@ Conditionally required attributes
 node's input ``kwargs`` (a dict subclass with an ``instance`` reference to the
 node being built) and returns ``True`` to require the attribute or ``False``
 to make it optional. This is useful when whether the attribute is required
-depends on the value of a sibling — or on external state that you query via
+depends on the value of a sibling, or on external state that you query via
 the :ref:`build context <config_build_lifecycle>`:
 
 .. code-block:: python

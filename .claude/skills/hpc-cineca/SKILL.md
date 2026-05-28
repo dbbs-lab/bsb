@@ -30,8 +30,10 @@ Read `~/.claude/cineca-personal.md`. It holds per-dev, per-machine details that 
 - Full ssh target: <your-cineca-username>@login.g100.cineca.it
 
 ## Step 1 — cert refresh (every ~24h, interactive)
-Run from <your-shell>; opens a browser; agent hands off to you:
-    ssh login '<your-email-for-step-1>' --provisioner cineca-hpc
+Uses the **smallstep** CLI (`step`), not OpenSSH. Run from <your-shell>; opens a browser; agent can launch the command (PowerShell has `step` on PATH) and hand off the browser portion to you:
+    step ssh login '<your-email-for-step-1>' --provisioner cineca-hpc
+
+⚠️ Do not drop the `step` prefix. A bare `ssh login ...` resolves to OpenSSH treating `login` as a hostname, which fails with `Connection refused`.
 
 ## Step 2 — SSH probe
     ssh -o BatchMode=yes -o ConnectTimeout=10 <your-cineca-username>@login.g100.cineca.it "<cmd>"
@@ -61,7 +63,7 @@ Then retry. Allowed without asking.
 
 - **Read-only / exploratory** commands on HPC (`sinfo`, `squeue`, `sacct`, `scontrol show`, `cat`, `ls`, `git status/log/diff`, `pip show`, `module list/avail`): run freely.
 - **Mutations** (writes, `sbatch`, `srun`, `salloc`, `scancel`, `module load`, `pip install`, edits to remote files, etc.): sketch first, wait for user approval. Each new approval is for that specific action; not durable.
-- **Cert refresh (step 1)** requires interactive browser login — hand off to the user, never attempt to automate.
+- **Cert refresh (step 1)**: agent launches `step ssh login ...` (the smallstep CLI, available on PowerShell PATH); only the browser portion is handed to the user. Never use a bare `ssh login ...` — that's OpenSSH and fails.
 - **Known_hosts cineca entries**: safe to remove unilaterally on fingerprint mismatch (cineca rotates host keys periodically).
 - **Smoke signal**: every sync increments `[RSYNC-BUILD] N` in the imported `bsb` module. Every job log MUST print this; if it doesn't, the wrong build is running.
 
@@ -88,8 +90,15 @@ Filled in from the personal file:
 
 Detection: probe with step 2 (`BatchMode=yes`). On auth failure, redo step 1.
 
-Hand-off to user:
-> Cert appears expired — please run `ssh login '<PROVISIONER_EMAIL>' --provisioner cineca-hpc` in your terminal and complete the browser login, then say "ready".
+The agent can launch the `step` command itself; only the browser login needs the user. Run:
+
+```
+step ssh login '<PROVISIONER_EMAIL>' --provisioner cineca-hpc
+```
+
+Then prompt the user to complete the browser login: "Browser window should have opened — complete the login, then say 'ready'."
+
+⚠️ The `step` prefix is mandatory — `step` is the smallstep CLI. Without it, PowerShell's bare `ssh` is OpenSSH and treats `login` as a hostname, failing with `Connection refused`.
 
 ### Step 2 — SSH probe
 
@@ -199,11 +208,13 @@ Should print `[RSYNC-BUILD] <NEXT>`. Skip on routine syncs.
 
 ## Submitting sbatch jobs
 
+**Submit from `$SCRATCH`, never from `$HOME`.** The submission cwd is what SLURM uses to resolve relative paths in the sbatch (`--output=logs/...`) AND what the job's process inherits as cwd (so relative paths inside the workload — config file references, `./morphologies/...` etc. — resolve against it). On g100, the canonical run-dir layout lives under `$SCRATCH` (`/g100_scratch/userexternal/<CINECA_USER>/`): configs, a `logs/` dir, and symlinks for `morphologies/` → the package source, `data/` → home-side data, etc. Running from `~` resolves relative paths against `$HOME`, which usually does NOT have these subdirs — jobs boot and then fail with `Couldn't find file:///g100/home/.../morphologies/...`.
+
 Use a heredoc to avoid leaving script files on the remote:
 
 ```bash
 ssh ... "<CINECA_USER>@login.g100.cineca.it" @'
-cd ~                  # submission cwd — relative `--output` paths land here
+cd $SCRATCH           # ALWAYS — relative paths in sbatch + config resolve here
 sbatch <<EOF
 #!/bin/bash
 #SBATCH --job-name=<name>

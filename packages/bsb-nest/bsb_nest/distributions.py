@@ -2,10 +2,16 @@ import builtins
 import typing
 
 import errr
-import nest.random.hl_api_random as _distributions
 from bsb import DistributionCastError, Scaffold, TypeHandler, config, types
 
-_available_distributions = [d for d in _distributions.__all__]
+
+class _LazyDistributionNames:
+    """Defers ``import nest`` until the validator actually needs to check a name."""
+
+    def __contains__(self, item):
+        import nest.random.hl_api_random as _distributions
+
+        return item in _distributions.__all__
 
 
 @config.node
@@ -16,7 +22,7 @@ class NestRandomDistribution:
 
     scaffold: "Scaffold"
     distribution: str = config.attr(
-        type=types.in_(_available_distributions), required=True
+        type=types.in_(_LazyDistributionNames()), required=True
     )
     """Distribution name. Should correspond to a function of nest.random.hl_api_random"""
     parameters: dict[str, typing.Any] = config.catch_all(type=types.any_())
@@ -24,6 +30,8 @@ class NestRandomDistribution:
     Should correspond to NEST's"""
 
     def __init__(self, **kwargs):
+        import nest.random.hl_api_random as _distributions
+
         try:
             self._distr = getattr(_distributions, self.distribution)(**self.parameters)
         except Exception as e:

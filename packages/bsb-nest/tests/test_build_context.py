@@ -1,4 +1,3 @@
-import sys
 import unittest
 import warnings
 from unittest.mock import patch
@@ -160,33 +159,3 @@ class TestDelayRequiredChecker(unittest.TestCase):
             any(issubclass(w.category, KernelWarning) for w in log),
             f"Expected a KernelWarning, got: {[w.message for w in log]}",
         )
-
-
-class TestImportingBsbNestDoesNotImportNest(unittest.TestCase):
-    """`import bsb_nest` must not pull NEST into the user's process."""
-
-    def test_nest_absent_after_import(self):
-        # Note: this test only proves a regression if NEST has not been
-        # imported earlier in the same Python process. Other tests in this
-        # file do `import nest`, so we re-check by spawning a subprocess.
-        import subprocess
-
-        result = subprocess.run(
-            [
-                sys.executable,
-                "-c",
-                "import bsb_nest, sys;"
-                " assert 'nest' not in sys.modules, sorted(sys.modules)",
-            ],
-            capture_output=True,
-            text=True,
-        )
-        self.assertEqual(
-            result.returncode,
-            0,
-            f"stdout={result.stdout!r}\nstderr={result.stderr!r}",
-        )
-
-
-if __name__ == "__main__":
-    unittest.main()

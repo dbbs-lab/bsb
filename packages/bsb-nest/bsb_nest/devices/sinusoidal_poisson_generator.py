@@ -1,3 +1,4 @@
+import nest
 from bsb import ConfigurationError, config
 from neo import SpikeTrain
 
@@ -30,8 +31,6 @@ class SinusoidalPoissonGenerator(
             )
 
     def implement(self, adapter, simulation, simdata):
-        import nest
-
         nodes = self.get_target_nodes(adapter, simulation, simdata)
         params = {
             "rate": self.rate,

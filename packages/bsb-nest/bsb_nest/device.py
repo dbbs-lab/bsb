@@ -1,6 +1,7 @@
 import abc
 import warnings
 
+import nest
 from bsb import DeviceModel, Targetting, config, refs, types
 
 from .distributions import nest_parameter
@@ -63,8 +64,6 @@ class NestDevice(DeviceModel):
 
     @staticmethod
     def _flatten_nodes_ids(dict_targets):
-        import nest
-
         return sum(dict_targets.values(), start=nest.NodeCollection())
 
     @staticmethod
@@ -89,8 +88,6 @@ class NestDevice(DeviceModel):
         return self._flatten_nodes_ids(targets_dict)
 
     def connect_to_nodes(self, device, nodes):
-        import nest
-
         if len(nodes) == 0:
             warnings.warn(f"{self.name} has no targets", stacklevel=2)
         else:
@@ -147,8 +144,6 @@ class ExtNestDevice(NestDevice, classmap_entry="external"):
     """Dictionary of the constants values to assign to the device model."""
 
     def implement(self, adapter, simulation, simdata):
-        import nest
-
         simdata.devices[self] = device = nest.Create(
             self.nest_model, params=self.constants
         )

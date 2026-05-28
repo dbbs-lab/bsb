@@ -1,3 +1,4 @@
+import nest
 from bsb import config
 
 from ..device import NestDevice
@@ -14,8 +15,6 @@ class DCGenerator(NestDevice, classmap_entry="dc_generator"):
         If not specified, generator will last until the end of the simulation."""
 
     def implement(self, adapter, simulation, simdata):
-        import nest
-
         nodes = self.get_target_nodes(adapter, simulation, simdata)
         params = {"amplitude": self.amplitude, "start": self.start}
         if self.stop is not None and self.stop > self.start:

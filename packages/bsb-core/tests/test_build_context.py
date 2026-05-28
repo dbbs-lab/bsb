@@ -91,7 +91,3 @@ class TestBuildContextDuringConfigBuild(unittest.TestCase):
         self.assertIsInstance(seen[0], BuildContext)
         # After the root build returns, the context has been cleared.
         self.assertIsNone(get_config_build_context())
-
-
-if __name__ == "__main__":
-    unittest.main()

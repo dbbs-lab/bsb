@@ -125,15 +125,12 @@ class NodeKwargs(dict):
 
     .. warning::
 
-        The node is only partially built when a ``required=`` checker runs. The
-        requirement check happens before attribute casting, so the node's own
-        configuration attributes are not assigned yet. Construction is
-        depth-first and parent-first: ancestors reached via ``_config_parent``
-        exist as objects, but each is only built up to the attribute whose
-        subtree is currently under construction. A sibling attribute is
-        therefore visible on an ancestor only if it is declared before the
-        branch you are in. Rely on identity and parent/key, never on the
-        completeness of any node's attributes.
+        A node is only partially built while its ``required=`` checkers run, so
+        a checker cannot rely on attribute values being set. The node's own
+        attributes are not assigned yet, and a parent attribute is available
+        only if it is declared before the attribute currently being built.
+        Build order follows attribute declaration order, not the order the keys
+        appear in the user's configuration, so it is at least deterministic.
     """
 
     def __init__(self, partial_node, *args, **kwargs):

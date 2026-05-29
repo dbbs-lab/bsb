@@ -75,7 +75,17 @@ def _connect_kernel():
     authkey = secrets.token_bytes(16)
     tmpdir = tempfile.mkdtemp(prefix="bsb-nest-kernel-")
     address = os.path.join(tmpdir, "kernel.sock")
-    env = {**os.environ, "_BSB_NEST_KERNEL_AUTHKEY": authkey.hex()}
+    # The kernel is a single, uninstrumented NEST process. Strip the MPI
+    # launcher's environment so the child's `import nest` does not block trying
+    # to enroll in the parent's MPI job, and disable OpenTelemetry so the
+    # auto-instrumentation does not run in the child.
+    env = {
+        k: v
+        for k, v in os.environ.items()
+        if not k.startswith(("OMPI_", "PMI_", "PMIX_", "OTEL_"))
+    }
+    env["_BSB_NEST_KERNEL_AUTHKEY"] = authkey.hex()
+    env["OTEL_SDK_DISABLED"] = "true"
     # Launch by file path so the child neither imports bsb_nest (and thus nest)
     # at the wrong time nor re-imports the parent's __main__.
     proc = subprocess.Popen(

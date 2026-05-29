@@ -4,68 +4,59 @@ import unittest
 import warnings
 
 import h5py
-from bsb_test import skip_parallel
+from bsb_test import RandomStorageFixture, skip_parallel
 
 
-class TestHDF5Provenance(unittest.TestCase):
+class TestHDF5Provenance(
+    RandomStorageFixture, unittest.TestCase, engine_name="hdf5"
+):
     """Verify the HDF5 engine writes & maintains the provenance bundle."""
 
-    def _new_storage(self, path):
-        from bsb.storage import Storage
-
-        return Storage("hdf5", path)
-
     def test_create_writes_full_bundle(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            path = os.path.join(tmp, "net.hdf5")
-            s = self._new_storage(path)
-            md = s._engine.metadata
-            for key in (
-                "storage_id",
-                "state_id",
-                "bsb_schema_version",
-                "created_at",
-                "bsb_core_version",
-                "engine_name",
-                "engine_version",
-                "plugins",
-                "host",
-                "mpi_size",
-            ):
-                self.assertIn(key, md, f"missing root attr: {key}")
-            self.assertNotIn("modified_at", md)
-            self.assertEqual(md["engine_name"], "hdf5")
-            self.assertEqual(md["state_id"], 0)
-            self.assertEqual(md["bsb_schema_version"], 1)
-            # Plugins manifest contains at least the two storage engines.
-            engines = (md.get("plugins") or {}).get("storage.engines", {})
-            self.assertIn("hdf5", engines)
-            self.assertIn("fs", engines)
+        md = self.storage._engine.metadata
+        for key in (
+            "storage_id",
+            "state_id",
+            "bsb_schema_version",
+            "created_at",
+            "bsb_core_version",
+            "engine_name",
+            "engine_version",
+            "plugins",
+            "host",
+            "mpi_size",
+        ):
+            self.assertIn(key, md, f"missing root attr: {key}")
+        self.assertNotIn("modified_at", md)
+        self.assertEqual(md["engine_name"], "hdf5")
+        self.assertEqual(md["state_id"], 0)
+        self.assertEqual(md["bsb_schema_version"], 1)
+        # Plugins manifest contains at least the two storage engines.
+        engines = (md.get("plugins") or {}).get("storage.engines", {})
+        self.assertIn("hdf5", engines)
+        self.assertIn("fs", engines)
 
     def test_storage_id_is_stable_uuid(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            path = os.path.join(tmp, "net.hdf5")
-            s1 = self._new_storage(path)
-            id1 = s1._engine.storage_id
-            # Re-open same file; id must not change.
-            s2 = self._new_storage(path)
-            self.assertEqual(s2._engine.storage_id, id1)
+        from bsb.storage import Storage
+
+        id1 = self.storage._engine.storage_id
+        # Re-open the same root; the id must not change.
+        s2 = Storage("hdf5", self.storage.root)
+        self.assertEqual(s2._engine.storage_id, id1)
 
     def test_state_bumps_on_mutation(self):
         from bsb.config import Configuration
         from bsb.core import Scaffold
 
-        with tempfile.TemporaryDirectory() as tmp:
-            path = os.path.join(tmp, "net.hdf5")
-            s = self._new_storage(path)
-            self.assertEqual(s._engine.state_id, 0)
-            s._engine._bump_state()
-            self.assertEqual(s._engine.state_id, 1)
-            # Going through Scaffold runs store_active_config which writes via
-            # the file store -> exercises the mutation-bump pathway.
-            before = s._engine.state_id
-            Scaffold(Configuration.default(), storage=s)
-            self.assertGreater(s._engine.state_id, before)
+        s = self.storage
+        self.assertEqual(s._engine.state_id, 0)
+        s._engine._bump_state()
+        self.assertEqual(s._engine.state_id, 1)
+        # Going through Scaffold runs store_active_config which writes via
+        # the file store -> exercises the mutation-bump pathway.
+        before = s._engine.state_id
+        Scaffold(Configuration.default(), storage=s)
+        self.assertGreater(s._engine.state_id, before)
 
     @skip_parallel  # warning is emitted on the main rank only; asserts single-rank
     def test_auto_upgrade_of_legacy_file(self):
@@ -96,28 +87,22 @@ class TestHDF5Provenance(unittest.TestCase):
             self.assertEqual(md["engine_name"], "hdf5")
 
 
-class TestFSProvenance(unittest.TestCase):
+class TestFSProvenance(RandomStorageFixture, unittest.TestCase, engine_name="fs"):
     """Verify the FileSystem engine writes & maintains the provenance bundle."""
 
-    def _new_storage(self, path):
-        from bsb.storage import Storage
-
-        return Storage("fs", path)
-
     def test_create_writes_metadata_json(self):
-        with tempfile.TemporaryDirectory() as tmp:
-            path = os.path.join(tmp, "fsroot")
-            s = self._new_storage(path)
-            md = s._engine.metadata
-            self.assertEqual(md.get("engine_name"), "fs")
-            self.assertIn("storage_id", md)
-            self.assertEqual(md["state_id"], 0)
+        md = self.storage._engine.metadata
+        self.assertEqual(md.get("engine_name"), "fs")
+        self.assertIn("storage_id", md)
+        self.assertEqual(md["state_id"], 0)
 
     @skip_parallel  # asserts an exact per-rank bump count from direct calls
     def test_state_bumps(self):
+        from bsb.storage import Storage
+
         with tempfile.TemporaryDirectory() as tmp:
             path = os.path.join(tmp, "fsroot")
-            s = self._new_storage(path)
+            s = Storage("fs", path)
             s._engine._bump_state()
             s._engine._bump_state()
             self.assertEqual(s._engine.state_id, 2)
@@ -151,19 +136,17 @@ class TestFSProvenance(unittest.TestCase):
             )
 
 
-class TestScaffoldProvenanceAPI(unittest.TestCase):
+class TestScaffoldProvenanceAPI(
+    RandomStorageFixture, unittest.TestCase, engine_name="hdf5"
+):
     def test_scaffold_exposes_storage_id_state_id_provenance(self):
         from bsb.config import Configuration
         from bsb.core import Scaffold
-        from bsb.storage import Storage
 
-        with tempfile.TemporaryDirectory() as tmp:
-            path = os.path.join(tmp, "net.hdf5")
-            storage = Storage("hdf5", path)
-            scaffold = Scaffold(Configuration.default(), storage=storage)
-            self.assertEqual(scaffold.storage_id, storage._engine.storage_id)
-            self.assertIsInstance(scaffold.state_id, int)
-            self.assertIn("storage_id", scaffold.provenance)
+        scaffold = Scaffold(Configuration.default(), storage=self.storage)
+        self.assertEqual(scaffold.storage_id, self.storage._engine.storage_id)
+        self.assertIsInstance(scaffold.state_id, int)
+        self.assertIn("storage_id", scaffold.provenance)
 
 
 if __name__ == "__main__":

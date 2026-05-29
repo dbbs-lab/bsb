@@ -2,6 +2,7 @@
 HDF5 storage engine for the BSB framework.
 """
 
+import contextlib
 import importlib.metadata
 import json
 import os
@@ -373,10 +374,8 @@ def _read_root_metadata(handle) -> dict:
             continue
         value = handle.attrs[key]
         if key in _JSON_ROOT_KEYS:
-            try:
+            with contextlib.suppress(TypeError, json.JSONDecodeError):
                 value = json.loads(value)
-            except (TypeError, json.JSONDecodeError):
-                pass
         else:
             # h5py returns numpy scalars; normalise to plain Python.
             if hasattr(value, "item"):

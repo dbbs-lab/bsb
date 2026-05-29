@@ -20,14 +20,16 @@ class SpikeRecorder(ArborDevice, classmap_entry="spike_recorder"):
                     if index == 0 and gid in self._gids:
                         per_gid_times[int(gid)].append(time)
 
-                for gid, times in per_gid_times.items():
+                # One spiketrain per targeted cell, empty if the cell stayed
+                # silent, so the recording reflects what was observed.
+                for gid in sorted(self._gids):
                     cell_model = simdata.gid_manager.lookup_model(gid)
                     offset = simdata.gid_manager._gid_offsets[cell_model]
                     cell_id = gid - offset
                     ps_name = cell_model.cell_type.name
                     segment.spiketrains.append(
                         simdata.result.spike_train(
-                            times=times,
+                            times=per_gid_times.get(int(gid), []),
                             ps_name=ps_name,
                             cell_id=cell_id,
                             cell_model=cell_model,

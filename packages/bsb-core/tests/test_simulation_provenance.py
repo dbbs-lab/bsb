@@ -3,6 +3,7 @@
 import unittest
 
 import numpy as np
+
 from bsb.simulation.results import (
     Recording,
     SimulationResult,

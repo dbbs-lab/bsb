@@ -6,7 +6,9 @@ Exposes ``new_storage_id``, ``iso_now``, ``collect_plugin_manifest``,
 the root-level provenance bundle an engine writes on ``create()``).
 """
 
+import copy
 import datetime
+import functools
 import getpass
 import importlib.metadata
 import os
@@ -61,6 +63,11 @@ def collect_plugin_manifest() -> dict:
     so a reader can answer "what plugins were installed when this artefact was
     written" without re-running discovery.
     """
+    return copy.deepcopy(_discover_plugin_manifest())
+
+
+@functools.lru_cache(maxsize=1)
+def _discover_plugin_manifest() -> dict:
     manifest: dict[str, dict[str, dict[str, str | None]]] = {}
     for category in _PLUGIN_CATEGORIES:
         try:

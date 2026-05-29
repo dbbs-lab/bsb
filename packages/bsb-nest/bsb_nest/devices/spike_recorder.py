@@ -23,11 +23,9 @@ class SpikeRecorder(NestDevice, classmap_entry="spike_recorder"):
         def recorder(segment):
             senders = np.asarray(device.events["senders"])
             times = np.asarray(device.events["times"])
-            for sim_id in np.unique(senders):
-                entry = lookup.get(int(sim_id))
-                if entry is None:
-                    continue
-                cell_model, ps_name, cell_id = entry
+            # One spiketrain per targeted cell, empty if the cell stayed
+            # silent, so the recording reflects what was observed.
+            for sim_id, (cell_model, ps_name, cell_id) in lookup.items():
                 mask = senders == sim_id
                 segment.spiketrains.append(
                     simdata.result.spike_train(

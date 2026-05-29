@@ -141,7 +141,7 @@ class SimulationResult:
         **fields,
     ):
         """
-        Build a :class:`neo.SpikeTrain` carrying the baseline ``bsb_*``
+        Build a :class:`~neo.core.SpikeTrain` carrying the baseline ``bsb_*``
         annotations plus the ``"cell"``-target fields. See :meth:`analog_signal`
         for the annotation layering and how ``fields`` extends it.
 
@@ -180,7 +180,7 @@ class SimulationResult:
         **fields,
     ):
         """
-        Build a :class:`neo.AnalogSignal` carrying the layered ``bsb_*``
+        Build a :class:`~neo.core.AnalogSignal` carrying the layered ``bsb_*``
         annotations.
 
         The annotations come in two layers, all as flat sibling keys. The
@@ -318,8 +318,8 @@ class Recording:
     annotations: dict
 
 
-def read_nio(path: str) -> "neo.Block":
-    """Open a ``.nio`` file and return its :class:`neo.Block`."""
+def read_nio(path: str) -> "neo.core.Block":
+    """Open a ``.nio`` file and return its :class:`~neo.core.Block`."""
     from neo import io
 
     return io.NixIO(path, mode="ro").read_block()

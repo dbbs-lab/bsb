@@ -92,10 +92,8 @@ class FileStore(IFileStore):
         staging = self._engine.root
         _atomic_write_bytes(self.id_to_meta_path(id), meta_blob, staging)
         _atomic_write_bytes(self.id_to_file_path(id), content, staging)
-        try:
+        with contextlib.suppress(Exception):
             self._engine._bump_state()
-        except Exception:
-            pass
         return id
 
     def load(self, id):
@@ -125,10 +123,8 @@ class FileStore(IFileStore):
         """
         os.unlink(self.id_to_file_path(id))
         os.unlink(self.id_to_meta_path(id))
-        try:
+        with contextlib.suppress(Exception):
             self._engine._bump_state()
-        except Exception:
-            pass
 
     def store_active_config(self, config):
         """

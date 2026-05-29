@@ -1,4 +1,5 @@
 import unittest
+from collections import defaultdict
 
 from bsb import MPI, Configuration, Scaffold
 from bsb_test import RandomStorageFixture, get_test_config_tree
@@ -19,18 +20,20 @@ class TestArbor(RandomStorageFixture, unittest.TestCase, engine_name="hdf5"):
         result = network.run_simulation("test_arbor")
 
         spiketrains = result.block.segments[0].spiketrains
-        sr_exc, sr_inh = None, None
+        # One spiketrain per targeted cell; group them back per device.
+        by_device = defaultdict(list)
         for st in spiketrains:
-            if st.annotations["device"] == "sr_exc":
-                sr_exc = st
-            elif st.annotations["device"] == "sr_inh":
-                sr_inh = st
+            by_device[st.annotations["bsb_device_name"]].append(st)
+        exc_trains = by_device["sr_exc"]
+        inh_trains = by_device["sr_inh"]
 
-        self.assertIsNotNone(sr_exc)
-        self.assertIsNotNone(sr_inh)
+        self.assertTrue(exc_trains)
+        self.assertTrue(inh_trains)
 
-        rate_ex = len(sr_exc) / simcfg.duration * 1000.0 / sr_exc.annotations["pop_size"]
-        rate_in = len(sr_inh) / simcfg.duration * 1000.0 / sr_inh.annotations["pop_size"]
+        spikes_ex = sum(len(st) for st in exc_trains)
+        spikes_in = sum(len(st) for st in inh_trains)
+        rate_ex = spikes_ex / simcfg.duration * 1000.0 / len(exc_trains)
+        rate_in = spikes_in / simcfg.duration * 1000.0 / len(inh_trains)
 
         # These are temporary circular values, taken from the output. May be incorrect.
         self.assertAlmostEqual(rate_in, 34.2, delta=1)

@@ -32,7 +32,7 @@ def _legacy_versions_path(root: str) -> Path:
 
 
 def _atomic_write_json(path: Path, payload: dict) -> None:
-    """Write JSON to ``path`` via a tmp file + os.replace so readers never see partials."""
+    """Write JSON via a tmp file + os.replace so readers never see partials."""
     path.parent.mkdir(parents=True, exist_ok=True)
     fd, tmp = tempfile.mkstemp(
         prefix=path.name + ".", suffix=".tmp", dir=str(path.parent)
@@ -116,10 +116,8 @@ class FileSystemEngine(Engine):
             _atomic_write_json(_metadata_path(self._root), bundle)
             legacy = _legacy_versions_path(self._root)
             if legacy.exists():
-                try:
+                with contextlib.suppress(OSError):
                     legacy.unlink()
-                except OSError:
-                    pass
             warnings.warn(
                 "Auto-upgraded legacy FS storage with a fresh storage_id and "
                 "provenance bundle.",

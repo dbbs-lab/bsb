@@ -15,6 +15,7 @@ from bsb_test import (
 from bsb_test.configs import get_test_config_module
 
 from bsb import (
+    AttributeOrderError,
     CastError,
     CfgReferenceError,
     ClassMapMissingError,
@@ -38,6 +39,7 @@ from bsb import (
 )
 from bsb._package_spec import get_missing_requirement_reason
 from bsb.config import Configuration, _attrs, compose_nodes, types
+from bsb.config._make import get_config_attributes
 from bsb.config.refs import Reference
 
 
@@ -246,6 +248,88 @@ class TestConfigAttrs(unittest.TestCase):
             msg="Readonly attribute should not be set",
         ):
             Test(x=6)
+
+
+class TestConfigAttrOrder(unittest.TestCase):
+    """Build order of configuration attributes across inheritance."""
+
+    def _order(self, cls):
+        return list(get_config_attributes(cls).keys())
+
+    def test_new_attributes_spliced_in_declaration_order(self):
+        @config.node
+        class Base:
+            a = config.attr()
+            b = config.attr()
+
+        @config.node
+        class Child(Base):
+            x = config.attr()
+            a = config.attr()
+            b = config.attr()
+
+        # `x`, declared before the overridden `a`/`b`, is built before them.
+        self.assertEqual(self._order(Child), ["x", "a", "b"])
+
+    def test_override_keeps_inherited_slot(self):
+        @config.node
+        class Base:
+            a = config.attr()
+            m = config.attr()
+            b = config.attr()
+
+        @config.node
+        class Child(Base):
+            n = config.attr()
+            b = config.attr()
+
+        # Only the new `n` is spliced in; the overridden `b` keeps its slot.
+        self.assertEqual(self._order(Child), ["a", "m", "n", "b"])
+
+    def test_clean_adjacent_swap_is_honored(self):
+        @config.node
+        class Base:
+            a = config.attr()
+            b = config.attr()
+
+        @config.node
+        class Child(Base):
+            b = config.attr()
+            a = config.attr()
+
+        self.assertEqual(self._order(Child), ["b", "a"])
+
+    def test_full_span_reorder_is_honored(self):
+        @config.node
+        class Base:
+            a = config.attr()
+            m = config.attr()
+            b = config.attr()
+
+        @config.node
+        class Child(Base):
+            b = config.attr()
+            m = config.attr()
+            a = config.attr()
+
+        self.assertEqual(self._order(Child), ["b", "m", "a"])
+
+    def test_ambiguous_reorder_raises(self):
+        @config.node
+        class Base:
+            a = config.attr()
+            m = config.attr()
+            b = config.attr()
+
+        @config.node
+        class Child(Base):
+            b = config.attr()
+            a = config.attr()
+
+        # `a` and `b` are swapped but `m` between them is not redeclared.
+        with self.assertRaises(AttributeOrderError) as ctx:
+            get_config_attributes(Child)
+        self.assertIn("m", str(ctx.exception))
 
 
 class TestConfigDict(unittest.TestCase):

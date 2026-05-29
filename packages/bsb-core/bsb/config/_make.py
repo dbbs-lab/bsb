@@ -13,6 +13,7 @@ import errr
 from .._package_spec import warn_missing_packages
 from .._util import get_qualified_class_name
 from ..exceptions import (
+    AttributeOrderError,
     BootError,
     CastError,
     ConfigurationError,
@@ -405,12 +406,18 @@ def get_config_attributes(cls):
     """Collect a node class's configuration attributes in build order.
 
     Walks the MRO base-first and threads each class's declared attributes into
-    the inherited order so that every class's declaration order is preserved as
-    a subsequence: an overridden attribute keeps its inherited slot, and a
-    subclass's new attributes are spliced in at the position the subclass wrote
-    them. A subclass may reorder inherited attributes by redeclaring them, but
-    only if it redeclares every attribute caught between them; otherwise the
-    requested order is ambiguous and a :class:`.ConfigurationError` is raised.
+    the order inherited so far, applying these rules:
+
+    * Every class's declaration order is preserved as a subsequence.
+    * An overridden attribute keeps its inherited slot; only its value is
+      replaced by the most-derived declaration.
+    * A new attribute is spliced in just before the next attribute the class
+      declares after it that is already present, or appended when the class
+      declares no such following attribute.
+    * A subclass may reorder inherited attributes by redeclaring them, but only
+      if it also redeclares every attribute caught between the ones it moves;
+      otherwise the requested order is ambiguous and an
+      :class:`.AttributeOrderError` is raised naming the attributes to redeclare.
     """
     from ._attrs import ConfigurationAttribute
 
@@ -437,11 +444,13 @@ def get_config_attributes(cls):
             lo, hi = min(positions), max(positions)
             blocked = [key for key in order[lo : hi + 1] if key not in decl]
             if blocked:
-                raise ConfigurationError(
+                raise AttributeOrderError(
                     f"`{cls.__name__}` redeclares {redeclared} in an order"
                     f" conflicting with its parents, but {blocked} lie between"
                     f" them. Redeclare {blocked} as well to define the order"
-                    " unambiguously."
+                    " unambiguously.",
+                    redeclared,
+                    blocked,
                 )
             order = order[:lo] + redeclared + order[hi + 1 :]
         # Splice this class's new attributes into the inherited order: each lands

@@ -43,6 +43,14 @@ jobs:
           path: ${{ env.NEST_FOLDER }}
           key: ${{ runner.os }}-${{ matrix.python-version }}-nest-${{ env.NEST_VERSION }}
 
+      # Build NEST outside the opentelemetry-instrument wrapper below: NEST's
+      # CMake runs Python helpers, and the auto-instrumentation injected into
+      # them writes to stderr and breaks NEST's configure step. Building here
+      # first means the install-nest dependency of the test target finds NEST
+      # already installed and exits early.
+      - name: Install NEST
+        run: uv run --project packages/bsb-core ./nx run bsb-nest:install-nest
+
       - name: Run unittests
         timeout-minutes: 60
         env:

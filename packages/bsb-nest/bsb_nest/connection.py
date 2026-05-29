@@ -4,23 +4,16 @@ import sys
 import numpy as np
 import psutil
 from bsb import (
-    ConfigurationError,
     ConnectionModel,
     compose_nodes,
     config,
     options,
     types,
-    warn,
 )
 from tqdm import tqdm
 
-from ._kernel_proxy import (
-    NestModelTypeHandler,
-    get_nest_kernel_proxy,
-    load_simulation_modules,
-)
+from ._kernel_proxy import NestModelTypeHandler, query_kernel
 from .distributions import nest_parameter
-from .exceptions import KernelWarning
 
 
 class nest_synapse_model(NestModelTypeHandler):
@@ -43,25 +36,18 @@ def _is_delay_required(kwargs):
     later at adapter prepare/connect time.
     """
     model_name = kwargs.get("model", NestSynapseSettings.model.default)
-    try:
-        proxy = get_nest_kernel_proxy()
-        if proxy is None:
-            warn(
-                "No active build context; cannot check whether synapse"
-                f" '{model_name}' requires a delay.",
-                KernelWarning,
-            )
-            return False
-        load_simulation_modules(getattr(kwargs, "partial_node", None), proxy)
-        return proxy.has_delay(model_name)
-    except ConfigurationError:
-        raise
-    except Exception as e:
-        warn(
-            f"Could not determine if delay is required for synapse '{model_name}': {e}",
-            KernelWarning,
-        )
-        return False
+    return query_kernel(
+        getattr(kwargs, "partial_node", None),
+        lambda proxy: proxy.has_delay(model_name),
+        fallback=False,
+        error_context=(
+            f"Could not determine if delay is required for synapse '{model_name}'"
+        ),
+        unreachable_warning=(
+            "No active build context; cannot check whether synapse"
+            f" '{model_name}' requires a delay."
+        ),
+    )
 
 
 @config.node

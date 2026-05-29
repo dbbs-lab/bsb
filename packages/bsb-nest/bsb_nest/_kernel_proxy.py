@@ -185,6 +185,34 @@ def load_simulation_modules(node, proxy):
         parent = getattr(parent, "_config_parent", None)
 
 
+_UNREACHABLE = object()
+
+
+def query_kernel(node, query, *, fallback, error_context, unreachable_warning=None):
+    """Run ``query(proxy)`` against the build's out-of-process NEST kernel.
+
+    Acquires the build's kernel proxy, installs *node*'s enclosing simulation
+    modules, then returns ``query(proxy)``. Returns *fallback* when the kernel
+    can't be reached (no active build, spawn failure, IPC error), emitting
+    *unreachable_warning* if given. A :class:`~bsb.exceptions.ConfigurationError`
+    from the query or from module loading propagates; any other kernel error
+    warns *error_context* and returns *fallback*.
+    """
+    try:
+        proxy = get_nest_kernel_proxy()
+        if proxy is None:
+            if unreachable_warning:
+                warn(unreachable_warning, KernelWarning)
+            return fallback
+        load_simulation_modules(node, proxy)
+        return query(proxy)
+    except ConfigurationError:
+        raise
+    except Exception as e:
+        warn(f"{error_context}: {e}", KernelWarning)
+        return fallback
+
+
 class NestModelTypeHandler(TypeHandler):
     """Validate a NEST model name against the build's out-of-process kernel.
 
@@ -200,16 +228,13 @@ class NestModelTypeHandler(TypeHandler):
 
     def __call__(self, value, _key=None, _parent=None):
         value = str(value)
-        try:
-            proxy = get_nest_kernel_proxy()
-            if proxy is None:
-                return value
-            load_simulation_modules(_parent, proxy)
-            models = proxy.models(mtype=self.mtype)
-        except ConfigurationError:
-            raise
-        except Exception as e:
-            warn(f"Could not validate {self.kind} model '{value}': {e}", KernelWarning)
+        models = query_kernel(
+            _parent,
+            lambda proxy: proxy.models(mtype=self.mtype),
+            fallback=_UNREACHABLE,
+            error_context=f"Could not validate {self.kind} model '{value}'",
+        )
+        if models is _UNREACHABLE:
             return value
         if value not in models:
             raise ConfigurationError(f"Unknown {self.kind} model '{value}'.")

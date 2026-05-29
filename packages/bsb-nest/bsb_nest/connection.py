@@ -58,8 +58,7 @@ def _is_delay_required(kwargs):
         raise
     except Exception as e:
         warn(
-            f"Could not determine if delay is required for synapse"
-            f" '{model_name}': {e}",
+            f"Could not determine if delay is required for synapse '{model_name}': {e}",
             KernelWarning,
         )
         return False

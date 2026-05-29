@@ -417,7 +417,8 @@ def get_config_attributes(cls):
     * A subclass may reorder inherited attributes by redeclaring them, but only
       if it also redeclares every attribute caught between the ones it moves;
       otherwise the requested order is ambiguous and an
-      :class:`.AttributeOrderError` is raised naming the attributes to redeclare.
+      :exc:`~bsb.exceptions.AttributeOrderError` is raised naming the attributes to
+      redeclare.
     """
     from ._attrs import ConfigurationAttribute
 

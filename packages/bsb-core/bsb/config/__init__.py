@@ -306,7 +306,7 @@ __api__ = [
     "get_config_attributes",
     "get_config_build_context",
     "get_config_path",
-    "make_config_diagram",
+    "make_configuration_diagram",
     "parse_configuration_file",
     "parse_configuration_content_to_dict",
     "parse_configuration_content",

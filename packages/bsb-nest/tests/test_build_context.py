@@ -76,10 +76,13 @@ class TestDelayRequiredChecker(unittest.TestCase):
     def _build_synapse(self, *, model, delay=None):
         from bsb_nest.connection import NestSynapseSettings
 
-        with patch(
-            "bsb_nest._kernel_proxy._start_kernel_manager",
-            side_effect=self._make_stub_manager,
-        ), build_context():
+        with (
+            patch(
+                "bsb_nest._kernel_proxy._start_kernel_manager",
+                side_effect=self._make_stub_manager,
+            ),
+            build_context(),
+        ):
             kwargs = {"model": model}
             if delay is not None:
                 kwargs["delay"] = delay
@@ -88,10 +91,14 @@ class TestDelayRequiredChecker(unittest.TestCase):
     def test_static_synapse_requires_delay(self):
         from bsb_nest.connection import NestSynapseSettings
 
-        with patch(
-            "bsb_nest._kernel_proxy._start_kernel_manager",
-            side_effect=self._make_stub_manager,
-        ), build_context(), self.assertRaises(RequirementError):
+        with (
+            patch(
+                "bsb_nest._kernel_proxy._start_kernel_manager",
+                side_effect=self._make_stub_manager,
+            ),
+            build_context(),
+            self.assertRaises(RequirementError),
+        ):
             NestSynapseSettings(
                 {"model": "static_synapse", "weight": 1.0},
             )
@@ -100,10 +107,13 @@ class TestDelayRequiredChecker(unittest.TestCase):
         # gap_junction is a real NEST synapse model with has_delay=False.
         from bsb_nest.connection import NestSynapseSettings
 
-        with patch(
-            "bsb_nest._kernel_proxy._start_kernel_manager",
-            side_effect=self._make_stub_manager,
-        ), build_context():
+        with (
+            patch(
+                "bsb_nest._kernel_proxy._start_kernel_manager",
+                side_effect=self._make_stub_manager,
+            ),
+            build_context(),
+        ):
             # No delay supplied — must not raise.
             NestSynapseSettings(
                 {"model": "gap_junction", "weight": 1.0},
@@ -115,10 +125,14 @@ class TestDelayRequiredChecker(unittest.TestCase):
         # genuinely can't reach the kernel.
         from bsb_nest.connection import NestSynapseSettings
 
-        with patch(
-            "bsb_nest._kernel_proxy._start_kernel_manager",
-            side_effect=self._make_stub_manager,
-        ), build_context(), self.assertRaises(ConfigurationError):
+        with (
+            patch(
+                "bsb_nest._kernel_proxy._start_kernel_manager",
+                side_effect=self._make_stub_manager,
+            ),
+            build_context(),
+            self.assertRaises(ConfigurationError),
+        ):
             NestSynapseSettings(
                 {
                     "model": "definitely_not_a_real_model",
@@ -198,10 +212,14 @@ class TestSimulationModuleLoading(unittest.TestCase):
         def boom():
             raise RuntimeError("kernel unreachable")
 
-        with patch(
-            "bsb_nest._kernel_proxy._start_kernel_manager",
-            side_effect=boom,
-        ), build_context(), warnings.catch_warnings(record=True) as log:
+        with (
+            patch(
+                "bsb_nest._kernel_proxy._start_kernel_manager",
+                side_effect=boom,
+            ),
+            build_context(),
+            warnings.catch_warnings(record=True) as log,
+        ):
             warnings.simplefilter("always", KernelWarning)
             result = _is_delay_required({"model": "static_synapse"})
         self.assertFalse(result)

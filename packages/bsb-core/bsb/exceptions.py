@@ -153,6 +153,7 @@ __all__ = [
     "AdapterError",
     "AllenApiError",
     "AttributeMissingError",
+    "AttributeOrderError",
     "BootError",
     "CLIError",
     "CastConfigurationError",

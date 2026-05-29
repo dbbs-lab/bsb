@@ -1,26 +1,7 @@
 import importlib.metadata
 import json
 import os
-import re
 from pathlib import Path
-
-# nx writes project.json as JSONC, so it may contain // or /* */ comments. This
-# pattern matches a JSON string OR a comment, letting us drop comments while
-# keeping string contents (e.g. "https://...") untouched.
-_JSONC_PATTERN = re.compile(
-    r'"(?:\\.|[^"\\])*"'  # double-quoted string (kept)
-    r"|//[^\n]*"  # line comment (dropped)
-    r"|/\*.*?\*/",  # block comment (dropped)
-    re.DOTALL,
-)
-
-
-def _loads_jsonc(text: str):
-    def _keep(match: re.Match):
-        token = match.group(0)
-        return token if token.startswith('"') else ""
-
-    return json.loads(_JSONC_PATTERN.sub(_keep, text))
 
 
 class Project:
@@ -132,7 +113,7 @@ class Project:
             return remote, (None, str(local_folder / "objects.inv"))
 
     def _get_monorepo_project(self):
-        return _loads_jsonc((self._root_folder / "project.json").read_text())
+        return json.loads((self._root_folder / "project.json").read_text())
 
     def _get_monorepo_doc_dependencies(self):
         project = self._get_monorepo_project()

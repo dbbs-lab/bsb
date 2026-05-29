@@ -37,11 +37,8 @@ class VoltageRecorder(NeuronDevice, classmap_entry="voltage_recorder"):
         section = location.section
         x = location.arc(0)
         vec = p.record(section(x)._ref_v)
-        loc = {
-            "section": getattr(section, "name", str(section)),
-            "x": float(x),
-            "compartment_index": getattr(location, "compartment_index", None),
-        }
+        section_name = getattr(section, "name", str(section))
+        compartment_index = getattr(location, "compartment_index", None)
 
         def flush(segment):
             segment.analogsignals.append(
@@ -50,11 +47,14 @@ class VoltageRecorder(NeuronDevice, classmap_entry="voltage_recorder"):
                     units=mV,
                     sampling_period=p.dt * ms,
                     name="V_m",
+                    target_kind="compartment",
                     ps_name=ps_name,
                     cell_id=cell_id,
                     cell_model=cell_model,
                     device=self,
-                    location=loc,
+                    section=section_name,
+                    arc=float(x),
+                    compartment_index=compartment_index,
                 )
             )
             if vec.size():

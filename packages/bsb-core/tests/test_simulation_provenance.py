@@ -107,17 +107,20 @@ class TestRecorderConventionHelpers(unittest.TestCase):
             device=_StubDevice(),
             t_stop=100.0,
         )
+        # Baseline layer.
         self.assertEqual(st.annotations["bsb_device_name"], "sr_pc")
         self.assertEqual(st.annotations["bsb_device_kind"], "spike_recorder")
-        self.assertEqual(st.annotations["bsb_ps_name"], "pc")
-        self.assertEqual(st.annotations["bsb_cell_id"], 17)
-        self.assertEqual(st.annotations["bsb_cell_model"], "pc")
+        self.assertEqual(st.annotations["bsb_target_kind"], "cell")
         self.assertEqual(
             st.annotations["bsb_simulation_id"], self.result.simulation_id
         )
         self.assertIsNotNone(st.annotations["bsb_segment_id"])
+        # Cell-target layer.
+        self.assertEqual(st.annotations["bsb_ps_name"], "pc")
+        self.assertEqual(st.annotations["bsb_cell_id"], 17)
+        self.assertEqual(st.annotations["bsb_cell_model"], "pc")
 
-    def test_analog_signal_has_standard_annotations(self):
+    def test_analog_signal_target_kind(self):
         import quantities as pq
 
         sig = self.result.analog_signal(
@@ -125,16 +128,22 @@ class TestRecorderConventionHelpers(unittest.TestCase):
             units="mV",
             sampling_period=1.0 * pq.ms,
             name="V_m",
+            target_kind="compartment",
             ps_name="pc",
             cell_id=3,
             cell_model=_StubCellModel(),
             device=_StubDevice(),
-            location={"section": "soma", "x": 0.5, "compartment_index": 0},
+            section="soma",
+            arc=0.5,
         )
         self.assertEqual(sig.name, "V_m")
+        self.assertEqual(sig.annotations["bsb_target_kind"], "compartment")
         self.assertEqual(sig.annotations["bsb_ps_name"], "pc")
         self.assertEqual(sig.annotations["bsb_cell_id"], 3)
-        self.assertEqual(sig.annotations["bsb_location"]["section"], "soma")
+        # per-kind fields are flat bsb_* siblings, not nested under bsb_location
+        self.assertEqual(sig.annotations["bsb_section"], "soma")
+        self.assertEqual(sig.annotations["bsb_arc"], 0.5)
+        self.assertNotIn("bsb_location", sig.annotations)
 
 
 class TestIterRecordings(unittest.TestCase):

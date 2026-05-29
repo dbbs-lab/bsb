@@ -48,11 +48,8 @@ class CurrentClamp(NeuronDevice, classmap_entry="current_clamp"):
             x=sx, delay=self.before, duration=self.duration, amplitude=self.amplitude
         )
         vec = p.record(clamp._ref_i)
-        loc = {
-            "section": getattr(section, "name", str(section)),
-            "x": float(sx),
-            "compartment_index": getattr(location, "compartment_index", None),
-        }
+        section_name = getattr(section, "name", str(section))
+        compartment_index = getattr(location, "compartment_index", None)
 
         def flush(segment):
             segment.analogsignals.append(
@@ -61,11 +58,14 @@ class CurrentClamp(NeuronDevice, classmap_entry="current_clamp"):
                     units=nA,
                     sampling_period=p.dt * ms,
                     name="I_clamp",
+                    target_kind="compartment",
                     ps_name=ps_name,
                     cell_id=cell_id,
                     cell_model=cell_model,
                     device=self,
-                    location=loc,
+                    section=section_name,
+                    arc=float(sx),
+                    compartment_index=compartment_index,
                 )
             )
             if vec.size():

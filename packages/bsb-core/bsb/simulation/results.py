@@ -126,23 +126,16 @@ class SimulationResult:
         device,
         t_stop,
         units: str = "ms",
-        location: dict | None = None,
-        **extra,
+        target_kind: str = "cell",
+        **fields,
     ):
         """
-        Build a :class:`neo.SpikeTrain` populated with the standard ``bsb_*``
-        annotations. ``extra`` is forwarded as extra annotations.
+        Build a :class:`neo.SpikeTrain` carrying the baseline ``bsb_*``
+        annotations plus the ``"cell"``-target fields. See :meth:`analog_signal`
+        for the annotation layering and how ``fields`` extends it.
 
         Convenience only: BSB does not validate or require recorders to use it.
         Recorders are free to emit any Neo objects they want, in any quantity.
-        The ``bsb_*`` keys this helper sets identify *which cell* and *which
-        device* a single emitted object came from; they do not describe how
-        many objects a recorder emits per cell.
-
-        ``location`` is a free-form dict whose schema is chosen by the recorder
-        author (e.g. ``{section, x}`` for voltage recordings, additional keys
-        for synapse / mechanism / channel-state recordings). Pass ``None`` for
-        point-neuron output.
         """
         from neo import SpikeTrain
 
@@ -152,12 +145,12 @@ class SimulationResult:
             t_stop=t_stop,
             **_bsb_annotations(
                 self,
+                device=device,
+                target_kind=target_kind,
                 ps_name=ps_name,
                 cell_id=cell_id,
                 cell_model=cell_model,
-                device=device,
-                location=location,
-                extra=extra,
+                fields=fields,
             ),
         )
 
@@ -172,25 +165,28 @@ class SimulationResult:
         cell_id: int,
         cell_model,
         device,
-        location: dict | None = None,
-        **extra,
+        target_kind: str = "cell",
+        **fields,
     ):
         """
-        Build a :class:`neo.AnalogSignal` populated with the standard ``bsb_*``
+        Build a :class:`neo.AnalogSignal` carrying the layered ``bsb_*``
         annotations.
 
-        Neo's native fields carry *what* is recorded: ``name`` is the quantity
-        label (e.g. ``"V_m"``, ``"I_syn"``, ``"AMPA.g"``, ``"NaV.m"``) and
-        ``units`` the dimension. The ``bsb_*`` keys this helper sets identify
-        *which cell* and *which device* a single emitted signal came from.
+        The annotations come in two layers, all as flat sibling keys. The
+        **baseline** identifies what is doing the recording and ties the object
+        back to its run: ``bsb_device_name``, ``bsb_device_kind``,
+        ``bsb_target_kind``, ``bsb_simulation_id``, ``bsb_segment_id``. The
+        **target-kind** layer, selected by ``target_kind``, declares what is
+        being recorded; this helper fills the ``"cell"`` anchor
+        (``bsb_ps_name``, ``bsb_cell_id``, ``bsb_cell_model``) shared by the
+        cell, compartment and synapse kinds.
 
-        ``location`` is a free-form dict whose schema is chosen by the recorder
-        author — voltage recorders use ``{section, x}``, synapse recorders add
-        ``{synapse_type}`` plus whatever identifies the instance, probe-style
-        recorders may use a different vocabulary entirely. A recorder may emit
-        many signals per ``(cell, device)`` — one per compartment, mechanism,
-        channel state variable, synapse instance, … — each with its own
-        ``location`` payload.
+        Neo's native fields carry the recorded quantity: ``name`` is the label
+        (e.g. ``"V_m"``, ``"I_syn"``) and ``units`` the dimension.
+
+        Any extra ``fields`` are namespaced as first-class ``bsb_<key>``
+        annotations alongside the baseline, so a kind that records a compartment
+        passes ``section=..., arc=...`` and gets ``bsb_section`` / ``bsb_arc``.
         """
         from neo import AnalogSignal
 
@@ -201,33 +197,41 @@ class SimulationResult:
             name=name,
             **_bsb_annotations(
                 self,
+                device=device,
+                target_kind=target_kind,
                 ps_name=ps_name,
                 cell_id=cell_id,
                 cell_model=cell_model,
-                device=device,
-                location=location,
-                extra=extra,
+                fields=fields,
             ),
         )
 
 
-def _bsb_annotations(result, *, ps_name, cell_id, cell_model, device, location, extra):
-    """Build the standard ``bsb_*`` annotation dict shared by all recorders."""
-    cell_model_name = getattr(cell_model, "name", cell_model)
+def _bsb_annotations(
+    result, *, device, target_kind, ps_name, cell_id, cell_model, fields
+):
+    """
+    Compose the layered ``bsb_*`` annotation dict: a baseline every recorder
+    shares, the ``"cell"`` anchor that the cell/compartment/synapse target kinds
+    build on, and any per-kind ``fields`` namespaced as flat ``bsb_<key>`` keys.
+    """
     device_name = getattr(device, "name", device)
     device_cls = type(device) if not isinstance(device, type) else device
     device_kind = getattr(device_cls, "classmap_entry", device_cls.__name__)
     ann = {
+        # Baseline: shared by every recorder regardless of target kind.
         "bsb_device_name": device_name,
         "bsb_device_kind": device_kind,
-        "bsb_ps_name": ps_name,
-        "bsb_cell_id": int(cell_id),
-        "bsb_cell_model": cell_model_name,
+        "bsb_target_kind": target_kind,
         "bsb_simulation_id": result.simulation_id,
         "bsb_segment_id": result.segment_id,
-        "bsb_location": location,
+        # Cell anchor: the cell/compartment/synapse kinds.
+        "bsb_ps_name": ps_name,
+        "bsb_cell_id": int(cell_id),
+        "bsb_cell_model": getattr(cell_model, "name", cell_model),
     }
-    ann.update(extra)
+    # Target-kind extension: flat siblings, namespaced under bsb_.
+    ann.update({f"bsb_{key}": value for key, value in fields.items()})
     return ann
 
 

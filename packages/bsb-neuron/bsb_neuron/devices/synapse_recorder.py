@@ -42,12 +42,9 @@ class SynapseRecorder(NeuronDevice, classmap_entry="synapse_recorder"):
 
         vec = p.record(synapse._pp._ref_i)
         section = location.section
-        loc = {
-            "section": getattr(section, "name", str(section)),
-            "x": float(location.arc(0)),
-            "compartment_index": getattr(location, "compartment_index", None),
-            "synapse_type": synapse.synapse_name,
-        }
+        section_name = getattr(section, "name", str(section))
+        arc = float(location.arc(0))
+        compartment_index = getattr(location, "compartment_index", None)
 
         def flush(segment):
             segment.analogsignals.append(
@@ -56,11 +53,15 @@ class SynapseRecorder(NeuronDevice, classmap_entry="synapse_recorder"):
                     units=nA,
                     sampling_period=p.dt * ms,
                     name="I_syn",
+                    target_kind="synapse",
                     ps_name=ps_name,
                     cell_id=cell_id,
                     cell_model=cell_model,
                     device=self,
-                    location=loc,
+                    section=section_name,
+                    arc=arc,
+                    compartment_index=compartment_index,
+                    synapse_type=synapse.synapse_name,
                 )
             )
             if vec.size():

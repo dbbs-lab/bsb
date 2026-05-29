@@ -252,42 +252,72 @@ The recorder annotation convention
 The BSB does **not** validate or constrain what recorders emit. A recorder is free
 to add as many (or as few) Neo objects to a segment as it wants, of either kind, in
 any shape it likes. The convention only describes what each emitted object's
-``bsb_*`` annotations *assert*:
+``bsb_*`` annotations *assert*, in two layers: a **baseline** every recorder shares,
+and a **target-kind** layer chosen by what is being recorded.
 
-``bsb_ps_name`` (str), ``bsb_cell_id`` (int), ``bsb_cell_model`` (str)
-    Identify the source **cell**: which placement set it belongs to, its index within
-    that placement set, and the cell model it was wired up as. The placement-set name
-    is the BSB identity; the BSB does not use simulator-internal GIDs in its data
-    model.
+Baseline (every recorder)
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+These annotations are present on every recorded object, regardless of what it
+records:
 
 ``bsb_device_name`` (str), ``bsb_device_kind`` (str)
-    Identify the **device** that emitted the object: its configured name and its
+    The **device** that emitted the object: its configured name and its
     ``classmap_entry`` (``"spike_recorder"``, ``"multimeter"``, ``"voltage_recorder"``,
-    ``"synapse_recorder"``, …). Two devices targetting the same cell produce objects
-    distinguishable by these keys.
+    …). Two devices recording the same target produce objects distinguishable by
+    these keys.
+
+``bsb_target_kind`` (str)
+    What *kind of thing* the object records: ``"cell"``, ``"compartment"``,
+    ``"synapse"``, ``"lfp"``, … This discriminator tells a consumer which
+    target-kind fields (below) to expect.
 
 ``bsb_simulation_id`` (str), ``bsb_segment_id`` (str)
     Mirrors of the :class:`neo:neo.core.Block`- and :class:`neo:neo.core.Segment`-
     level UUIDs, denormalised onto each object so individual Neo objects stay
     self-identifying when extracted from the Block.
 
-``bsb_location`` (dict | None)
-    Free-form: **the recorder author chooses the keys**. For a ``voltage_recorder``
-    this is typically ``{"section": ..., "x": ...}``; a ``synapse_recorder`` may add
-    ``{"synapse_type": ..., "compartment_index": ...}``; a probe-style recorder may
-    use a different vocabulary entirely. There is no fixed schema, so downstream code
-    that needs site-level filtering must agree with the recorder author on what keys
-    to look for.
+Neo's native fields carry *what quantity* is recorded: ``obj.name`` is the label
+(e.g. ``"V_m"``, ``"I_syn"``; conventionally blank for a
+:class:`neo:neo.core.SpikeTrain`) and ``obj.units`` the dimension (a ``quantities``
+unit, e.g. ``mV``, ``nA``).
 
-Neo's native fields keep their normal meaning:
+Target kinds (proposed)
+^^^^^^^^^^^^^^^^^^^^^^^
 
-``obj.name``
-    Label for *what* is recorded (e.g. ``"V_m"``, ``"I_syn"``, ``"AMPA.g"``,
-    ``"NaV.m"``). For :class:`neo:neo.core.SpikeTrain` it is conventionally left
-    blank.
+On top of the baseline, each ``bsb_target_kind`` declares further fields that locate
+its target. These are first-class flat ``bsb_*`` annotations, siblings of the
+baseline keys (not nested in a blob), so a consumer reads ``rec.annotations`` keys
+directly. This taxonomy is part of the proposal; the field sets per kind are open to
+feedback and new kinds can be added.
 
-``obj.units``
-    The recorded dimension (a ``quantities`` unit, e.g. ``mV``, ``nA``).
+``"cell"``
+    A whole cell (e.g. a point-neuron spike train or membrane voltage). Adds
+    ``bsb_ps_name`` (str), ``bsb_cell_id`` (int), ``bsb_cell_model`` (str): which
+    placement set, the cell's index within it, and the cell model it was wired as.
+    The placement-set name is the BSB identity; the BSB does not use
+    simulator-internal GIDs in its data model.
+
+``"compartment"``
+    A location on a cell's morphology. Adds the ``"cell"`` fields plus the site:
+    ``bsb_section`` (str) and ``bsb_arc`` (float in ``[0, 1]``), and optionally
+    ``bsb_compartment_index`` (int).
+
+``"synapse"``
+    A synapse on a postsynaptic cell. Adds the postsynaptic ``"cell"`` fields, the
+    site on that cell (``bsb_section`` / ``bsb_arc``), ``bsb_synapse_type`` (str),
+    and the presynaptic identity (proposed: ``bsb_pre_ps_name`` /
+    ``bsb_pre_cell_id``).
+
+``"lfp"``
+    A local field potential over a region, not tied to a single cell. Declares the
+    recording electrode / probe identity and its position (proposed: ``bsb_probe`` /
+    ``bsb_position``).
+
+The built-in recorders cover three kinds: NEST ``spike_recorder`` / ``multimeter``
+and Arbor ``spike_recorder`` emit ``"cell"``; NEURON ``voltage_recorder`` (and
+``current_clamp``) emit ``"compartment"``; NEURON ``synapse_recorder`` emits
+``"synapse"``. The ``"lfp"`` kind has no built-in recorder yet.
 
 Examples
 ^^^^^^^^
@@ -315,16 +345,15 @@ All membrane voltage traces from a specific device, grouped by cell:
        if rec.kind is neo.AnalogSignal and rec.device == "v_recorder_pc" and rec.name == "V_m":
            per_cell[rec.cell_id].append(rec)
 
-All synaptic currents on the soma of any cell, when the responsible
-``synapse_recorder`` filled ``bsb_location`` with a ``"section"`` key:
+All synaptic currents on the soma of any cell (filtering on the flat
+``"synapse"``-kind fields):
 
 .. code-block:: python
 
    for rec in iter_recordings(block):
        if (
-           rec.kind is neo.AnalogSignal
-           and rec.annotations.get("bsb_device_kind") == "synapse_recorder"
-           and (rec.annotations.get("bsb_location") or {}).get("section") == "soma"
+           rec.annotations.get("bsb_target_kind") == "synapse"
+           and rec.annotations.get("bsb_section") == "soma"
        ):
            ...
 

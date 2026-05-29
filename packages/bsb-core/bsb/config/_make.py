@@ -402,6 +402,16 @@ def _bootstrap_components(components, file_store=None):
 
 
 def get_config_attributes(cls):
+    """Collect a node class's configuration attributes in build order.
+
+    Walks the MRO base-first and threads each class's declared attributes into
+    the inherited order so that every class's declaration order is preserved as
+    a subsequence: an overridden attribute keeps its inherited slot, and a
+    subclass's new attributes are spliced in at the position the subclass wrote
+    them. A subclass may reorder inherited attributes by redeclaring them, but
+    only if it redeclares every attribute caught between them; otherwise the
+    requested order is ambiguous and a :class:`.ConfigurationError` is raised.
+    """
     from ._attrs import ConfigurationAttribute
 
     if not isinstance(cls, type):
@@ -417,7 +427,44 @@ def get_config_attributes(cls):
         for key in decl:
             # A more-derived override wins the value.
             values[key] = vars(p_cls)[key]
-        order = _splice_config_attrs(order, decl)
+        in_order = set(order)
+        # Honor a reordering of inherited attributes only when it is
+        # unambiguous, i.e. the class redeclares every attribute that sits
+        # between the ones it moves.
+        redeclared = [key for key in decl if key in in_order]
+        if redeclared != [key for key in order if key in decl]:
+            positions = [order.index(key) for key in redeclared]
+            lo, hi = min(positions), max(positions)
+            blocked = [key for key in order[lo : hi + 1] if key not in decl]
+            if blocked:
+                raise ConfigurationError(
+                    f"`{cls.__name__}` redeclares {redeclared} in an order"
+                    f" conflicting with its parents, but {blocked} lie between"
+                    f" them. Redeclare {blocked} as well to define the order"
+                    " unambiguously."
+                )
+            order = order[:lo] + redeclared + order[hi + 1 :]
+        # Splice this class's new attributes into the inherited order: each lands
+        # just before the next already-present attribute the class declares after
+        # it (its following anchor), or at the end when there is none.
+        following_anchor = {}
+        anchor = None
+        for key in reversed(decl):
+            if key in in_order:
+                anchor = key
+            else:
+                following_anchor[key] = anchor
+        groups = {}
+        for key in decl:
+            if key not in in_order:
+                groups.setdefault(following_anchor[key], []).append(key)
+        if groups:
+            spliced = []
+            for key in order:
+                spliced.extend(groups.get(key, ()))
+                spliced.append(key)
+            spliced.extend(groups.get(None, ()))
+            order = spliced
         for unset in getattr(p_cls, "_config_unset", []):
             values.pop(unset, None)
             if unset in order:
@@ -430,37 +477,6 @@ def get_config_attributes(cls):
                 values[key] = attr
                 order.append(key)
     return {key: values[key] for key in order}
-
-
-def _splice_config_attrs(order, decl):
-    """Thread a class's declared attributes into the inherited *order*.
-
-    Attributes already in *order* (overrides) keep their inherited position;
-    attributes new in *decl* are inserted just before the next attribute *decl*
-    declares after them that is already present (their following anchor), or
-    appended when *decl* declares no such anchor after them. Every class's
-    declaration order is preserved as a subsequence, so a subclass's new
-    attributes appear at the position the subclass wrote them, between the
-    inherited ones.
-    """
-    in_order = set(order)
-    following_anchor = {}
-    anchor = None
-    for key in reversed(decl):
-        if key in in_order:
-            anchor = key
-        else:
-            following_anchor[key] = anchor
-    groups = {}
-    for key in decl:
-        if key not in in_order:
-            groups.setdefault(following_anchor[key], []).append(key)
-    result = []
-    for key in order:
-        result.extend(groups.get(key, ()))
-        result.append(key)
-    result.extend(groups.get(None, ()))
-    return result
 
 
 def _get_node_name(self):

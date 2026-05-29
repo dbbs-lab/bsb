@@ -3,7 +3,6 @@ import importlib.metadata
 import json
 import os
 import shutil
-import tempfile
 import warnings
 from datetime import datetime
 from pathlib import Path
@@ -17,7 +16,7 @@ from ..decorators import on_main_until
 from ..interfaces import Engine, NoopLock
 from ..interfaces import StorageNode as IStorageNode
 from ..provenance import build_root_metadata
-from .file_store import FileStore  # noqa: F401
+from .file_store import FileStore, _atomic_write_bytes  # noqa: F401
 
 _METADATA_FILENAME = "metadata.json"
 _LEGACY_VERSIONS_FILENAME = "versions.txt"
@@ -31,22 +30,11 @@ def _legacy_versions_path(root: str) -> Path:
     return Path(root) / _LEGACY_VERSIONS_FILENAME
 
 
-def _atomic_write_json(path: Path, payload: dict) -> None:
-    """Write JSON via a tmp file + os.replace so readers never see partials."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fd, tmp = tempfile.mkstemp(
-        prefix=path.name + ".", suffix=".tmp", dir=str(path.parent)
-    )
-    try:
-        with os.fdopen(fd, "w") as f:
-            json.dump(payload, f, sort_keys=True)
-            f.flush()
-            os.fsync(f.fileno())
-        os.replace(tmp, path)
-    except Exception:
-        with contextlib.suppress(Exception):
-            os.unlink(tmp)
-        raise
+def _write_metadata(root: str, payload: dict) -> None:
+    # Serialise the provenance bundle and write it through the same atomic
+    # writer the file store uses, so there is a single race-safe write path.
+    blob = json.dumps(payload, sort_keys=True).encode("utf-8")
+    _atomic_write_bytes(_metadata_path(root), blob, root)
 
 
 class FileSystemEngine(Engine):
@@ -95,7 +83,7 @@ class FileSystemEngine(Engine):
             if not md:
                 return
             md["state_id"] = int(md.get("state_id", 0)) + 1
-            _atomic_write_json(_metadata_path(self._root), md)
+            _write_metadata(self._root, md)
 
     def _upgrade_if_needed(self):
         if self._readonly or not self.exists():
@@ -113,7 +101,7 @@ class FileSystemEngine(Engine):
                 mpi_size=self.comm.get_size(),
             )
             bundle["state_id"] = 1
-            _atomic_write_json(_metadata_path(self._root), bundle)
+            _write_metadata(self._root, bundle)
             legacy = _legacy_versions_path(self._root)
             if legacy.exists():
                 with contextlib.suppress(OSError):
@@ -162,7 +150,7 @@ class FileSystemEngine(Engine):
             engine_version=importlib.metadata.version("bsb-core"),
             mpi_size=self.comm.get_size(),
         )
-        _atomic_write_json(_metadata_path(self._root), bundle)
+        _write_metadata(self._root, bundle)
 
     @on_main_until(lambda self: self.exists())
     def move(self, new_root):

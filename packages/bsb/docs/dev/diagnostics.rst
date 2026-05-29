@@ -221,10 +221,130 @@ as such:
 
 Now you should see all of the BSB telemetry reported in a single trace again.
 
-API
----
+Exporting traces to JSON Lines
+------------------------------
 
-OpenTelemetry spans can be added using :meth:`~bsb_otel.tracer.BsbTracer.trace`.
+When no live collector is reachable, for example on an HPC compute node, the
+BSB can write traces to a local file as newline-delimited JSON (one span per
+line) instead of streaming them to Jaeger. The file is appended as spans
+complete, so a trace from a run that crashes or is killed is still readable up
+to the point of failure.
+
+.. note::
+
+    A span is written only once it ends. Hard terminations that skip stack
+    unwinding, such as ``MPI_Abort`` (:meth:`~mpi4py.MPI.Comm.Abort`) or
+    :func:`~os._exit`, cannot be caught, so any spans still open at that moment
+    are never exported. Spans that have already completed stay in the file.
+
+Two pieces from ``bsb-otel`` provide this:
+
+* the ``jsonlines`` traces exporter
+  (:class:`~bsb_otel.exporters.JSONLinesSpanExporter`), and
+* the ``bsb_jsonlines`` OpenTelemetry distro, which selects that exporter
+  together with a configurator that builds a ``TracerProvider`` backed by a
+  ``SimpleSpanProcessor``.
+
+Select the exporter directly:
+
+.. code-block:: bash
+
+    OTEL_EXPORTER_JSONLINES_PATH=./traces.jsonlines \
+    opentelemetry-instrument \
+        --traces_exporter jsonlines \
+        --service_name "BSB Workflow" \
+        python -m bsb compile --clear
+
+or activate the distro, which wires up the exporter and processor for you:
+
+.. code-block:: bash
+
+    OTEL_PYTHON_DISTRO=bsb_jsonlines \
+    OTEL_EXPORTER_JSONLINES_PATH=./traces.jsonlines \
+    opentelemetry-instrument \
+        --service_name "BSB Workflow" \
+        python -m bsb compile --clear
+
+``OTEL_EXPORTER_JSONLINES_PATH`` sets the output file (default
+``traces_*.jsonlines``). A ``*`` in the path is replaced with a random
+8-character string, so concurrent processes each write a unique file. Under
+MPI every rank writes its own file.
+
+The distro's configurator uses a ``SimpleSpanProcessor``, which exports each
+span synchronously as it ends, with no background export thread. This keeps it
+safe under MPI, where the default ``BatchSpanProcessor``'s daemon thread can
+deadlock with ``mpi4py`` during interpreter shutdown.
+
+Replaying traces into a collector
+---------------------------------
+
+A JSON Lines file is not a live stream, so it does not appear in Jaeger on its
+own. The ``replay-otel`` command re-emits its spans through the active
+OpenTelemetry pipeline, preserving their original ids, parent links and status.
+Run it under ``opentelemetry-instrument`` with the exporter aimed at your
+collector:
+
+.. code-block:: bash
+
+    opentelemetry-instrument \
+        --traces_exporter otlp \
+        --exporter_otlp_endpoint http://localhost:4317 \
+        --service_name "BSB Replay" \
+        bsb replay-otel traces_*.jsonlines
+
+The replayed spans take on the ``--service_name`` of the replaying process, so
+they group under that name in Jaeger. The file argument accepts several paths or
+glob patterns: the per-rank files of an MPI run replay together, and because the
+BSB broadcasts the root span context across ranks (see
+:ref:`the wrapping example above <otel_broadcast>`) they share one ``trace_id``,
+so Jaeger reassembles them into a single trace.
+
+By default the command shifts the trace forward in time so it ends at the moment
+of replay, keeping each span's relative offset and duration. This lands the trace
+inside a collector's default search window (such as Jaeger's lookback) without
+any fiddling. Pass ``--keep-timestamps`` to replay at the original times instead,
+then widen the lookback to find older traces.
+
+Reading traces directly
+-----------------------
+
+For ad-hoc analysis, each line is one span serialised with OpenTelemetry's
+``ReadableSpan.to_json``, so a file loads with :func:`~json.loads`:
+
+.. code-block:: python
+
+    import json
+
+    with open("traces.jsonlines") as f:
+        spans = [json.loads(line) for line in f if line.strip()]
+
+Each span carries ``name``, ``context`` (with ``trace_id`` and ``span_id``),
+``parent_id``, ``start_time``, ``end_time``, ``attributes`` and ``status``;
+group by ``trace_id`` to reconstruct a workflow.
+
+Components
+----------
+
+Everything above lives in the ``bsb-otel`` package. Its public helpers:
+
+* :func:`~bsb_otel.tracer.get_bsb_tracer` returns a
+  :class:`~bsb_otel.tracer.BsbTracer`; use its
+  :meth:`~bsb_otel.tracer.BsbTracer.trace` method as a context manager to add
+  spans.
+* :func:`~bsb_otel.tracer.local_tracing` and
+  :func:`~bsb_otel.tracer.use_communicator` scope which MPI communicator spans
+  are broadcast on, for rank-divergent code paths.
+* :func:`~bsb_otel.tracer.ensure_spans_on_exit` installs a ``SIGTERM`` handler
+  that unwinds active spans so telemetry survives a scheduler kill.
+* :class:`~bsb_otel.exporters.JSONLinesSpanExporter` is the ``jsonlines``
+  exporter described above.
+* :func:`~bsb_otel.replay.replay_files` backs the ``bsb replay-otel`` command,
+  re-emitting recorded spans into the active pipeline.
+* :class:`~bsb_otel.testing.OTelFixture` and
+  :func:`~bsb_otel.testing.wrap_tests_with_traces` record spans in tests.
+
+See the `bsb-otel documentation <https://bsb-otel.readthedocs.io/en/latest>`_
+for the full reference.
 
 Profiling
 ---------

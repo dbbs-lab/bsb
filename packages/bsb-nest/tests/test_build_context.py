@@ -6,7 +6,13 @@ from bsb import ConfigurationError, RequirementError
 from bsb.config import build_context
 
 from bsb_nest import get_nest_kernel_proxy
-from bsb_nest._kernel_proxy import _NestKernel
+
+
+def _requires_nest():
+    try:
+        import nest  # noqa: F401
+    except ImportError as e:
+        raise unittest.SkipTest("NEST is not installed") from e
 
 
 class TestKernelProxyLifecycle(unittest.TestCase):
@@ -14,131 +20,72 @@ class TestKernelProxyLifecycle(unittest.TestCase):
         self.assertIsNone(get_nest_kernel_proxy())
 
     def test_registers_under_bsb_nest_namespace_and_cleans_up(self):
-        manager_shutdowns = []
+        shutdowns = []
+        sentinel = object()
 
-        class _StubManager:
-            def __init__(self):
-                self._kernel = object()
+        def stub_connect():
+            return sentinel, lambda: shutdowns.append(True)
 
-            def start(self):
-                pass
-
-            def kernel(self):
-                return self._kernel
-
-            def shutdown(self):
-                manager_shutdowns.append(self)
-
-        with patch(
-            "bsb_nest._kernel_proxy._start_kernel_manager",
-            side_effect=lambda: _StubManager(),
-        ):
+        with patch("bsb_nest._kernel_proxy._connect_kernel", side_effect=stub_connect):
             with build_context() as ctx:
                 proxy = get_nest_kernel_proxy()
+                self.assertIs(proxy, sentinel)
                 self.assertIs(proxy, ctx.bsb_nest.kernel)
-                # Repeated calls reuse the same proxy.
-                self.assertIs(get_nest_kernel_proxy(), proxy)
-                self.assertEqual(manager_shutdowns, [])
-            self.assertEqual(len(manager_shutdowns), 1)
+                # Repeated calls reuse the same proxy (connect only once).
+                self.assertIs(get_nest_kernel_proxy(), sentinel)
+                self.assertEqual(shutdowns, [])
+            self.assertEqual(shutdowns, [True])
 
 
 class TestDelayRequiredChecker(unittest.TestCase):
-    """Exercises the checker via the real (in-process) ``_NestKernel`` helper.
-
-    These tests stand in for the subprocess by patching ``_start_kernel_manager``
-    so the proxy is just a ``_NestKernel`` instance — sidesteps subprocess
-    startup cost in unit tests while exercising the same code paths the proxy
-    would.
+    """Exercises the checker with an in-process ``_Kernel`` standing in for the
+    subprocess, to keep these unit tests cheap while running the same code paths.
     """
 
     @classmethod
     def setUpClass(cls):
-        try:
-            import nest  # noqa: F401
-        except ImportError as e:
-            raise unittest.SkipTest("NEST is not installed") from e
+        _requires_nest()
 
-    def _make_stub_manager(self):
-        kernel = _NestKernel()
+    @staticmethod
+    def _stub_connect():
+        from bsb_nest._kernel_server import _Kernel
 
-        class _StubManager:
-            def start(self):
-                pass
+        return _Kernel(), lambda: None
 
-            def kernel(self):
-                return kernel
-
-            def shutdown(self):
-                pass
-
-        return _StubManager()
-
-    def _build_synapse(self, *, model, delay=None):
-        from bsb_nest.connection import NestSynapseSettings
-
-        with (
-            patch(
-                "bsb_nest._kernel_proxy._start_kernel_manager",
-                side_effect=self._make_stub_manager,
-            ),
-            build_context(),
-        ):
-            kwargs = {"model": model}
-            if delay is not None:
-                kwargs["delay"] = delay
-            return NestSynapseSettings(kwargs)
+    def _patch_kernel(self):
+        return patch(
+            "bsb_nest._kernel_proxy._connect_kernel", side_effect=self._stub_connect
+        )
 
     def test_static_synapse_requires_delay(self):
         from bsb_nest.connection import NestSynapseSettings
 
         with (
-            patch(
-                "bsb_nest._kernel_proxy._start_kernel_manager",
-                side_effect=self._make_stub_manager,
-            ),
+            self._patch_kernel(),
             build_context(),
             self.assertRaises(RequirementError),
         ):
-            NestSynapseSettings(
-                {"model": "static_synapse", "weight": 1.0},
-            )
+            NestSynapseSettings({"model": "static_synapse", "weight": 1.0})
 
     def test_gap_junction_does_not_require_delay(self):
         # gap_junction is a real NEST synapse model with has_delay=False.
         from bsb_nest.connection import NestSynapseSettings
 
-        with (
-            patch(
-                "bsb_nest._kernel_proxy._start_kernel_manager",
-                side_effect=self._make_stub_manager,
-            ),
-            build_context(),
-        ):
-            # No delay supplied — must not raise.
-            NestSynapseSettings(
-                {"model": "gap_junction", "weight": 1.0},
-            )
+        with self._patch_kernel(), build_context():
+            NestSynapseSettings({"model": "gap_junction", "weight": 1.0})
 
     def test_unknown_synapse_is_hard_error_when_proxy_reachable(self):
         # When the proxy IS reachable, an unknown model name is a real config
-        # error — the soft warn-and-fall-back is only for cases where we
-        # genuinely can't reach the kernel.
+        # error; the soft warn-and-fall-back is only for unreachable kernels.
         from bsb_nest.connection import NestSynapseSettings
 
         with (
-            patch(
-                "bsb_nest._kernel_proxy._start_kernel_manager",
-                side_effect=self._make_stub_manager,
-            ),
+            self._patch_kernel(),
             build_context(),
             self.assertRaises(ConfigurationError),
         ):
             NestSynapseSettings(
-                {
-                    "model": "definitely_not_a_real_model",
-                    "weight": 1.0,
-                    "delay": 0.5,
-                },
+                {"model": "definitely_not_a_real_model", "weight": 1.0, "delay": 0.5}
             )
 
     def test_no_context_warns_and_falls_back(self):
@@ -147,13 +94,49 @@ class TestDelayRequiredChecker(unittest.TestCase):
 
         with warnings.catch_warnings(record=True) as log:
             warnings.simplefilter("always", KernelWarning)
-            # Calling outside a build context — no proxy available.
+            # Calling outside a build context: no proxy available.
             result = _is_delay_required({"model": "static_synapse"})
         self.assertFalse(result)
         self.assertTrue(
             any(issubclass(w.category, KernelWarning) for w in log),
             f"Expected a KernelWarning, got: {[w.message for w in log]}",
         )
+
+    def test_proxy_failure_warns_and_falls_back(self):
+        from bsb_nest.connection import _is_delay_required
+        from bsb_nest.exceptions import KernelWarning
+
+        def boom():
+            raise RuntimeError("kernel unreachable")
+
+        with (
+            patch("bsb_nest._kernel_proxy._connect_kernel", side_effect=boom),
+            build_context(),
+            warnings.catch_warnings(record=True) as log,
+        ):
+            warnings.simplefilter("always", KernelWarning)
+            result = _is_delay_required({"model": "static_synapse"})
+        self.assertFalse(result)
+        self.assertTrue(
+            any(issubclass(w.category, KernelWarning) for w in log),
+            f"Expected a KernelWarning, got: {[w.message for w in log]}",
+        )
+
+
+class TestRealKernelSubprocess(unittest.TestCase):
+    """End-to-end check of the actual kernel subprocess, with no stubbing."""
+
+    @classmethod
+    def setUpClass(cls):
+        _requires_nest()
+
+    def test_subprocess_kernel_answers_queries(self):
+        with build_context():
+            proxy = get_nest_kernel_proxy()
+            self.assertIsNotNone(proxy)
+            self.assertIn("static_synapse", proxy.models(mtype="synapses"))
+            self.assertTrue(proxy.has_delay("static_synapse"))
+            self.assertFalse(proxy.has_delay("gap_junction"))
 
 
 class TestSimulationModuleLoading(unittest.TestCase):
@@ -204,26 +187,3 @@ class TestSimulationModuleLoading(unittest.TestCase):
 
         with self.assertRaises(ConfigurationError):
             load_simulation_modules(model, FakeProxy())
-
-    def test_proxy_failure_warns_and_falls_back(self):
-        from bsb_nest.connection import _is_delay_required
-        from bsb_nest.exceptions import KernelWarning
-
-        def boom():
-            raise RuntimeError("kernel unreachable")
-
-        with (
-            patch(
-                "bsb_nest._kernel_proxy._start_kernel_manager",
-                side_effect=boom,
-            ),
-            build_context(),
-            warnings.catch_warnings(record=True) as log,
-        ):
-            warnings.simplefilter("always", KernelWarning)
-            result = _is_delay_required({"model": "static_synapse"})
-        self.assertFalse(result)
-        self.assertTrue(
-            any(issubclass(w.category, KernelWarning) for w in log),
-            f"Expected a KernelWarning, got: {[w.message for w in log]}",
-        )

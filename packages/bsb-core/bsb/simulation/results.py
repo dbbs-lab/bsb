@@ -165,6 +165,36 @@ class SimulationResult:
             ),
         )
 
+    def stimulus_train(
+        self,
+        *,
+        times,
+        device,
+        target_count: int,
+        t_stop,
+        units: str = "ms",
+    ):
+        """
+        Build a stimulator :class:`~neo.core.SpikeTrain`: the device's own
+        emitted spikes, not a recording of a cell. It carries the baseline
+        ``bsb_*`` annotations with ``bsb_recording_kind="stimulus"`` and
+        ``bsb_target_count``, but no cell anchor (no ``bsb_ps_name`` /
+        ``bsb_cell_id``), so :func:`iter_recordings` skips it.
+        """
+        from neo import SpikeTrain
+
+        return SpikeTrain(
+            times=times,
+            units=units,
+            t_stop=t_stop,
+            bsb_device_name=getattr(device, "name", device),
+            bsb_device_kind=_device_kind(device),
+            bsb_recording_kind="stimulus",
+            bsb_simulation_id=self.simulation_id,
+            bsb_segment_id=self.segment_id,
+            bsb_target_count=int(target_count),
+        )
+
     def analog_signal(
         self,
         *,
@@ -227,13 +257,10 @@ def _bsb_annotations(
     kinds build on, and any per-kind ``fields`` namespaced as flat ``bsb_<key>``
     keys.
     """
-    device_name = getattr(device, "name", device)
-    device_cls = type(device) if not isinstance(device, type) else device
-    device_kind = getattr(device_cls, "classmap_entry", device_cls.__name__)
     ann = {
         # Baseline: shared by every recorder regardless of recording kind.
-        "bsb_device_name": device_name,
-        "bsb_device_kind": device_kind,
+        "bsb_device_name": getattr(device, "name", device),
+        "bsb_device_kind": _device_kind(device),
         "bsb_recording_kind": recording_kind,
         "bsb_simulation_id": result.simulation_id,
         "bsb_segment_id": result.segment_id,
@@ -245,6 +272,30 @@ def _bsb_annotations(
     # Target-kind extension: flat siblings, namespaced under bsb_.
     ann.update({f"bsb_{key}": value for key, value in fields.items()})
     return ann
+
+
+def _device_kind(device) -> str:
+    """
+    Resolve a device's config classmap entry (e.g. ``"spike_recorder"``).
+
+    The entry is registered on the dynamic root's ``_config_dynamic_classmap``
+    as ``{entry: class}``, not on the leaf class, so it is reverse-looked-up.
+    An explicit ``classmap_entry`` attribute wins if present, and the
+    snake-cased class name is the fallback for an unregistered class.
+    """
+    cls = device if isinstance(device, type) else type(device)
+    explicit = getattr(cls, "classmap_entry", None)
+    if isinstance(explicit, str):
+        return explicit
+    for base in cls.__mro__:
+        classmap = base.__dict__.get("_config_dynamic_classmap")
+        if classmap:
+            for entry, mapped in classmap.items():
+                if mapped is cls:
+                    return entry
+    from ..config._make import _snake_case
+
+    return _snake_case(cls.__name__)
 
 
 def _scaffold_provenance(scaffold) -> dict:

@@ -1,7 +1,6 @@
 import nest
 import numpy as np
 from bsb import config
-from neo import SpikeTrain
 
 from ..device import NestDevice
 
@@ -30,21 +29,13 @@ class PoissonGenerator(NestDevice, classmap_entry="poisson_generator"):
 
         def recorder(segment):
             # Stimulator: it does not record cells in the BSB model, only its
-            # own emitted spikes. We expose them on a SpikeTrain that doesn't
-            # carry a (ps_name, cell_id) — the bsb_* annotations identify it
-            # as a stimulator output. This is intentional and outside the
-            # ``iter_recordings`` convention (which filters on bsb_ps_name).
+            # own emitted spikes, so the train carries no (ps_name, cell_id).
             segment.spiketrains.append(
-                SpikeTrain(
-                    np.asarray(sr.events["times"]),
-                    units="ms",
+                simdata.result.stimulus_train(
+                    times=np.asarray(sr.events["times"]),
+                    device=self,
+                    target_count=len(nodes),
                     t_stop=simulation.duration,
-                    bsb_device_name=self.name,
-                    bsb_device_kind=self.__class__.classmap_entry,
-                    bsb_recording_kind="stimulus",
-                    bsb_simulation_id=simdata.result.simulation_id,
-                    bsb_segment_id=simdata.result.segment_id,
-                    bsb_target_count=len(nodes),
                 )
             )
 

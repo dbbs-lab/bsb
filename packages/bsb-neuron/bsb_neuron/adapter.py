@@ -70,7 +70,7 @@ class NeuronAdapter(SimulatorAdapter):
 
         return engine
 
-    def prepare(self, simulation):
+    def prepare(self, simulation, filename=None):
         """
         Prepare the simulation environment and data structures for running a NEURON
         simulation.
@@ -90,7 +90,8 @@ class NeuronAdapter(SimulatorAdapter):
         """
 
         self.simdata[simulation] = NeuronSimulationData(
-            simulation, result=NeuronResult(simulation)
+            simulation,
+            result=NeuronResult(simulation, filename=filename),
         )
         try:
             report("Preparing simulation", level=2)

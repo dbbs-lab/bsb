@@ -39,6 +39,7 @@ test = [
   "bsb-core[parallel]",
   "bsb-test~=7.0",
   "bsb-hdf5~=7.0",
+  "bsb-otel[sdk]~=7.2",
   "coverage~=7.0"
 ]
 docs = [ "furo~=2024.0", "sphinxext-bsb~=7.0" ]
@@ -57,6 +58,10 @@ editable = true
 
 [tool.uv.sources.bsb-test]
 path = "../bsb-test"
+editable = true
+
+[tool.uv.sources.bsb-otel]
+path = "../bsb-otel"
 editable = true
 
 [tool.uv.sources.sphinxext-bsb]

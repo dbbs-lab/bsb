@@ -47,13 +47,42 @@ jobs:
         timeout-minutes: 60
         env:
           BSB_QUIET: true
+          OTEL_PYTHON_DISTRO: bsb_jsonlines
+          OTEL_EXPORTER_JSONLINES_PATH: ./traces_rank_*.jsonlines
         run: |
           npm install rimraf
+          # uv --env-file lets the parent PYTHONPATH win, so the value
+          # nest_vars.sh tries to set is masked by opentelemetry-instrument's
+          # injection. Add NEST's site-packages to the outer PYTHONPATH so it
+          # survives both layers.
+          export PYTHONPATH="${{ github.workspace }}/.nx/installation/nest/install/lib/python${{ matrix.python-version }}/site-packages${PYTHONPATH:+:$PYTHONPATH}"
           if [ "${{ github.ref }}" == "refs/heads/main" ]; then
-            ./nx run-many -t test ;
+            uv run --project packages/bsb-core opentelemetry-instrument ./nx run-many -t test ;
           else
-            ./nx affected -t test --base=origin/main --head=HEAD;
+            uv run --project packages/bsb-core opentelemetry-instrument ./nx affected -t test --base=origin/main --head=HEAD;
           fi
+      - name: Verify bsb-otel no-SDK contract
+        # Run this step after main unit tests and combine coverage.
+        timeout-minutes: 5
+        env:
+          BSB_QUIET: true
+        run: |
+          cd packages/bsb-otel
+          uv run coverage run -p -m unittest -v \
+            tests.test_bsb_otel.TestBsbTracerSpan.test_trace_no_ops_without_sdk_provider
+          if [ -f .coverage ]; then
+            uv run coverage combine --append
+            uv run coverage xml -o ../../coverage/packages/bsb-otel/coverage.xml
+          fi
+      - name: Upload OTel jsonlines traces
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: otel-traces-py${{ matrix.python-version }}
+          path: |
+            packages/*/traces_rank_*.jsonlines
+            libs/*/traces_rank_*.jsonlines
+          if-no-files-found: warn
       - name: Send coverage
         uses: codecov/codecov-action@v5
         with:

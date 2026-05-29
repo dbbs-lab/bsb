@@ -402,26 +402,65 @@ def _bootstrap_components(components, file_store=None):
 
 
 def get_config_attributes(cls):
-    attrs = {}
+    from ._attrs import ConfigurationAttribute
+
     if not isinstance(cls, type):
         cls = cls.__class__
-    for p_cls in reversed(cls.__mro__):
-        if hasattr(p_cls, "_config_attrs"):
-            attrs.update(p_cls._config_attrs)
-        else:
-            # Scrape for mixin config attributes
-            from ._attrs import ConfigurationAttribute
-
-            attrs.update(
-                {
-                    key: attr
-                    for key, attr in p_cls.__dict__.items()
-                    if isinstance(attr, ConfigurationAttribute)
-                }
-            )
+    order = []
+    values = {}
+    for p_cls in reversed(cls.__mro__):  # base to most-derived
+        decl = [
+            key
+            for key, attr in vars(p_cls).items()
+            if isinstance(attr, ConfigurationAttribute)
+        ]
+        for key in decl:
+            # A more-derived override wins the value.
+            values[key] = vars(p_cls)[key]
+        order = _splice_config_attrs(order, decl)
         for unset in getattr(p_cls, "_config_unset", []):
-            attrs.pop(unset, None)
-    return attrs
+            values.pop(unset, None)
+            if unset in order:
+                order.remove(unset)
+    # Catch attributes registered on a class's merged set but not present as a
+    # class attribute (e.g. injected onto a dynamic subclass).
+    for p_cls in reversed(cls.__mro__):
+        for key, attr in getattr(p_cls, "_config_attrs", {}).items():
+            if key not in values:
+                values[key] = attr
+                order.append(key)
+    return {key: values[key] for key in order}
+
+
+def _splice_config_attrs(order, decl):
+    """Thread a class's declared attributes into the inherited *order*.
+
+    Attributes already in *order* (overrides) keep their inherited position;
+    attributes new in *decl* are inserted just before the next attribute *decl*
+    declares after them that is already present (their following anchor), or
+    appended when *decl* declares no such anchor after them. Every class's
+    declaration order is preserved as a subsequence, so a subclass's new
+    attributes appear at the position the subclass wrote them, between the
+    inherited ones.
+    """
+    in_order = set(order)
+    following_anchor = {}
+    anchor = None
+    for key in reversed(decl):
+        if key in in_order:
+            anchor = key
+        else:
+            following_anchor[key] = anchor
+    groups = {}
+    for key in decl:
+        if key not in in_order:
+            groups.setdefault(following_anchor[key], []).append(key)
+    result = []
+    for key in order:
+        result.extend(groups.get(key, ()))
+        result.append(key)
+    result.extend(groups.get(None, ()))
+    return result
 
 
 def _get_node_name(self):

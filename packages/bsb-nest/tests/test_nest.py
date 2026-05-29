@@ -1,4 +1,5 @@
 import unittest
+from collections import defaultdict
 from unittest.mock import patch
 
 import nest
@@ -185,18 +186,20 @@ class TestNest(
         result = network.run_simulation("test_nest")
 
         spiketrains = result.block.segments[0].spiketrains
-        sr_exc, sr_inh = None, None
+        # One spiketrain per targeted cell; group them back per device.
+        by_device = defaultdict(list)
         for st in spiketrains:
-            if st.annotations["device"] == "sr_exc":
-                sr_exc = st
-            elif st.annotations["device"] == "sr_inh":
-                sr_inh = st
+            by_device[st.annotations["bsb_device_name"]].append(st)
+        exc_trains = by_device["sr_exc"]
+        inh_trains = by_device["sr_inh"]
 
-        self.assertIsNotNone(sr_exc)
-        self.assertIsNotNone(sr_inh)
+        self.assertTrue(exc_trains)
+        self.assertTrue(inh_trains)
 
-        rate_ex = len(sr_exc) / simcfg.duration * 1000.0 / sr_exc.annotations["pop_size"]
-        rate_in = len(sr_inh) / simcfg.duration * 1000.0 / sr_inh.annotations["pop_size"]
+        spikes_ex = sum(len(st) for st in exc_trains)
+        spikes_in = sum(len(st) for st in inh_trains)
+        rate_ex = spikes_ex / simcfg.duration * 1000.0 / len(exc_trains)
+        rate_in = spikes_in / simcfg.duration * 1000.0 / len(inh_trains)
 
         self.assertAlmostEqual(rate_in, 50, delta=1)
         self.assertAlmostEqual(rate_ex, 50, delta=1)
@@ -210,18 +213,20 @@ class TestNest(
         result = network.run_simulation("test_nest")
 
         spiketrains = result.block.segments[0].spiketrains
-        sr_exc, sr_inh = None, None
+        # One spiketrain per targeted cell; group them back per device.
+        by_device = defaultdict(list)
         for st in spiketrains:
-            if st.annotations["device"] == "sr_exc":
-                sr_exc = st
-            elif st.annotations["device"] == "sr_inh":
-                sr_inh = st
+            by_device[st.annotations["bsb_device_name"]].append(st)
+        exc_trains = by_device["sr_exc"]
+        inh_trains = by_device["sr_inh"]
 
-        self.assertIsNotNone(sr_exc)
-        self.assertIsNotNone(sr_inh)
+        self.assertTrue(exc_trains)
+        self.assertTrue(inh_trains)
 
-        rate_ex = len(sr_exc) / simcfg.duration * 1000.0 / sr_exc.annotations["pop_size"]
-        rate_in = len(sr_inh) / simcfg.duration * 1000.0 / sr_inh.annotations["pop_size"]
+        spikes_ex = sum(len(st) for st in exc_trains)
+        spikes_in = sum(len(st) for st in inh_trains)
+        rate_ex = spikes_ex / simcfg.duration * 1000.0 / len(exc_trains)
+        rate_in = spikes_in / simcfg.duration * 1000.0 / len(inh_trains)
 
         self.assertAlmostEqual(rate_in, 50, delta=1)
         self.assertAlmostEqual(rate_ex, 50, delta=1)
@@ -281,11 +286,11 @@ class TestNest(
         netw.compile()
         results = netw.run_simulation("test")
         spike_times_bsb = results.spiketrains[0]
-        self.assertTrue(np.unique(spike_times_bsb.array_annotations["senders"]) == 1)
+        self.assertEqual(spike_times_bsb.annotations["bsb_cell_id"], 0)
         membrane_potentials = results.analogsignals[0]
         # last time point is not recorded because of recorder delay.
         self.assertTrue(len(membrane_potentials) == duration / resolution - 1)
-        self.assertTrue(membrane_potentials.annotations["cell_id"] == 1)
+        self.assertEqual(membrane_potentials.annotations["bsb_cell_id"], 0)
         defaults = nest.GetDefaults("iaf_cond_alpha")
         # since current injected is positive, the V_m should be clamped between default
         # initial V_m = -70mV and spike threshold V_th = -55 mV
@@ -803,7 +808,9 @@ class TestNest(
 
         # get spike time of first spike of C
         spike_times_bsb = results.spiketrains[1]
-        self.assertEqual("record_C_spikes", spike_times_bsb.annotations["device"])
+        self.assertEqual(
+            "record_C_spikes", spike_times_bsb.annotations["bsb_device_name"]
+        )
         membrane_potentials = results.analogsignals[0].magnitude[:, 0]
         time_effect_first_syn = int((spike_times_bsb.magnitude[0] + 1) / resolution)
         time_effect_sec_syn = int((spike_times_bsb.magnitude[0] + 30) / resolution)

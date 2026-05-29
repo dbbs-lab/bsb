@@ -26,6 +26,9 @@ class NeuronSimulationData(SimulationData):
 
 
 class NeuronResult(SimulationResult):
+    # Generic record API for ad-hoc use; built-in BSB devices use the
+    # ``analog_signal`` / ``spike_train`` helpers on SimulationResult directly so
+    # they always emit the standard bsb_* annotations.
     def record(self, obj, **annotations):
         from patch import p
         from quantities import ms
@@ -36,9 +39,14 @@ class NeuronResult(SimulationResult):
             if "units" not in annotations:
                 annotations["units"] = "mV"
             segment.analogsignals.append(
-                AnalogSignal(list(v), sampling_period=p.dt * ms, **annotations)
+                AnalogSignal(
+                    list(v),
+                    sampling_period=p.dt * ms,
+                    bsb_simulation_id=self.simulation_id,
+                    bsb_segment_id=self.segment_id,
+                    **annotations,
+                )
             )
-            # Free the memory
             if v.size():
                 v.remove(0, v.size() - 1)
 
@@ -97,6 +105,10 @@ class NeuronAdapter(SimulatorAdapter):
             self.engine.dt = simulation.resolution
             self.engine.celsius = simulation.temperature
             self.engine.tstop = simulation.duration
+            self.simdata[simulation].result.set_simulator(
+                "neuron",
+                version=_neuron_version(),
+            )
             report("Load balancing", level=2)
             self.load_balance(simulation)
             report("Creating neurons", level=2)
@@ -328,3 +340,12 @@ def _all_ints(arr):
     except TypeError:
         # Not iterable
         return False
+
+
+def _neuron_version() -> str | None:
+    try:
+        import neuron
+
+        return getattr(neuron, "__version__", None)
+    except Exception:
+        return None

@@ -148,11 +148,18 @@ class PackageRequirementWarning(ScaffoldWarning):
     pass
 
 
+class BsbProvenanceUpgradeWarning(ScaffoldWarning):
+    """Emitted once when a legacy storage file is auto-upgraded with provenance."""
+
+    pass
+
+
 __all__ = [
     "AdapterError",
     "AllenApiError",
     "AttributeMissingError",
     "BootError",
+    "BsbProvenanceUpgradeWarning",
     "CLIError",
     "CastConfigurationError",
     "CastError",

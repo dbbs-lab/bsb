@@ -1,4 +1,5 @@
 import unittest
+from collections import defaultdict
 
 import numpy as np
 from bsb_arbor import SpikeRecorder
@@ -158,34 +159,25 @@ class TestTargetting(
         )
         result = self.network.run_simulation("test")
         spiketrains = result.block.segments[0].spiketrains
+        # One spiketrain per targeted cell, so each device's recording count
+        # equals the number of cells its targetting strategy selected.
         expected = {
-            "count_recorder": {
-                "size": 7,
-                "min": 0,
-                "max": 20,
-            },
-            "fraction_recorder": {
-                "size": 10,
-                "min": 0,
-                "max": 20,
-            },
-            "new_recorder": {
-                "size": 100,
-                "min": 20,
-                "max": 120,
-            },
+            "count_recorder": {"size": 7, "ps_name": "h_cell"},
+            "fraction_recorder": {"size": 10, "ps_name": "h_cell"},
+            "new_recorder": {"size": 100, "ps_name": "test_cell"},
         }
+        by_device = defaultdict(list)
         for spiketrain in spiketrains:
-            recorder = spiketrain.annotations["device"]
-            self.assertEqual(
-                spiketrain.annotations["pop_size"], expected[recorder]["size"]
-            )
-            self.assertAll(
-                np.array(spiketrain.annotations["gids"]) < expected[recorder]["max"]
-            )
-            self.assertAll(
-                np.array(spiketrain.annotations["gids"]) >= expected[recorder]["min"]
-            )
+            by_device[spiketrain.annotations["bsb_device_name"]].append(spiketrain)
+        for device, trains in by_device.items():
+            ps_size = len(self.network.get_placement_set(expected[device]["ps_name"]))
+            self.assertEqual(len(trains), expected[device]["size"])
+            for spiketrain in trains:
+                self.assertEqual(
+                    spiketrain.annotations["bsb_ps_name"], expected[device]["ps_name"]
+                )
+                cell_id = spiketrain.annotations["bsb_cell_id"]
+                self.assertTrue(0 <= cell_id < ps_size)
 
     def test_by_id(self):
         sim = self.network.simulations.test
@@ -198,7 +190,8 @@ class TestTargetting(
         )
         result = self.network.run_simulation("test")
         spiketrains = result.block.segments[0].spiketrains
-        self.assertEqual(sorted(spiketrains[0].annotations["gids"]), [0, 5, 7, 10])
+        recorded_ids = sorted(st.annotations["bsb_cell_id"] for st in spiketrains)
+        self.assertEqual(recorded_ids, [0, 5, 7, 10])
 
     def test_sphere(self):
         """Testing SphericalTargetting and SphericalTargettingCellTypes together"""
@@ -224,14 +217,22 @@ class TestTargetting(
         # check ids in sphere by positions, our sphere only include h_cells with x <= 40
         ps = self.network.get_placement_set("h_cell")
         positions = ps.load_positions()
-        expected_ids = np.where(positions[:, 0] <= 40)
+        expected_ids = np.where(positions[:, 0] <= 40)[0]
 
         spiketrains = result.block.segments[0].spiketrains
+        by_device = defaultdict(list)
         for spiketrain in spiketrains:
-            sorted_ids = np.sort(spiketrain.annotations["gids"])
-            only_h_cells = sorted_ids[sorted_ids < 20]
-            self.assertAll(only_h_cells == expected_ids)
-            self.assertEqual(len(only_h_cells), 12)
+            by_device[spiketrain.annotations["bsb_device_name"]].append(spiketrain)
+        for trains in by_device.values():
+            h_cell_ids = np.sort(
+                [
+                    st.annotations["bsb_cell_id"]
+                    for st in trains
+                    if st.annotations["bsb_ps_name"] == "h_cell"
+                ]
+            )
+            self.assertAll(h_cell_ids == expected_ids)
+            self.assertEqual(len(h_cell_ids), 12)
 
     def test_cylinder(self):
         sim = self.network.simulations.test
@@ -253,13 +254,18 @@ class TestTargetting(
         filtered_by_cylinder = ((positions[:, 0] <= 60) & (positions[:, 0] >= 20)) & (
             positions[:, 2] == 50
         )
-        expected_ids = np.where(filtered_by_cylinder)
+        expected_ids = np.where(filtered_by_cylinder)[0]
 
         spiketrains = result.block.segments[0].spiketrains
-        sorted_ids = np.sort(spiketrains[0].annotations["gids"])
-        only_h_cells = sorted_ids[sorted_ids < 20]
-        self.assertAll(only_h_cells == expected_ids)
-        self.assertEqual(len(only_h_cells), 6)
+        h_cell_ids = np.sort(
+            [
+                st.annotations["bsb_cell_id"]
+                for st in spiketrains
+                if st.annotations["bsb_ps_name"] == "h_cell"
+            ]
+        )
+        self.assertAll(h_cell_ids == expected_ids)
+        self.assertEqual(len(h_cell_ids), 6)
 
     def test_bylabel(self):
         ps = self.network.get_placement_set("h_cell")
@@ -280,9 +286,9 @@ class TestTargetting(
         result = self.network.run_simulation("test")
         spiketrains = result.block.segments[0].spiketrains
 
-        sorted_ids = np.sort(spiketrains[0].annotations["gids"])
-        self.assertAll(sorted_ids == sub_pop_h_cell)
-        self.assertEqual(len(sorted_ids), 4)
+        recorded_ids = np.sort([st.annotations["bsb_cell_id"] for st in spiketrains])
+        self.assertAll(recorded_ids == sub_pop_h_cell)
+        self.assertEqual(len(recorded_ids), 4)
 
 
 @config.node

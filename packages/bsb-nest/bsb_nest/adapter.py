@@ -3,6 +3,7 @@ import sys
 import typing
 
 import nest
+import numpy as np
 from bsb import (
     AdapterError,
     SimulationData,
@@ -22,25 +23,27 @@ if typing.TYPE_CHECKING:  # pragma: nocover
 
 
 class NestResult(SimulationResult):
-    # It seems that the record method is not used,
-    # probably we will have to uniform the behavior with NeuronResult
+    # Convenience that adapter code (or post_prepare hooks) can call to wire
+    # a one-off spike_recorder onto an arbitrary NodeCollection. Caller-supplied
+    # ``annotations`` are passed straight through (callers using the standard
+    # bsb_* convention should set bsb_ps_name / bsb_cell_id themselves).
     def record(self, nc, **annotations):
         recorder = nest.Create("spike_recorder", params={"record_to": "memory"})
         nest.Connect(nc, recorder)
 
         def flush(segment):
             events = recorder.events[0]
-
             segment.spiketrains.append(
                 SpikeTrain(
-                    events["times"],
-                    array_annotations={"senders": events["senders"]},
+                    np.asarray(events["times"]),
+                    array_annotations={"senders": np.asarray(events["senders"])},
                     t_stop=nest.biological_time,
                     units="ms",
+                    bsb_simulation_id=self.simulation_id,
+                    bsb_segment_id=self.segment_id,
                     **annotations,
                 )
             )
-            # Free the Memory -> not possible to free the memory while sim is running
 
         self.create_recorder(flush)
 
@@ -86,6 +89,11 @@ class NestAdapter(SimulatorAdapter):
             report("Installing  NEST modules...", level=2)
             self.load_modules(simulation)
             self.set_settings(simulation)
+            self.simdata[simulation].result.set_simulator(
+                "nest",
+                version=getattr(nest, "__version__", None),
+                modules=sorted(self.loaded_modules),
+            )
             report("Creating neurons...", level=2)
             self.create_neurons(simulation)
             report("Creating connections...", level=2)

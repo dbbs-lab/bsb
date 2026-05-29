@@ -2,6 +2,7 @@
 HDF5 storage engine for the BSB framework.
 """
 
+import contextlib
 import importlib.metadata
 import json
 import os
@@ -11,14 +12,39 @@ from datetime import datetime
 
 import h5py
 import shortuuid
-from bsb import Engine, MPILock, ScaffoldWarning, config, report, warn
+from bsb import (
+    BsbProvenanceUpgradeWarning,
+    Engine,
+    MPILock,
+    ScaffoldWarning,
+    config,
+    report,
+    warn,
+)
 from bsb import StorageNode as IStorageNode
+from bsb.storage.provenance import build_root_metadata
 
 from ._telemetry import _hdf5_tracer
 from .connectivity_set import ConnectivitySet
 from .file_store import FileStore
 from .morphology_repository import MorphologyRepository
 from .placement_set import PlacementSet
+
+# Names of root attrs that are JSON-encoded because h5py attrs can't hold nested dicts.
+_JSON_ROOT_KEYS = ("plugins", "host")
+# Names of root attrs that make up the provenance bundle.
+_ROOT_PROVENANCE_KEYS = (
+    "storage_id",
+    "state_id",
+    "bsb_schema_version",
+    "created_at",
+    "bsb_core_version",
+    "engine_name",
+    "engine_version",
+    "plugins",
+    "host",
+    "mpi_size",
+)
 
 __all__ = [
     "ConnectivitySet",
@@ -124,6 +150,7 @@ class HDF5Engine(Engine):
         super().__init__(root, comm)
         self._lock = MPILock.sync(comm._comm)
         self._readonly = False
+        self._upgrade_if_needed()
 
     @on_main()
     @property
@@ -134,6 +161,62 @@ class HDF5Engine(Engine):
                 "engine": "bsb-hdf5",
                 "version": handle.attrs["bsb_hdf5_version"],
             }
+
+    @property
+    def metadata(self) -> dict:
+        if not self.exists():
+            return {}
+        try:
+            with self._handle("r") as handle:
+                return _read_root_metadata(handle)
+        except Exception:
+            return {}
+
+    def _bump_state(self) -> None:
+        """Increment ``state_id``. MPI-safe."""
+        if self._readonly:
+            return
+        self._bump_state_collective()
+
+    @on_main()
+    def _bump_state_collective(self):
+        with self._handle("a") as handle:
+            _bump_state_attrs(handle)
+
+    def _upgrade_if_needed(self):
+        """
+        Stamp a fresh provenance bundle on a pre-schema file that's missing it.
+
+        Triggered automatically on engine instantiation; no-op for fresh files
+        (already stamped by ``create()``), read-only engines, and files that
+        don't exist yet.
+        """
+        if self._readonly or not self.exists():
+            return
+        self._upgrade_collective()
+
+    @on_main()
+    def _upgrade_collective(self):
+        try:
+            with self._handle("r") as handle:
+                if "storage_id" in handle.attrs:
+                    return
+        except Exception:
+            return
+        bundle = build_root_metadata(
+            engine_name="hdf5",
+            engine_version=importlib.metadata.version("bsb-hdf5"),
+            mpi_size=self.comm.get_size(),
+        )
+        bundle["state_id"] = 1
+        with self._handle("a") as handle:
+            _write_root_metadata(handle, bundle)
+        warn(
+            "Auto-upgraded legacy HDF5 storage with a fresh storage_id and "
+            "provenance bundle.",
+            category=BsbProvenanceUpgradeWarning,
+            stacklevel=3,
+        )
 
     @property
     def root_slug(self):
@@ -200,9 +283,15 @@ class HDF5Engine(Engine):
 
     @on_main_until(lambda self: self.exists())
     def create(self):
+        bundle = build_root_metadata(
+            engine_name="hdf5",
+            engine_version=importlib.metadata.version("bsb-hdf5"),
+            mpi_size=self.comm.get_size(),
+        )
         with self._handle("w") as handle:
             handle.attrs["bsb_hdf5_version"] = importlib.metadata.version("bsb-hdf5")
             handle.attrs["bsb_version"] = importlib.metadata.version("bsb-core")
+            _write_root_metadata(handle, bundle)
             handle.create_group("placement")
             handle.create_group("connectivity")
             handle.create_group("files")
@@ -237,6 +326,7 @@ class HDF5Engine(Engine):
             del handle.attrs["chunk_size"]
             handle.require_group("placement")
             self._write_chunk_stats(handle, {})
+            _bump_state_attrs(handle)
 
     @on_main()
     def clear_connectivity(self):
@@ -250,6 +340,7 @@ class HDF5Engine(Engine):
                 for k, v in stats.items()
             }
             self._write_chunk_stats(handle, stats)
+            _bump_state_attrs(handle)
 
     @on_main()
     def get_chunk_stats(self):
@@ -261,6 +352,44 @@ class HDF5Engine(Engine):
 
     def _write_chunk_stats(self, handle, stats):
         handle.attrs["chunks"] = json.dumps(stats)
+
+
+def _write_root_metadata(handle, bundle: dict) -> None:
+    """Write the provenance bundle to ``handle.attrs``, JSON-encoding nested keys."""
+    for key in _ROOT_PROVENANCE_KEYS:
+        if key not in bundle:
+            continue
+        value = bundle[key]
+        if key in _JSON_ROOT_KEYS:
+            handle.attrs[key] = json.dumps(value)
+        else:
+            handle.attrs[key] = value
+
+
+def _read_root_metadata(handle) -> dict:
+    """Read the provenance bundle from ``handle.attrs``, decoding JSON keys."""
+    out: dict = {}
+    for key in _ROOT_PROVENANCE_KEYS:
+        if key not in handle.attrs:
+            continue
+        value = handle.attrs[key]
+        if key in _JSON_ROOT_KEYS:
+            with contextlib.suppress(TypeError, json.JSONDecodeError):
+                value = json.loads(value)
+        else:
+            # h5py returns numpy scalars; normalise to plain Python.
+            if hasattr(value, "item"):
+                value = value.item()
+        out[key] = value
+    return out
+
+
+def _bump_state_attrs(handle) -> None:
+    """Increment ``state_id`` on an open handle."""
+    current = handle.attrs.get("state_id", 0)
+    if hasattr(current, "item"):
+        current = current.item()
+    handle.attrs["state_id"] = int(current) + 1
 
 
 def _get_default_root():

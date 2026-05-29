@@ -2,7 +2,6 @@ import nest
 import numpy as np
 import quantities as pq
 from bsb import ConfigurationError, _util, config, types
-from neo import AnalogSignal
 
 from ..device import NestDevice
 
@@ -26,7 +25,6 @@ class Multimeter(NestDevice, classmap_entry="multimeter"):
     def implement(self, adapter, simulation, simdata):
         targets_dict = self.get_dict_targets(adapter, simulation, simdata)
         nodes = self._flatten_nodes_ids(targets_dict)
-        inv_targets = self._invert_targets_dict(targets_dict)
         device = self.register_device(
             simdata,
             nest.Create(
@@ -38,22 +36,39 @@ class Multimeter(NestDevice, classmap_entry="multimeter"):
             ),
         )
         self.connect_to_nodes(device, nodes)
+        # NEST node id -> (cell_model, ps_name, cell_id_within_ps).
+        lookup = _build_lookup(simdata, targets_dict)
 
         def recorder(segment):
-            senders = device.events["senders"]
-            for sender in np.unique(senders):
-                sender_filter = senders == sender
+            senders = np.asarray(device.events["senders"])
+            for sim_id in np.unique(senders):
+                entry = lookup.get(int(sim_id))
+                if entry is None:
+                    continue
+                cell_model, ps_name, cell_id = entry
+                sender_mask = senders == sim_id
                 for prop, unit in zip(self.properties, self.units, strict=False):
                     segment.analogsignals.append(
-                        AnalogSignal(
-                            device.events[prop][sender_filter],
+                        simdata.result.analog_signal(
+                            data=device.events[prop][sender_mask],
                             units=pq.units.__dict__[unit],
                             sampling_period=self.simulation.resolution * pq.ms,
-                            name=self.name,
-                            cell_type=inv_targets[sender],
-                            cell_id=sender,
-                            prop_recorded=prop,
+                            name=prop,
+                            ps_name=ps_name,
+                            cell_id=cell_id,
+                            cell_model=cell_model,
+                            device=self,
                         )
                     )
 
-        simdata.result.create_recorder(recorder)
+        simdata.result.create_recorder(recorder, device=self)
+
+
+def _build_lookup(simdata, targets_dict):
+    lookup = {}
+    for cell_model, nc in targets_dict.items():
+        ps = simdata.placement[cell_model]
+        ps_name = ps.cell_type.name
+        for cell_id, sim_id in enumerate(nc.tolist()):
+            lookup[int(sim_id)] = (cell_model, ps_name, cell_id)
+    return lookup

@@ -74,6 +74,8 @@ class ConnectivitySet(Resource, IConnectivitySet):
         g.attrs["post"] = post_type.name
         g.require_group(f"{path}/inc")
         g.require_group(f"{path}/out")
+        _init_cs_attrs(handle, path, tag)
+        _bump_root_state(handle)
         cs = cls(engine, tag, handle=handle)
         cs.pre_type = pre_type
         cs.post_type = post_type
@@ -131,6 +133,9 @@ class ConnectivitySet(Resource, IConnectivitySet):
             )
         g.require_group(path + "/inc")
         g.require_group(path + "/out")
+        if "created_at" not in g.attrs:
+            _init_cs_attrs(handle, path, tag)
+            _bump_root_state(handle)
         cs = cls(engine, tag, handle=handle)
         cs.pre_type_name = pre_type.name
         cs.post_type_name = post_type.name
@@ -152,6 +157,8 @@ class ConnectivitySet(Resource, IConnectivitySet):
         g.create_group("out")
         g.attrs["len"] = 0
         g.attrs["chunks"] = "{}"
+        _bump_cs_state(handle, self._path)
+        _bump_root_state(handle)
 
     @handles_handles("a")
     def connect(self, pre_set, post_set, src_locs, dest_locs, handle=HANDLED):
@@ -325,6 +332,8 @@ class ConnectivitySet(Resource, IConnectivitySet):
             conn_stats.setdefault(id, {"inc": 0, "out": 0})[tag] += count
             group.attrs["chunks"] = json.dumps(conn_stats)
         self._engine._write_chunk_stats(handle, global_stats)
+        _bump_cs_state(handle, self._path)
+        _bump_root_state(handle)
 
     @handles_handles("r")
     def get_chunk_stats(self, handle=HANDLED):
@@ -536,3 +545,26 @@ def _point_to_2d(arr):
         return ret
     else:
         return arr
+
+
+def _init_cs_attrs(handle, cs_path, tag):
+    from bsb.storage.provenance import iso_now
+
+    grp = handle[cs_path]
+    grp.attrs["tag"] = tag
+    grp.attrs["revision"] = 0
+    grp.attrs["created_at"] = iso_now()
+
+
+def _bump_cs_state(handle, cs_path):
+    grp = handle[cs_path]
+    current = grp.attrs.get("revision", 0)
+    if hasattr(current, "item"):
+        current = current.item()
+    grp.attrs["revision"] = int(current) + 1
+
+
+def _bump_root_state(handle):
+    from . import _bump_state_attrs
+
+    _bump_state_attrs(handle)

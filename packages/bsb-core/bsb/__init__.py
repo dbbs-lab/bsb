@@ -126,6 +126,7 @@ if typing.TYPE_CHECKING:  # pragma: nocover
   import bsb.storage._files
   import bsb.storage.decorators
   import bsb.storage.interfaces
+  import bsb.storage.provenance
   import bsb.topology
   import bsb.topology.partition
   import bsb.topology.region
@@ -149,6 +150,7 @@ BranchLocTargetting: type["bsb.simulation.targetting.BranchLocTargetting"]
 BsbCommand: type["bsb.cli.commands.BsbCommand"]
 BsbOption: type["bsb.option.BsbOption"]
 BsbParser: type["bsb.morphologies.parsers.parser.BsbParser"]
+BsbProvenanceUpgradeWarning: type["bsb.exceptions.BsbProvenanceUpgradeWarning"]
 ByIdTargetting: type["bsb.simulation.targetting.ByIdTargetting"]
 ByLabelTargetting: type["bsb.simulation.targetting.ByLabelTargetting"]
 CLIError: type["bsb.exceptions.CLIError"]
@@ -324,6 +326,7 @@ RandomPlacement: type["bsb.placement.random.RandomPlacement"]
 RandomRotations: type["bsb.placement.distributor.RandomRotations"]
 ReadOnlyManager: type["bsb.storage.interfaces.ReadOnlyManager"]
 ReadOnlyOptionError: type["bsb.exceptions.ReadOnlyOptionError"]
+Recording: type["bsb.simulation.results.Recording"]
 RedoError: type["bsb.exceptions.RedoError"]
 Reference: type["bsb.config.refs.Reference"]
 ReferenceLambdaError: type["bsb.exceptions.ReferenceLambdaError"]
@@ -339,6 +342,7 @@ RootCommand: type["bsb.cli.commands.RootCommand"]
 RotationDistributor: type["bsb.placement.distributor.RotationDistributor"]
 RotationSet: type["bsb.morphologies.RotationSet"]
 RoundRobinMorphologies: type["bsb.placement.distributor.RoundRobinMorphologies"]
+SCHEMA_VERSION: type["bsb.storage.provenance.SCHEMA_VERSION"]
 Scaffold: type["bsb.core.Scaffold"]
 ScaffoldError: type["bsb.exceptions.ScaffoldError"]
 ScaffoldWarning: type["bsb.exceptions.ScaffoldWarning"]
@@ -392,7 +396,10 @@ WorkflowError: type["bsb.services.WorkflowError"]
 activate_session: "bsb.profiling.activate_session"
 box_layout: "bsb.topology.box_layout"
 branch_iter: "bsb.morphologies.branch_iter"
+build_root_metadata: "bsb.storage.provenance.build_root_metadata"
 chunklist: "bsb.storage._chunks.chunklist"
+collect_host_info: "bsb.storage.provenance.collect_host_info"
+collect_plugin_manifest: "bsb.storage.provenance.collect_plugin_manifest"
 compose_nodes: "bsb.config.compose_nodes"
 copy_configuration_template: "bsb.config.copy_configuration_template"
 create_engine: "bsb.storage.create_engine"
@@ -423,8 +430,11 @@ inside_mbox: "bsb.connectivity.geometric.geometric_shapes.inside_mbox"
 is_module_option_set: "bsb.options.is_module_option_set"
 is_partition: "bsb.topology.is_partition"
 is_region: "bsb.topology.is_region"
+iso_now: "bsb.storage.provenance.iso_now"
+iter_recordings: "bsb.simulation.results.iter_recordings"
 load_root_command: "bsb.cli.commands.load_root_command"
 make_configuration_diagram: "bsb.config.make_configuration_diagram"
+new_storage_id: "bsb.storage.provenance.new_storage_id"
 on_main: "bsb.storage.decorators.on_main"
 on_main_until: "bsb.storage.decorators.on_main_until"
 open_storage: "bsb.storage.open_storage"
@@ -434,6 +444,7 @@ parse_configuration_file: "bsb.config.parse_configuration_file"
 parse_morphology_content: "bsb.morphologies.parsers.parse_morphology_content"
 parse_morphology_file: "bsb.morphologies.parsers.parse_morphology_file"
 pool_cache: "bsb.services.pool_cache"
+read_nio: "bsb.simulation.results.read_nio"
 read_option: "bsb.options.read_option"
 refs: "bsb.config.refs"
 register_option: "bsb.options.register_option"

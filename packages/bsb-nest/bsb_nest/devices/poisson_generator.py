@@ -1,6 +1,6 @@
 import nest
+import numpy as np
 from bsb import config
-from neo import SpikeTrain
 
 from ..device import NestDevice
 
@@ -12,7 +12,7 @@ class PoissonGenerator(NestDevice, classmap_entry="poisson_generator"):
     start = config.attr(type=float, required=False, default=0.0)
     """Activation time in ms"""
     stop = config.attr(type=float, required=False, default=None)
-    """Deactivation time in ms. 
+    """Deactivation time in ms.
         If not specified, generator will last until the end of the simulation."""
 
     def implement(self, adapter, simulation, simdata):
@@ -28,15 +28,15 @@ class PoissonGenerator(NestDevice, classmap_entry="poisson_generator"):
         self.connect_to_nodes(device, nodes)
 
         def recorder(segment):
+            # Stimulator: it does not record cells in the BSB model, only its
+            # own emitted spikes, so the train carries no (ps_name, cell_id).
             segment.spiketrains.append(
-                SpikeTrain(
-                    sr.events["times"],
-                    units="ms",
-                    array_annotations={"senders": sr.events["senders"]},
+                simdata.result.stimulus_train(
+                    times=np.asarray(sr.events["times"]),
+                    device=self,
+                    target_count=len(nodes),
                     t_stop=simulation.duration,
-                    device=self.name,
-                    pop_size=len(nodes),
                 )
             )
 
-        simdata.result.create_recorder(recorder)
+        simdata.result.create_recorder(recorder, device=self)

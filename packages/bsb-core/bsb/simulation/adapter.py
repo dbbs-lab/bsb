@@ -66,6 +66,8 @@ class FixedStepProgressController:
 
 
 class SimulationData:
+    result: SimulationResult
+
     def __init__(self, simulation: "Simulation", result=None):
         self.chunks = None
         self.populations = dict()
@@ -76,7 +78,7 @@ class SimulationData:
         self.devices = dict()
         if result is None:
             result = SimulationResult(simulation)
-        self.result: SimulationResult = result
+        self.result = result
 
 
 class SimulatorAdapter(abc.ABC):
@@ -119,7 +121,15 @@ class SimulatorAdapter(abc.ABC):
                     hook(self, simulation, data)
             if post_prepare:
                 post_prepare(self, simulations, alldata)
-            results = self.run(*simulations)
+            for data in alldata:
+                data.result.mark_started()
+            wall_start = time()
+            try:
+                results = self.run(*simulations)
+            finally:
+                wall = time() - wall_start
+                for data in alldata:
+                    data.result.mark_finished(wall_seconds=wall)
             return self.collect(results)
 
     @abc.abstractmethod

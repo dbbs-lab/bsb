@@ -13,9 +13,10 @@ class SynapseRecorder(NeuronDevice, classmap_entry="synapse_recorder"):
 
     @ignore_arborize_proxy_warnings()
     def implement(self, adapter, simulation, simdata):
-        for _model, pop in self.targetting.get_targets(
+        for cell_model, pop in self.targetting.get_targets(
             adapter, simulation, simdata
         ).items():
+            ps_name = simdata.placement[cell_model].cell_type.name
             for target in pop:
                 for location in self.locations.get_locations(target):
                     for synapse in location.section.synapses:
@@ -23,15 +24,45 @@ class SynapseRecorder(NeuronDevice, classmap_entry="synapse_recorder"):
                             not self.synapse_types
                             or synapse.synapse_name in self.synapse_types
                         ):
-                            _record_synaptic_current(
-                                simdata.result,
+                            self._record_synaptic_current(
+                                simulation,
+                                simdata,
                                 synapse,
-                                name=self.name,
-                                cell_type=target.cell_model.name,
+                                location,
+                                cell_model=cell_model,
+                                ps_name=ps_name,
                                 cell_id=target.id,
-                                synapse_type=synapse.synapse_name,
                             )
 
+    def _record_synaptic_current(
+        self, simulation, simdata, synapse, location, *, cell_model, ps_name, cell_id
+    ):
+        from patch import p
+        from quantities import ms, nA
 
-def _record_synaptic_current(result, synapse, **annotations):
-    result.record(synapse._pp._ref_i, **annotations, units="nA")
+        vec = p.record(synapse._pp._ref_i)
+        branch, point = location.location
+        arc = float(location.arc(0))
+
+        def flush(segment):
+            segment.analogsignals.append(
+                simdata.result.analog_signal(
+                    data=list(vec),
+                    units=nA,
+                    sampling_period=p.dt * ms,
+                    name="I_syn",
+                    recording_kind="synapse",
+                    ps_name=ps_name,
+                    cell_id=cell_id,
+                    cell_model=cell_model,
+                    device=self,
+                    branch=branch,
+                    point=point,
+                    arc=arc,
+                    synapse_type=synapse.synapse_name,
+                )
+            )
+            if vec.size():
+                vec.remove(0, vec.size() - 1)
+
+        simdata.result.create_recorder(flush, device=self)

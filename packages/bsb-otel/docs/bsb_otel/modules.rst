@@ -18,6 +18,13 @@ bsb_otel.exporters module
    :members:
    :undoc-members:
 
+bsb_otel.replay module
+^^^^^^^^^^^^^^^^^^^^^^^
+
+.. automodule:: bsb_otel.replay
+   :members:
+   :undoc-members:
+
 bsb_otel.testing module
 ^^^^^^^^^^^^^^^^^^^^^^^
 

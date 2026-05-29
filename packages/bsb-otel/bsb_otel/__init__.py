@@ -25,5 +25,6 @@ Public API: import directly from the submodule that owns each symbol::
     from bsb_otel.tracer import local_tracing, use_communicator
     from bsb_otel.tracer import TerminationError, ensure_spans_on_exit
     from bsb_otel.exporters import JSONLinesSpanExporter
+    from bsb_otel.replay import replay_files
     from bsb_otel.testing import OTelFixture
 """

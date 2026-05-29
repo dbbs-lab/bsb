@@ -35,6 +35,9 @@ email = "dimitri.rodarie@unipv.it"
 [project.license]
 file = "LICENSE"
 
+[project.entry-points."bsb.commands"]
+bsb_otel = "bsb_otel.commands"
+
 [project.entry-points.opentelemetry_traces_exporter]
 jsonlines = "bsb_otel.exporters:JSONLinesSpanExporter"
 

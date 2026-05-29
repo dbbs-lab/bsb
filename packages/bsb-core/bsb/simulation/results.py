@@ -276,26 +276,17 @@ def _bsb_annotations(
 
 def _device_kind(device) -> str:
     """
-    Resolve a device's config classmap entry (e.g. ``"spike_recorder"``).
-
-    The entry is registered on the dynamic root's ``_config_dynamic_classmap``
-    as ``{entry: class}``, not on the leaf class, so it is reverse-looked-up.
-    An explicit ``classmap_entry`` attribute wins if present, and the
-    snake-cased class name is the fallback for an unregistered class.
+    A device's kind is the classmap entry it was configured under (e.g.
+    ``"spike_recorder"``). A dynamic config node exposes that on its dynamic
+    attribute, so read it straight off the device.
     """
-    cls = device if isinstance(device, type) else type(device)
-    explicit = getattr(cls, "classmap_entry", None)
-    if isinstance(explicit, str):
-        return explicit
-    for base in cls.__mro__:
-        classmap = base.__dict__.get("_config_dynamic_classmap")
-        if classmap:
-            for entry, mapped in classmap.items():
-                if mapped is cls:
-                    return entry
-    from ..config._make import _snake_case
-
-    return _snake_case(cls.__name__)
+    root = getattr(type(device), "_config_dynamic_root", None)
+    attr = getattr(root, "_config_dynamic_attr", None) if root is not None else None
+    value = getattr(device, attr, None) if attr is not None else None
+    if isinstance(value, str):
+        return value
+    # Fallback for non-node devices (e.g. test stubs).
+    return getattr(device, "classmap_entry", type(device).__name__)
 
 
 def _scaffold_provenance(scaffold) -> dict:

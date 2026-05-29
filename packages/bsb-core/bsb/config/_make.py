@@ -425,6 +425,7 @@ def get_config_attributes(cls):
         cls = cls.__class__
     order = []
     values = {}
+    unset = set()
     for p_cls in reversed(cls.__mro__):  # base to most-derived
         decl = [
             key
@@ -432,8 +433,9 @@ def get_config_attributes(cls):
             if isinstance(attr, ConfigurationAttribute)
         ]
         for key in decl:
-            # A more-derived override wins the value.
+            # A more-derived override wins the value and cancels a prior unset.
             values[key] = vars(p_cls)[key]
+            unset.discard(key)
         in_order = set(order)
         # Honor a reordering of inherited attributes only when it is
         # unambiguous, i.e. the class redeclares every attribute that sits
@@ -474,15 +476,17 @@ def get_config_attributes(cls):
                 spliced.append(key)
             spliced.extend(groups.get(None, ()))
             order = spliced
-        for unset in getattr(p_cls, "_config_unset", []):
-            values.pop(unset, None)
-            if unset in order:
-                order.remove(unset)
+        for key in getattr(p_cls, "_config_unset", []):
+            values.pop(key, None)
+            if key in order:
+                order.remove(key)
+            unset.add(key)
     # Catch attributes registered on a class's merged set but not present as a
-    # class attribute (e.g. injected onto a dynamic subclass).
+    # class attribute (e.g. injected onto a dynamic subclass), without
+    # resurrecting any that a subclass unset.
     for p_cls in reversed(cls.__mro__):
         for key, attr in getattr(p_cls, "_config_attrs", {}).items():
-            if key not in values:
+            if key not in values and key not in unset:
                 values[key] = attr
                 order.append(key)
     return {key: values[key] for key in order}

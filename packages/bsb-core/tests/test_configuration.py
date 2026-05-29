@@ -331,6 +331,20 @@ class TestConfigAttrOrder(unittest.TestCase):
             get_config_attributes(Child)
         self.assertIn("m", str(ctx.exception))
 
+    def test_unset_attribute_is_not_resurrected(self):
+        @config.node
+        class Base:
+            a = config.attr()
+            b = config.attr()
+
+        @config.node
+        class Child(Base):
+            n = config.attr()
+            b = config.unset()
+
+        # `b` is unset and must not reappear, while the new `n` is spliced in.
+        self.assertEqual(self._order(Child), ["a", "n"])
+
 
 class TestConfigDict(unittest.TestCase):
     def test_dict_attr(self):

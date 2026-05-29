@@ -47,10 +47,6 @@ jobs:
         timeout-minutes: 60
         env:
           BSB_QUIET: true
-          # The runner has fewer cores than the `mpiexec -n 2` ranks, so OpenMPI's
-          # default busy-wait polling lets one rank starve the other and deadlock
-          # mpilock's RMA. Yield the CPU when idle to keep ranks making progress.
-          OMPI_MCA_mpi_yield_when_idle: "1"
         run: |
           npm install rimraf
           if [ "${{ github.ref }}" == "refs/heads/main" ]; then

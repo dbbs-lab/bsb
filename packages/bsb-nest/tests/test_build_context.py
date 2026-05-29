@@ -141,6 +141,56 @@ class TestDelayRequiredChecker(unittest.TestCase):
             f"Expected a KernelWarning, got: {[w.message for w in log]}",
         )
 
+
+class TestSimulationModuleLoading(unittest.TestCase):
+    """``load_simulation_modules`` finds the enclosing simulation's modules and
+    guards against them not being built yet."""
+
+    @staticmethod
+    def _sim_and_model():
+        from bsb import config
+
+        @config.node
+        class Sim:
+            modules = config.list(type=str)
+
+        @config.node
+        class Model:
+            pass
+
+        sim = Sim(modules=["mymod"])
+        return sim, Model({}, _parent=sim)
+
+    def test_loads_enclosing_simulation_modules(self):
+        from bsb_nest._kernel_proxy import load_simulation_modules
+
+        _, model = self._sim_and_model()
+
+        class FakeProxy:
+            loaded = None
+
+            def load_modules(self, modules):
+                self.loaded = list(modules)
+                return []
+
+        proxy = FakeProxy()
+        load_simulation_modules(model, proxy)
+        self.assertEqual(proxy.loaded, ["mymod"])
+
+    def test_guards_against_unbuilt_modules(self):
+        from bsb_nest._kernel_proxy import load_simulation_modules
+
+        sim, model = self._sim_and_model()
+        # Simulate a future attribute reorder where `modules` is not built yet.
+        del sim.__dict__["_modules"]
+
+        class FakeProxy:
+            def load_modules(self, modules):  # pragma: no cover
+                raise AssertionError("must not load against unbuilt modules")
+
+        with self.assertRaises(ConfigurationError):
+            load_simulation_modules(model, FakeProxy())
+
     def test_proxy_failure_warns_and_falls_back(self):
         from bsb_nest.connection import _is_delay_required
         from bsb_nest.exceptions import KernelWarning

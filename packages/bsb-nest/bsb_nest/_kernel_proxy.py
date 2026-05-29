@@ -16,6 +16,7 @@ from multiprocessing.managers import BaseManager
 
 from bsb import ConfigurationError, TypeHandler, warn
 from bsb.config import get_config_build_context
+from bsb.config._attrs import _hasattr
 
 from .exceptions import KernelWarning
 
@@ -125,17 +126,32 @@ def get_nest_kernel_proxy():
 def load_simulation_modules(node, proxy):
     """Install a config *node*'s enclosing simulation modules into the *proxy*.
 
-    Walks up from *node* to the owning ``NestSimulation`` and hands its
-    ``modules`` to :meth:`_NestKernel.load_modules`, which installs each module
-    only once per build. Raises :class:`~bsb.exceptions.ConfigurationError` if a
-    module can't be found. No-op when *node* has no enclosing simulation, e.g. a
-    model built in isolation.
+    Walks up from *node* to the owning simulation (the first ancestor that
+    declares a ``modules`` attribute) and hands its ``modules`` to
+    :meth:`_NestKernel.load_modules`, which installs each module only once per
+    build. Raises :class:`~bsb.exceptions.ConfigurationError` if a module can't
+    be found. No-op when *node* has no enclosing simulation, e.g. a model built
+    in isolation.
+
+    The simulation's ``modules`` must already be built when this runs; the
+    attribute build order guarantees it precedes the cell and connection models
+    (see :func:`bsb.config._make.get_config_attributes`). Should that order ever
+    change, raise rather than silently validate models against a kernel that is
+    missing the simulation's modules.
     """
     parent = getattr(node, "_config_parent", None)
     while parent is not None:
-        modules = getattr(parent, "modules", None)
-        if isinstance(modules, (list, tuple)):
-            missing = proxy.load_modules(list(modules))
+        if "modules" in getattr(type(parent), "_config_attrs", {}):
+            if not _hasattr(parent, "modules"):
+                raise ConfigurationError(
+                    f"Cannot load the NEST modules of {parent.get_node_name()}:"
+                    " its `modules` attribute is not built yet. Cell and"
+                    " connection models are validated against the simulation's"
+                    " modules, so the `modules` attribute must appear before"
+                    " `cell_models` and `connection_models` in the simulation"
+                    " config object."
+                )
+            missing = proxy.load_modules(list(parent.modules or []))
             if missing:
                 raise ConfigurationError(
                     f"NEST module(s) not found: {', '.join(missing)}."

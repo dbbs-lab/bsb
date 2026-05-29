@@ -43,18 +43,6 @@ jobs:
           path: ${{ env.NEST_FOLDER }}
           key: ${{ runner.os }}-${{ matrix.python-version }}-nest
 
-      - name: Verify bsb-otel no-SDK contract
-        # Runs the no-SDK contract test outside the opentelemetry-instrument
-        # wrapper so the bsb_jsonlines distro is not loaded and the test's
-        # "no TracerProvider configured" precondition actually holds.
-        timeout-minutes: 5
-        env:
-          BSB_QUIET: true
-        run: |
-          cd packages/bsb-otel
-          uv run python -m unittest -v \
-            tests.test_bsb_otel.TestBsbTracerSpan.test_trace_no_ops_without_sdk_provider
-
       - name: Run unittests
         timeout-minutes: 60
         env:
@@ -72,6 +60,19 @@ jobs:
             uv run --project packages/bsb-core opentelemetry-instrument ./nx run-many -t test ;
           else
             uv run --project packages/bsb-core opentelemetry-instrument ./nx affected -t test --base=origin/main --head=HEAD;
+          fi
+      - name: Verify bsb-otel no-SDK contract
+        # Run this step after main unit tests and combine coverage.
+        timeout-minutes: 5
+        env:
+          BSB_QUIET: true
+        run: |
+          cd packages/bsb-otel
+          uv run coverage run -p -m unittest -v \
+            tests.test_bsb_otel.TestBsbTracerSpan.test_trace_no_ops_without_sdk_provider
+          if [ -f .coverage ]; then
+            uv run coverage combine --append
+            uv run coverage xml -o ../../coverage/packages/bsb-otel/coverage.xml
           fi
       - name: Upload OTel jsonlines traces
         if: always()

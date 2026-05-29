@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "bsb-core"
-version = "7.3.1"
+version = "7.4.0"
 readme = "README.md"
 requires-python = ">=3.10,<4"
 dynamic = [ "description" ]
@@ -86,11 +86,7 @@ docs = [
   "bsb-yaml~=7.0",
   "sphinxext-bsb~=7.0"
 ]
-dev = [
-  "pre-commit~=3.5",
-  "ruff>=0.8.2",
-  "snakeviz~=2.1"
-]
+dev = [ "pre-commit~=3.5", "ruff>=0.8.2", "snakeviz~=2.1" ]
 
 [tool.uv]
 default-groups = [ "dev", "docs", "test" ]

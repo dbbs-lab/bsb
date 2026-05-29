@@ -178,3 +178,10 @@ node_modules
 *.pkl
 *.nio
 *.swc
+
+.claude/settings.local.json
+.claude/scheduled_tasks.lock
+.claude/skills/**/NOTES.md
+.claude/skills/**/local.md
+.claude/skills/**/personal.md
+.patches/

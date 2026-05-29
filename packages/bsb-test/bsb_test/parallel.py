@@ -1,3 +1,4 @@
+import contextvars as _contextvars
 import socket
 import threading as _threading
 import unittest as _unittest
@@ -48,8 +49,11 @@ def _excepthook(f):
 def timeout(timeout, abort=False):
     def decorator(f):
         def timed_f(*args, **kwargs):
+            # Prevent loss of context in test body.
+            _ctx = _contextvars.copy_context()
             thread = _threading.Thread(
-                target=_excepthook(f), args=args, kwargs=kwargs, daemon=True
+                target=lambda: _ctx.run(_excepthook(f), *args, **kwargs),
+                daemon=True,
             )
             thread.start()
             thread.join(timeout=timeout)

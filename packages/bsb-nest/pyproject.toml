@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "bsb-nest"
-version = "7.3.1"
+version = "7.4.0"
 readme = "README.md"
 requires-python = ">=3.10,<4"
 dynamic = [ "description" ]
@@ -36,6 +36,7 @@ test = [
   "bsb-test~=7.0",
   "bsb-hdf5~=7.0",
   "bsb-arbor~=7.0",
+  "bsb-otel[sdk]~=7.2",
   "coverage~=7.0"
 ]
 docs = [ "furo~=2024.0", "sphinxext-bsb~=7.0" ]
@@ -58,6 +59,10 @@ editable = true
 
 [tool.uv.sources.bsb-test]
 path = "../bsb-test"
+editable = true
+
+[tool.uv.sources.bsb-otel]
+path = "../bsb-otel"
 editable = true
 
 [tool.uv.sources.sphinxext-bsb]

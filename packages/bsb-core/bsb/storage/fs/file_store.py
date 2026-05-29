@@ -1,8 +1,10 @@
 import base64
+import contextlib
 import hashlib
 import importlib.metadata
 import json
 import os
+import tempfile
 import time
 import typing
 from uuid import uuid4
@@ -17,6 +19,22 @@ def _id_to_path(url):
 
 def _path_to_id(f):
     return base64.urlsafe_b64decode(f).decode("UTF-8")
+
+
+def _atomic_write_bytes(path, data, staging_dir):
+    # Stage in `staging_dir`, not in dirname(path), so a half-written
+    # tmpXXXX filename never appears in `files/` (`_path_to_id` would
+    # crash trying to base64-decode it). Caller must pass a staging dir
+    # on the same filesystem so `os.replace` stays atomic.
+    fd, tmp = tempfile.mkstemp(dir=staging_dir)
+    try:
+        with os.fdopen(fd, "wb") as f:
+            f.write(data)
+        os.replace(tmp, path)
+    except BaseException:
+        with contextlib.suppress(OSError):
+            os.unlink(tmp)
+        raise
 
 
 class FileStore(IFileStore):
@@ -35,6 +53,11 @@ class FileStore(IFileStore):
         return self.meta_path(path)
 
     def all(self):
+        # `files/` is the canonical discovery directory for this store.
+        # `file_meta/` must NEVER be listed for discovery — `store()` relies
+        # on this to keep concurrent readers consistent (see the comment
+        # there). If you want a meta-only iterator, derive ids from `files/`
+        # and then look up the meta by id.
         return {
             id: self.get_meta(id) for id in map(_path_to_id, os.listdir(self.file_path()))
         }
@@ -51,10 +74,24 @@ class FileStore(IFileStore):
         meta.setdefault("content_sha256", hashlib.sha256(content).hexdigest())
         if not overwrite and self.has(id):
             raise FileExistsError(f"Store already contains a file with id {id}")
-        with open(self.id_to_file_path(id), "wb") as f:
-            f.write(content)
-        with open(self.id_to_meta_path(id), "w") as f:
-            json.dump({"meta": meta, "mtime": time.time(), "encoding": encoding}, f)
+        # The store is shared across MPI ranks (Engine.__init__ broadcasts
+        # rank-0's root), so this write can interleave with another rank's
+        # `all()` reading the same directories. Two rules keep readers
+        # consistent:
+        #   1. Each file lands atomically (tmp+rename) — `files/<id>` and
+        #      `file_meta/<id>` never exist on disk in a half-written state.
+        #   2. `all()` discovers entries by listing `files/` only (see the
+        #      comment there). So an id is "visible" exactly when its
+        #      content file is renamed in — we write meta first and content
+        #      second, and a reader that sees the new id in `files/` is
+        #      guaranteed to find the meta already on disk.
+        # Always use `files/` as the source of truth for discovery.
+        meta_blob = json.dumps(
+            {"meta": meta, "mtime": time.time(), "encoding": encoding}
+        ).encode("utf-8")
+        staging = self._engine.root
+        _atomic_write_bytes(self.id_to_meta_path(id), meta_blob, staging)
+        _atomic_write_bytes(self.id_to_file_path(id), content, staging)
         try:
             self._engine._bump_state()
         except Exception:

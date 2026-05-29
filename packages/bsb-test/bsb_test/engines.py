@@ -412,14 +412,21 @@ class TestPlacementSet(
         ps = self.network.get_placement_set("test_cell")
         cells_to_label = [33, 12, 0, 3, 77]
         labels = ["label1", "label2"]
-        # Test empty labeling
+        # Test empty labeling.
+        # MPI.barrier() between ps.label() and get_unique_labels() so a fast
+        # rank cannot race ahead into the next ps.label() call below and
+        # have a slower rank observe its labels via get_unique_labels() —
+        # mpilock serialises writes but does not align ranks at op
+        # boundaries.
         ps.label(labels, np.full(len(ps), False))
+        MPI.barrier()
         self.assertAll(
             np.asarray(ps.get_unique_labels()) == np.asarray([set()]),
             "No cells should have been labelled.",
         )
 
         ps.label(labels, cells_to_label)
+        MPI.barrier()
         self.assertAll(
             np.asarray(ps.get_unique_labels()) == np.asarray([set(), set(labels)])
         )

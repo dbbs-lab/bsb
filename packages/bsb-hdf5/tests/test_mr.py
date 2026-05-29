@@ -67,6 +67,12 @@ class TestHandcrafted(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         super().tearDownClass()
+        # Hold all ranks until every rank is done with all tests in this
+        # class.  Without this barrier rank 0 can race ahead into the file
+        # removal below while a slower rank is still in its last test
+        # method, which then opens a deleted file (`FileNotFoundError:
+        # test3.h5`).
+        MPI.barrier()
         if MPI.get_rank() == 0:
             os.remove("test.h5")
             os.remove("test2.h5")

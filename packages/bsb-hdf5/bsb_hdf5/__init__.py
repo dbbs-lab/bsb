@@ -21,11 +21,7 @@ from bsb import (
     warn,
 )
 from bsb import StorageNode as IStorageNode
-from bsb.storage.provenance import (
-    SCHEMA_VERSION,
-    build_root_metadata,
-    iso_now,
-)
+from bsb.storage.provenance import build_root_metadata
 
 from .connectivity_set import ConnectivitySet
 from .file_store import FileStore
@@ -40,8 +36,7 @@ _ROOT_PROVENANCE_KEYS = (
     "state_id",
     "bsb_schema_version",
     "created_at",
-    "modified_at",
-    "bsb_version",
+    "bsb_core_version",
     "engine_name",
     "engine_version",
     "plugins",
@@ -147,7 +142,7 @@ class HDF5Engine(Engine):
             return {}
 
     def _bump_state(self) -> None:
-        """Increment ``state_id`` and refresh ``modified_at``. MPI-safe."""
+        """Increment ``state_id``. MPI-safe."""
         if self._readonly:
             return
         self._bump_state_collective()
@@ -361,12 +356,11 @@ def _read_root_metadata(handle) -> dict:
 
 
 def _bump_state_attrs(handle) -> None:
-    """Increment ``state_id`` and refresh ``modified_at`` on an open handle."""
+    """Increment ``state_id`` on an open handle."""
     current = handle.attrs.get("state_id", 0)
     if hasattr(current, "item"):
         current = current.item()
     handle.attrs["state_id"] = int(current) + 1
-    handle.attrs["modified_at"] = iso_now()
 
 
 def _get_default_root():

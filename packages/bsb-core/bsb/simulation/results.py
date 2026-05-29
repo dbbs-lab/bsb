@@ -137,7 +137,7 @@ class SimulationResult:
         device,
         t_stop,
         units: str = "ms",
-        target_kind: str = "cell",
+        recording_kind: str = "cell",
         **fields,
     ):
         """
@@ -157,7 +157,7 @@ class SimulationResult:
             **_bsb_annotations(
                 self,
                 device=device,
-                target_kind=target_kind,
+                recording_kind=recording_kind,
                 ps_name=ps_name,
                 cell_id=cell_id,
                 cell_model=cell_model,
@@ -176,7 +176,7 @@ class SimulationResult:
         cell_id: int,
         cell_model,
         device,
-        target_kind: str = "cell",
+        recording_kind: str = "cell",
         **fields,
     ):
         """
@@ -186,9 +186,9 @@ class SimulationResult:
         The annotations come in two layers, all as flat sibling keys. The
         **baseline** identifies what is doing the recording and ties the object
         back to its run: ``bsb_device_name``, ``bsb_device_kind``,
-        ``bsb_target_kind``, ``bsb_simulation_id``, ``bsb_segment_id``. The
-        **target-kind** layer, selected by ``target_kind``, declares what is
-        being recorded; this helper fills the ``"cell"`` anchor
+        ``bsb_recording_kind``, ``bsb_simulation_id``, ``bsb_segment_id``. The
+        **recording-kind** layer, selected by ``recording_kind``, declares what
+        is being recorded; this helper fills the ``"cell"`` anchor
         (``bsb_ps_name``, ``bsb_cell_id``, ``bsb_cell_model``) shared by the
         cell, compartment and synapse kinds.
 
@@ -209,7 +209,7 @@ class SimulationResult:
             **_bsb_annotations(
                 self,
                 device=device,
-                target_kind=target_kind,
+                recording_kind=recording_kind,
                 ps_name=ps_name,
                 cell_id=cell_id,
                 cell_model=cell_model,
@@ -219,21 +219,22 @@ class SimulationResult:
 
 
 def _bsb_annotations(
-    result, *, device, target_kind, ps_name, cell_id, cell_model, fields
+    result, *, device, recording_kind, ps_name, cell_id, cell_model, fields
 ):
     """
     Compose the layered ``bsb_*`` annotation dict: a baseline every recorder
-    shares, the ``"cell"`` anchor that the cell/compartment/synapse target kinds
-    build on, and any per-kind ``fields`` namespaced as flat ``bsb_<key>`` keys.
+    shares, the ``"cell"`` anchor that the cell/compartment/synapse recording
+    kinds build on, and any per-kind ``fields`` namespaced as flat ``bsb_<key>``
+    keys.
     """
     device_name = getattr(device, "name", device)
     device_cls = type(device) if not isinstance(device, type) else device
     device_kind = getattr(device_cls, "classmap_entry", device_cls.__name__)
     ann = {
-        # Baseline: shared by every recorder regardless of target kind.
+        # Baseline: shared by every recorder regardless of recording kind.
         "bsb_device_name": device_name,
         "bsb_device_kind": device_kind,
-        "bsb_target_kind": target_kind,
+        "bsb_recording_kind": recording_kind,
         "bsb_simulation_id": result.simulation_id,
         "bsb_segment_id": result.segment_id,
         # Cell anchor: the cell/compartment/synapse kinds.

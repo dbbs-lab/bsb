@@ -116,14 +116,12 @@ def build_root_metadata(
     The returned dict is JSON-serialisable. Engines decide how to persist it
     (HDF5 attrs vs an FS ``metadata.json``).
     """
-    now = iso_now()
     return {
         "storage_id": new_storage_id(),
         "state_id": 0,
         "bsb_schema_version": SCHEMA_VERSION,
-        "created_at": now,
-        "modified_at": now,
-        "bsb_version": _safe_version("bsb-core"),
+        "created_at": iso_now(),
+        "bsb_core_version": _safe_version("bsb-core"),
         "engine_name": engine_name,
         "engine_version": engine_version,
         "plugins": collect_plugin_manifest(),

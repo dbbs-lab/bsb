@@ -141,9 +141,9 @@ class Engine(Interface):
     @abc.abstractmethod
     def _bump_state(self) -> None:  # pragma: nocover
         """
-        :guilabel:`collective` Must increment the engine's ``state_id`` and update
-        ``modified_at``. Called by every mutating operation; engines invoke this
-        themselves so it does not need to be called from user code.
+        :guilabel:`collective` Must increment the engine's ``state_id``. Called by
+        every mutating operation; engines invoke this themselves so it does not need
+        to be called from user code.
         """
         pass
 

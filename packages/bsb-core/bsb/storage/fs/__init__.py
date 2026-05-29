@@ -16,7 +16,7 @@ from ...services import MPILock
 from ..decorators import on_main_until
 from ..interfaces import Engine, NoopLock
 from ..interfaces import StorageNode as IStorageNode
-from ..provenance import build_root_metadata, iso_now
+from ..provenance import build_root_metadata
 from .file_store import FileStore  # noqa: F401
 
 _METADATA_FILENAME = "metadata.json"
@@ -65,9 +65,9 @@ class FileSystemEngine(Engine):
         md = self.metadata
         if md:
             return {
-                "bsb": md.get("bsb_version"),
+                "bsb": md.get("bsb_core_version"),
                 "engine": "fs",
-                "version": md.get("engine_version") or md.get("bsb_version"),
+                "version": md.get("engine_version") or md.get("bsb_core_version"),
             }
         # Pre-upgrade legacy fallback.
         legacy = _legacy_versions_path(self._root)
@@ -95,7 +95,6 @@ class FileSystemEngine(Engine):
             if not md:
                 return
             md["state_id"] = int(md.get("state_id", 0)) + 1
-            md["modified_at"] = iso_now()
             _atomic_write_json(_metadata_path(self._root), md)
 
     def _upgrade_if_needed(self):

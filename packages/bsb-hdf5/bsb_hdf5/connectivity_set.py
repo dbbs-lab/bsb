@@ -550,23 +550,18 @@ def _point_to_2d(arr):
 def _init_cs_attrs(handle, cs_path, tag):
     from bsb.storage.provenance import iso_now
 
-    now = iso_now()
     grp = handle[cs_path]
     grp.attrs["tag"] = tag
     grp.attrs["revision"] = 0
-    grp.attrs["created_at"] = now
-    grp.attrs["modified_at"] = now
+    grp.attrs["created_at"] = iso_now()
 
 
 def _bump_cs_state(handle, cs_path):
-    from bsb.storage.provenance import iso_now
-
     grp = handle[cs_path]
     current = grp.attrs.get("revision", 0)
     if hasattr(current, "item"):
         current = current.item()
     grp.attrs["revision"] = int(current) + 1
-    grp.attrs["modified_at"] = iso_now()
 
 
 def _bump_root_state(handle):

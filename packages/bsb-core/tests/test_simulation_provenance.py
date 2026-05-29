@@ -110,7 +110,7 @@ class TestRecorderConventionHelpers(unittest.TestCase):
         # Baseline layer.
         self.assertEqual(st.annotations["bsb_device_name"], "sr_pc")
         self.assertEqual(st.annotations["bsb_device_kind"], "spike_recorder")
-        self.assertEqual(st.annotations["bsb_target_kind"], "cell")
+        self.assertEqual(st.annotations["bsb_recording_kind"], "cell")
         self.assertEqual(
             st.annotations["bsb_simulation_id"], self.result.simulation_id
         )
@@ -120,7 +120,7 @@ class TestRecorderConventionHelpers(unittest.TestCase):
         self.assertEqual(st.annotations["bsb_cell_id"], 17)
         self.assertEqual(st.annotations["bsb_cell_model"], "pc")
 
-    def test_analog_signal_target_kind(self):
+    def test_analog_signal_recording_kind(self):
         import quantities as pq
 
         sig = self.result.analog_signal(
@@ -128,7 +128,7 @@ class TestRecorderConventionHelpers(unittest.TestCase):
             units="mV",
             sampling_period=1.0 * pq.ms,
             name="V_m",
-            target_kind="compartment",
+            recording_kind="compartment",
             ps_name="pc",
             cell_id=3,
             cell_model=_StubCellModel(),
@@ -138,7 +138,7 @@ class TestRecorderConventionHelpers(unittest.TestCase):
             arc=0.5,
         )
         self.assertEqual(sig.name, "V_m")
-        self.assertEqual(sig.annotations["bsb_target_kind"], "compartment")
+        self.assertEqual(sig.annotations["bsb_recording_kind"], "compartment")
         self.assertEqual(sig.annotations["bsb_ps_name"], "pc")
         self.assertEqual(sig.annotations["bsb_cell_id"], 3)
         # per-kind fields are flat bsb_* siblings, not nested under bsb_location

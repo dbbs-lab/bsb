@@ -576,28 +576,23 @@ def _init_ps_attrs(handle, ps_path, cell_type_name):
     """Stamp the provenance attrs that every PlacementSet should have."""
     from bsb.storage.provenance import iso_now
 
-    now = iso_now()
     grp = handle[ps_path]
     grp.attrs["cell_type"] = cell_type_name
     grp.attrs["revision"] = 0
-    grp.attrs["created_at"] = now
-    grp.attrs["modified_at"] = now
+    grp.attrs["created_at"] = iso_now()
 
 
 def _bump_ps_state(handle, ps_path, engine):
     """
-    Bump the per-PS ``revision``/``modified_at`` attrs and refresh the
-    informational ``morphology_hashes`` from the morphology repo on the same
-    open handle (no re-locking).
+    Bump the per-PS ``revision`` and refresh the informational
+    ``morphology_hashes`` from the morphology repo on the same open handle (no
+    re-locking).
     """
-    from bsb.storage.provenance import iso_now
-
     grp = handle[ps_path]
     current = grp.attrs.get("revision", 0)
     if hasattr(current, "item"):
         current = current.item()
     grp.attrs["revision"] = int(current) + 1
-    grp.attrs["modified_at"] = iso_now()
     loaders = grp.attrs.get("morphology_loaders")
     if loaders is not None and len(loaders):
         all_meta = _read_morphology_meta_from_handle(handle)

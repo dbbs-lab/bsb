@@ -25,8 +25,7 @@ class TestHDF5Provenance(unittest.TestCase):
                 "state_id",
                 "bsb_schema_version",
                 "created_at",
-                "modified_at",
-                "bsb_version",
+                "bsb_core_version",
                 "engine_name",
                 "engine_version",
                 "plugins",
@@ -34,6 +33,7 @@ class TestHDF5Provenance(unittest.TestCase):
                 "mpi_size",
             ):
                 self.assertIn(key, md, f"missing root attr: {key}")
+            self.assertNotIn("modified_at", md)
             self.assertEqual(md["engine_name"], "hdf5")
             self.assertEqual(md["state_id"], 0)
             self.assertEqual(md["bsb_schema_version"], 1)

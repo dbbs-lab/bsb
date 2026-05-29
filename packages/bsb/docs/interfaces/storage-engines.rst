@@ -36,9 +36,8 @@ The provenance surface (below) is the second group.
     cannot be upgraded.
 
 :meth:`_bump_state <bsb:bsb.storage.interfaces.Engine._bump_state>`
-    Increments :attr:`state_id <bsb:bsb.storage.interfaces.Engine.state_id>` and
-    refreshes ``modified_at`` atomically. The engine invokes this itself from every
-    mutating code path:
+    Increments :attr:`state_id <bsb:bsb.storage.interfaces.Engine.state_id>`
+    atomically. The engine invokes this itself from every mutating code path:
     :meth:`clear_placement <bsb:bsb.storage.interfaces.Engine.clear_placement>`,
     :meth:`clear_connectivity <bsb:bsb.storage.interfaces.Engine.clear_connectivity>`,
     :meth:`FileStore.store <bsb:bsb.storage.interfaces.FileStore.store>` and
@@ -78,10 +77,12 @@ Key                            Meaning
                                write. Not a content fingerprint: it answers "did this
                                artefact change since I last looked?", not "is it the same
                                network as that other artefact?".
-``bsb_schema_version``         Version of the bundle layout itself.
+``bsb_schema_version``         Version of the bundle layout itself, so future BSB
+                               versions can read / write / migrate older and newer
+                               schemas.
 ``created_at``                 ISO 8601 UTC timestamp of engine creation.
-``modified_at``                ISO 8601 UTC timestamp of the last mutating write.
-``bsb_version``                ``importlib.metadata.version("bsb-core")`` at creation time.
+``bsb_core_version``           ``importlib.metadata.version("bsb-core")`` at creation
+                               time (every package and plugin is also in ``plugins``).
 ``engine_name``                ``"hdf5"`` or ``"fs"``.
 ``engine_version``             Engine package version at creation time.
 ``plugins``                    ``{category: {entry_name: {package, version}}}`` enumerated
@@ -89,8 +90,11 @@ Key                            Meaning
                                ``storage.engines``, ``config.parsers``,
                                ``config.templates``, ``simulation_backends``,
                                ``commands`` and ``options``.
-``host``                       ``{platform, python_version, hostname, user, cwd}``.
-``mpi_size``                   ``comm.get_size()`` at creation time.
+``host``                       Diagnostic, optional: ``{platform, python_version,
+                               hostname, user, cwd}`` of the last writer.
+``mpi_size``                   Diagnostic, optional: ``comm.get_size()`` of the last
+                               writer. Reconstructions can be built in parts, so this
+                               is best-effort.
 ============================== ==============================================================
 
 The bundle is the back-pointer target for simulation result files. Every ``.nio``
@@ -694,10 +698,10 @@ Every write path across the sub-interfaces keeps the
 :ref:`provenance bundle <storage-engine-contract>` in step with the data:
 
 * placement writes (``append_data``, ``append_additional``, the ``label*`` methods,
-  ``clear``) stamp ``revision``, ``created_at`` and ``modified_at`` on the placement
-  set and refresh ``morphology_hashes`` when morphology data changed;
-* connectivity writes (``connect``, ``chunk_connect``, ``clear``) stamp ``revision``,
-  ``created_at`` and ``modified_at`` on the connectivity set;
+  ``clear``) bump ``revision`` on the placement set and refresh
+  ``morphology_hashes`` when morphology data changed;
+* connectivity writes (``connect``, ``chunk_connect``, ``clear``) bump ``revision``
+  on the connectivity set;
 * file writes (``store``, ``remove``, ``store_active_config``) record
   ``content_sha256`` and ``producer`` per file;
 * all of them bump the engine's ``state_id`` (the cross-cutting

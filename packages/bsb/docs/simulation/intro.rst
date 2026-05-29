@@ -253,7 +253,7 @@ The BSB does **not** validate or constrain what recorders emit. A recorder is fr
 to add as many (or as few) Neo objects to a segment as it wants, of either kind, in
 any shape it likes. The convention only describes what each emitted object's
 ``bsb_*`` annotations *assert*, in two layers: a **baseline** every recorder shares,
-and a **target-kind** layer chosen by what is being recorded.
+and a **recording-kind** layer chosen by what is being recorded.
 
 Baseline (every recorder)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -267,10 +267,10 @@ records:
     …). Two devices recording the same target produce objects distinguishable by
     these keys.
 
-``bsb_target_kind`` (str)
+``bsb_recording_kind`` (str)
     What *kind of thing* the object records: ``"cell"``, ``"compartment"``,
     ``"synapse"``, ``"lfp"``, … This discriminator tells a consumer which
-    target-kind fields (below) to expect.
+    recording-kind fields (below) to expect.
 
 ``bsb_simulation_id`` (str), ``bsb_segment_id`` (str)
     Mirrors of the :class:`neo:neo.core.Block`- and :class:`neo:neo.core.Segment`-
@@ -282,10 +282,10 @@ Neo's native fields carry *what quantity* is recorded: ``obj.name`` is the label
 :class:`neo:neo.core.SpikeTrain`) and ``obj.units`` the dimension (a ``quantities``
 unit, e.g. ``mV``, ``nA``).
 
-Target kinds (proposed)
-^^^^^^^^^^^^^^^^^^^^^^^
+Recording kinds (proposed)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-On top of the baseline, each ``bsb_target_kind`` declares further fields that locate
+On top of the baseline, each ``bsb_recording_kind`` declares further fields that locate
 its target. These are first-class flat ``bsb_*`` annotations, siblings of the
 baseline keys (not nested in a blob), so a consumer reads ``rec.annotations`` keys
 directly. This taxonomy is part of the proposal; the field sets per kind are open to
@@ -361,7 +361,7 @@ All synaptic currents on the soma branch of any cell (filtering on the flat
 
    for rec in iter_recordings(block):
        if (
-           rec.annotations.get("bsb_target_kind") == "synapse"
+           rec.annotations.get("bsb_recording_kind") == "synapse"
            and rec.annotations.get("bsb_branch") == 0
        ):
            ...

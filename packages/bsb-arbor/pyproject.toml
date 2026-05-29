@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "bsb-arbor"
-version = "7.3.1"
+version = "7.4.0"
 readme = "README.md"
 requires-python = ">=3.10,<4"
 dynamic = [ "description" ]
@@ -37,15 +37,12 @@ arbor = "bsb_arbor"
 test = [
   "bsb-core[parallel]",
   "bsb-hdf5~=7.0",
+  "bsb-otel[sdk]~=7.2",
   "bsb-test~=7.0",
   "coverage>=7.3"
 ]
 docs = [ "furo~=2024.0", "sphinxext-bsb~=7.0" ]
-dev = [
-  "pre-commit~=3.5",
-  "ruff>=0.8.2",
-  "snakeviz~=2.1"
-]
+dev = [ "pre-commit~=3.5", "ruff>=0.8.2", "snakeviz~=2.1" ]
 
 [tool.uv]
 default-groups = [ "dev", "docs", "test" ]
@@ -60,6 +57,10 @@ editable = true
 
 [tool.uv.sources.bsb-test]
 path = "../bsb-test"
+editable = true
+
+[tool.uv.sources.bsb-otel]
+path = "../bsb-otel"
 editable = true
 
 [tool.uv.sources.sphinxext-bsb]

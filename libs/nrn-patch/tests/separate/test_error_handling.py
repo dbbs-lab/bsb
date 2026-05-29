@@ -22,9 +22,7 @@ class TestErrorHandling(_shared.NeuronTestCase):
                 v = p.Vector()
                 v.__neuron__().record(p.Section())
 
-        with self.assertRaises(
-            HocError, msg="Did not capture `RuntimeError: hoc error`"
-        ):
+        with self.assertRaises(HocError, msg="Did not capture `RuntimeError: hoc error`"):
             test()
 
     def test_handler_requirements(self):

@@ -28,8 +28,8 @@ jobs:
         run: |
           sudo apt update
           # Install `libopenmpi` for MPI, `libhdf5` for `morphio`,
-          # `libgsl` and `libreadline` for NEST
-          sudo apt install -y openmpi-bin libopenmpi-dev libhdf5-dev libreadline-dev libgsl-dev
+          # `libgsl` and `libreadline` for NEST, `libboost` required by NEST >= 3.8
+          sudo apt install -y openmpi-bin libopenmpi-dev libhdf5-dev libreadline-dev libgsl-dev libboost-dev
 
       - name: Install nodejs
         uses: actions/setup-node@v6
@@ -41,7 +41,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ env.NEST_FOLDER }}
-          key: ${{ runner.os }}-${{ matrix.python-version }}-nest
+          key: ${{ runner.os }}-${{ matrix.python-version }}-nest-${{ env.NEST_VERSION }}
 
       - name: Run unittests
         timeout-minutes: 60

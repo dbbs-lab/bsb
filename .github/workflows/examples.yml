@@ -7,7 +7,7 @@ on:
       - submitted
 
 env:
-  NEST_VERSION: 3.7
+  NEST_VERSION: 3.8
   NEST_FOLDER: ${{ github.workspace }}/.nx/installation/nest
   NX_DAEMON: false  # may prevent GHA to stall for some reason
 

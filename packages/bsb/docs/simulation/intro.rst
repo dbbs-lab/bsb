@@ -299,15 +299,18 @@ feedback and new kinds can be added.
     simulator-internal GIDs in its data model.
 
 ``"compartment"``
-    A location on a cell's morphology. Adds the ``"cell"`` fields plus the site:
-    ``bsb_section`` (str) and ``bsb_arc`` (float in ``[0, 1]``), and optionally
-    ``bsb_compartment_index`` (int).
+    A location on a cell's morphology. Adds the ``"cell"`` fields plus the
+    BSB-native morphology address: ``bsb_branch`` (int branch id), ``bsb_point`` (int
+    point id) and ``bsb_arc`` (float in ``[0, 1]`` along the branch). Where the
+    recorder can resolve it, a small ``bsb_coordinates`` dict
+    ``{"x", "y", "z", "r"}`` gives the point's position and radius (proposed; this is
+    also the per-segment geometry an LFP probe needs).
 
 ``"synapse"``
     A synapse on a postsynaptic cell. Adds the postsynaptic ``"cell"`` fields, the
-    site on that cell (``bsb_section`` / ``bsb_arc``), ``bsb_synapse_type`` (str),
-    and the presynaptic identity (proposed: ``bsb_pre_ps_name`` /
-    ``bsb_pre_cell_id``).
+    morphology address on that cell (``bsb_branch`` / ``bsb_point`` / ``bsb_arc``),
+    ``bsb_synapse_type`` (str), and the presynaptic identity (proposed:
+    ``bsb_pre_ps_name`` / ``bsb_pre_cell_id``).
 
 ``"lfp"``
     A local field potential over a region, not tied to a single cell. Declares the

@@ -41,10 +41,8 @@ class SynapseRecorder(NeuronDevice, classmap_entry="synapse_recorder"):
         from quantities import ms, nA
 
         vec = p.record(synapse._pp._ref_i)
-        section = location.section
-        section_name = getattr(section, "name", str(section))
+        branch, point = location.location
         arc = float(location.arc(0))
-        compartment_index = getattr(location, "compartment_index", None)
 
         def flush(segment):
             segment.analogsignals.append(
@@ -58,9 +56,9 @@ class SynapseRecorder(NeuronDevice, classmap_entry="synapse_recorder"):
                     cell_id=cell_id,
                     cell_model=cell_model,
                     device=self,
-                    section=section_name,
+                    branch=branch,
+                    point=point,
                     arc=arc,
-                    compartment_index=compartment_index,
                     synapse_type=synapse.synapse_name,
                 )
             )

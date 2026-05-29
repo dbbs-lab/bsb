@@ -133,7 +133,8 @@ class TestRecorderConventionHelpers(unittest.TestCase):
             cell_id=3,
             cell_model=_StubCellModel(),
             device=_StubDevice(),
-            section="soma",
+            branch=2,
+            point=5,
             arc=0.5,
         )
         self.assertEqual(sig.name, "V_m")
@@ -141,7 +142,8 @@ class TestRecorderConventionHelpers(unittest.TestCase):
         self.assertEqual(sig.annotations["bsb_ps_name"], "pc")
         self.assertEqual(sig.annotations["bsb_cell_id"], 3)
         # per-kind fields are flat bsb_* siblings, not nested under bsb_location
-        self.assertEqual(sig.annotations["bsb_section"], "soma")
+        self.assertEqual(sig.annotations["bsb_branch"], 2)
+        self.assertEqual(sig.annotations["bsb_point"], 5)
         self.assertEqual(sig.annotations["bsb_arc"], 0.5)
         self.assertNotIn("bsb_location", sig.annotations)
 

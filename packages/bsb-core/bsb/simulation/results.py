@@ -81,8 +81,19 @@ class SimulationResult:
     def add(self, recorder):
         self.recorders.append(recorder)
 
-    def create_recorder(self, flush: typing.Callable[["neo.core.Segment"], None]):
-        recorder = SimulationRecorder()
+    def create_recorder(
+        self,
+        flush: typing.Callable[["neo.core.Segment"], None],
+        *,
+        device=None,
+        meta: dict | None = None,
+    ):
+        """
+        Register ``flush`` as a recorder. Pass ``device`` to link the recorder
+        back to it (sets ``recorder.device_name``) and ``meta`` to expose
+        recorder-level metadata queryable at runtime via ``recorder.meta(...)``.
+        """
+        recorder = SimulationRecorder(device=device, meta=meta)
         recorder.flush = flush
         self.add(recorder)
         return recorder
@@ -258,8 +269,35 @@ def _mpi_size(scaffold) -> int:
 
 
 class SimulationRecorder:
+    """
+    A recorder appends Neo objects to a segment on each ``flush``. It is also
+    inspectable at runtime, before anything is written to file: ``device_name``
+    links it back to the device that created it, and ``meta`` exposes
+    recorder-level metadata. This lets a controller (e.g. an LFP probe) find the
+    recorders of the devices it manages during a flush and query their metadata,
+    such as ``recorder.meta("lfp_source_geometry")``.
+    """
+
+    def __init__(self, device=None, meta: dict | None = None):
+        self.device_name = getattr(device, "name", device)
+        self._meta = dict(meta or {})
+
     def flush(self, segment: "neo.core.Segment"):
         raise NotImplementedError("Recorders need to implement the `flush` function.")
+
+    def meta(self, property: str | None = None, default=None):
+        """
+        Query recorder-level metadata. With a ``property`` name return that entry
+        (or ``default``); with no argument return a copy of the whole metadata
+        mapping.
+        """
+        if property is None:
+            return dict(self._meta)
+        return self._meta.get(property, default)
+
+    def set_meta(self, property: str, value) -> None:
+        """Set a recorder-level metadata entry."""
+        self._meta[property] = value
 
 
 # ---- reader helper -----------------------------------------------------------

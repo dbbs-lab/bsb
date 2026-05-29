@@ -41,10 +41,11 @@ class PoissonGenerator(NestDevice, classmap_entry="poisson_generator"):
                     t_stop=simulation.duration,
                     bsb_device_name=self.name,
                     bsb_device_kind=self.__class__.classmap_entry,
+                    bsb_target_kind="stimulus",
                     bsb_simulation_id=simdata.result.simulation_id,
                     bsb_segment_id=simdata.result.segment_id,
                     bsb_target_count=len(nodes),
                 )
             )
 
-        simdata.result.create_recorder(recorder)
+        simdata.result.create_recorder(recorder, device=self)

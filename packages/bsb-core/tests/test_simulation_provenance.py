@@ -177,5 +177,32 @@ class TestIterRecordings(unittest.TestCase):
         _ = Block, Segment  # silence unused-import linters
 
 
+class TestRecorderRuntimeInspection(unittest.TestCase):
+    """A recorder is linked to its device and its meta is queryable at runtime."""
+
+    def test_device_link_and_meta(self):
+        result = SimulationResult(_StubSimulation())
+        rec = result.create_recorder(
+            lambda segment: None,
+            device=_StubDevice(),
+            meta={"lfp_source_geometry": [1, 2, 3]},
+        )
+        # Discoverable on the result and linked back to its device.
+        self.assertIn(rec, result.recorders)
+        self.assertEqual(rec.device_name, "sr_pc")
+        # Metadata queryable before anything is written to file.
+        self.assertEqual(rec.meta("lfp_source_geometry"), [1, 2, 3])
+        self.assertIsNone(rec.meta("absent"))
+        self.assertEqual(rec.meta(), {"lfp_source_geometry": [1, 2, 3]})
+        rec.set_meta("k", 9)
+        self.assertEqual(rec.meta("k"), 9)
+
+    def test_recorder_without_device(self):
+        result = SimulationResult(_StubSimulation())
+        rec = result.create_recorder(lambda segment: None)
+        self.assertIsNone(rec.device_name)
+        self.assertEqual(rec.meta(), {})
+
+
 if __name__ == "__main__":
     unittest.main()

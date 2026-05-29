@@ -65,4 +65,4 @@ class SynapseRecorder(NeuronDevice, classmap_entry="synapse_recorder"):
             if vec.size():
                 vec.remove(0, vec.size() - 1)
 
-        simdata.result.create_recorder(flush)
+        simdata.result.create_recorder(flush, device=self)

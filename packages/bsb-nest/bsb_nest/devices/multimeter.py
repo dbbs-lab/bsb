@@ -61,7 +61,7 @@ class Multimeter(NestDevice, classmap_entry="multimeter"):
                         )
                     )
 
-        simdata.result.create_recorder(recorder)
+        simdata.result.create_recorder(recorder, device=self)
 
 
 def _build_lookup(simdata, targets_dict):

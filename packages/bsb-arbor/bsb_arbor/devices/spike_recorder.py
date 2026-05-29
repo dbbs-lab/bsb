@@ -36,7 +36,7 @@ class SpikeRecorder(ArborDevice, classmap_entry="spike_recorder"):
                         )
                     )
 
-            simdata.result.create_recorder(record_device_spikes)
+            simdata.result.create_recorder(record_device_spikes, device=self)
 
     def implement_probes(self, simdata, gid):
         self._gids.add(gid)

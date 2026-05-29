@@ -59,4 +59,4 @@ class VoltageRecorder(NeuronDevice, classmap_entry="voltage_recorder"):
             if vec.size():
                 vec.remove(0, vec.size() - 1)
 
-        simdata.result.create_recorder(flush)
+        simdata.result.create_recorder(flush, device=self)

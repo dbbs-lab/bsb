@@ -317,10 +317,16 @@ feedback and new kinds can be added.
     recording electrode / probe identity and its position (proposed: ``bsb_probe`` /
     ``bsb_position``).
 
-The built-in recorders cover three kinds: NEST ``spike_recorder`` / ``multimeter``
-and Arbor ``spike_recorder`` emit ``"cell"``; NEURON ``voltage_recorder`` (and
+``"stimulus"``
+    A stimulator's own emitted output (e.g. a Poisson generator's spike train),
+    rather than a recording of the network. Carries only the baseline plus a count
+    of driven targets (``bsb_target_count``).
+
+The built-in recorders cover four kinds: NEST ``spike_recorder`` / ``multimeter`` and
+Arbor ``spike_recorder`` emit ``"cell"``; NEURON ``voltage_recorder`` (and
 ``current_clamp``) emit ``"compartment"``; NEURON ``synapse_recorder`` emits
-``"synapse"``. The ``"lfp"`` kind has no built-in recorder yet.
+``"synapse"``; NEST ``poisson_generator`` / ``sinusoidal_poisson_generator`` emit
+``"stimulus"``. The ``"lfp"`` kind has no built-in recorder yet.
 
 Examples
 ^^^^^^^^
@@ -348,7 +354,7 @@ All membrane voltage traces from a specific device, grouped by cell:
        if rec.kind is neo.AnalogSignal and rec.device == "v_recorder_pc" and rec.name == "V_m":
            per_cell[rec.cell_id].append(rec)
 
-All synaptic currents on the soma of any cell (filtering on the flat
+All synaptic currents on the soma branch of any cell (filtering on the flat
 ``"synapse"``-kind fields):
 
 .. code-block:: python
@@ -356,7 +362,7 @@ All synaptic currents on the soma of any cell (filtering on the flat
    for rec in iter_recordings(block):
        if (
            rec.annotations.get("bsb_target_kind") == "synapse"
-           and rec.annotations.get("bsb_section") == "soma"
+           and rec.annotations.get("bsb_branch") == 0
        ):
            ...
 
@@ -375,6 +381,16 @@ ignore the convention entirely. Non-compliant objects still flow through and lan
 in the file;
 :func:`iter_recordings <bsb:bsb.simulation.results.iter_recordings>` just skips
 them.
+
+Pass ``device=self`` to
+:meth:`create_recorder <bsb:bsb.simulation.results.SimulationResult.create_recorder>`
+so the recorder links back to its device, and ``meta={...}`` for recorder-level
+metadata. Both are inspectable at runtime, before anything is written to file: a
+:class:`SimulationRecorder <bsb:bsb.simulation.results.SimulationRecorder>` exposes
+``device_name`` and ``meta(property)``. This lets a controller find the recorders of
+the devices it manages (matching them to a segment's ``bsb_device_name`` annotations)
+and query their metadata, e.g. an LFP probe reading
+``recorder.meta("lfp_source_geometry")`` each flush.
 
 Advanced Features
 =================

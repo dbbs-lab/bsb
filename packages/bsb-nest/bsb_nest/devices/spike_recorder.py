@@ -40,7 +40,7 @@ class SpikeRecorder(NestDevice, classmap_entry="spike_recorder"):
                     )
                 )
 
-        simdata.result.create_recorder(recorder)
+        simdata.result.create_recorder(recorder, device=self)
 
 
 def _build_lookup(simdata, targets_dict):

@@ -164,9 +164,7 @@ def _make_otel_handler(cls, base, attr, orig_method):
                 "bsb.component_method": attr,
             },
         ) as span:
-            span.set_attribute(
-                "bsb.component_attributes", json.dumps(self.__tree__())
-            )
+            span.set_attribute("bsb.component_attributes", json.dumps(self.__tree__()))
             return orig_method(self, *args, **kwargs)
 
     return handler

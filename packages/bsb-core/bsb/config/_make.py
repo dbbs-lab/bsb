@@ -13,6 +13,7 @@ import errr
 from .._package_spec import warn_missing_packages
 from .._util import get_qualified_class_name
 from ..exceptions import (
+    AttributeOrderError,
     BootError,
     CastError,
     ConfigurationError,
@@ -116,9 +117,27 @@ def make_metaclass(cls):
 
 
 class NodeKwargs(dict):
-    def __init__(self, instance, *args, **kwargs):
+    """
+    The raw input kwargs of a node, plus a handle to the node being built.
+
+    Passed to ``required=`` callables. ``partial_node`` is the node instance
+    under construction; use it to inspect identity, ``_config_parent`` and
+    ``_config_key``.
+
+    .. warning::
+
+        A node is only partially built while its ``required=`` checkers run, so
+        a checker cannot rely on attribute values being set. The node's own
+        attributes are not assigned yet, and a parent attribute is available
+        only if it is declared before the attribute currently being built.
+        Build order follows attribute declaration order, not the order the keys
+        appear in the user's configuration, so it is at least deterministic.
+    """
+
+    def __init__(self, partial_node, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.is_shortform = getattr(instance, "_config_pos_init", False)
+        self.is_shortform = getattr(partial_node, "_config_pos_init", False)
+        self.partial_node = partial_node
 
 
 def compose_nodes(*node_classes):
@@ -323,26 +342,29 @@ def compile_postnew(cls):
 
 def wrap_root_postnew(post_new):
     def __post_new__(self, *args, _parent=None, _key=None, _store=None, **kwargs):
+        from ._build_context import build_context
+
         if not hasattr(self, "_meta"):
             self._meta = {"path": None, "produced": True}
 
-        try:
-            # Root node bootstrapping sequence
-            _bootstrap_components(kwargs.get("components", []), file_store=_store)
-            warn_missing_packages(kwargs.get("packages", []))
-        except Exception as e:
-            raise BootError("Failed to bootstrap configuration.") from e
+        with build_context():
+            try:
+                # Root node bootstrapping sequence
+                _bootstrap_components(kwargs.get("components", []), file_store=_store)
+                warn_missing_packages(kwargs.get("packages", []))
+            except Exception as e:
+                raise BootError("Failed to bootstrap configuration.") from e
 
-        try:
-            with warnings.catch_warnings(record=True) as log:
-                try:
-                    post_new(self, *args, _parent=None, _key=None, **kwargs)
-                except (CastError, RequirementError) as e:
-                    _bubble_up_exc(e, self._meta)
-                self._config_isfinished = True
-                _resolve_references(self)
-        finally:
-            _bubble_up_warnings(log)
+            try:
+                with warnings.catch_warnings(record=True) as log:
+                    try:
+                        post_new(self, *args, _parent=None, _key=None, **kwargs)
+                    except (CastError, RequirementError) as e:
+                        _bubble_up_exc(e, self._meta)
+                    self._config_isfinished = True
+                    _resolve_references(self)
+            finally:
+                _bubble_up_warnings(log)
 
     return __post_new__
 
@@ -381,26 +403,94 @@ def _bootstrap_components(components, file_store=None):
 
 
 def get_config_attributes(cls):
-    attrs = {}
+    """Collect a node class's configuration attributes in build order.
+
+    Walks the MRO base-first and threads each class's declared attributes into
+    the order inherited so far, applying these rules:
+
+    * Every class's declaration order is preserved as a subsequence.
+    * An overridden attribute keeps its inherited slot; only its value is
+      replaced by the most-derived declaration.
+    * A new attribute is spliced in just before the next attribute the class
+      declares after it that is already present, or appended when the class
+      declares no such following attribute.
+    * A subclass may reorder inherited attributes by redeclaring them, but only
+      if it also redeclares every attribute caught between the ones it moves;
+      otherwise the requested order is ambiguous and an
+      :exc:`~bsb.exceptions.AttributeOrderError` is raised naming the attributes to
+      redeclare.
+    """
+    from ._attrs import ConfigurationAttribute
+
     if not isinstance(cls, type):
         cls = cls.__class__
+    order = []
+    values = {}
+    unset = set()
+    for p_cls in reversed(cls.__mro__):  # base to most-derived
+        decl = [
+            key
+            for key, attr in vars(p_cls).items()
+            if isinstance(attr, ConfigurationAttribute)
+        ]
+        for key in decl:
+            # A more-derived override wins the value and cancels a prior unset.
+            values[key] = vars(p_cls)[key]
+            unset.discard(key)
+        in_order = set(order)
+        # Honor a reordering of inherited attributes only when it is
+        # unambiguous, i.e. the class redeclares every attribute that sits
+        # between the ones it moves.
+        redeclared = [key for key in decl if key in in_order]
+        if redeclared != [key for key in order if key in decl]:
+            positions = [order.index(key) for key in redeclared]
+            lo, hi = min(positions), max(positions)
+            blocked = [key for key in order[lo : hi + 1] if key not in decl]
+            if blocked:
+                raise AttributeOrderError(
+                    f"`{cls.__name__}` redeclares {redeclared} in an order"
+                    f" conflicting with its parents, but {blocked} lie between"
+                    f" them. Redeclare {blocked} as well to define the order"
+                    " unambiguously.",
+                    redeclared,
+                    blocked,
+                )
+            order = order[:lo] + redeclared + order[hi + 1 :]
+        # Splice this class's new attributes into the inherited order: each lands
+        # just before the next already-present attribute the class declares after
+        # it (its following anchor), or at the end when there is none.
+        following_anchor = {}
+        anchor = None
+        for key in reversed(decl):
+            if key in in_order:
+                anchor = key
+            else:
+                following_anchor[key] = anchor
+        groups = {}
+        for key in decl:
+            if key not in in_order:
+                groups.setdefault(following_anchor[key], []).append(key)
+        if groups:
+            spliced = []
+            for key in order:
+                spliced.extend(groups.get(key, ()))
+                spliced.append(key)
+            spliced.extend(groups.get(None, ()))
+            order = spliced
+        for key in getattr(p_cls, "_config_unset", []):
+            values.pop(key, None)
+            if key in order:
+                order.remove(key)
+            unset.add(key)
+    # Catch attributes registered on a class's merged set but not present as a
+    # class attribute (e.g. injected onto a dynamic subclass), without
+    # resurrecting any that a subclass unset.
     for p_cls in reversed(cls.__mro__):
-        if hasattr(p_cls, "_config_attrs"):
-            attrs.update(p_cls._config_attrs)
-        else:
-            # Scrape for mixin config attributes
-            from ._attrs import ConfigurationAttribute
-
-            attrs.update(
-                {
-                    key: attr
-                    for key, attr in p_cls.__dict__.items()
-                    if isinstance(attr, ConfigurationAttribute)
-                }
-            )
-        for unset in getattr(p_cls, "_config_unset", []):
-            attrs.pop(unset, None)
-    return attrs
+        for key, attr in getattr(p_cls, "_config_attrs", {}).items():
+            if key not in values and key not in unset:
+                values[key] = attr
+                order.append(key)
+    return {key: values[key] for key in order}
 
 
 def _get_node_name(self):

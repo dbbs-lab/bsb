@@ -112,8 +112,8 @@ def chunklist(chunks) -> list[Chunk]:
 
 def _safe_ids(self, other):
     return (
-        np.array(self, copy=False).view(Chunk)._safe_id(),
-        np.array(other, copy=False).view(Chunk)._safe_id(),
+        np.asarray(self).view(Chunk)._safe_id(),
+        np.asarray(other).view(Chunk)._safe_id(),
     )
 
 

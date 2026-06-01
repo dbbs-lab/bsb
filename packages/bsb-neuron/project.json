@@ -62,7 +62,7 @@
         "commands": [
           "npx -y rimraf .coverage*",
           "uv run coverage run -p -m unittest discover -v -s ./tests",
-          "mpiexec -n 2 uv run coverage run -p -m unittest discover -v -s ./tests",
+          "timeout 600 mpiexec -n 2 uv run coverage run -p -m unittest discover -v -s ./tests",
           "uv run coverage combine",
           "uv run coverage xml -i -o ../../coverage/packages/bsb-neuron/coverage.xml",
           "uv run coverage html -i -d ../../coverage/packages/bsb-neuron/html"

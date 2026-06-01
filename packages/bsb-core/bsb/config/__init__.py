@@ -39,6 +39,12 @@ from ._attrs import (
     slot,
     unset,
 )
+from ._build_context import (
+    BuildContext,
+    build_context,
+    get_config_build_context,
+    set_config_build_context,
+)
 from ._distributions import Distribution
 from ._hooks import after, before, has_hook, on, run_hook
 from ._make import (
@@ -246,6 +252,7 @@ def parse_configuration_content(content, parser=None, path=None, **kwargs):
 
 # Static public API
 __all__ = [
+    "BuildContext",
     "Configuration",
     "ConfigurationAttribute",
     "Distribution",
@@ -253,6 +260,7 @@ __all__ = [
     "after",
     "attr",
     "before",
+    "build_context",
     "catch_all",
     "compose_nodes",
     "copy_configuration_template",
@@ -261,6 +269,7 @@ __all__ = [
     "file",
     "format_configuration_content",
     "get_config_attributes",
+    "get_config_build_context",
     "get_config_path",
     "has_hook",
     "list",
@@ -278,6 +287,7 @@ __all__ = [
     "reflist",
     "root",
     "run_hook",
+    "set_config_build_context",
     "slot",
     "types",
     "unset",
@@ -285,19 +295,23 @@ __all__ = [
     "walk_nodes",
 ]
 __api__ = [
+    "BuildContext",
     "Configuration",
     "ConfigurationAttribute",
     "Distribution",
+    "build_context",
     "compose_nodes",
     "copy_configuration_template",
     "format_configuration_content",
     "get_config_attributes",
+    "get_config_build_context",
     "get_config_path",
     "make_configuration_diagram",
     "parse_configuration_file",
     "parse_configuration_content_to_dict",
     "parse_configuration_content",
     "refs",
+    "set_config_build_context",
     "types",
     "walk_node_attributes",
     "walk_nodes",

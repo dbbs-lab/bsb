@@ -33,6 +33,7 @@ _t(
             CfgReferenceError=_e(),
             ReferenceLambdaError=_e(),
             UnknownConfigAttrError=_e("attributes"),
+            AttributeOrderError=_e("redeclared", "blocked"),
         ),
         CompilationError=_e(
             DistributorError=_e("property", "strategy"),
@@ -152,6 +153,7 @@ __all__ = [
     "AdapterError",
     "AllenApiError",
     "AttributeMissingError",
+    "AttributeOrderError",
     "BootError",
     "CLIError",
     "CastConfigurationError",

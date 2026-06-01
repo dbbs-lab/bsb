@@ -1,0 +1,31 @@
+# Minimal NESTML neuron model for testing bsb-nest extension-module handling.
+# A bare current-based leaky integrate-and-fire neuron; kept as small as
+# possible while still compiling to a usable NEST node model.
+model bsb_test_neuron:
+    state:
+        V_m mV = E_L
+
+    equations:
+        kernel K = delta(t)
+        inline I_syn pA = convolve(K, spikes) * pA
+        V_m' = (E_L - V_m) / tau_m + (I_syn + I_e) / C_m
+
+    parameters:
+        C_m pF = 250 pF
+        tau_m ms = 10 ms
+        E_L mV = -70 mV
+        V_th mV = -55 mV
+        V_reset mV = -65 mV
+        I_e pA = 0 pA
+
+    input:
+        spikes <- spike
+
+    output:
+        spike
+
+    update:
+        integrate_odes()
+        if V_m >= V_th:
+            V_m = V_reset
+            emit_spike()

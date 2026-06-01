@@ -84,11 +84,11 @@ class Chunk(np.ndarray):
 
     @property
     def ldc(self):
-        return self._size * self.astype(np.float64)
+        return np.asarray(self._size * self.astype(np.float64))
 
     @property
     def mdc(self):
-        return self._size * (self.astype(np.float64) + 1)
+        return np.asarray(self._size * (self.astype(np.float64) + 1))
 
     @classmethod
     def from_id(cls, id, size):

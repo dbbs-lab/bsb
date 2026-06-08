@@ -13,6 +13,7 @@ dependencies = [
     "bsb-hdf5",
     "bsb-nest",
     "bsb-neuron",
+    "bsb-otel",
     "bsb-json",
     "bsb-test",
     "bsb-yaml",
@@ -29,6 +30,7 @@ bsb-core = { path = "../packages/bsb-core", editable = true }
 bsb-hdf5 = { path = "../packages/bsb-hdf5", editable = true }
 bsb-nest = { path = "../packages/bsb-nest", editable = true }
 bsb-neuron = { path = "../packages/bsb-neuron", editable = true }
+bsb-otel = { path = "../packages/bsb-otel", editable = true }
 bsb-json = { path = "../packages/bsb-json", editable = true }
 bsb-test = { path = "../packages/bsb-test", editable = true }
 bsb-yaml = { path = "../packages/bsb-yaml", editable = true }

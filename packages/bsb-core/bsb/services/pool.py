@@ -225,20 +225,27 @@ def dispatcher(pool_id, job_args):
 
     Before running a job, the cache is checked for eventual cached items to free up.
     """
-    job_type, args, kwargs = job_args
-    # Get the static job execution handler from this module
-    handler = globals()[job_type].execute
-    # Get the owning scaffold from the JobPool class variables, which act as a registry.
-    owner = JobPool.get_owner(pool_id)
+    # Imported here to avoid a circular import when bsb_otel.tracer's own
+    # consumers (eg. bsb-otel tests) load this module via bsb.services.
+    from bsb_otel.tracer import local_tracing
 
-    # Check the pool's cache
-    pool = JobPool._pools[pool_id]
-    required_cache_items = pool._read_required_cache_items()
-    # and free any stale cached items
-    free_stale_pool_cache(owner, required_cache_items)
+    # Stop collective broadcasting of root traces (causes deadlocks).
+    with local_tracing():
+        job_type, args, kwargs = job_args
+        # Get the static job execution handler from this module
+        handler = globals()[job_type].execute
+        # Get the owning scaffold from the JobPool class variables, which act as a
+        # registry.
+        owner = JobPool.get_owner(pool_id)
 
-    # Execute the job handler.
-    return handler(owner, args, kwargs)
+        # Check the pool's cache
+        pool = JobPool._pools[pool_id]
+        required_cache_items = pool._read_required_cache_items()
+        # and free any stale cached items
+        free_stale_pool_cache(owner, required_cache_items)
+
+        # Execute the job handler.
+        return handler(owner, args, kwargs)
 
 
 class SubmissionContext:
@@ -688,7 +695,10 @@ class JobPool:
 
         future = concurrent.futures.Future()
         self._schedulers.append(future)
-        thread = threading.Thread(target=self._schedule, args=(future, nodes, scheduler))
+        ctx = contextvars.copy_context()
+        thread = threading.Thread(
+            target=ctx.run, args=(self._schedule, future, nodes, scheduler)
+        )
         thread.start()
 
     @property

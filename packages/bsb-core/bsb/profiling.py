@@ -1,7 +1,6 @@
 import atexit
 import cProfile
 import functools
-import importlib.metadata
 import inspect
 import json
 import pickle
@@ -9,9 +8,6 @@ import sys
 import warnings
 from functools import cache
 from uuid import uuid4
-
-from opentelemetry import trace
-from opentelemetry.trace import NonRecordingSpan, get_current_span, set_span_in_context
 
 from .services import MPI
 
@@ -94,87 +90,13 @@ def view_profile(fstem):
     ProfilingSession.load(fstem).view()
 
 
-__all__ = [
-    "ProfilingSession",
-    "activate_session",
-    "get_active_session",
-    "view_profile",
-]
-_otel_tracer = trace.get_tracer("bsb", str(importlib.metadata.version("bsb-core")))
-
-
-class _SpanContextManagerProxy:
-    """
-    Proxy for the span context manager returned by tracer.start_as_current_span,
-    which has been modified to be safe to re-enter.
-    """
-
-    def __init__(self, manager, span):
-        self._manager = manager
-        self._span = span
-
-    def __enter__(self):
-        return self._span
-
-    def __exit__(self, *args, **kwargs):
-        return self._manager.__exit__(*args, **kwargs)
-
-    def __getattr__(self, name):
-        # Delegate all other attribute access to the original span
-        return getattr(self._manager, name)
-
-
-def _telemetry_trace(name, attributes=None, broadcast=False):
-    """
-    Starts a new telemetry trace span using the current OpenTelemetry tracer.
-    Use it as a context manager.
-
-    .. warning::
-        This feature is experimental and subject to change.
-
-    :param str name: name of the span to start
-    :param dict attributes: attributes to pass to OpenTelemetry.
-    :param bool broadcast: Under MPI, the root span must be broadcast for traces
-      across ranks to be grouped under the same span. This is usually done by the
-      BSB CLI, but you must do this yourself in scripts.
-      See :ref:`BSB OpenTelemetry spans under MPI <otel_broadcast>`.
-    :returns: OpenTelemetry trace span.
-    """
-    if attributes is None:
-        attributes = {}
-
-    attributes["mpi.rank"] = rank = MPI.get_rank()
-    attributes["mpi.size"] = MPI.get_size()
-
-    if broadcast:
-        if get_current_span().get_span_context().is_valid:
-            raise RuntimeError("Cannot broadcast root span when a span is already active")
-
-        if rank == 0:
-            parent_span_ctx_mgr = _otel_tracer.start_as_current_span(
-                name, attributes=attributes
-            )
-            parent_span = parent_span_ctx_mgr.__enter__()
-            set_span_in_context(parent_span)
-            parent_span_context = parent_span.get_span_context()
-            MPI.bcast(parent_span_context, root=0)
-            return _SpanContextManagerProxy(parent_span_ctx_mgr, parent_span)
-        else:
-            parent_span_context = MPI.bcast(None, root=0)
-            return trace.use_span(
-                NonRecordingSpan(parent_span_context), end_on_exit=False
-            )
-
-    # Normal behavior without broadcast
-    span = _otel_tracer.start_as_current_span(name, attributes=attributes)
-    return span
-
-
 def _instrument_command(cls):
     _orig_handler = cls.handler
 
     @functools.wraps(cls.handler)
     def handler(self, context):
+        from bsb_otel.tracer import get_bsb_tracer
+
         attributes = {
             "bsb.type": "command_handler",
             "bsb.command_class": cls.__name__,
@@ -186,7 +108,7 @@ def _instrument_command(cls):
                 f"{k}={getattr(context, k)}" for k, v in self.get_options().items()
             ]
 
-        with _telemetry_trace(
+        with get_bsb_tracer("bsb-core").trace(
             cls.name,
             attributes=attributes,
         ):
@@ -225,16 +147,34 @@ def _make_otel_handler(cls, base, attr, orig_method):
 
     @functools.wraps(orig_method)
     def handler(self, *args, **kwargs):
-        with _telemetry_trace(
+        from opentelemetry import trace as _ot
+
+        # Fast path: no SDK provider, nothing will record anyway.
+        if _ot._TRACER_PROVIDER is None:
+            return orig_method(self, *args, **kwargs)
+
+        from bsb_otel.tracer import get_bsb_tracer
+
+        with get_bsb_tracer("bsb-core").trace(
             f"{cls.__name__}.{attr}",
             attributes={
                 "bsb.type": "component_method",
                 "bsb.component_type": base.__name__,
                 "bsb.component_class": cls.__name__,
                 "bsb.component_method": attr,
-                "bsb.component_attributes": json.dumps(self.__tree__()),
             },
-        ):
+        ) as span:
+            span.set_attribute(
+                "bsb.component_attributes", json.dumps(self.__tree__())
+            )
             return orig_method(self, *args, **kwargs)
 
     return handler
+
+
+__all__ = [
+    "ProfilingSession",
+    "activate_session",
+    "get_active_session",
+    "view_profile",
+]

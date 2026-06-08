@@ -22,7 +22,7 @@ This class assigns a random position to each cell within their related partition
 
         "placement": {
             "place_randomly":{
-                "strategy": "bsb.placement.particle.RandomPlacement",
+                "strategy": "bsb.placement.random.RandomPlacement",
                 "partitions": ["my_layer"],
                 "cell_types": ["my_cell"]
             }

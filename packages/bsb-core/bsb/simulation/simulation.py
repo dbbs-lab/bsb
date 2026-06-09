@@ -3,7 +3,7 @@ from __future__ import annotations
 import itertools
 import typing
 
-from .. import config
+from .. import config, types
 from ..config import types as cfgtypes
 from ..config._attrs import cfgdict, cfglist
 from ._backends import get_simulation_nodes
@@ -40,6 +40,8 @@ class Simulation:
     """
     Duration of the simulation in milliseconds.
     """
+    resolution = config.attr(type=types.float(min=0.0), default=0.1)
+    """Simulation time step size in milliseconds."""
     cell_models: cfgdict[CellModel] = config.slot(type=CellModel, required=True)
     """
     Dictionary linking the cell population name to its model.

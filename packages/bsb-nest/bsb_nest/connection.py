@@ -5,15 +5,18 @@ import numpy as np
 import psutil
 from bsb import (
     ConnectionModel,
+    ConnectionParameter,
     compose_nodes,
     config,
     options,
     types,
+    warn,
 )
+from bsb.config._attrs import cfgdict
 from tqdm import tqdm
 
 from ._kernel_proxy import NestModelTypeHandler, query_kernel
-from .distributions import nest_parameter
+from .distributions import NestRandomDistribution, nest_constant
 
 
 class nest_synapse_model(NestModelTypeHandler):
@@ -47,6 +50,12 @@ def _is_delay_required(kwargs):
             "No active build context; cannot check whether synapse"
             f" '{model_name}' requires a delay."
         ),
+    ) and "delay" not in kwargs.get("parameters", NestSynapseSettings.parameters.default)
+
+
+def _is_weight_required(kwargs):
+    return "weight" not in kwargs.get(
+        "parameters", NestSynapseSettings.parameters.default
     )
 
 
@@ -58,13 +67,18 @@ class NestSynapseSettings:
 
     model = config.attr(type=nest_synapse_model(), default="static_synapse")
     """Importable reference to the NEST model describing the synapse type."""
-    weight = config.attr(type=float, required=True)
+    parameters: cfgdict[ConnectionParameter] = config.dict(
+        type=ConnectionParameter, default={}
+    )
+    """Dictionary of the parameters, computed during simulation loading, 
+       to assign to the synapse model."""
+    weight = config.attr(type=nest_constant(), required=_is_weight_required, default=None)
     """Weight of the connection between the presynaptic and the postsynaptic cells."""
-    delay = config.attr(type=float, required=_is_delay_required, default=None)
+    delay = config.attr(type=nest_constant(), required=_is_delay_required, default=None)
     """Delay of the transmission between the presynaptic and the postsynaptic cells."""
     receptor_type = config.attr(type=int)
     """Index of the postsynaptic receptor to target."""
-    constants = config.catch_all(type=nest_parameter())
+    constants = config.catch_all(type=nest_constant())
     """Dictionary of the constants values to assign to the synapse model."""
 
 
@@ -123,13 +137,12 @@ class NestConnection(compose_nodes(NestConnectionSettings, ConnectionModel)):
     def create_connections(self, simdata, pre_nodes, post_nodes, cs, comm):
         import nest
 
-        syn_specs = self.get_syn_specs()
         if self.rule is not None:
             nest.Connect(
                 pre_nodes,
                 post_nodes,
                 self.get_conn_spec(),
-                nest.CollocatedSynapses(*syn_specs),
+                nest.CollocatedSynapses(*self.get_syn_specs()),
             )
         else:
             comm.barrier()
@@ -148,12 +161,16 @@ class NestConnection(compose_nodes(NestConnectionSettings, ConnectionModel)):
                 postl = post_nodes.tolist()
                 # cannot use CollocatedSynapses with a list of weight and delay
                 # so loop over the syn_specs
-                for syn_spec in syn_specs:
+                for syn_spec in self.get_syn_specs(cs, pre_locs, post_locs):
                     ssw = {**syn_spec}
-                    bw = syn_spec["weight"]
-                    ssw["weight"] = [bw * m for m in multiplicity]
-                    if "delay" in syn_spec:
-                        ssw["delay"] = [syn_spec["delay"]] * len(ssw["weight"])
+                    for k, v in ssw.items():
+                        if isinstance(v, list | np.ndarray):
+                            ssw[k] = np.repeat(v, multiplicity)
+                        elif k == "weight":
+                            ssw[k] = [v * m for m in multiplicity]
+                        elif k == "delay":
+                            ssw[k] = [v] * np.sum(multiplicity)
+
                     nest.Connect(
                         [prel[x] for x in cell_pairs[:, 0]],
                         [postl[x] for x in cell_pairs[:, 1]],
@@ -230,20 +247,40 @@ class NestConnection(compose_nodes(NestConnectionSettings, ConnectionModel)):
             **self.constants,
         }
 
-    def get_syn_specs(self):
-        return [
-            {
-                **{
-                    label: value
-                    for attr, label in (
-                        ("model", "synapse_model"),
-                        ["weight"] * 2,
-                        ["delay"] * 2,
-                        ["receptor_type"] * 2,
-                    )
-                    if (value := getattr(synapse, attr)) is not None
-                },
-                **synapse.constants,
+    def get_syn_specs(self, cs=None, pre_locs=None, post_locs=None):
+        syn_specs = []
+        for synapse in self.synapses:
+            # default values, can be overwritten by constants or parameters
+            dict_syn = {
+                "synapse_model": synapse.model,
+                "weight": (
+                    synapse.weight()
+                    if isinstance(synapse.weight, NestRandomDistribution)
+                    else synapse.weight
+                ),
+                "delay": (
+                    synapse.delay()
+                    if isinstance(synapse.delay, NestRandomDistribution)
+                    else synapse.delay
+                ),
+                "receptor_type": 0,
             }
-            for synapse in self.synapses
-        ]
+            for k, v in synapse.constants.items():
+                dict_syn[k] = v() if isinstance(v, NestRandomDistribution) else v
+            if cs is not None and pre_locs is not None and post_locs is not None:
+                # can compute one sim param per connection pair
+                dict_syn.update(
+                    {
+                        k: param.compute(self.simulation, cs, pre_locs, post_locs)
+                        for k, param in synapse.parameters.items()
+                    }
+                )
+            elif len(synapse.parameters) > 0:
+                warn(
+                    f"{self.model_strategy}: Parameters of synapse {synapse.model} will "
+                    "be ignored as they rely on the reconstruction context. "
+                    "Use `constants` instead."
+                )
+            syn_specs.append(dict_syn)
+
+        return syn_specs

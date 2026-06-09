@@ -55,9 +55,7 @@ def _stripped_mpi_env():
     """
     stripped = {
         k: os.environ.pop(k)
-        for k in [
-            k for k in os.environ if k.startswith(("OMPI_", "PMI_", "PMIX_"))
-        ]
+        for k in [k for k in os.environ if k.startswith(("OMPI_", "PMI_", "PMIX_"))]
     }
     try:
         yield

@@ -34,19 +34,3 @@ class NestSimulation(Simulation):
         type=NestDevice, required=True
     )
     """Dictionary of devices in the simulation."""
-
-    def __boot__(self):
-        import nest
-
-        from .exceptions import NestModuleError
-
-        for module in self.modules:
-            try:
-                nest.Install(module)
-            except Exception as e:
-                if e.errorname == "DynamicModuleManagementError":
-                    if "loaded already" in e.message:
-                        continue
-                    elif "file not found" in e.message:
-                        raise NestModuleError(f"Module {module} not found") from None
-                raise  # pragma: nocover

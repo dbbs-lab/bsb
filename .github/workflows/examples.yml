@@ -7,7 +7,7 @@ on:
       - submitted
 
 env:
-  NEST_VERSION: 3.7
+  NEST_VERSION: 3.8
   NEST_FOLDER: ${{ github.workspace }}/.nx/installation/nest
   NX_DAEMON: false  # may prevent GHA to stall for some reason
 
@@ -27,8 +27,8 @@ jobs:
         run: |
           sudo apt update
           # Install `libopenmpi` for MPI, `libhdf5` for `morphio`,
-          # `libgsl` and `libreadline` for NEST
-          sudo apt install openmpi-bin libopenmpi-dev libhdf5-dev libreadline-dev libgsl-dev
+          # `libgsl` and `libreadline` for NEST, `libboost` required by NEST >= 3.8
+          sudo apt install openmpi-bin libopenmpi-dev libhdf5-dev libreadline-dev libgsl-dev libboost-dev
 
       - name: Install nodejs
         uses: actions/setup-node@v6
@@ -40,7 +40,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ env.NEST_FOLDER }}
-          key: ${{ runner.os }}-3.12-nest
+          key: ${{ runner.os }}-3.12-nest-${{ env.NEST_VERSION }}
 
       - name: Run unittests
         run: |

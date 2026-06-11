@@ -327,6 +327,7 @@ class TestNrrdVoxels(RandomStorageFixture, unittest.TestCase, engine_name="hdf5"
         vs = part.voxelset
         self.assertEqual(24, len(vs), "Region has that many voxels")
 
+    @unittest.skipIf(skip_test_allen_api(), "Allen API is down")
     def test_placement_source_uncasted(self):
         # if the referred element in sources is an uncasted elem
         # use the file stem like for the morphologies

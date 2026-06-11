@@ -169,7 +169,7 @@ class NestConnection(compose_nodes(NestConnectionSettings, ConnectionModel)):
                         elif k == "weight":
                             ssw[k] = [v * m for m in multiplicity]
                         elif k == "delay":
-                            ssw[k] = [v] * np.sum(multiplicity)
+                            ssw[k] = [v] * len(multiplicity)
 
                     nest.Connect(
                         [prel[x] for x in cell_pairs[:, 0]],
@@ -258,13 +258,15 @@ class NestConnection(compose_nodes(NestConnectionSettings, ConnectionModel)):
                     if isinstance(synapse.weight, NestRandomDistribution)
                     else synapse.weight
                 ),
-                "delay": (
+            }
+            if synapse.delay is not None:
+                dict_syn["delay"] = (
                     synapse.delay()
                     if isinstance(synapse.delay, NestRandomDistribution)
                     else synapse.delay
-                ),
-                "receptor_type": 0,
-            }
+                )
+            if synapse.receptor_type is not None:
+                dict_syn["receptor_type"] = synapse.receptor_type
             for k, v in synapse.constants.items():
                 dict_syn[k] = v() if isinstance(v, NestRandomDistribution) else v
             if cs is not None and pre_locs is not None and post_locs is not None:

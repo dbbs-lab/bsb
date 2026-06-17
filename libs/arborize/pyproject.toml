@@ -12,10 +12,10 @@ classifiers = [
   "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"
 ]
 dependencies = [
-  "numpy~=1.21",
+  "numpy>=1.21",
   "errr~=1.2",
   "morphio>=3.3.6,<4",
-  "bsb-core~=7.0"
+  "bsb-core~=7.4"
 ]
 
   [[project.authors]]

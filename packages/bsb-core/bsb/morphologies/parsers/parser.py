@@ -75,7 +75,7 @@ class BsbParser(MorphologyParser, classmap_entry="bsb"):
         return np.array(data)
 
     def _swc_data_to_morpho(self, data):
-        data = np.array(data, copy=False)
+        data = np.asarray(data)
         tag_map = {1: "soma", 2: "axon", 3: "dendrites"}
         if self.tags is not None:
             tag_map.update((int(k), v) for (k, v) in self.tags.items())

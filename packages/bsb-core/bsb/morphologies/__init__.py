@@ -46,7 +46,7 @@ class MorphologySet:
         """
         if m_indices is None:
             loaders, m_indices = np.unique(loaders, return_inverse=True)
-        self._m_indices = np.array(m_indices, copy=False, dtype=int)
+        self._m_indices = np.asarray(m_indices, dtype=int)
         self._loaders = list(loaders)
         check_max = np.max(m_indices, initial=-1)
         if check_max >= len(loaders):
@@ -359,7 +359,7 @@ class SubTree:
 
     @points.setter
     def points(self, value):
-        arr = np.array(value, copy=False, dtype=float)
+        arr = np.asarray(value, dtype=float)
         if self._is_shared:
             self.points[:] = arr
         else:
@@ -373,7 +373,7 @@ class SubTree:
 
     @radii.setter
     def radii(self, value):
-        arr = np.array(value, copy=False, dtype=float)
+        arr = np.asarray(value, dtype=float)
         if self._is_shared:
             self.radii[:] = arr
         else:
@@ -505,7 +505,7 @@ class SubTree:
         """
         if points is None:
             points = np.ones(len(self), dtype=bool)
-        points = np.array(points, copy=False)
+        points = np.asarray(points)
         if self._is_shared:
             self.labels.label(labels, points)
         else:
@@ -515,7 +515,7 @@ class SubTree:
                     b.label(labels, points[ctr : ctr + len(b)])
                     ctr += len(b)
             elif np.can_cast(points.dtype, int):
-                points = np.array(points, copy=False, dtype=int)
+                points = np.asarray(points, dtype=int)
                 for b in self.branches:
                     mux = points < len(b)
                     b.label(labels, points[mux])
@@ -1149,7 +1149,7 @@ class Branch:
 
     @points.setter
     def points(self, value):
-        arr = np.array(value, copy=False, dtype=float)
+        arr = np.asarray(value, dtype=float)
         if arr.shape == self._points.shape:
             self._points[:] = arr
         elif arr.ndim != 2 or arr.shape[1] != 3:
@@ -1285,7 +1285,7 @@ class Branch:
 
     @radii.setter
     def radii(self, value):
-        arr = np.array(value, copy=False, dtype=float)
+        arr = np.asarray(value, dtype=float)
         if arr.shape == self._radii.shape:
             self._radii[:] = arr
         else:
@@ -1404,7 +1404,7 @@ class Branch:
             closest point to the coordinates is used.
         :type: numpy.ndarray | int
         """
-        index = np.array(index, copy=False)
+        index = np.asarray(index)
         if index.ndim != 0:
             index = self.find_closest_point(index)
 

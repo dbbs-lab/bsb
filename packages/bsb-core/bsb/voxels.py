@@ -104,8 +104,8 @@ class VoxelSet:
             memory and time. You may accidentally change a voxelset if you later change
             the same array.
         """
-        voxels = np.array(voxels, copy=False)
-        voxel_size = np.array(size, copy=False)
+        voxels = np.asarray(voxels)
+        voxel_size = np.asarray(size)
         if voxels.dtype.name == "object":
             raise ValueError("Couldn't convert given `voxels` to a voxel matrix")
         if voxels.ndim != 2:
@@ -130,7 +130,7 @@ class VoxelSet:
                 else:
                     self._data = VoxelData(data, keys=data_keys)
             else:
-                data = np.array(data, copy=False)
+                data = np.asarray(data)
                 if data.ndim < 2:
                     cols = len(data_keys) if data_keys else 1
                     data = data.reshape(-1, cols)
@@ -157,7 +157,7 @@ class VoxelSet:
         else:
             # Voxels given in index coords
             self._size = voxel_size
-            self._indices = np.array(voxels, copy=False, dtype=int)
+            self._indices = np.asarray(voxels, dtype=int)
             self._regular = True
 
     def __iter__(self):
@@ -314,8 +314,8 @@ class VoxelSet:
 
     @classmethod
     def one(cls, ldc, mdc, data=None):
-        ldc = np.array(ldc, copy=False).reshape(-1)
-        mdc = np.array(mdc, copy=False).reshape(-1)
+        ldc = np.asarray(ldc).reshape(-1)
+        mdc = np.asarray(mdc).reshape(-1)
         if ldc.shape != (3,) or mdc.shape != (3,):
             raise ValueError(
                 "Arguments to `VoxelSet.one` should be shape (3,) minmax coords of voxel."
@@ -473,7 +473,7 @@ class VoxelSet:
         return VoxelSet(grid, voxel_size, data)
 
     def resize(self, size):
-        val = np.array(size, copy=False)
+        val = np.asarray(size)
         if val.dtype.name == "object":
             raise ValueError("Size must be number type")
         if val.ndim > 1:

@@ -1,15 +1,17 @@
+from __future__ import annotations
+
 import dataclasses
 import typing
-from collections.abc import Iterable
 
 import numpy as np
-import numpy.typing as npt
 
 if typing.TYPE_CHECKING:  # pragma: nocover
-    from schematic import Point
+    from collections.abc import Iterable
+
+    from arborize.schematic import Point
 
 
-def get_location_name(pts: Iterable["Point"]) -> str:
+def get_location_name(pts: Iterable[Point]) -> str:
     if len(pts) == 1:
         loc = pts[0].loc
         locstr = f"location ({loc[0]}.{loc[1]})"
@@ -20,7 +22,7 @@ def get_location_name(pts: Iterable["Point"]) -> str:
     return locstr
 
 
-def get_arclengths(pts: Iterable["Point"]) -> npt.NDArray[np.float64]:
+def get_arclengths(pts: Iterable[Point]) -> np.ndarray:
     """
     Compute normalized cumulative arclengths from a sequence of points.
 

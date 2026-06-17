@@ -15,7 +15,7 @@ dependencies = [
   "nmodl-glia[neuron]~=7.0",
   "packaging~=24.0",
   "errr~=1.2",
-  "numpy~=1.21",
+  "numpy>=1.21",
   "NEURON>=9.0; sys_platform != 'win32'"
 ]
 

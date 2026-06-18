@@ -8,6 +8,8 @@ import numpy as np
 if typing.TYPE_CHECKING:  # pragma: nocover
     from collections.abc import Iterable
 
+    import numpy
+
     from arborize.schematic import Point
 
 
@@ -22,7 +24,7 @@ def get_location_name(pts: Iterable[Point]) -> str:
     return locstr
 
 
-def get_arclengths(pts: Iterable[Point]) -> np.ndarray:
+def get_arclengths(pts: Iterable[Point]) -> numpy.ndarray:
     """
     Compute normalized cumulative arclengths from a sequence of points.
 

@@ -46,6 +46,7 @@ import logging
 import pickle
 import tempfile
 import threading
+import time
 import typing
 import warnings
 import zlib
@@ -315,7 +316,11 @@ class Job(abc.ABC):
         self._error = None
         self._cache_items: list[int] = [] if cache_items is None else cache_items
 
-        for j in self._deps:
+        # Snapshot `self._deps`: registering against an already-completed dep
+        # makes `on_completion` fire `_dep_completed` inline, which discards
+        # that dep from `self._deps`. Iterating the live set would then raise
+        # "Set changed size during iteration".
+        for j in list(self._deps):
             j.on_completion(self._dep_completed)
 
     @obj_str_insert
@@ -405,6 +410,18 @@ class Job(abc.ABC):
 
     def on_completion(self, cb):
         self._completion_cbs.append(cb)
+        # If we already completed (the cb-loop in `_completed` has already run),
+        # fire the callback inline so late registrants aren't stranded. Without
+        # this, a job constructed *after* its dep had already succeeded would
+        # never see `_dep_completed` fire, and the pool would then sit forever
+        # on one PENDING job whose `_deps` is never discarded.
+        if self._status in (
+            JobStatus.SUCCESS,
+            JobStatus.FAILED,
+            JobStatus.CANCELLED,
+            JobStatus.ABORTED,
+        ):
+            cb(self)
 
     def set_result(self, value):
         dirname = JobPool.get_tmp_folder(self.pool_id)
@@ -445,9 +462,18 @@ class Job(abc.ABC):
         else:
             # When all our dependencies have been discarded we can queue ourselves.
             # Unless the pool is serial, then the pool itself just runs all jobs in order.
-            if not self._deps and self._comm.get_size() > 1:
-                # self._pool is set when the pool first tried to enqueue us, but we were
-                # still waiting for deps, in the `_enqueue` method below.
+            #
+            # `self._pool` is only set once the pool has tried to `_enqueue` us
+            # (the `else` branch below). When this callback fires *inline during
+            # our own `__init__`* (because a dep had already completed before we
+            # registered) `self._pool` isn't set yet. Skip enqueuing here: the
+            # `_put` -> `_enqueue` call that immediately follows construction
+            # sees the now-empty `self._deps` and submits us.
+            if (
+                not self._deps
+                and self._comm.get_size() > 1
+                and getattr(self, "_pool", None) is not None
+            ):
                 self._enqueue(self._pool)
 
     def _enqueue(self, pool):
@@ -789,6 +815,15 @@ class JobPool:
                 job.status == JobStatus.PENDING or job.status == JobStatus.QUEUED
                 for job in self._job_queue
             ):
+                # `concurrent.futures.wait([], timeout=X)` returns immediately
+                # with empty sets: the timeout does not apply when there are no
+                # futures to await. If the loop ever ends up with nothing
+                # running but jobs still PENDING/QUEUED, sleep instead of
+                # busy-spinning, so any future strand idles at 0% CPU rather
+                # than melting down a core and the log.
+                if not self._running_futures:
+                    time.sleep(self._max_wait if self._max_wait else 0.1)
+                    continue
                 try:
                     done, not_done = concurrent.futures.wait(
                         self._running_futures,

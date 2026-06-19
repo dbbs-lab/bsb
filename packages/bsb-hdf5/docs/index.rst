@@ -1,26 +1,28 @@
-.. BSB HDF5 Storage Engine documentation master file, created by
-   sphinx-quickstart on Sun Jul  3 14:42:28 2022.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+BSB HDF5 storage engine
+=======================
 
-BSB HDF5 Storage Engine's documentation
-=======================================
+``bsb-hdf5`` is the default storage engine for the BSB. It persists a network
+(placement, connectivity, morphologies, files) to a single HDF5 file and
+mediates concurrent rank access via an :class:`MPILock`.
 
-This website hosts the documentation references related to the ``bsb-hdf5`` package.
-
-``bsb-hdf5`` is a plugin of the ``BSB``.
-It contains the storage engine allowing the user to save and load their models' in HDF5 files.
-
-Code references
----------------
+This site contains the narrative dev docs and the auto-generated API reference.
+For end-user configuration of the storage block, see the main
+`BSB documentation <https://bsb.readthedocs.io/en/latest/index.html>`_.
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: Architecture
+
+   architecture
+   handles
+   chunking
+   resources
+   telemetry
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Reference
 
    bsb_hdf5/modules
    genindex
    py-modindex
-
-`Main BSB documentation <https://bsb.readthedocs.io/en/latest/index.html>`_
----------------------------------------------------------------------------

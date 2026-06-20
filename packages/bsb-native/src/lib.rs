@@ -8,6 +8,7 @@
 pub mod bvh;
 pub mod geom;
 pub mod poisson;
+pub mod scene;
 
 #[cfg(feature = "python")]
 mod py;

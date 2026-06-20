@@ -5,6 +5,6 @@ built from Rust. This package re-exports its public kernels. It has no dependenc
 on ``bsb-core``; it is a standalone numeric library (numpy in, numpy out).
 """
 
-from ._native import SegmentTree, poisson_disk
+from ._native import connect_segments, poisson_disk
 
-__all__ = ["SegmentTree", "poisson_disk"]
+__all__ = ["connect_segments", "poisson_disk"]

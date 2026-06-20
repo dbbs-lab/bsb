@@ -3,11 +3,16 @@
 //! any Python dependency so it can be unit-tested with `cargo test`.
 
 use numpy::ndarray::Array2;
-use numpy::{IntoPyArray, PyArray2, PyReadonlyArray1, PyReadonlyArray2};
+use numpy::{
+    IntoPyArray, PyArray2, PyReadonlyArray1, PyReadonlyArray2, PyReadonlyArray3,
+};
+use pyo3::exceptions::PyValueError;
 use pyo3::prelude::*;
 
-use crate::bvh::{Segment, SegmentTree as CoreTree};
+use crate::bvh::Segment;
+use crate::geom::{Mat3, Vec3};
 use crate::poisson::poisson_disk as core_poisson;
+use crate::scene::{connect_segments as core_connect, Favor, Instances};
 
 /// Sample points in the box `[lo, hi]` no closer than `min_distance` to each
 /// other or to any `fixed` point, returning an `(N, 3)` float64 array.
@@ -35,7 +40,9 @@ fn poisson_disk<'py>(
             .collect(),
         None => Vec::new(),
     };
-    let pts = core_poisson(lo, hi, min_distance, k, &fixed_vec, max_count, seed);
+    let pts = py.allow_threads(|| {
+        core_poisson(lo, hi, min_distance, k, &fixed_vec, max_count, seed)
+    });
     let n = pts.len();
     let mut flat = Vec::with_capacity(n * 3);
     for p in &pts {
@@ -46,101 +53,137 @@ fn poisson_disk<'py>(
         .into_pyarray_bound(py)
 }
 
-fn build_segments(
+fn build_library(
     p: &PyReadonlyArray2<f64>,
     q: &PyReadonlyArray2<f64>,
     radius: &PyReadonlyArray1<f64>,
     branch: &PyReadonlyArray1<i64>,
     point: &PyReadonlyArray1<i64>,
-) -> Vec<Segment> {
+    offsets: &PyReadonlyArray1<i64>,
+) -> Vec<Vec<Segment>> {
     let p = p.as_array();
     let q = q.as_array();
     let radius = radius.as_array();
     let branch = branch.as_array();
     let point = point.as_array();
-    let n = p.shape()[0];
-    (0..n)
-        .map(|i| Segment {
-            p: [p[[i, 0]], p[[i, 1]], p[[i, 2]]],
-            q: [q[[i, 0]], q[[i, 1]], q[[i, 2]]],
-            radius: radius[i],
-            branch: branch[i],
-            point: point[i],
+    let offsets = offsets.as_array();
+    let m = offsets.len().saturating_sub(1);
+    (0..m)
+        .map(|mi| {
+            let s = offsets[mi] as usize;
+            let e = offsets[mi + 1] as usize;
+            (s..e)
+                .map(|i| Segment {
+                    p: [p[[i, 0]], p[[i, 1]], p[[i, 2]]],
+                    q: [q[[i, 0]], q[[i, 1]], q[[i, 2]]],
+                    radius: radius[i],
+                    branch: branch[i],
+                    point: point[i],
+                })
+                .collect()
         })
         .collect()
 }
 
-/// A per-morphology segment BVH (the "BLAS"): build once over one morphology's
-/// segments in its local frame, then query it with other cells' segments
-/// transformed into that frame.
-#[pyclass]
-struct SegmentTree {
-    inner: CoreTree,
+fn build_instances(
+    morpho: &PyReadonlyArray1<i64>,
+    rot: &PyReadonlyArray3<f64>,
+    pos: &PyReadonlyArray2<f64>,
+) -> (Vec<u32>, Vec<Mat3>, Vec<Vec3>) {
+    let morpho = morpho.as_array();
+    let rot = rot.as_array();
+    let pos = pos.as_array();
+    let n = morpho.len();
+    let m: Vec<u32> = (0..n).map(|i| morpho[i] as u32).collect();
+    let r: Vec<Mat3> = (0..n)
+        .map(|i| {
+            [
+                [rot[[i, 0, 0]], rot[[i, 0, 1]], rot[[i, 0, 2]]],
+                [rot[[i, 1, 0]], rot[[i, 1, 1]], rot[[i, 1, 2]]],
+                [rot[[i, 2, 0]], rot[[i, 2, 1]], rot[[i, 2, 2]]],
+            ]
+        })
+        .collect();
+    let p: Vec<Vec3> = (0..n).map(|i| [pos[[i, 0]], pos[[i, 1]], pos[[i, 2]]]).collect();
+    (m, r, p)
 }
 
-#[pymethods]
-impl SegmentTree {
-    /// Build from a morphology's segments. All arrays are length `M` (one per
-    /// segment): `seg_p`/`seg_q` are the `(M, 3)` endpoints in the morphology's
-    /// local frame, `seg_radius` the per-segment radius, and
-    /// `seg_branch`/`seg_point` the location reported on a contact.
-    #[new]
-    fn new(
-        seg_p: PyReadonlyArray2<f64>,
-        seg_q: PyReadonlyArray2<f64>,
-        seg_radius: PyReadonlyArray1<f64>,
-        seg_branch: PyReadonlyArray1<i64>,
-        seg_point: PyReadonlyArray1<i64>,
-    ) -> Self {
-        let segs = build_segments(&seg_p, &seg_q, &seg_radius, &seg_branch, &seg_point);
-        SegmentTree {
-            inner: CoreTree::build(segs),
+fn locs_to_array<'py>(py: Python<'py>, locs: &[[i64; 3]]) -> Bound<'py, PyArray2<i64>> {
+    let k = locs.len();
+    let mut flat = Vec::with_capacity(k * 3);
+    for l in locs {
+        flat.extend_from_slice(l);
+    }
+    Array2::from_shape_vec((k, 3), flat)
+        .expect("flat buffer is K*3")
+        .into_pyarray_bound(py)
+}
+
+/// Connect two cell populations by morphology-segment proximity.
+///
+/// The morphology library is passed as flat per-segment arrays plus `lib_offsets`
+/// (length `M+1`) delimiting each morphology's segment range. Each population is
+/// given as instances: a per-cell `morpho` index into the library, a per-cell
+/// `(N, 3, 3)` rotation matrix, and a per-cell `(N, 3)` position. `favor` ("pre"
+/// or "post") selects which side builds the trees. Returns `(pre_locs,
+/// post_locs)`, each an `(K, 3)` int64 array of `[cell, branch, point]` triples
+/// aligned row-by-row, one per contact.
+#[pyfunction]
+#[pyo3(signature = (
+    lib_p, lib_q, lib_radius, lib_branch, lib_point, lib_offsets,
+    pre_morpho, pre_rot, pre_pos, post_morpho, post_rot, post_pos,
+    contact, favor = "pre"
+))]
+#[allow(clippy::too_many_arguments)]
+fn connect_segments<'py>(
+    py: Python<'py>,
+    lib_p: PyReadonlyArray2<f64>,
+    lib_q: PyReadonlyArray2<f64>,
+    lib_radius: PyReadonlyArray1<f64>,
+    lib_branch: PyReadonlyArray1<i64>,
+    lib_point: PyReadonlyArray1<i64>,
+    lib_offsets: PyReadonlyArray1<i64>,
+    pre_morpho: PyReadonlyArray1<i64>,
+    pre_rot: PyReadonlyArray3<f64>,
+    pre_pos: PyReadonlyArray2<f64>,
+    post_morpho: PyReadonlyArray1<i64>,
+    post_rot: PyReadonlyArray3<f64>,
+    post_pos: PyReadonlyArray2<f64>,
+    contact: f64,
+    favor: &str,
+) -> PyResult<(Bound<'py, PyArray2<i64>>, Bound<'py, PyArray2<i64>>)> {
+    let favor = match favor {
+        "pre" => Favor::Pre,
+        "post" => Favor::Post,
+        other => {
+            return Err(PyValueError::new_err(format!(
+                "favor must be 'pre' or 'post', got '{other}'"
+            )))
         }
-    }
-
-    fn __len__(&self) -> usize {
-        self.inner.len()
-    }
-
-    /// Query the tree with a batch of segments (already transformed into the
-    /// tree's local frame). Returns two `(K, 3)` int64 arrays of `[cell, branch,
-    /// point]` location triples: the first on the tree (target) side, the second
-    /// on the query (candidate) side, one row per contact within `contact`.
-    #[pyo3(signature = (q_p, q_q, q_radius, q_branch, q_point, q_cell, target_cell, contact))]
-    #[allow(clippy::too_many_arguments)]
-    fn query_batch<'py>(
-        &self,
-        py: Python<'py>,
-        q_p: PyReadonlyArray2<f64>,
-        q_q: PyReadonlyArray2<f64>,
-        q_radius: PyReadonlyArray1<f64>,
-        q_branch: PyReadonlyArray1<i64>,
-        q_point: PyReadonlyArray1<i64>,
-        q_cell: PyReadonlyArray1<i64>,
-        target_cell: i64,
-        contact: f64,
-    ) -> (Bound<'py, PyArray2<i64>>, Bound<'py, PyArray2<i64>>) {
-        let queries = build_segments(&q_p, &q_q, &q_radius, &q_branch, &q_point);
-        let q_cell = q_cell.as_array();
-        let pairs = self.inner.query_batch(&queries, contact);
-
-        let k = pairs.len();
-        let mut a = Vec::with_capacity(k * 3);
-        let mut b = Vec::with_capacity(k * 3);
-        for (ti, qi) in pairs {
-            let (branch, point) = self.inner.location(ti);
-            a.extend_from_slice(&[target_cell, branch, point]);
-            b.extend_from_slice(&[q_cell[qi], queries[qi].branch, queries[qi].point]);
-        }
-        let a = Array2::from_shape_vec((k, 3), a).expect("flat buffer is K*3");
-        let b = Array2::from_shape_vec((k, 3), b).expect("flat buffer is K*3");
-        (a.into_pyarray_bound(py), b.into_pyarray_bound(py))
-    }
+    };
+    let library =
+        build_library(&lib_p, &lib_q, &lib_radius, &lib_branch, &lib_point, &lib_offsets);
+    let (pre_m, pre_r, pre_p) = build_instances(&pre_morpho, &pre_rot, &pre_pos);
+    let (post_m, post_r, post_p) = build_instances(&post_morpho, &post_rot, &post_pos);
+    let pre = Instances {
+        morpho: &pre_m,
+        rot: &pre_r,
+        pos: &pre_p,
+    };
+    let post = Instances {
+        morpho: &post_m,
+        rot: &post_r,
+        pos: &post_p,
+    };
+    // Release the GIL for the heavy, Python-free computation.
+    let (a, b) =
+        py.allow_threads(|| core_connect(&library, &pre, &post, contact, favor));
+    Ok((locs_to_array(py, &a), locs_to_array(py, &b)))
 }
 
 #[pymodule]
 fn _native(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(poisson_disk, m)?)?;
-    m.add_class::<SegmentTree>()?;
+    m.add_function(wrap_pyfunction!(connect_segments, m)?)?;
     Ok(())
 }

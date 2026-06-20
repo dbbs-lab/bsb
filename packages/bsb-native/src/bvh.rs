@@ -239,6 +239,112 @@ fn build_recursive(
     node_index
 }
 
+/// A BVH over arbitrary AABBs (the cell-level "TLAS"): build over per-cell
+/// world-space boxes, query with another box to get overlapping cell indices.
+pub struct AabbBvh {
+    boxes: Vec<Aabb>,
+    order: Vec<usize>,
+    nodes: Vec<Node>,
+}
+
+impl AabbBvh {
+    pub fn build(boxes: Vec<Aabb>) -> Self {
+        let n = boxes.len();
+        let mut order: Vec<usize> = (0..n).collect();
+        let mut nodes: Vec<Node> = Vec::with_capacity(2 * n.max(1));
+        if n > 0 {
+            build_boxes(&boxes, &mut order, &mut nodes, 0, n);
+        }
+        AabbBvh {
+            boxes,
+            order,
+            nodes,
+        }
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.boxes.is_empty()
+    }
+
+    /// Indices of every stored box overlapping `query`.
+    pub fn query_aabb(&self, query: &Aabb) -> Vec<usize> {
+        let mut out = Vec::new();
+        if self.nodes.is_empty() {
+            return out;
+        }
+        let mut stack = vec![0usize];
+        while let Some(ni) = stack.pop() {
+            let node = &self.nodes[ni];
+            if !node.bbox.overlaps(query) {
+                continue;
+            }
+            if node.left == usize::MAX {
+                for &oi in &self.order[node.first..node.first + node.count] {
+                    if self.boxes[oi].overlaps(query) {
+                        out.push(oi);
+                    }
+                }
+            } else {
+                stack.push(node.left);
+                stack.push(node.right);
+            }
+        }
+        out
+    }
+}
+
+fn build_boxes(
+    boxes: &[Aabb],
+    order: &mut [usize],
+    nodes: &mut Vec<Node>,
+    first: usize,
+    count: usize,
+) -> usize {
+    let mut bbox = Aabb::empty();
+    let mut cbox = Aabb::empty();
+    for &oi in &order[first..first + count] {
+        bbox.expand(&boxes[oi]);
+        cbox.expand_point(boxes[oi].centroid());
+    }
+    let node_index = nodes.len();
+    nodes.push(Node {
+        bbox,
+        left: usize::MAX,
+        right: usize::MAX,
+        first,
+        count,
+    });
+    if count <= LEAF_SIZE {
+        return node_index;
+    }
+    let extent = [
+        cbox.max[0] - cbox.min[0],
+        cbox.max[1] - cbox.min[1],
+        cbox.max[2] - cbox.min[2],
+    ];
+    let axis = if extent[0] >= extent[1] && extent[0] >= extent[2] {
+        0
+    } else if extent[1] >= extent[2] {
+        1
+    } else {
+        2
+    };
+    if extent[axis] <= 0.0 {
+        return node_index;
+    }
+    let mid = count / 2;
+    order[first..first + count].select_nth_unstable_by(mid, |&a, &b| {
+        boxes[a].centroid()[axis]
+            .partial_cmp(&boxes[b].centroid()[axis])
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
+    let left = build_boxes(boxes, order, nodes, first, mid);
+    let right = build_boxes(boxes, order, nodes, first + mid, count - mid);
+    nodes[node_index].left = left;
+    nodes[node_index].right = right;
+    node_index
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

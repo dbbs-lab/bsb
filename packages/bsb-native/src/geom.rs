@@ -153,6 +153,45 @@ impl Aabb {
     }
 }
 
+/// A 3x3 rotation matrix (row-major).
+pub type Mat3 = [[f64; 3]; 3];
+
+#[inline]
+pub fn matvec(m: &Mat3, v: Vec3) -> Vec3 {
+    [
+        m[0][0] * v[0] + m[0][1] * v[1] + m[0][2] * v[2],
+        m[1][0] * v[0] + m[1][1] * v[1] + m[1][2] * v[2],
+        m[2][0] * v[0] + m[2][1] * v[1] + m[2][2] * v[2],
+    ]
+}
+
+/// `transpose(m) * v`. For a rotation matrix this is the inverse rotation.
+#[inline]
+pub fn matvec_t(m: &Mat3, v: Vec3) -> Vec3 {
+    [
+        m[0][0] * v[0] + m[1][0] * v[1] + m[2][0] * v[2],
+        m[0][1] * v[0] + m[1][1] * v[1] + m[2][1] * v[2],
+        m[0][2] * v[0] + m[1][2] * v[1] + m[2][2] * v[2],
+    ]
+}
+
+impl Aabb {
+    /// World-space box of this (local) box after rotation `r` then translation
+    /// `p`, computed from its 8 transformed corners.
+    pub fn transformed(&self, r: &Mat3, p: Vec3) -> Aabb {
+        let mut out = Aabb::empty();
+        for &x in &[self.min[0], self.max[0]] {
+            for &y in &[self.min[1], self.max[1]] {
+                for &z in &[self.min[2], self.max[2]] {
+                    let w = matvec(r, [x, y, z]);
+                    out.expand_point([w[0] + p[0], w[1] + p[1], w[2] + p[2]]);
+                }
+            }
+        }
+        out
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

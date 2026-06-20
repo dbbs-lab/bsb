@@ -56,66 +56,78 @@ class SegmentIntersection(Intersectional, ConnectionStrategy):
         # the bsb-native wheel; only running this strategy requires it.
         from bsb_native import SegmentTree
 
-        tm_iter = tmset.iter_morphologies(cache=self.cache, hard_cache=self.cache)
-        target_itr = zip(
-            tset.load_positions(), tset.load_rotations().iter(), tm_iter, strict=False
-        )
+        positions = tset.load_positions()
+        rotations = tset.load_rotations()
+        # Per-cell morphology-loader index: equal values share a morphology (and
+        # therefore the same local-frame segments), so it is a stable cache key.
+        morpho_index = tmset.get_indices(copy=False)
         crotations = cset.load_rotations()
         cpositions = cset.load_positions()
-        tree_cache: dict = {}
-        src_acc = []
-        dest_acc = []
+
+        # Group target cells by morphology so each segment tree is built once,
+        # used for every cell that shares it, then dropped before the next
+        # morphology. Peak memory is thus one tree (plus the current bucket's
+        # transient candidate segments), independent of how many unique
+        # morphologies the population has. The buckets themselves hold only
+        # candidate index arrays, not geometry.
+        buckets: dict = {}
         for target_id, candidates in enumerate(matches):
-            tpos, trot, tmor = next(target_itr)
             if not len(candidates):
                 continue
-            # Build (or reuse) the target morphology's local-frame segment tree.
-            # `iter_morphologies(hard_cache=True)` yields one shared instance per
-            # unique morphology, so `id(tmor)` is a valid per-morphology key.
-            key = id(tmor) if self.cache else None
-            tree = tree_cache.get(key)
-            if tree is None:
-                tp, tq, tr, tb, tpt = _morpho_segments(tmor)
-                if len(tp) == 0:
-                    continue
-                tree = SegmentTree(tp, tq, tr, tb, tpt)
-                if key is not None:
-                    tree_cache[key] = tree
+            buckets.setdefault(int(morpho_index[target_id]), []).append(
+                (target_id, candidates)
+            )
+
+        src_acc = []
+        dest_acc = []
+        for members in buckets.values():
+            # Build the tree from a representative cell's local-frame morphology;
+            # every cell in the bucket shares those local segments.
+            rep_id = members[0][0]
+            tmor = tmset.get(rep_id, cache=self.cache, hard_cache=self.cache)
+            tp, tq, tr, tb, tpt = _morpho_segments(tmor)
+            if len(tp) == 0:
+                continue
+            tree = SegmentTree(tp, tq, tr, tb, tpt)
             if len(tree) == 0:
                 continue
-            # Transform each candidate's segments into the target's local frame:
-            # rotate by the candidate's own rotation, translate by the relative
-            # offset, then anti-rotate by the target's rotation.
-            qp, qq, qr, qb, qpt, qcell = [], [], [], [], [], []
-            for cand in candidates:
-                morpho = cmset.get(cand, cache=self.cache, hard_cache=False)
-                morpho.rotate(crotations[cand])
-                morpho.translate(cpositions[cand] - tpos)
-                morpho.rotate(trot.inv())
-                sp, sq, sr, sb, spt = _morpho_segments(morpho)
-                if len(sp) == 0:
+            for target_id, candidates in members:
+                tpos = positions[target_id]
+                trot = rotations[target_id]
+                # Transform each candidate's segments into the target's local
+                # frame: rotate by the candidate's own rotation, translate by the
+                # relative offset, then anti-rotate by the target's rotation.
+                qp, qq, qr, qb, qpt, qcell = [], [], [], [], [], []
+                for cand in candidates:
+                    morpho = cmset.get(cand, cache=self.cache, hard_cache=False)
+                    morpho.rotate(crotations[cand])
+                    morpho.translate(cpositions[cand] - tpos)
+                    morpho.rotate(trot.inv())
+                    sp, sq, sr, sb, spt = _morpho_segments(morpho)
+                    if len(sp) == 0:
+                        continue
+                    qp.append(sp)
+                    qq.append(sq)
+                    qr.append(sr)
+                    qb.append(sb)
+                    qpt.append(spt)
+                    qcell.append(np.full(len(sp), cand, dtype=np.int64))
+                if not qp:
                     continue
-                qp.append(sp)
-                qq.append(sq)
-                qr.append(sr)
-                qb.append(sb)
-                qpt.append(spt)
-                qcell.append(np.full(len(sp), cand, dtype=np.int64))
-            if not qp:
-                continue
-            target_locs, cand_locs = tree.query_batch(
-                np.concatenate(qp),
-                np.concatenate(qq),
-                np.concatenate(qr),
-                np.concatenate(qb),
-                np.concatenate(qpt),
-                np.concatenate(qcell),
-                target_id,
-                self.contact_distance,
-            )
-            if len(target_locs):
-                src_acc.append(target_locs)
-                dest_acc.append(cand_locs)
+                target_locs, cand_locs = tree.query_batch(
+                    np.concatenate(qp),
+                    np.concatenate(qq),
+                    np.concatenate(qr),
+                    np.concatenate(qb),
+                    np.concatenate(qpt),
+                    np.concatenate(qcell),
+                    target_id,
+                    self.contact_distance,
+                )
+                if len(target_locs):
+                    src_acc.append(target_locs)
+                    dest_acc.append(cand_locs)
+            # `tree` is rebound (and the old one freed) on the next bucket.
 
         if not src_acc:
             return

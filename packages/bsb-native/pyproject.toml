@@ -1,0 +1,42 @@
+[build-system]
+requires = [ "maturin>=1.7,<2" ]
+build-backend = "maturin"
+
+[project]
+name = "bsb-native"
+version = "7.4.0"
+readme = "README.md"
+requires-python = ">=3.10,<4"
+description = "Native (Rust) numerical kernels for the BSB: Poisson-disk placement sampling and segment-intersection connectivity."
+classifiers = [
+  "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"
+]
+dependencies = [ "numpy~=1.19" ]
+
+  [[project.authors]]
+  name = "Robin De Schepper"
+  email = "robin@alexandria.sc"
+
+  [[project.authors]]
+  name = "Dimitri Rodarie"
+  email = "dimitri.rodarie@unipv.it"
+
+  [project.license]
+  file = "LICENSE"
+
+[tool.maturin]
+# Build the `python`-gated PyO3 bindings; the algorithm core stays Python-free.
+features = [ "python" ]
+# Mixed layout: the `bsb_native/` Python package lives at the project root, and
+# the compiled extension is placed at `bsb_native._native`.
+python-source = "."
+module-name = "bsb_native._native"
+
+[tool.ruff]
+exclude = [ ".ruff_cache", ".svn", ".tox", ".venv", "dist", "target" ]
+line-length = 90
+indent-width = 4
+
+  [tool.ruff.lint]
+  select = [ "E", "F", "UP", "B", "SIM", "I" ]
+  ignore = [ "F822" ]

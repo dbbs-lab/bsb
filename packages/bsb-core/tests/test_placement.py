@@ -644,3 +644,42 @@ class TestPoissonDiskPlacement(
             (pos >= [10, 10, 10]).all() and (pos < [90, 90, 90]).all(),
             "cells placed outside the region",
         )
+
+    def test_seamless_across_chunks(self):
+        # A box spanning 4 chunks: seamless mode must keep the minimum distance
+        # across chunk borders (no seams), via colored wavefront scheduling and
+        # the neighbour halo.
+        min_distance = 8.0
+        cfg = Configuration.default(
+            network=dict(chunk_size=[50, 50, 50]),
+            regions={"reg": {"type": "group", "children": ["box"]}},
+            partitions={
+                "box": {
+                    "type": "rhomboid",
+                    "origin": [0, 0, 0],
+                    "dimensions": [100, 100, 50],
+                }
+            },
+            cell_types={"cell": {"spatial": {"density": 1e-3, "radius": 2}}},
+            placement={
+                "poisson": {
+                    "strategy": "bsb.placement.PoissonDiskPlacement",
+                    "partitions": ["box"],
+                    "cell_types": ["cell"],
+                    "min_distance": min_distance,
+                    "seed": 1,
+                    "seamless": True,
+                }
+            },
+        )
+        network = Scaffold(cfg, self.storage)
+        network.compile(clear=True)
+        pos = network.get_placement_set("cell").load_positions()
+        self.assertGreater(len(pos), 0, "expected cells to be placed")
+        d2 = ((pos[:, None, :] - pos[None, :, :]) ** 2).sum(-1)
+        np.fill_diagonal(d2, np.inf)
+        self.assertGreaterEqual(
+            d2.min() ** 0.5,
+            min_distance - 1e-6,
+            "seamless placement violated min-distance across a chunk border",
+        )

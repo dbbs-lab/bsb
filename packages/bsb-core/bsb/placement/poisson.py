@@ -1,10 +1,19 @@
+import itertools
 import zlib
 
 import numpy as np
 
 from .. import config
+from ..storage._chunks import Chunk
 from ..voxels import VoxelSet
 from .strategy import PlacementStrategy
+
+_NEIGHBORS = [d for d in itertools.product((-1, 0, 1), repeat=3) if d != (0, 0, 0)]
+
+
+def _color(chunk):
+    # 8 parity classes; same-color chunks are never face/edge/corner adjacent.
+    return (int(chunk[0]) % 2) * 4 + (int(chunk[1]) % 2) * 2 + (int(chunk[2]) % 2)
 
 
 @config.node
@@ -33,6 +42,43 @@ class PoissonDiskPlacement(PlacementStrategy):
     min_distance = config.attr(type=float, required=False)
     tries = config.attr(type=int, default=30)
     seed = config.attr(type=int, required=False)
+    seamless = config.attr(type=bool, default=True)
+
+    def queue(self, pool, chunk_size):
+        """Queue placement jobs.
+
+        In seamless mode, color each chunk by the parity of its coordinates (8
+        classes) and make every chunk depend on its lower-color neighbours. Since
+        same-color chunks are never adjacent, this schedules placement in 8
+        wavefronts where no two touching chunks ever run at once: when a chunk is
+        placed, its already-placed neighbours can be read as a fixed halo, and
+        every chunk border is reconciled exactly once. Falls back to the default
+        per-chunk queueing when ``seamless`` is off.
+        """
+        if not self.seamless:
+            return super().queue(pool, chunk_size)
+        base_deps = set(
+            itertools.chain(
+                *(pool.get_submissions_of(strat) for strat in self.get_deps())
+            )
+        )
+        chunks = np.unique(
+            np.concatenate([p.to_chunks(chunk_size) for p in self.partitions]), axis=0
+        )
+        chunk_set = {tuple(int(c) for c in ch) for ch in chunks}
+        jobs: dict = {}
+        # Process in color order so a chunk's lower-color neighbour jobs already
+        # exist when it is queued.
+        for ch in sorted(chunk_set, key=lambda c: (_color(c), c)):
+            col = _color(ch)
+            deps = set(base_deps)
+            for d in _NEIGHBORS:
+                nb = (ch[0] + d[0], ch[1] + d[1], ch[2] + d[2])
+                if nb in chunk_set and _color(nb) < col:
+                    deps.add(jobs[nb])
+            jobs[ch] = pool.queue_placement(
+                self, Chunk(np.array(ch), chunk_size), deps=deps
+            )
 
     def place(self, chunk, indicators):
         # Lazily import the compiled kernel: bsb-core stays importable without
@@ -54,12 +100,19 @@ class PoissonDiskPlacement(PlacementStrategy):
             min_distance = self._derive_min_distance(
                 lo, hi, count, indicator.get_radius()
             )
+            # Already-placed neighbours within reach act as fixed constraints, so
+            # samples near the border respect them (see `queue`).
+            fixed = (
+                self._halo(indicator.cell_type, chunk, lo, hi, min_distance)
+                if self.seamless
+                else None
+            )
             positions = poisson_disk(
                 tuple(float(x) for x in lo),
                 tuple(float(x) for x in hi),
                 min_distance,
                 self.tries,
-                None,
+                fixed,
                 count,
                 self._chunk_seed(chunk, name),
             )
@@ -80,6 +133,22 @@ class PoissonDiskPlacement(PlacementStrategy):
         # two soma radii so somas cannot overlap.
         spacing = (volume / count) ** (1 / 3) if volume > 0 else 0.0
         return max(spacing, 2 * radius)
+
+    def _halo(self, cell_type, chunk, lo, hi, min_distance):
+        # Read this cell type's already-placed somas in the 26 neighbour chunks
+        # and keep those within `min_distance` of the sampling box, to seed the
+        # sampler as fixed constraints. Higher-color neighbours are not placed yet
+        # (they depend on this chunk), so they simply contribute nothing.
+        base = np.asarray(chunk, dtype=int)
+        neighbors = [Chunk(base + d, chunk.dimensions) for d in _NEIGHBORS]
+        positions = cell_type.get_placement_set(chunks=neighbors).load_positions()
+        if len(positions) == 0:
+            return None
+        lo_h = np.asarray(lo, dtype=float) - min_distance
+        hi_h = np.asarray(hi, dtype=float) + min_distance
+        mask = np.all((positions >= lo_h) & (positions <= hi_h), axis=1)
+        positions = np.ascontiguousarray(positions[mask], dtype=float)
+        return positions if len(positions) else None
 
     def _chunk_seed(self, chunk, name):
         base = 0 if self.seed is None else int(self.seed)

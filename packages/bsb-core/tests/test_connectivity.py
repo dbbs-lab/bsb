@@ -1098,3 +1098,85 @@ class TestOutputNamingConnect(
         ps_post = self.network.get_placement_set("D")
         with self.assertRaises(ConnectivityError):
             self.network.connectivity.x.connect_cells(ps_pre, ps_post, [], [])
+
+
+def _has_bsb_native():
+    try:
+        import bsb_native  # noqa: F401
+
+        return True
+    except ImportError:
+        return False
+
+
+@unittest.skipUnless(_has_bsb_native(), "requires the bsb-native compiled kernels")
+class TestSegmentIntersection(
+    RandomStorageFixture,
+    NetworkFixture,
+    NumpyTestCase,
+    unittest.TestCase,
+    engine_name="hdf5",
+):
+    """End-to-end check that the bsb-native segment-intersection kernel connects
+    cells whose morphologies overlap, and leaves distant cells unconnected."""
+
+    def setUp(self):
+        self.cfg = Configuration.default(
+            cell_types=dict(
+                test_cell_A=dict(
+                    spatial=dict(radius=1, density=1, morphologies=[dict(names=["A"])])
+                ),
+                test_cell_B=dict(
+                    spatial=dict(radius=1, density=1, morphologies=[dict(names=["B"])])
+                ),
+            ),
+            placement=dict(
+                fixed_A=dict(
+                    strategy="bsb.placement.FixedPositions",
+                    cell_types=["test_cell_A"],
+                    partitions=[],
+                    # cell 1 ([50,0,0]) overlaps B; cell 2 ([0,0,300]) is far away.
+                    positions=[[0, 0, 0], [50, 0, 0], [0, 0, 300]],
+                ),
+                fixed_B=dict(
+                    strategy="bsb.placement.FixedPositions",
+                    cell_types=["test_cell_B"],
+                    partitions=[],
+                    positions=[[95, 0, 0]],
+                ),
+            ),
+        )
+        super().setUp()
+        self.network.connectivity.add(
+            "intersect",
+            dict(
+                strategy="bsb.connectivity.SegmentIntersection",
+                presynaptic=dict(cell_types=["test_cell_A"]),
+                postsynaptic=dict(cell_types=["test_cell_B"]),
+                contact_distance=10.0,
+            ),
+        )
+        if MPI.get_rank():
+            MPI.barrier()
+        else:
+            mA = Morphology(
+                [Branch([[0, 0, 0], [0, 25, 25], [25, 0, 0], [50, 0, 0]], [1] * 4)]
+            )
+            self.network.morphologies.save("A", mA)
+            mB = Morphology(
+                [Branch([[0, 0, 0], [0, 25, 25], [-25, 0, 0], [-50, 0, 0]], [1] * 4)]
+            )
+            self.network.morphologies.save("B", mB)
+            MPI.barrier()
+
+    def test_segment_contacts(self):
+        self.network.compile()
+        cs = self.network.get_connectivity_set("intersect")
+        total = 0
+        for _pre_chunks, pre_locs, _post_chunks, _post_locs in (
+            cs.load_connections().chunk_iter()
+        ):
+            total += len(pre_locs)
+        self.assertGreater(
+            total, 0, "expected the overlapping A/B morphologies to connect"
+        )

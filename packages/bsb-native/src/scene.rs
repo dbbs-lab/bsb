@@ -11,6 +11,7 @@
 
 use crate::bvh::{AabbBvh, Segment, SegmentTree};
 use crate::geom::{matvec, matvec_t, Aabb, Mat3, Vec3};
+use crate::rng::Rng;
 use rayon::prelude::*;
 
 /// One cell population as instances of morphologies in the shared library.
@@ -37,14 +38,38 @@ pub enum Favor {
     Post,
 }
 
+/// Keep a random fraction `affinity` of the candidate cells, in place. Matches
+/// the per-target candidate subsampling of the legacy `Intersectional` strategy:
+/// keep `floor(n*affinity)` plus one more with probability of the fractional part.
+fn subsample(cands: &mut Vec<usize>, affinity: f64, rng: &mut Rng) {
+    let n = cands.len();
+    let exact = n as f64 * affinity;
+    let floor = exact.floor();
+    let keep = floor as usize + usize::from(rng.unit() < (exact - floor));
+    if keep >= n {
+        return;
+    }
+    // Partial Fisher-Yates: shuffle `keep` random elements to the front, truncate.
+    for i in 0..keep {
+        let j = i + rng.range(n - i);
+        cands.swap(i, j);
+    }
+    cands.truncate(keep);
+}
+
 /// Returns `(pre_locs, post_locs)`: matched `[cell, branch, point]` triples, one
 /// row per contact, aligned so row `i` of each is the two ends of one contact.
+///
+/// `affinity` in `[0, 1]` keeps that random fraction of each query cell's
+/// candidate partners (1.0 = no subsampling); `seed` makes that reproducible.
 pub fn connect_segments(
     library: &[Vec<Segment>],
     pre: &Instances,
     post: &Instances,
     contact: f64,
     favor: Favor,
+    affinity: f64,
+    seed: u64,
 ) -> (Vec<[i64; 3]>, Vec<[i64; 3]>) {
     let (targets, queries, target_is_pre) = match favor {
         Favor::Pre => (pre, post, true),
@@ -104,9 +129,18 @@ pub fn connect_segments(
             let mut qbox = local_box[qm].transformed(r_q, p_q);
             qbox.pad(contact);
 
+            let mut candidates = tlas.query_aabb(&qbox);
+            if affinity < 1.0 && !candidates.is_empty() {
+                // Per-query RNG keyed on (seed, qi) so subsampling is
+                // reproducible and independent of thread scheduling.
+                let mut rng =
+                    Rng::seeded(seed ^ (qi as u64).wrapping_mul(0x9E3779B97F4A7C15));
+                subsample(&mut candidates, affinity, &mut rng);
+            }
+
             let mut a_locs: Vec<[i64; 3]> = Vec::new(); // target side
             let mut b_locs: Vec<[i64; 3]> = Vec::new(); // query side
-            for ti in tlas.query_aabb(&qbox) {
+            for ti in candidates {
                 let tree = match &blas[targets.morpho[ti] as usize] {
                     Some(t) => t,
                     None => continue,
@@ -240,7 +274,7 @@ mod tests {
 
         let want = brute(&library, &pre, &post, contact);
         for favor in [Favor::Pre, Favor::Post] {
-            let (a, b) = connect_segments(&library, &pre, &post, contact, favor);
+            let (a, b) = connect_segments(&library, &pre, &post, contact, favor, 1.0, 0);
             assert_eq!(a.len(), b.len());
             let got: std::collections::HashSet<_> = a
                 .iter()
@@ -249,5 +283,50 @@ mod tests {
                 .collect();
             assert_eq!(got, want, "favor mismatch");
         }
+    }
+
+    #[test]
+    fn affinity_subsamples() {
+        // A query cell overlapping many target cells; affinity should thin the
+        // partners. One query morphology, many target instances around it.
+        let library = vec![vec![seg([-2., 0., 0.], [2., 0., 0.], 0.2, 0, 0)]];
+        let n_targets = 40;
+        let t_m = vec![0u32; n_targets];
+        let t_r = vec![ID; n_targets];
+        let t_p: Vec<Vec3> = (0..n_targets).map(|i| [0.0, i as f64 * 0.1, 0.0]).collect();
+        let targets = Instances {
+            morpho: &t_m,
+            rot: &t_r,
+            pos: &t_p,
+        };
+        let q_m = [0u32];
+        let q_r = [ID];
+        let q_p = [[0.0, 2.0, 0.0]];
+        let queries = Instances {
+            morpho: &q_m,
+            rot: &q_r,
+            pos: &q_p,
+        };
+        let full =
+            connect_segments(&library, &queries, &targets, 5.0, Favor::Post, 1.0, 0)
+                .0
+                .len();
+        let half =
+            connect_segments(&library, &queries, &targets, 5.0, Favor::Post, 0.5, 0)
+                .0
+                .len();
+        let none =
+            connect_segments(&library, &queries, &targets, 5.0, Favor::Post, 0.0, 0)
+                .0
+                .len();
+        assert!(full > 10, "expected many full-affinity contacts, got {full}");
+        assert_eq!(none, 0, "affinity 0 should make no connections");
+        assert!(half < full && half > 0, "affinity 0.5 got {half} of {full}");
+        // Reproducible for a fixed seed.
+        let half2 =
+            connect_segments(&library, &queries, &targets, 5.0, Favor::Post, 0.5, 0)
+                .0
+                .len();
+        assert_eq!(half, half2, "affinity subsampling must be reproducible");
     }
 }

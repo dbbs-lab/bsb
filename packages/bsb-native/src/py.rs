@@ -132,7 +132,7 @@ fn locs_to_array<'py>(py: Python<'py>, locs: &[[i64; 3]]) -> Bound<'py, PyArray2
 #[pyo3(signature = (
     lib_p, lib_q, lib_radius, lib_branch, lib_point, lib_offsets,
     pre_morpho, pre_rot, pre_pos, post_morpho, post_rot, post_pos,
-    contact, favor = "pre"
+    contact, favor = "pre", affinity = 1.0, seed = 0
 ))]
 #[allow(clippy::too_many_arguments)]
 fn connect_segments<'py>(
@@ -151,6 +151,8 @@ fn connect_segments<'py>(
     post_pos: PyReadonlyArray2<f64>,
     contact: f64,
     favor: &str,
+    affinity: f64,
+    seed: u64,
 ) -> PyResult<(Bound<'py, PyArray2<i64>>, Bound<'py, PyArray2<i64>>)> {
     let favor = match favor {
         "pre" => Favor::Pre,
@@ -176,8 +178,9 @@ fn connect_segments<'py>(
         pos: &post_p,
     };
     // Release the GIL for the heavy, Python-free computation.
-    let (a, b) =
-        py.allow_threads(|| core_connect(&library, &pre, &post, contact, favor));
+    let (a, b) = py.allow_threads(|| {
+        core_connect(&library, &pre, &post, contact, favor, affinity, seed)
+    });
     Ok((locs_to_array(py, &a), locs_to_array(py, &b)))
 }
 

@@ -71,6 +71,8 @@ class SegmentIntersection(Intersectional, ConnectionStrategy):
             post_pos,
             self.contact_distance,
             self.favor_cache,
+            self.affinity,
+            0,
         )
         if len(pre_locs):
             self.connect_cells(pre_set, post_set, pre_locs, post_locs)

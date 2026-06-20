@@ -29,6 +29,8 @@ def connect_segments(
     post_pos: NDArray[np.float64],
     contact: float,
     favor: str = ...,
+    affinity: float = ...,
+    seed: int = ...,
 ) -> tuple[NDArray[np.int64], NDArray[np.int64]]:
     """Connect two cell populations by morphology-segment (capsule) proximity.
 

@@ -1,0 +1,88 @@
+name: bsb-native wheels
+
+# bsb-native ships a compiled (PyO3/maturin) extension, so it cannot be published
+# by `nx release publish` like the pure-Python packages (that would only produce
+# the runner's platform wheel). Instead nx versions/tags it and no-ops its
+# publish, and this workflow builds the per-platform abi3 wheels + sdist and
+# publishes them. Because the crate is abi3 (cp310-abi3) there is one wheel per
+# platform, not one per Python version, so the matrix is platform x arch only.
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "packages/bsb-native/**"
+      - ".github/workflows/wheels.yml"
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: packages/bsb-native
+
+jobs:
+  wheels:
+    name: wheel ${{ matrix.platform.target }} (${{ matrix.platform.runner }})
+    runs-on: ${{ matrix.platform.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - { runner: ubuntu-latest, target: x86_64, manylinux: auto }
+          - { runner: ubuntu-latest, target: aarch64, manylinux: auto }
+          - { runner: macos-13, target: x86_64 }
+          - { runner: macos-14, target: aarch64 }
+          - { runner: windows-latest, target: x64 }
+    steps:
+      - uses: actions/checkout@v5
+      - name: Build wheel
+        uses: PyO3/maturin-action@v1
+        with:
+          working-directory: packages/bsb-native
+          target: ${{ matrix.platform.target }}
+          manylinux: ${{ matrix.platform.manylinux || 'auto' }}
+          args: --release --out dist
+          sccache: "true"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheels-${{ matrix.platform.runner }}-${{ matrix.platform.target }}
+          path: packages/bsb-native/dist/*.whl
+
+  sdist:
+    name: sdist
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Build sdist
+        uses: PyO3/maturin-action@v1
+        with:
+          working-directory: packages/bsb-native
+          command: sdist
+          args: --out dist
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wheels-sdist
+          path: packages/bsb-native/dist/*.tar.gz
+
+  publish:
+    name: Publish to PyPI
+    needs: [wheels, sdist]
+    runs-on: ubuntu-latest
+    # Only publish for an actual release; PRs and manual runs just build.
+    if: github.event_name == 'release'
+    environment: pypi
+    permissions:
+      id-token: write # PyPI trusted publishing
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: wheels-*
+          path: dist
+          merge-multiple: true
+      - name: Publish
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist

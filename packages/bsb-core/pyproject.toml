@@ -13,6 +13,7 @@ classifiers = [
 ]
 dependencies = [
   "bsb-otel~=7.2",
+  "bsb-native~=7.0",
   "numpy~=1.19",
   "scipy~=1.5",
   "scikit-learn~=1.0",
@@ -93,6 +94,10 @@ default-groups = [ "dev", "docs", "test" ]
 
 [tool.uv.sources.bsb-otel]
 path = "../bsb-otel"
+editable = true
+
+[tool.uv.sources.bsb-native]
+path = "../bsb-native"
 editable = true
 
 [tool.uv.sources.bsb-test]

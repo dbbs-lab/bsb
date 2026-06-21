@@ -24,6 +24,11 @@ jobs:
         with:
           fetch-depth: 0
 
+      # Needed to build the bsb-native Rust extension (a bsb-core dependency)
+      # when uv installs the workspace, and to run its `cargo test` target.
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
       - name: Install apt dependencies
         run: |
           sudo apt update

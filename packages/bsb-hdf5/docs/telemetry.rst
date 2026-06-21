@@ -1,7 +1,7 @@
 Telemetry
 =========
 
-Every method decorated with :func:`handles_handles` emits an OTel span named
+Every method decorated with ``handles_handles`` emits an OTel span named
 ``hdf5.<method_name>``. Every file open emits an ``hdf5.file.open`` span
 (carrying ``hdf5.file.slow_lock`` and ``hdf5.file.wait_ms`` when the OS-level
 h5py lock had to retry). Every MPI lock acquire emits an ``mpilock.*`` span
@@ -13,8 +13,8 @@ engine forces ``local_tracing`` around every span it emits.
 The local tracer
 ----------------
 
-The engine does *not* call :func:`bsb_otel.tracer.get_bsb_tracer` directly. It
-goes through :class:`bsb_hdf5._telemetry._LocalHdf5Tracer`:
+The engine does *not* call ``get_bsb_tracer`` directly. It
+goes through ``_LocalHdf5Tracer``:
 
 .. code-block:: python
 
@@ -37,15 +37,15 @@ goes through :class:`bsb_hdf5._telemetry._LocalHdf5Tracer`:
    _hdf5_tracer = _LocalHdf5Tracer()
 
 Every span the engine emits is therefore wrapped in
-:func:`bsb_otel.tracer.local_tracing`. That call sets the per-context MPI
-communicator used by :class:`BsbTracer` for span broadcasts to
+``local_tracing``. That call sets the per-context MPI
+communicator used by ``BsbTracer`` for span broadcasts to
 ``MPI.COMM_SELF`` (a single-rank communicator). Spans created inside the block
 therefore do not trigger any cross-rank broadcast.
 
 Why the broadcast had to go
 ---------------------------
 
-By default :class:`BsbTracer` does a collective broadcast on the first span of
+By default ``BsbTracer`` does a collective broadcast on the first span of
 a trace so that every rank's downstream spans share the same trace id. That
 default is the right call for cluster-wide BSB phases (the run as a whole,
 each pipeline phase), where every rank executes the same sequence of traced
@@ -54,7 +54,7 @@ operations.
 It is the wrong call for engine spans, because engine operations are
 **per-rank divergent**:
 
-* Workers all run :class:`PlacementJob`, but they get different chunks. Their
+* Workers all run ``PlacementJob``, but they get different chunks. Their
   ``hdf5.append_data`` calls fire at different times and in different counts.
 * Reads from rank 0 (the scheduler) and from a worker are completely
   uncoordinated.
@@ -66,7 +66,7 @@ If the engine emitted spans through the default tracer, rank 0 would block on
 worker would block on ``bcast`` waiting for rank 0. The first
 divergence-and-trace produces a hang.
 
-Wrapping every engine span in :func:`local_tracing` cuts the bcast out for
+Wrapping every engine span in ``local_tracing`` cuts the bcast out for
 engine spans only. A cross-rank parent set above the engine (e.g. by a
 ``run_placement`` collective span) is still inherited because
 ``local_tracing`` only changes the *broadcast* communicator, not the OTel
@@ -96,12 +96,12 @@ The convention for span attributes:
 What gets emitted automatically
 -------------------------------
 
-The :func:`handles_handles` decorator emits:
+The ``handles_handles`` decorator emits:
 
 * ``hdf5.<method_name>`` covering the function body (including the wait for
   the MPI lock and the file open).
 * ``hdf5.file.open`` covering only the ``h5py.File`` lifetime, via the
-  :class:`_SpannedHandle` wrapper. The two spans always nest.
+  ``_SpannedHandle`` wrapper. The two spans always nest.
 
 A read path therefore produces:
 

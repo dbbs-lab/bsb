@@ -1,7 +1,7 @@
 Resources
 =========
 
-The HDF5 engine exposes four concrete :class:`Resource` types, one per BSB
+The HDF5 engine exposes four concrete ``Resource`` types, one per BSB
 storage interface. Each lives at a fixed path inside the file and exposes the
 operations the BSB asks for. This page describes what each resource stores and
 the few quirks worth knowing.
@@ -11,8 +11,8 @@ PlacementSet
 
 * Path: ``/placement/<cell_type_name>/``
 * Implements: :class:`bsb.storage.interfaces.PlacementSet`
-* Uses: :class:`ChunkLoader` (chunked positions, rotations, morphology indices,
-  labels, plus an ``additional`` :class:`ChunkedCollection`).
+* Uses: ``ChunkLoader`` (chunked positions, rotations, morphology indices,
+  labels, plus an ``additional`` ``ChunkedCollection``).
 
 A placement set is the per-cell-type record of where cells live. Its chunked
 layout (see :doc:`chunking`) lets workers append disjoint chunks in parallel
@@ -20,17 +20,17 @@ without contending on a single growing dataset.
 
 Notable methods:
 
-* :meth:`load_morphologies` returns a :class:`MorphologySet` keyed on the
+* ``load_morphologies`` returns a ``MorphologySet`` keyed on the
   ``morphology_loaders`` attribute the placement step wrote per chunk. It opens
-  one handle which the nested :meth:`_get_morphology_loaders` (itself decorated)
+  one handle which the nested ``_get_morphology_loaders`` (itself decorated)
   reuses automatically through the ambient-handle ContextVar. See
   :doc:`handles`.
-* :meth:`append_data` accepts ``positions``, ``morphologies``, ``rotations``,
-  ``additional`` for a chunk, calls :meth:`require_chunk` to materialise the
+* ``append_data`` accepts ``positions``, ``morphologies``, ``rotations``,
+  ``additional`` for a chunk, calls ``require_chunk`` to materialise the
   chunk group on first write, then appends to each chunked property in turn.
   The per-chunk ``morphology_loaders`` attribute is rewritten on every append
-  by :meth:`_append_morphologies`.
-* :meth:`convert_to_local` maps a list of global cell ids into local-chunk
+  by ``_append_morphologies``.
+* ``convert_to_local`` maps a list of global cell ids into local-chunk
   indices for the loaded chunk filter. Use when the caller only has the
   flat-array indices but needs to write back to specific chunk groups.
 
@@ -47,8 +47,8 @@ chunk X" or "all connections into chunk Y" without reading the whole set.
 
 Notable methods:
 
-* :meth:`flat_iter_connections` iterates over per-chunk connection blocks.
-* :meth:`connect` writes a new block of (src_locs, dst_locs) pairs into the
+* ``flat_iter_connections`` iterates over per-chunk connection blocks.
+* ``connect`` writes a new block of (src_locs, dst_locs) pairs into the
   appropriate chunk groups and updates the root ``chunks`` JSON attribute's
   ``inc`` / ``out`` counters.
 
@@ -69,17 +69,17 @@ row per point: ``[x, y, z, radius, label, *properties]``) and a ``graph``
 dataset (one row per branch: ``[end_ptr, parent_branch_id]``).
 
 A single ``morphology_meta`` dataset at ``/`` holds the JSON-encoded metadata
-for every morphology in the file. Reading it via :meth:`get_all_meta` is the
+for every morphology in the file. Reading it via ``get_all_meta`` is the
 one cheap operation that lets the placement step decide which morphology to
 load without touching any morphology group.
 
 Notable methods:
 
-* :meth:`preload` builds a :class:`StoredMorphology` from a name + meta dict.
+* ``preload`` builds a ``StoredMorphology`` from a name + meta dict.
   Pass ``meta=`` in to skip the meta lookup (the common path when iterating
   over many morphologies). Called from inside an open handle (an enclosing scope
   or decorated method) it reuses that handle automatically; see :doc:`handles`.
-* :meth:`save` writes a :class:`Morphology` to disk and updates the
+* ``save`` writes a ``Morphology`` to disk and updates the
   ``morphology_meta`` attribute.
 
 FileStore
@@ -96,12 +96,12 @@ single dataset under ``/files/<id>`` with two attributes:
 
 The file store is also where the **active config** lives: a special blob
 flagged with ``meta["active_config"] = True``, retrievable via
-:meth:`load_active_config`. Only one blob carries that flag at a time;
-:meth:`store_active_config` clears it on the previous holder before flagging
+``load_active_config``. Only one blob carries that flag at a time;
+``store_active_config`` clears it on the previous holder before flagging
 the new one.
 
 Unlike the other resources, the file store does not use the
-:func:`handles_handles` decorator: every method opens its own handle in the
+``handles_handles`` decorator: every method opens its own handle in the
 body via ``with self._engine._read(), self._engine._handle("r")``. This is
 intentional: the file store is mostly called as a one-shot from user code, not
 from inside other engine paths, so threading would not pay off.

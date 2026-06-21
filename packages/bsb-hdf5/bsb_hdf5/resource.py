@@ -18,10 +18,17 @@ HANDLED = None
 
 
 # Per-(engine, scope) state. Value: {id(engine): (mode, h5py_handle)}.
-# Default is the empty dict so .get(id(engine)) is always safe.
+# The default is `None` (a mutable default would be shared across all contexts);
+# `_get_handles` substitutes the empty map so `.get(id(engine))` is always safe.
 _engine_handle: contextvars.ContextVar = contextvars.ContextVar(
-    "_bsb_hdf5_engine_handle", default={}
+    "_bsb_hdf5_engine_handle", default=None
 )
+
+
+def _get_handles() -> dict:
+    """Return the per-engine handle map for the current context, or the empty
+    map when none is set."""
+    return _engine_handle.get() or {}
 
 
 class _WriteScopeState:
@@ -74,7 +81,7 @@ def _lookup_handle(engine, requested_mode):
     returns us to the read state on release. (Hence
     :class:`PromotedHandleWarning` exists to flag the pattern.)
     """
-    cur = _engine_handle.get().get(id(engine))
+    cur = _get_handles().get(id(engine))
     if cur is None:
         return None
     held_mode, held_handle = cur
@@ -95,7 +102,8 @@ def handles_handles(handle_type, handler=lambda args: args[0]._engine):
     1. If the caller passed ``handle=`` explicitly, the inner function gets
        that handle. Period.
     2. Otherwise the decorator checks the per-engine handle ContextVar (set by
-       :meth:`HDF5Engine.read_scope` / :meth:`~HDF5Engine.write_scope` or by
+       :meth:`~bsb_hdf5.HDF5Engine.read_scope` /
+       :meth:`~bsb_hdf5.HDF5Engine.write_scope` or by
        any outer ``@handles_handles`` call that opened a handle). If a
        compatible handle is open, it is reused. No mpilock acquire, no
        ``h5py.File`` open.
@@ -138,7 +146,7 @@ def handles_handles(handle_type, handler=lambda args: args[0]._engine):
                     # about to trigger an mpilock promotion. Detect the second
                     # case by checking whether ANY handle is open on this
                     # engine in the current context.
-                    cur = _engine_handle.get().get(id(engine))
+                    cur = _get_handles().get(id(engine))
                     if cur is not None and not promote_from_read:
                         warnings.warn(
                             f"`{f.__module__}.{f.__name__}` is a write "
@@ -187,7 +195,7 @@ def handles_handles(handle_type, handler=lambda args: args[0]._engine):
                 # scope and `handle_type == "a"`.
                 with lock_f(engine)(), engine._handle(handle_type) as new_handle:
                     bound.arguments["handle"] = new_handle
-                    current = _engine_handle.get()
+                    current = _get_handles()
                     tok = _engine_handle.set(
                         {**current, id(engine): (handle_type, new_handle)}
                     )
@@ -204,14 +212,15 @@ def handles_handles(handle_type, handler=lambda args: args[0]._engine):
 @contextlib.contextmanager
 def _push_scope(engine, mode):
     """Open a handle on ``engine`` in ``mode``, push it onto the engine-handle
-    ContextVar, and yield the handle. Used by :meth:`HDF5Engine.read_scope`
-    and :meth:`~HDF5Engine.write_scope`. Also installs a
+    ContextVar, and yield the handle. Used by
+    :meth:`~bsb_hdf5.HDF5Engine.read_scope` and
+    :meth:`~bsb_hdf5.HDF5Engine.write_scope`. Also installs a
     :class:`_WriteScopeState` on the ``_write_scope_state`` ContextVar when
     ``mode == "a"`` so :class:`UnusedWriteScopeWarning` can fire on exit.
     """
     lock_f = {"r": lambda eng: eng._read, "a": lambda eng: eng._write}[mode]
     with lock_f(engine)(), engine._handle(mode) as handle:
-        current = _engine_handle.get()
+        current = _get_handles()
         engine_tok = _engine_handle.set({**current, id(engine): (mode, handle)})
         scope_tok = None
         state = None

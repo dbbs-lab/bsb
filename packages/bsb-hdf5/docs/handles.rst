@@ -2,7 +2,7 @@ Handles
 =======
 
 Every read or write inside the engine goes through ``h5py.File``, and every
-``h5py.File`` open sits behind the :class:`MPILock`. Opening the file is the
+``h5py.File`` open sits behind the ``MPILock``. Opening the file is the
 most expensive operation an engine method can do. This page explains the
 discipline that keeps it cheap: open one handle, then reuse it for as long as
 possible.
@@ -10,7 +10,7 @@ possible.
 The ``handles_handles`` decorator
 ---------------------------------
 
-Any method on a :class:`Resource` that needs an HDF5 handle is decorated and
+Any method on a ``Resource`` that needs an HDF5 handle is decorated and
 takes a ``handle`` keyword argument:
 
 .. code-block:: python
@@ -57,12 +57,12 @@ Passing ``handle=handle`` explicitly still works and takes precedence over the
 ambient lookup. Use it when you hold a handle that is not on the ContextVar
 (for example one received as an argument), or to be explicit at a hot call site.
 A non-decorated helper that needs to take part in reuse (for example a mixin
-like :meth:`ChunkLoader.get_loaded_chunks`) accepts a ``handle=`` keyword and
+like ``ChunkLoader.get_loaded_chunks``) accepts a ``handle=`` keyword and
 passes it on to the decorated calls it makes.
 
 The ContextVar propagates across threads and asyncio tasks that go through
 :func:`contextvars.copy_context`, including the path the BSB job pool takes
-(:meth:`Job.run` uses ``ctx.run`` on the worker thread). It does *not*
+(``Job.run`` uses ``ctx.run`` on the worker thread). It does *not*
 propagate across MPI ranks: each rank has its own handle and its own lock.
 
 Batching with ``read_scope`` and ``write_scope``

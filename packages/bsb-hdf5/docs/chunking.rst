@@ -8,7 +8,7 @@ data under its own HDF5 group so workers can append without contending on the
 same dataset.
 
 This page describes how that chunking lands in the file and how to use the
-:class:`ChunkLoader` mixin to read it back.
+``ChunkLoader`` mixin to read it back.
 
 The chunk size attribute
 ------------------------
@@ -20,12 +20,12 @@ This is the source of truth for the spatial size of every chunk in the file.
 Chunks at rest
 --------------
 
-A :class:`ChunkLoader` lives at ``self._path``. Each chunk it owns gets a group
+A ``ChunkLoader`` lives at ``self._path``. Each chunk it owns gets a group
 at ``self._path/<chunk.id>``. Inside that group:
 
-* One **dataset** per :class:`ChunkedProperty`, named after the property
+* One **dataset** per ``ChunkedProperty``, named after the property
   (``positions``, ``rotations``, ``morphology``, ``labels`` for a PlacementSet).
-* One **group** per :class:`ChunkedCollection`, named after the collection
+* One **group** per ``ChunkedCollection``, named after the collection
   (``additional`` for a PlacementSet). The collection group holds one dataset
   per arbitrary key stored under it.
 
@@ -50,7 +50,7 @@ Example for ``/placement/granule_cell``:
 The ``ChunkLoader`` mixin
 -------------------------
 
-A resource that wants chunked storage inherits from :class:`ChunkLoader` and
+A resource that wants chunked storage inherits from ``ChunkLoader`` and
 declares its properties / collections in the subclass parameters:
 
 .. code-block:: python
@@ -72,27 +72,27 @@ declares its properties / collections in the subclass parameters:
 
 The mixin gives the subclass:
 
-* :meth:`get_loaded_chunks` returns the chunks currently in the load filter, or
+* ``get_loaded_chunks`` returns the chunks currently in the load filter, or
   every chunk in the file if no filter is set. Accepts ``handle=`` so a
   decorated caller can pass its handle on to this non-decorated helper. See
   :doc:`handles`.
-* :meth:`get_all_chunks` reads the keys of ``self._path`` and returns the full
+* ``get_all_chunks`` reads the keys of ``self._path`` and returns the full
   chunk list. Decorated with ``@handles_handles("r")`` so it opens its own
   handle if not given one.
-* :meth:`get_chunk_path` returns the full HDF5 path of a chunk's group, or a
+* ``get_chunk_path`` returns the full HDF5 path of a chunk's group, or a
   property/collection dataset inside it.
-* :meth:`require_chunk` creates the chunk group + property datasets on first
+* ``require_chunk`` creates the chunk group + property datasets on first
   write. Decorated with ``@handles_handles("a")``.
-* :meth:`include_chunk`, :meth:`exclude_chunk`, :meth:`set_chunk_filter`,
-  :meth:`clear_chunk_filter` manage the in-memory load filter.
-* :meth:`chunk_context` is a context manager that temporarily replaces the
+* ``include_chunk``, ``exclude_chunk``, ``set_chunk_filter``,
+  ``clear_chunk_filter`` manage the in-memory load filter.
+* ``chunk_context`` is a context manager that temporarily replaces the
   load filter for the duration of a block.
 
 The chunk-id ordering matters
 -----------------------------
 
 ``ChunkedProperty.load`` concatenates chunks in the order they appear in
-:meth:`get_loaded_chunks`. The order must be stable between writers and
+``get_loaded_chunks``. The order must be stable between writers and
 readers; chunk lists are produced via :func:`bsb.storage._chunks.chunklist`
 which sorts on the integer chunk id.
 
@@ -113,6 +113,6 @@ and connection counts:
      "12346": {"placed":  512, "connections": {"inc": 0, "out": 0}}
    }
 
-This is maintained by :meth:`PlacementSet._track_add` (on append) and the
+This is maintained by ``PlacementSet._track_add`` (on append) and the
 connectivity-write paths. It lets the BSB report counts and decide
 work-distribution without having to walk every chunk group.

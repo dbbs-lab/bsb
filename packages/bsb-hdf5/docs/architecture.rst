@@ -11,28 +11,28 @@ The pieces
 .. list-table::
    :widths: 25 75
 
-   * - :class:`HDF5Engine`
-     - Engine entry point. Owns the file path, the :class:`MPILock`, and the
+   * - ``HDF5Engine``
+     - Engine entry point. Owns the file path, the ``MPILock``, and the
        ``_handle`` factory that opens the file. Provides the rank-collective
        ``create``, ``move``, ``copy``, ``remove``, ``clear_placement``,
        ``clear_connectivity`` operations via the ``on_main`` /
        ``on_main_until`` decorators.
-   * - :class:`Resource` (resource.py)
+   * - ``Resource`` (resource.py)
      - Base class for everything that lives at a path inside the HDF5 file. The
-       :func:`handles_handles` decorator does the open-on-entry, close-on-exit,
+       ``handles_handles`` decorator does the open-on-entry, close-on-exit,
        lock-while-open dance.
-   * - :class:`ChunkLoader` (chunks.py)
+   * - ``ChunkLoader`` (chunks.py)
      - Mixin that gives a resource per-chunk read/write of its
-       :class:`ChunkedProperty` and :class:`ChunkedCollection` datasets.
-   * - :class:`PlacementSet`, :class:`ConnectivitySet`, :class:`MorphologyRepository`, :class:`FileStore`
+       ``ChunkedProperty`` and ``ChunkedCollection`` datasets.
+   * - ``PlacementSet``, ``ConnectivitySet``, ``MorphologyRepository``, ``FileStore``
      - The four resource implementations the BSB asks for.
-   * - :mod:`bsb_hdf5._telemetry`
+   * - ``bsb_hdf5._telemetry``
      - The local-only ``_hdf5_tracer`` used by every span the engine emits.
 
 File layout
 -----------
 
-After :meth:`HDF5Engine.create`, the file has four top-level groups:
+After ``HDF5Engine.create``, the file has four top-level groups:
 
 ::
 
@@ -52,15 +52,15 @@ Sub-layouts are documented per resource in :doc:`resources`.
 The MPI lock
 ------------
 
-Every HDF5 read or write goes through :class:`bsb.services.MPILock`, an MPI
+Every HDF5 read or write goes through ``MPILock``, an MPI
 RMA-based reader/writer lock:
 
-* Multiple :meth:`_read` holders can hold the read lock simultaneously.
-* :meth:`_write` is exclusive against both other writers and any readers.
-* :meth:`_master_write` is single-writer rank-0-only and skips the
+* Multiple ``_read`` holders can hold the read lock simultaneously.
+* ``_write`` is exclusive against both other writers and any readers.
+* ``_master_write`` is single-writer rank-0-only and skips the
   reader-counting handshake.
 
-The engine acquires the right kind of lock via the :func:`handles_handles`
+The engine acquires the right kind of lock via the ``handles_handles``
 decorator. The lock is held for the full body of the decorated function (i.e.,
 for as long as the HDF5 handle is open). Every additional ``handle=None`` call
 inside that body re-acquires the lock and re-opens the file. See :doc:`handles`
@@ -69,11 +69,11 @@ for why this matters.
 The handle wrapper
 ------------------
 
-:class:`_SpannedHandle` wraps the real :class:`h5py.File` so that every open
+``_SpannedHandle`` wraps the real :class:`h5py.File` so that every open
 emits an ``hdf5.file.open`` OTel span covering its lifetime, with
 ``hdf5.file.slow_lock`` flagged if the OS-level h5py lock had to back off and
-retry. The retry loop in :meth:`HDF5Engine._handle` caps at 10 000 attempts
-(~10 s) before aborting; emitting a :class:`HDF5SlowLockingWarning` when any
+retry. The retry loop in ``HDF5Engine._handle`` caps at 10 000 attempts
+(~10 s) before aborting; emitting a ``HDF5SlowLockingWarning`` when any
 retry happened.
 
 The rank-collective decorators

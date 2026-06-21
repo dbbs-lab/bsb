@@ -1,5 +1,5 @@
-from numpy.typing import NDArray
 import numpy as np
+from numpy.typing import NDArray
 
 def poisson_disk(
     lo: tuple[float, float, float],
@@ -39,5 +39,7 @@ def connect_segments(
     Each population is given as instances: a per-cell ``morpho`` index into the
     library, a per-cell ``(N, 3, 3)`` rotation matrix, and a per-cell ``(N, 3)``
     position. ``favor`` (``"pre"`` or ``"post"``) selects which side builds the
-    trees. Returns ``(pre_locs, post_locs)``, each an ``(K, 3)`` int64 array of
-    ``[cell, branch, point]`` triples aligned row-by-row, one per contact."""
+    trees; ``affinity`` keeps that random fraction of each query cell's candidate
+    partners (``seed`` makes it reproducible). Returns ``(pre_locs, post_locs)``,
+    each an ``(K, 3)`` int64 array of ``[cell, branch, point]`` triples aligned
+    row-by-row, one per contact."""

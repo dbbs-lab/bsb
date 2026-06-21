@@ -13,22 +13,6 @@
       },
       "cache": true
     },
-    "lint": {
-      "executor": "@nxlv/python:ruff-check",
-      "outputs": [],
-      "options": {
-        "lintFilePatterns": ["bsb_native"]
-      },
-      "cache": true
-    },
-    "format": {
-      "executor": "@nxlv/python:ruff-format",
-      "outputs": [],
-      "options": {
-        "filePatterns": ["bsb_native"]
-      },
-      "cache": true
-    },
     "test": {
       "executor": "nx:run-commands",
       "outputs": [],

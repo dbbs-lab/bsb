@@ -82,6 +82,7 @@ if typing.TYPE_CHECKING:  # pragma: nocover
   import bsb.config.parsers
   import bsb.config.refs
   import bsb.config.types
+  import bsb.connectivity.detailed.segment_intersection
   import bsb.connectivity.detailed.shared
   import bsb.connectivity.detailed.voxel_intersection
   import bsb.connectivity.general
@@ -104,6 +105,7 @@ if typing.TYPE_CHECKING:  # pragma: nocover
   import bsb.placement.distributor
   import bsb.placement.import_
   import bsb.placement.indicator
+  import bsb.placement.poisson
   import bsb.placement.random
   import bsb.placement.strategy
   import bsb.plugins
@@ -318,6 +320,7 @@ PlacementStrategy: type["bsb.placement.strategy.PlacementStrategy"]
 PlacementWarning: type["bsb.exceptions.PlacementWarning"]
 Plotting: type["bsb.cell_types.Plotting"]
 PluginError: type["bsb.exceptions.PluginError"]
+PoissonDiskPlacement: type["bsb.placement.poisson.PoissonDiskPlacement"]
 ProfilingSession: type["bsb.profiling.ProfilingSession"]
 ProgressEvent: type["bsb.simulation.simulation.ProgressEvent"]
 ProjectOptionDescriptor: type["bsb.option.ProjectOptionDescriptor"]
@@ -345,6 +348,7 @@ Scaffold: type["bsb.core.Scaffold"]
 ScaffoldError: type["bsb.exceptions.ScaffoldError"]
 ScaffoldWarning: type["bsb.exceptions.ScaffoldWarning"]
 ScriptOptionDescriptor: type["bsb.option.ScriptOptionDescriptor"]
+SegmentIntersection: type["bsb.connectivity.detailed.segment_intersection.SegmentIntersection"]
 SelectorError: type["bsb.exceptions.SelectorError"]
 ShapeHemitype: type["bsb.connectivity.geometric.shape_shape_intersection.ShapeHemitype"]
 ShapeToMorphologyIntersection: type["bsb.connectivity.geometric.shape_morphology_intersection.ShapeToMorphologyIntersection"]

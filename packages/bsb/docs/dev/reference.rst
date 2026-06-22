@@ -9,14 +9,13 @@ bsb.services
 
 Provides several services for optional dependencies.
 
-.. autodata:: bsb.services.MPI
+.. autodata:: bsb.services.mpi.MPI
 
-.. autodata:: bsb.services.MPILock
+.. autodata:: bsb.services.mpilock.MPILock
 
 .. automodule:: bsb.services
    :members:
    :undoc-members:
-   :exclude-members: JobPool
    :show-inheritance:
 
 bsb.topology._layout module

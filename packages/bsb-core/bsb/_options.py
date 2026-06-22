@@ -180,6 +180,54 @@ class QuietFlag(
         return False
 
 
+class ProvideMpiOption(
+    BsbOption,
+    name="provide_mpi",
+    project=("provide_mpi",),
+    env=("BSB_PROVIDE_MPI",),
+    script=("provide_mpi",),
+):
+    """Ordered preferred providers for the MPI service (comma-separated)."""
+
+    def setter(self, value):
+        return str(value)
+
+    def get_default(self):
+        return "mpi4py,serial"
+
+
+class ProvideMpilockOption(
+    BsbOption,
+    name="provide_mpilock",
+    project=("provide_mpilock",),
+    env=("BSB_PROVIDE_MPILOCK",),
+    script=("provide_mpilock",),
+):
+    """Ordered preferred providers for the MPILock service (comma-separated)."""
+
+    def setter(self, value):
+        return str(value)
+
+    def get_default(self):
+        return "mpilock,serial"
+
+
+class ProvidePoolOption(
+    BsbOption,
+    name="provide_pool",
+    project=("provide_pool",),
+    env=("BSB_PROVIDE_POOL",),
+    script=("provide_pool",),
+):
+    """Ordered preferred providers for the pool (executor) service (comma-separated)."""
+
+    def setter(self, value):
+        return str(value)
+
+    def get_default(self):
+        return "mpipool,serial"
+
+
 def verbosity():
     return VerbosityOption
 
@@ -210,3 +258,15 @@ def debug_pool():
 
 def quiet():
     return QuietFlag
+
+
+def provide_mpi():
+    return ProvideMpiOption
+
+
+def provide_mpilock():
+    return ProvideMpilockOption
+
+
+def provide_pool():
+    return ProvidePoolOption

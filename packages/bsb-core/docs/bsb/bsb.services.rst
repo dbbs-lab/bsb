@@ -1,6 +1,11 @@
 bsb.services package
 ====================
 
+The ``bsb.services`` modules are *reference stubs* that document the contract
+every provider must satisfy. The actual runtime modules are installed by
+``bsb.services.__init__`` from the configured providers in
+:mod:`bsb._providers`.
+
 Submodules
 ----------
 
@@ -26,14 +31,6 @@ bsb.services.pool module
 .. automodule:: bsb.services.pool
    :members:
    :undoc-members:
-
-Developer modules
-^^^^^^^^^^^^^^^^^
-
-.. automodule:: bsb.services._util
-   :members:
-   :undoc-members:
-   :show-inheritance:
 
 
 .. The following stub is required to cover a docstring error because

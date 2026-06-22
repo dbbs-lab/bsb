@@ -11,7 +11,7 @@ from ..config._attrs import cfgdict
 from ..exceptions import DistributorError, EmptySelectionError
 from ..mixins import HasDependencies
 from ..reporting import warn
-from ..services import pool_cache
+from ..jobs import pool_cache
 from ..storage._chunks import Chunk
 from ..voxels import VoxelSet
 from .distributor import DistributorsNode

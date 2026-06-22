@@ -665,7 +665,7 @@ class MorphologyDependencyNode(
         Add the loading of the current morphology to a job queue.
 
         :param pool: Queue of jobs.
-        :type pool: bsb.services.pool.JobPool
+        :type pool: bsb.jobs.JobPool
         """
 
         def create_morphology(scaffold, i):
@@ -689,7 +689,7 @@ class MorphologyPipelineNode(FilePipelineMixin):
         Add the loading of the current morphology to a job queue.
 
         :param pool: Queue of jobs.
-        :type pool: bsb.services.pool.JobPool
+        :type pool: bsb.jobs.JobPool
         """
 
         def job(scaffold, i, j):

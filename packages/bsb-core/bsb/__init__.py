@@ -93,6 +93,7 @@ if typing.TYPE_CHECKING:  # pragma: nocover
   import bsb.connectivity.strategy
   import bsb.core
   import bsb.exceptions
+  import bsb.jobs
   import bsb.mixins
   import bsb.morphologies
   import bsb.morphologies.parsers
@@ -111,6 +112,9 @@ if typing.TYPE_CHECKING:  # pragma: nocover
   import bsb.profiling
   import bsb.reporting
   import bsb.services
+  import bsb.services.mpi
+  import bsb.services.mpilock
+  import bsb.services.pool
   import bsb.simulation
   import bsb.simulation.adapter
   import bsb.simulation.cell
@@ -252,7 +256,7 @@ Intersectional: type["bsb.connectivity.detailed.shared.Intersectional"]
 InvalidReferenceError: type["bsb.exceptions.InvalidReferenceError"]
 InvertedRoI: type["bsb.mixins.InvertedRoI"]
 JobCancelledError: type["bsb.exceptions.JobCancelledError"]
-JobPool: type["bsb.services.JobPool"]
+JobPool: type["bsb.jobs.JobPool"]
 JobPoolContextError: type["bsb.exceptions.JobPoolContextError"]
 JobPoolError: type["bsb.exceptions.JobPoolError"]
 JobSchedulingError: type["bsb.exceptions.JobSchedulingError"]
@@ -261,8 +265,8 @@ LabellingError: type["bsb.exceptions.LabellingError"]
 Layer: type["bsb.topology.partition.Layer"]
 LayoutError: type["bsb.exceptions.LayoutError"]
 LocationTargetting: type["bsb.simulation.targetting.LocationTargetting"]
-MPI: type["bsb.services.MPI"]
-MPILock: type["bsb.services.MPILock"]
+MPI: type["bsb.services.mpi.MPI"]
+MPILock: type["bsb.services.mpilock.MPILock"]
 MissingActiveConfigError: type["bsb.exceptions.MissingActiveConfigError"]
 MissingMorphologyError: type["bsb.exceptions.MissingMorphologyError"]
 MissingSourceError: type["bsb.exceptions.MissingSourceError"]
@@ -388,7 +392,7 @@ VoxelSet: type["bsb.voxels.VoxelSet"]
 VoxelSetError: type["bsb.exceptions.VoxelSetError"]
 Voxels: type["bsb.topology.partition.Voxels"]
 WeakInverter: type["bsb.config.types.WeakInverter"]
-WorkflowError: type["bsb.services.WorkflowError"]
+WorkflowError: type["bsb.jobs.WorkflowError"]
 activate_session: "bsb.profiling.activate_session"
 box_layout: "bsb.topology.box_layout"
 branch_iter: "bsb.morphologies.branch_iter"
@@ -433,11 +437,10 @@ parse_configuration_content_to_dict: "bsb.config.parse_configuration_content_to_
 parse_configuration_file: "bsb.config.parse_configuration_file"
 parse_morphology_content: "bsb.morphologies.parsers.parse_morphology_content"
 parse_morphology_file: "bsb.morphologies.parsers.parse_morphology_file"
-pool_cache: "bsb.services.pool_cache"
+pool_cache: "bsb.jobs.pool_cache"
 read_option: "bsb.options.read_option"
 refs: "bsb.config.refs"
 register_option: "bsb.options.register_option"
-register_service: "bsb.services.register_service"
 report: "bsb.reporting.report"
 reset_module_option: "bsb.options.reset_module_option"
 set_module_option: "bsb.options.set_module_option"

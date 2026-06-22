@@ -139,7 +139,7 @@ Content
   dev/monorepo
   dev/guidelines
   dev/documentation
-  dev/services
+  dev/services/services-toc
   dev/projects
   dev/diagnostics
   dev/plugins

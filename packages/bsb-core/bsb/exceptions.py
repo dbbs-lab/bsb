@@ -38,7 +38,9 @@ _t(
             DistributorError=_e("property", "strategy"),
             RedoError=_e(),
         ),
-        DependencyError=_e(),
+        DependencyError=_e(
+            ProviderUnavailableError=_e(),
+        ),
         GatewayError=_e(
             AllenApiError=_e(),
         ),
@@ -222,6 +224,7 @@ __all__ = [
     "PlacementRelationError",
     "PlacementWarning",
     "PluginError",
+    "ProviderUnavailableError",
     "ReadOnlyOptionError",
     "RedoError",
     "ReferenceLambdaError",

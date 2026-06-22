@@ -63,6 +63,21 @@ sim_console_progress = "bsb._options:sim_console_progress"
 profiling = "bsb._options:profiling"
 debug_pool = "bsb._options:debug_pool"
 quiet = "bsb._options:quiet"
+provide_mpi = "bsb._options:provide_mpi"
+provide_mpilock = "bsb._options:provide_mpilock"
+provide_pool = "bsb._options:provide_pool"
+
+[project.entry-points."bsb.providers.mpi"]
+mpi4py = "bsb._providers.mpi.mpi4py_loader:load"
+serial = "bsb._providers.mpi.serial"
+
+[project.entry-points."bsb.providers.mpilock"]
+mpilock = "bsb._providers.mpilock.mpilock_loader:load"
+serial = "bsb._providers.mpilock.serial"
+
+[project.entry-points."bsb.providers.pool"]
+mpipool = "bsb._providers.pool.mpipool_loader:load"
+serial = "bsb._providers.pool.serial"
 
   [project.scripts]
   bsb = "bsb.cli:handle_cli"

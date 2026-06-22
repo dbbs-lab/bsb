@@ -31,17 +31,17 @@ from bsb import (
     Scaffold,
     config,
 )
-from bsb.services.pool import (
+from bsb.jobs import (
     Job,
     JobStatus,
     PoolProgress,
     PoolProgressReason,
     PoolStatus,
     WorkflowError,
-    _cache_hash,
     get_node_cache_items,
     pool_cache,
 )
+from bsb.jobs._pool import _cache_hash
 
 
 def sleep_y(scaffold, x, y):
@@ -622,13 +622,13 @@ class TestPoolCache(RandomStorageFixture, unittest.TestCase, engine_name="hdf5")
             )
 
     @patch(
-        "bsb.services.pool.free_stale_pool_cache",
+        "bsb.jobs._pool.free_stale_pool_cache",
         lambda scaffold, required_cache_items: mock_free_cache(
             scaffold, required_cache_items
         ),
     )
     @patch(
-        "bsb.services.pool.JobPool._read_required_cache_items",
+        "bsb.jobs._pool.JobPool._read_required_cache_items",
         lambda self: mock_read_required_cache_items(self),
     )
     @timeout(3)

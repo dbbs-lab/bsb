@@ -8,8 +8,8 @@ from typing import cast
 from blessed import Terminal
 from dashing import Color, DoubleColumn, HSplit, Text
 
-from . import MPI
-from .pool import (
+from ..services.mpi import MPI
+from ._pool import (
     Job,
     JobStatus,
     PoolJobAddedProgress,

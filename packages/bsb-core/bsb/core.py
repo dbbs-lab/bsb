@@ -23,10 +23,14 @@ from .exceptions import (
 )
 from .placement import PlacementStrategy
 from .reporting import report
-from .services import JobPool
-from .services._pool_listeners import NonTTYTerminalListener, TTYTerminalListener
+from .jobs import (
+    Job,
+    JobPool,
+    NonTTYTerminalListener,
+    TTYTerminalListener,
+    Workflow,
+)
 from .services.mpi import MPIService
-from .services.pool import Job, Workflow
 from .simulation import get_simulation_adapter
 from .storage import Storage, open_storage
 from .storage._chunks import Chunk

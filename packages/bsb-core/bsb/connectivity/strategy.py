@@ -19,7 +19,7 @@ if typing.TYPE_CHECKING:  # pragma: nocover
     from ..cell_types import CellType
     from ..core import Scaffold
     from ..morphologies import MorphologySet
-    from ..services import JobPool
+    from ..jobs import JobPool
     from ..storage.interfaces import PlacementSet
 
 

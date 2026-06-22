@@ -13,7 +13,7 @@ from uuid import uuid4
 from opentelemetry import trace
 from opentelemetry.trace import NonRecordingSpan, get_current_span, set_span_in_context
 
-from .services import MPI
+from .services.mpi import MPI
 
 
 class ProfilingSession:

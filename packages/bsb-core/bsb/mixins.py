@@ -8,7 +8,7 @@ from .reporting import warn
 from .storage._chunks import Chunk
 
 if typing.TYPE_CHECKING:  # pragma: nocover
-    from .services import JobPool
+    from .jobs import JobPool
 
 
 def _queue_placement(self, pool: "JobPool", chunk_size):
@@ -31,7 +31,7 @@ def _queue_connectivity(self, pool: "JobPool"):
     Get the queued jobs of all the strategies we depend on.
 
     param pool: pool where the jobs will be queued
-    type pool: bsb.services.pool.JobPool
+    type pool: bsb.jobs.JobPool
     """
     deps = set(_gutil.ichain(pool.get_submissions_of(strat) for strat in self.get_deps()))
     # Schedule all chunks in 1 job

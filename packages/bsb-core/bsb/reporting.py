@@ -33,7 +33,7 @@ def report(*message, level=2, ongoing=False, nodes=None, all_nodes=False):
     :type ongoing: bool
     """
     from . import options
-    from .services import MPI
+    from .services.mpi import MPI
 
     message = " ".join(map(str, message))
     rank = MPI.get_rank()
@@ -52,7 +52,7 @@ def warn(message, category=None, stacklevel=2, log_exc=None):
     :param category: The class of the warning.
     """
     from . import options
-    from .services import MPI
+    from .services.mpi import MPI
 
     if log_exc:
         import traceback

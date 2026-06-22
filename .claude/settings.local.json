@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(done)",
+      "Bash(xargs grep:*)",
+      "Read(///wsl.localhost/Ubuntu/home/robin/git/bsb/packages/**)",
+      "Bash(python -m pytest tests/ -x -q)",
+      "Bash(wslpath -u \"\\\\\\\\wsl.localhost\\\\Ubuntu\\\\home\\\\robin\\\\git\\\\bsb\\\\packages\\\\bsb-otel\")"
+    ]
+  }
+}

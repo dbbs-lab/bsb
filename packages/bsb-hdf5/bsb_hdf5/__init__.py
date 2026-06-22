@@ -142,8 +142,12 @@ class HDF5Engine(Engine):
 
     @staticmethod
     def recognizes(root, comm):
-        lock = MPILock.sync(comm)
-        with lock.read():
+        # Close the controller on exit instead of leaking it: every storage
+        # probe creates one, and a leaked controller keeps a progress-pump
+        # thread (and its background MPI traffic) alive for the whole process.
+        # `recognizes` runs symmetrically on every rank, so the collective
+        # window free in close() is safe here.
+        with MPILock.sync(comm) as lock, lock.read():
             try:
                 h5py.File(root, "r").close()
                 return True

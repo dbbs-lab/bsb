@@ -1,3 +1,4 @@
+import contextlib
 import functools
 import json
 import os
@@ -36,10 +37,8 @@ def _abort_run_on_mpi_failure(label):
         file=sys.stderr,
         flush=True,
     )
-    try:
+    with contextlib.suppress(Exception):
         trace.get_tracer_provider().force_flush()
-    except Exception:
-        pass
     comm.Abort(1)
 
 

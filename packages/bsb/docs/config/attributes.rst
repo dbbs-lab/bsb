@@ -27,6 +27,79 @@ classes to define your attribute:
     }
   }
 
+.. _config_attrs_required_callable:
+
+Conditionally required attributes
+=================================
+
+``required=`` accepts a callable as well as a bool. The callable receives the
+node's input ``kwargs`` (a dict subclass with a ``partial_node`` reference to
+the node being built) and returns ``True`` to require the attribute or ``False``
+to make it optional. This is useful when whether the attribute is required
+depends on the value of a sibling, or on external state that you query via
+the :ref:`build context <config_build_lifecycle>`:
+
+.. code-block:: python
+
+  from bsb import config
+
+  def _delay_required_for(kwargs):
+      # `kwargs` is the synapse node's input dict; `kwargs.partial_node` is the
+      # synapse being built, with `_config_parent` set.
+      return kwargs.get("model", "static_synapse") != "gap_junction"
+
+  @config.node
+  class SynapseSettings:
+      model = config.attr(type=str, default="static_synapse")
+      delay = config.attr(type=float, required=_delay_required_for, default=None)
+
+The checker runs during the build phase; if it raises, the exception
+propagates with node context. For checkers that need to consult
+out-of-process resources (a remote API, a kernel running in a subprocess,
+...), see :ref:`config_build_lifecycle` for how to register and look up
+shared resources on the active build context.
+
+.. _config_attr_order:
+
+Attribute ordering
+==================
+
+Attributes are built in the order they are declared, not the order the keys
+appear in the user's configuration. The order is stable, so a checker that
+reads a sibling (such as a :ref:`conditionally required
+<config_attrs_required_callable>` callable) can rely on attributes declared
+earlier in the class body already being set.
+
+When a node subclasses another, each class's declaration order is preserved:
+
+* An overridden attribute keeps the slot it had in the parent; redeclaring it
+  only changes its definition, not its position.
+* A new attribute is built at the position the subclass declares it, threaded in
+  between the inherited ones.
+
+.. code-block:: python
+
+  from bsb import config
+
+  @config.node
+  class Simulation:
+      duration = config.attr(type=float)
+      cell_models = config.dict()
+
+  @config.node
+  class NestSimulation(Simulation):
+      modules = config.list(type=str)
+      cell_models = config.dict()
+
+``NestSimulation`` builds its attributes as ``duration``, ``modules``,
+``cell_models``: ``modules`` is woven in before the redeclared ``cell_models``,
+which keeps its inherited slot.
+
+To change the order of inherited attributes, redeclare them in the order you
+want. This is only allowed when you redeclare every attribute that sits between
+the ones you move, so the result is unambiguous; otherwise the build raises an
+:class:`~bsb.exceptions.AttributeOrderError` naming the attributes to redeclare.
+
 .. _config_dict:
 
 Configuration dictionaries

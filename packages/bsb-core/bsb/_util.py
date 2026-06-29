@@ -87,10 +87,10 @@ def sanitize_ndarray(arr_input, shape, dtype=None):
     """
     Convert an object to an ndarray and shape, avoiding to copy it wherever possible.
     """
-    kwargs = {"copy": False}
+    kwargs = {}
     if dtype is not None:
         kwargs["dtype"] = dtype
-    arr = _np.array(arr_input, **kwargs)
+    arr = _np.asarray(arr_input, **kwargs)
     arr.shape = shape
     return arr
 

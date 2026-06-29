@@ -4,6 +4,7 @@ NEST simulation adapter for the BSB framework.
 
 from bsb import SimulationBackendPlugin
 
+from ._kernel_proxy import get_nest_kernel_proxy
 from .adapter import NestAdapter
 from .devices import (
     DCGenerator,
@@ -24,4 +25,5 @@ __all__ = [
     "PoissonGenerator",
     "SinusoidalPoissonGenerator",
     "SpikeRecorder",
+    "get_nest_kernel_proxy",
 ]

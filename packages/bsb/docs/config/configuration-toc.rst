@@ -9,4 +9,5 @@ Configuration
    files
    nodes
    attributes
+   build-lifecycle
    reference

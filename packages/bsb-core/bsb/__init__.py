@@ -139,6 +139,7 @@ AllToAll: type["bsb.connectivity.general.AllToAll"]
 AllenApiError: type["bsb.exceptions.AllenApiError"]
 AllenStructure: type["bsb.topology.partition.AllenStructure"]
 AttributeMissingError: type["bsb.exceptions.AttributeMissingError"]
+AttributeOrderError: type["bsb.exceptions.AttributeOrderError"]
 BaseCommand: type["bsb.cli.commands.BaseCommand"]
 BidirectionalContact: type["bsb.postprocessing.BidirectionalContact"]
 BootError: type["bsb.exceptions.BootError"]
@@ -149,6 +150,7 @@ BranchLocTargetting: type["bsb.simulation.targetting.BranchLocTargetting"]
 BsbCommand: type["bsb.cli.commands.BsbCommand"]
 BsbOption: type["bsb.option.BsbOption"]
 BsbParser: type["bsb.morphologies.parsers.parser.BsbParser"]
+BuildContext: type["bsb.config.BuildContext"]
 ByIdTargetting: type["bsb.simulation.targetting.ByIdTargetting"]
 ByLabelTargetting: type["bsb.simulation.targetting.ByLabelTargetting"]
 CLIError: type["bsb.exceptions.CLIError"]
@@ -393,6 +395,7 @@ WorkflowError: type["bsb.services.WorkflowError"]
 activate_session: "bsb.profiling.activate_session"
 box_layout: "bsb.topology.box_layout"
 branch_iter: "bsb.morphologies.branch_iter"
+build_context: "bsb.config.build_context"
 chunklist: "bsb.storage._chunks.chunklist"
 compose_nodes: "bsb.config.compose_nodes"
 copy_configuration_template: "bsb.config.copy_configuration_template"
@@ -404,6 +407,7 @@ format_configuration_content: "bsb.config.format_configuration_content"
 from_storage: "bsb.core.from_storage"
 get_active_session: "bsb.profiling.get_active_session"
 get_config_attributes: "bsb.config.get_config_attributes"
+get_config_build_context: "bsb.config.get_config_build_context"
 get_config_path: "bsb.config.get_config_path"
 get_configuration_parser: "bsb.config.parsers.get_configuration_parser"
 get_configuration_parser_classes: "bsb.config.parsers.get_configuration_parser_classes"
@@ -441,6 +445,7 @@ register_option: "bsb.options.register_option"
 register_service: "bsb.services.register_service"
 report: "bsb.reporting.report"
 reset_module_option: "bsb.options.reset_module_option"
+set_config_build_context: "bsb.config.set_config_build_context"
 set_module_option: "bsb.options.set_module_option"
 store_option: "bsb.options.store_option"
 types: "bsb.config.types"

@@ -20,7 +20,7 @@ def get_location_name(pts: Iterable["Point"]) -> str:
     return locstr
 
 
-def get_arclengths(pts: Iterable["Point"]) -> npt.NDArray[np.float_]:
+def get_arclengths(pts: Iterable["Point"]) -> npt.NDArray[np.float64]:
     """
     Compute normalized cumulative arclengths from a sequence of points.
 

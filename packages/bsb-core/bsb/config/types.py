@@ -797,7 +797,7 @@ class ndarray(TypeHandler):
         self.dtype = dtype
 
     def __call__(self, value):
-        result = np.array(value, copy=False)
+        result = np.asarray(value)
         if self.dtype is not None:
             result = np.asarray(result, dtype=self.dtype)
         if self.shape is not None:

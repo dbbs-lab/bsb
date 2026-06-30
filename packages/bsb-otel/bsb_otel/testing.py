@@ -2,12 +2,44 @@ import contextlib
 import functools
 import json
 import os
+import sys
 import tempfile
 import typing
 import unittest
 from collections import deque
 
 from opentelemetry import trace
+
+
+def _abort_run_on_mpi_failure(label):
+    """Bring the whole MPI job down when a test errors or fails on this rank.
+
+    Under ``mpiexec -n >1`` a failure on one rank but not another desynchronises
+    the ranks: the failing rank unwinds past in-test collectives that the peer
+    ranks are still blocked on, so the run deadlocks at the next mismatched
+    collective (surfacing as a multi-hour CI timeout rather than a test result).
+    There is no safe point to coordinate a graceful stop from -- the peers are
+    already stuck mid-collective -- so abort the job now. CI then reports a fast
+    failure. No-op in single-rank runs, where unittest reports failures
+    normally; the serial test pass still produces the full failure list.
+    """
+    try:
+        from mpi4py import MPI
+    except ImportError:
+        return
+    comm = MPI.COMM_WORLD
+    if comm.Get_size() <= 1:
+        return
+    print(
+        f"\n[bsb-otel] {label} on MPI rank {comm.Get_rank()}; aborting all ranks "
+        f"to avoid a collective-mismatch deadlock (run serially for the full "
+        f"failure report).",
+        file=sys.stderr,
+        flush=True,
+    )
+    with contextlib.suppress(Exception):
+        trace.get_tracer_provider().force_flush()
+    comm.Abort(1)
 
 
 @contextlib.contextmanager
@@ -122,11 +154,15 @@ def _wrap_case(case: unittest.TestCase):
 
                 def add_error(test, err):
                     _record("error", err)
-                    return _orig_add_error(test, err)
+                    out = _orig_add_error(test, err)
+                    _abort_run_on_mpi_failure(f"{case.id()} errored")
+                    return out
 
                 def add_failure(test, err):
                     _record("failure", err)
-                    return _orig_add_failure(test, err)
+                    out = _orig_add_failure(test, err)
+                    _abort_run_on_mpi_failure(f"{case.id()} failed")
+                    return out
 
                 result.addError = add_error
                 result.addFailure = add_failure

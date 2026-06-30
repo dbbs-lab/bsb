@@ -6,6 +6,7 @@ from functools import cache
 from itertools import chain
 
 import numpy as np
+from opentelemetry import trace as _otel_trace
 
 from .. import config
 from .._util import ichain, obj_str_insert
@@ -241,6 +242,20 @@ class ConnectionStrategy(abc.ABC, HasDependencies):
             else:
                 name = tag
 
+        # Accumulate the rows added by this connect job onto its surrounding
+        # ``<Strategy>.connect`` span, whose own duration is the job's compute
+        # time. One job calls ``connect_cells`` once per cell-type pair, so we
+        # keep a running total keyed on the current span id (reset whenever a
+        # new connect span becomes current) and re-publish it each call. This
+        # lets per-job compute time be correlated against connection volume.
+        span = _otel_trace.get_current_span()
+        span_id = span.get_span_context().span_id
+        if getattr(self, "_otel_rows_span", None) != span_id:
+            self._otel_rows_span = span_id
+            self._otel_rows_added = 0
+        self._otel_rows_added += len(src_locs)
+        span.set_attribute("bsb.rows_added", int(self._otel_rows_added))
+
         self.scaffold.connect_cells(pre_set, post_set, src_locs, dest_locs, name)
 
     def get_region_of_interest(self, chunk):
@@ -275,11 +290,17 @@ class ConnectionStrategy(abc.ABC, HasDependencies):
                 ct.get_placement_set().get_all_chunks() for ct in pre_types
             )
         )
-        rois = {
-            chunk: roi
-            for chunk in from_chunks
-            if (roi := self.get_region_of_interest(chunk)) is None or len(roi)
-        }
+        # Batch every per-chunk storage read (``PlacementSet.exists``,
+        # ``get_all_chunks``, ``load_morphologies``, ...) behind one
+        # ``mpilock.read`` + one ``hdf5.file.open``. Without this, each
+        # per-chunk ``get_region_of_interest`` call opens its own handle and
+        # the lock + open cost dominates queueing.
+        with self.scaffold.storage.read_scope():
+            rois = {
+                chunk: roi
+                for chunk in from_chunks
+                if (roi := self.get_region_of_interest(chunk)) is None or len(roi)
+            }
         if not rois:
             warn(
                 f"No overlap found between {[pre.name for pre in pre_types]} and "

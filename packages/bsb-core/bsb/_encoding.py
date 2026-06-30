@@ -47,11 +47,11 @@ class EncodedLabels(np.ndarray):
         try:
             return np.allclose(*EncodedLabels._merged_translate((self, other)))
         except Exception:
-            return np.array(self, copy=False) == other
+            return np.asarray(self) == other
 
     @property
     def raw(self):
-        return np.array(self, copy=False)
+        return np.asarray(self)
 
     def copy(self, *args, **kwargs):
         cp = super().copy(*args, **kwargs)

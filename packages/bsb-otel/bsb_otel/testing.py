@@ -42,6 +42,48 @@ def _abort_run_on_mpi_failure(label):
     comm.Abort(1)
 
 
+@contextlib.contextmanager
+def detached_span():
+    """
+    Run the enclosed block with no active parent span.
+
+    Attaches an ``INVALID_SPAN`` to the current OpenTelemetry context so that
+    :meth:`bsb_otel.tracer.BsbTracer.trace` sees no valid ambient parent, and
+    detaches it again on exit. Lets parallel telemetry tests exercise the
+    cross-rank broadcast branch without an externally supplied outer span
+    (such as one installed by ``opentelemetry-instrument`` or by the
+    ``load_tests`` wrap span).
+    """
+    from opentelemetry import context as otel_context
+    from opentelemetry.trace import INVALID_SPAN, set_span_in_context
+
+    token = otel_context.attach(set_span_in_context(INVALID_SPAN))
+    try:
+        yield
+    finally:
+        otel_context.detach(token)
+
+
+@contextlib.contextmanager
+def broadcast_root(tracer, name, attributes=None):
+    """
+    Open a broadcast-root span for *tracer* with no ambient parent.
+
+    Runs :func:`detached_span` so that, under MPI, ``tracer.trace(name)`` takes
+    its broadcast-root branch deterministically: rank 0 records the span and
+    broadcasts its context, while the other ranks attach a non-recording copy.
+    Child spans opened inside this block are then recorded on every rank. In
+    serial mode it is just an ordinary span.
+
+    :param bsb_otel.tracer.BsbTracer tracer: tracer used to open the root span
+    :param str name: name of the root span
+    :param dict attributes: OpenTelemetry attributes for the root span
+    :returns: the root span, for use as a context manager.
+    """
+    with detached_span(), tracer.trace(name, attributes=attributes) as span:
+        yield span
+
+
 def _pop(queue):
     try:
         return queue.pop()
@@ -304,4 +346,4 @@ class OTelFixture:
         self.temp_file.close()
 
 
-__all__ = ["OTelFixture", "wrap_tests_with_traces"]
+__all__ = ["OTelFixture", "broadcast_root", "detached_span", "wrap_tests_with_traces"]

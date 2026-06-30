@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "bsb-nest"
-version = "7.4.0"
+version = "7.5.0"
 readme = "README.md"
 requires-python = ">=3.10,<4"
 dynamic = [ "description" ]
@@ -38,10 +38,6 @@ test = [
   "bsb-arbor~=7.0",
   "bsb-otel[sdk]~=7.2",
   "coverage~=7.0",
-  # Builds the minimal extension module in test_nestml_module; must match the
-  # NEST version under test (the test skips if the build is unavailable). Pinned
-  # to the 8.3 release candidate, the only published 8.3, so the specifier must
-  # allow the pre-release.
   "nestml~=8.3.0rc2"
 ]
 docs = [ "furo~=2024.0", "sphinxext-bsb~=7.0" ]

@@ -1,3 +1,13 @@
+## 7.6.0 (2026-06-30)
+
+### 🚀 Features
+
+- **bsb-hdf5:** batched HDF5 handle scopes, job-pool dependency fixes, and connect-job tracing ([#250](https://github.com/dbbs-lab/bsb/pull/250), [#223](https://github.com/dbbs-lab/bsb/issues/223), [#1](https://github.com/dbbs-lab/bsb/issues/1))
+
+### ❤️ Thank You
+
+- Robin De Schepper
+
 ## 7.5.1 (2026-06-30)
 
 This was a version bump only for bsb-core to align it with other projects, there were no code changes.

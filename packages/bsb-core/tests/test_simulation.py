@@ -12,6 +12,7 @@ from bsb import (
     MPI,
     AttributeMissingError,
     Scaffold,
+    SimulationResult,
     config,
     get_simulation_adapter,
     options,
@@ -682,3 +683,57 @@ class TestAdapterControllers(
             [11, 11],
             "Both runs must keep their own 11 segments",
         )
+
+    def test_RAM_usage(self):
+        """
+        This test writes over 7 GB of data in 60 segments of 120 MB each.
+
+        It checks that peak memory usage never exceeds 500 MB.
+        If PLOT_GRAPH is set to True, it will also plot the graph of memory
+        after every flush.
+        """
+        import os
+        import tracemalloc
+
+        import matplotlib.pyplot as plt
+        from neo import AnalogSignal
+        from quantities import ms
+
+        tracemalloc.start()
+        PLOT_GRAPH = False
+        MB = 1024 * 1024
+        total_threshold = 500
+        rank = MPI.get_rank()
+
+        sim = self.network.simulations.test
+        nio_file = "out" + str(rank) + ".nio"
+        my_result = SimulationResult(sim, nio_file)
+
+        def my_flush(segment):
+            # Creates a signal of 120 MB
+            signal = np.ones(15 * MB)
+            segment.analogsignals.append(
+                AnalogSignal(signal, sampling_period=0.1 * ms, units="mV")
+            )
+
+        my_result.create_recorder(my_flush)
+        num_samples = 60
+        mem_size = np.zeros(num_samples)
+        for _sample in range(num_samples):
+            my_result.flush()
+            mem_size_after, mem_peak = tracemalloc.get_traced_memory()
+            mem_size[_sample] = mem_size_after / MB
+
+        _, mem_peak = tracemalloc.get_traced_memory()
+
+        if PLOT_GRAPH:
+            plt.plot(mem_size)
+
+            plt.xlabel("step")
+            plt.ylabel("Mem Size")
+            plt.ylim(0, 400)
+
+            plt.grid(True)
+            plt.show()
+        self.assertLess(mem_peak / MB, total_threshold)
+        os.remove("out" + str(rank) + ".nio")

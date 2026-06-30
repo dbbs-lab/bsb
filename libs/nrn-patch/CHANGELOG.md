@@ -1,3 +1,7 @@
+## 7.5.1 (2026-06-30)
+
+This was a version bump only for nrn-patch to align it with other projects, there were no code changes.
+
 ## 7.5.0 (2026-06-30)
 
 ### 🚀 Features

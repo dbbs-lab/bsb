@@ -1,3 +1,13 @@
+## 7.5.1 (2026-06-30)
+
+### 🩹 Fixes
+
+- **bsb-nest:** isolate the validation kernel per simulation ([#251](https://github.com/dbbs-lab/bsb/pull/251))
+
+### ❤️ Thank You
+
+- Robin De Schepper
+
 ## 7.5.0 (2026-06-30)
 
 ### 🚀 Features

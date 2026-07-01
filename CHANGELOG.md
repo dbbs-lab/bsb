@@ -1,3 +1,33 @@
+## 7.6.0 (2026-06-30)
+
+### 🚀 Features
+
+- **bsb-hdf5:** batched HDF5 handle scopes, job-pool dependency fixes, and connect-job tracing ([#250](https://github.com/dbbs-lab/bsb/pull/250), [#223](https://github.com/dbbs-lab/bsb/issues/223), [#1](https://github.com/dbbs-lab/bsb/issues/1))
+
+### ❤️ Thank You
+
+- Robin De Schepper
+
+## 7.5.1 (2026-06-30)
+
+### 🩹 Fixes
+
+- **bsb-nest:** isolate the validation kernel per simulation ([#251](https://github.com/dbbs-lab/bsb/pull/251))
+
+### ❤️ Thank You
+
+- Robin De Schepper
+
+## 7.5.0 (2026-06-30)
+
+### 🚀 Features
+
+- **config:** out-of-process NEST kernel for config-build-time checks ([#227](https://github.com/dbbs-lab/bsb/pull/227), [#235](https://github.com/dbbs-lab/bsb/pull/235), [#228](https://github.com/dbbs-lab/bsb/issues/228))
+
+### ❤️ Thank You
+
+- Robin De Schepper
+
 ## 7.4.0 (2026-05-29)
 
 ### 🚀 Features

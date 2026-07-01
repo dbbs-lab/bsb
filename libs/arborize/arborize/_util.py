@@ -3,7 +3,6 @@ import typing
 from collections.abc import Iterable
 
 import numpy as np
-import numpy.typing as npt
 
 if typing.TYPE_CHECKING:  # pragma: nocover
     from schematic import Point
@@ -20,7 +19,7 @@ def get_location_name(pts: Iterable["Point"]) -> str:
     return locstr
 
 
-def get_arclengths(pts: Iterable["Point"]) -> npt.NDArray[np.float64]:
+def get_arclengths(pts: Iterable["Point"]) -> np.ndarray:
     """
     Compute normalized cumulative arclengths from a sequence of points.
 

@@ -15,6 +15,14 @@ the BSB without affecting the kernel subprocess.
 The proxy is created lazily on first call to :func:`get_nest_kernel_proxy`,
 stored on the active :class:`~bsb.config.BuildContext` at ``ctx.bsb_nest.kernel``,
 and shut down by a cleanup callback when the build context exits.
+
+A kernel cannot unload a dynamically loaded module, and ``ResetKernel`` does not
+remove installed modules either, so a single kernel that served one simulation
+keeps that simulation's modules available to every later query. To validate each
+simulation against only its own modules, the kernel is isolated per simulation:
+when validation moves to a different simulation than the one the current kernel
+was loaded for, the current kernel is torn down and a fresh one is spawned (see
+:func:`load_simulation_modules`).
 """
 
 import contextlib
@@ -135,6 +143,30 @@ def _shutdown_kernel(proc, conn, tmpdir):
     shutil.rmtree(tmpdir, ignore_errors=True)
 
 
+def _spawn_kernel(ctx):
+    """Spawn a fresh kernel for *ctx* and store it on ``ctx.bsb_nest``.
+
+    Registers a cleanup that tears down whichever kernel is current when the
+    build exits, so a respawned kernel does not leak the previous subprocess and
+    the final kernel is always shut down.
+    """
+    ns = ctx.bsb_nest
+    proxy, shutdown = _connect_kernel()
+    ns.kernel = proxy
+    ns.__dict__["kernel_shutdown"] = shutdown
+    return proxy
+
+
+def _teardown_kernel(ctx):
+    """Shut down the kernel currently stored on *ctx*, if any, and forget it."""
+    ns = ctx.bsb_nest
+    shutdown = ns.__dict__.pop("kernel_shutdown", None)
+    ns.__dict__.pop("kernel", None)
+    ns.__dict__.pop("kernel_sim", None)
+    if shutdown is not None:
+        shutdown()
+
+
 def get_nest_kernel_proxy():
     """
     Return a proxy to the out-of-process NEST kernel for this build.
@@ -152,10 +184,23 @@ def get_nest_kernel_proxy():
     existing = ns.__dict__.get("kernel")
     if existing is not None:
         return existing
-    proxy, shutdown = _connect_kernel()
-    ns.kernel = proxy
-    ctx.add_cleanup(shutdown)
+    proxy = _spawn_kernel(ctx)
+    # Tear down whichever kernel is current at build exit. `_teardown_kernel`
+    # reads the live `ctx.bsb_nest`, so a respawn that replaces the kernel does
+    # not leak the old subprocess and the final kernel is still shut down.
+    ctx.add_cleanup(lambda: _teardown_kernel(ctx))
     return proxy
+
+
+def _enclosing_simulation(node):
+    """Return *node*'s owning simulation, the first ancestor declaring
+    ``modules``, or ``None`` for a model built in isolation."""
+    parent = getattr(node, "_config_parent", None)
+    while parent is not None:
+        if "modules" in getattr(type(parent), "_config_attrs", {}):
+            return parent
+        parent = getattr(parent, "_config_parent", None)
+    return None
 
 
 def load_simulation_modules(node, proxy):
@@ -163,10 +208,21 @@ def load_simulation_modules(node, proxy):
 
     Walks up from *node* to the owning simulation (the first ancestor that
     declares a ``modules`` attribute) and hands its ``modules`` to
-    ``proxy.load_modules``, which installs each module only once per build.
-    Raises :class:`~bsb.exceptions.ConfigurationError` if a module can't be
-    found. No-op when *node* has no enclosing simulation, e.g. a model built in
+    ``proxy.load_modules``. Raises
+    :class:`~bsb.exceptions.ConfigurationError` if a module can't be found.
+    No-op when *node* has no enclosing simulation, e.g. a model built in
     isolation.
+
+    Each simulation is validated against a kernel carrying only its own modules.
+    The kernel keeps every module it installs for the lifetime of its
+    subprocess, so when validation moves to a different simulation than the one
+    the current kernel was loaded for, that kernel is torn down and a fresh one
+    is spawned before the new simulation's modules are installed. Repeated
+    validations within the same simulation reuse the same kernel. The served
+    simulation is keyed by ``id`` of the simulation node: that node is held by
+    the config tree for the whole build, so its identity is stable and not
+    reused, whereas a name or path can be empty or collide across configs built
+    in one context.
 
     The simulation's ``modules`` must already be built when this runs; the
     attribute build order guarantees it precedes the cell and connection models
@@ -174,25 +230,35 @@ def load_simulation_modules(node, proxy):
     change, raise rather than silently validate models against a kernel that is
     missing the simulation's modules.
     """
-    parent = getattr(node, "_config_parent", None)
-    while parent is not None:
-        if "modules" in getattr(type(parent), "_config_attrs", {}):
-            if not _hasattr(parent, "modules"):
-                raise ConfigurationError(
-                    f"Cannot load the NEST modules of {parent.get_node_name()}:"
-                    " its `modules` attribute is not built yet. Cell and"
-                    " connection models are validated against the simulation's"
-                    " modules, so the `modules` attribute must appear before"
-                    " `cell_models` and `connection_models` in the simulation"
-                    " config object."
-                )
-            missing = proxy.load_modules(list(parent.modules or []))
-            if missing:
-                raise ConfigurationError(
-                    f"NEST module(s) not found: {', '.join(missing)}."
-                )
-            return
-        parent = getattr(parent, "_config_parent", None)
+    parent = _enclosing_simulation(node)
+    if parent is None:
+        return
+    if not _hasattr(parent, "modules"):
+        raise ConfigurationError(
+            f"Cannot load the NEST modules of {parent.get_node_name()}:"
+            " its `modules` attribute is not built yet. Cell and"
+            " connection models are validated against the simulation's"
+            " modules, so the `modules` attribute must appear before"
+            " `cell_models` and `connection_models` in the simulation"
+            " config object."
+        )
+    ctx = get_config_build_context()
+    if ctx is not None:
+        ns = ctx.bsb_nest
+        sim_key = id(parent)
+        if ns.__dict__.get("kernel") is proxy and ns.__dict__.get("kernel_sim") not in (
+            None,
+            sim_key,
+        ):
+            # The current kernel was loaded for a different simulation; its
+            # modules cannot be unloaded, so replace it with a clean kernel.
+            _teardown_kernel(ctx)
+            proxy = _spawn_kernel(ctx)
+        ns.__dict__["kernel_sim"] = sim_key
+    missing = proxy.load_modules(list(parent.modules or []))
+    if missing:
+        raise ConfigurationError(f"NEST module(s) not found: {', '.join(missing)}.")
+    return proxy
 
 
 _UNREACHABLE = object()
@@ -214,7 +280,9 @@ def query_kernel(node, query, *, fallback, error_context, unreachable_warning=No
             if unreachable_warning:
                 warn(unreachable_warning, KernelWarning)
             return fallback
-        load_simulation_modules(node, proxy)
+        # Loading a different simulation's modules may respawn the kernel, so
+        # query whichever proxy comes back rather than the one acquired above.
+        proxy = load_simulation_modules(node, proxy) or proxy
         return query(proxy)
     except ConfigurationError:
         raise

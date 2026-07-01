@@ -46,6 +46,7 @@ import logging
 import pickle
 import tempfile
 import threading
+import time
 import typing
 import warnings
 import zlib
@@ -308,6 +309,11 @@ class Job(abc.ABC):
         self._deps = set(deps or [])
         self._submit_ctx = submission_context
         self._completion_cbs = []
+        # Guards `_completion_cbs` + `_completion_fired` against the race between
+        # a callback being registered (`on_completion`, called from scheduler
+        # threads) and completion running (`_completed`, on the main thread).
+        self._completion_lock = threading.Lock()
+        self._completion_fired = False
         self._status = JobStatus.PENDING
         self._future: concurrent.futures.Future | None = None
         self._thread: threading.Thread | None = None
@@ -315,7 +321,11 @@ class Job(abc.ABC):
         self._error = None
         self._cache_items: list[int] = [] if cache_items is None else cache_items
 
-        for j in self._deps:
+        # Snapshot `self._deps`: registering against an already-completed dep
+        # makes `on_completion` fire `_dep_completed` inline, which discards
+        # that dep from `self._deps`. Iterating the live set would then raise
+        # "Set changed size during iteration".
+        for j in list(self._deps):
             j.on_completion(self._dep_completed)
 
     @obj_str_insert
@@ -404,7 +414,20 @@ class Job(abc.ABC):
         return True
 
     def on_completion(self, cb):
-        self._completion_cbs.append(cb)
+        # Register the callback atomically with the completion state. If the
+        # cb-loop in `_completed` has already run, fire `cb` inline so late
+        # registrants aren't stranded; otherwise `cb` joins the list that
+        # `_completed` will run. Keying on `_completion_fired` under the lock
+        # (rather than on `_status`) closes the race where a registrant appends
+        # *after* `_completed` snapshotted the list but *before* it set the
+        # final status: that cb would otherwise never fire, stranding the
+        # dependent job (its `_dep_completed` never runs) and deadlocking the
+        # pool on a job that is never discarded.
+        with self._completion_lock:
+            if not self._completion_fired:
+                self._completion_cbs.append(cb)
+                return
+        cb(self)
 
     def set_result(self, value):
         dirname = JobPool.get_tmp_folder(self.pool_id)
@@ -431,7 +454,22 @@ class Job(abc.ABC):
                 self.set_exception(e)
             else:
                 self.set_result(result)
-        for cb in self._completion_cbs:
+        self._fire_completion()
+
+    def _fire_completion(self):
+        # Fire completion callbacks exactly once, whether we reached a terminal
+        # state through `_completed` (success/failure, surfaced by the main loop
+        # via our future) or through `cancel` (which can fire while we are still
+        # PENDING and have no future at all). Snapshotting the callbacks and
+        # flipping `_completion_fired` in one critical section keeps
+        # `on_completion` race-free: a concurrent registrant either lands in this
+        # snapshot or fires inline afterwards, never neither and never twice.
+        with self._completion_lock:
+            if self._completion_fired:
+                return
+            cbs = list(self._completion_cbs)
+            self._completion_fired = True
+        for cb in cbs:
             cb(self)
 
     def _dep_completed(self, dep):
@@ -445,9 +483,18 @@ class Job(abc.ABC):
         else:
             # When all our dependencies have been discarded we can queue ourselves.
             # Unless the pool is serial, then the pool itself just runs all jobs in order.
-            if not self._deps and self._comm.get_size() > 1:
-                # self._pool is set when the pool first tried to enqueue us, but we were
-                # still waiting for deps, in the `_enqueue` method below.
+            #
+            # `self._pool` is only set once the pool has tried to `_enqueue` us
+            # (the `else` branch below). When this callback fires *inline during
+            # our own `__init__`* (because a dep had already completed before we
+            # registered) `self._pool` isn't set yet. Skip enqueuing here: the
+            # `_put` -> `_enqueue` call that immediately follows construction
+            # sees the now-empty `self._deps` and submits us.
+            if (
+                not self._deps
+                and self._comm.get_size() > 1
+                and getattr(self, "_pool", None) is not None
+            ):
                 self._enqueue(self._pool)
 
     def _enqueue(self, pool):
@@ -471,6 +518,11 @@ class Job(abc.ABC):
             warnings.warn(
                 f"Could not cancel {self}, the job is already running.", stacklevel=2
             )
+        # Cascade completion now: a PENDING job cancelled for a failed dependency
+        # has no future, so it would never surface through the main loop's
+        # `_completed` path, leaving its own dependents (and the pool) waiting on
+        # a job that is never discarded.
+        self._fire_completion()
 
     def change_status(self, status: JobStatus):
         old_status = self._status
@@ -789,29 +841,41 @@ class JobPool:
                 job.status == JobStatus.PENDING or job.status == JobStatus.QUEUED
                 for job in self._job_queue
             ):
-                try:
-                    done, not_done = concurrent.futures.wait(
-                        self._running_futures,
-                        timeout=self._max_wait,
-                        return_when="FIRST_COMPLETED",
-                    )
-                except ValueError:
-                    # Sometimes a ValueError is raised here, perhaps because we modify
-                    # the list below?
-                    continue
+                # `concurrent.futures.wait([], timeout=X)` returns immediately
+                # with empty sets: the timeout does not apply when there are no
+                # futures to await. When nothing is running yet (jobs still
+                # waiting on deps, or schedulers still producing) sleep briefly
+                # instead of busy-spinning on `wait([])`. Either way we fall
+                # through to `ping()`/`notify()` below, so cancellations and
+                # unhandled errors are still processed every iteration (skipping
+                # `notify()` here would hang the error/cancellation paths).
+                done = set()
+                if self._running_futures:
+                    try:
+                        done, not_done = concurrent.futures.wait(
+                            self._running_futures,
+                            timeout=self._max_wait,
+                            return_when="FIRST_COMPLETED",
+                        )
+                    except ValueError:
+                        # Sometimes a ValueError is raised here, perhaps because we
+                        # modify the list below?
+                        continue
 
-                # Complete any jobs that are done
-                for job in self._job_queue:
-                    if job._future in done:
-                        job._completed()
+                    # Complete any jobs that are done
+                    for job in self._job_queue:
+                        if job._future in done:
+                            job._completed()
 
-                # If a job finished, update the required cache items
-                if len(done):
-                    self._update_cache_window()
+                    # If a job finished, update the required cache items
+                    if len(done):
+                        self._update_cache_window()
 
-                # Remove running futures that are done
-                for future in done:
-                    self._running_futures.remove(future)
+                    # Remove running futures that are done
+                    for future in done:
+                        self._running_futures.remove(future)
+                else:
+                    time.sleep(self._max_wait if self._max_wait else 0.1)
                 # If nothing finished, post a timeout notification.
                 if not len(done):
                     self.ping()

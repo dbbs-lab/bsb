@@ -695,7 +695,6 @@ class TestAdapterControllers(
         import os
         import tracemalloc
 
-        import matplotlib.pyplot as plt
         from neo import AnalogSignal
         from quantities import ms
 
@@ -727,6 +726,8 @@ class TestAdapterControllers(
         _, mem_peak = tracemalloc.get_traced_memory()
 
         if PLOT_GRAPH:
+            import matplotlib.pyplot as plt
+
             plt.plot(mem_size)
 
             plt.xlabel("step")

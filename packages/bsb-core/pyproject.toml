@@ -77,7 +77,6 @@ test = [
   "bsb-test~=7.0",
   "bsb-otel[sdk]~=7.2",
   "coverage>=7.3",
-  "matplotlib"
 ]
 docs = [
   "furo~=2024.4",

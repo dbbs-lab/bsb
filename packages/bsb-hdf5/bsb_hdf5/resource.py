@@ -1,6 +1,9 @@
+import contextlib
+import contextvars
 import functools
 import inspect
 import typing
+import warnings
 
 import h5py
 import numpy as np
@@ -14,12 +17,108 @@ if typing.TYPE_CHECKING:  # pragma: nocover
 HANDLED = None
 
 
+# Per-(engine, scope) state. Value: {id(engine): (mode, h5py_handle)}.
+# The default is `None` (a mutable default would be shared across all contexts);
+# `_get_handles` substitutes the empty map so `.get(id(engine))` is always safe.
+_engine_handle: contextvars.ContextVar = contextvars.ContextVar(
+    "_bsb_hdf5_engine_handle", default=None
+)
+
+
+def _get_handles() -> dict:
+    """Return the per-engine handle map for the current context, or the empty
+    map when none is set."""
+    return _engine_handle.get() or {}
+
+
+class _WriteScopeState:
+    """Mutable flag for :class:`UnusedWriteScopeWarning` detection."""
+
+    __slots__ = ("wrote",)
+
+    def __init__(self):
+        self.wrote = False
+
+
+_write_scope_state: contextvars.ContextVar = contextvars.ContextVar(
+    "_bsb_hdf5_write_scope_state", default=None
+)
+
+
+class PromotedHandleWarning(UserWarning):
+    """
+    A write operation ran inside a read scope. mpilock promoted the read lock
+    to a write for the duration of that call, briefly serializing all readers
+    and writers across the cluster.
+
+    The promotion itself is safe, but holding write locks inside read scopes
+    blocks parallelism, so it's usually a refactor target (move the write
+    outside the read scope). If the write is genuinely small, one-off, and
+    cannot be moved, pass ``promote_from_read=True`` at the call site to
+    silence this warning.
+    """
+
+
+class UnusedWriteScopeWarning(UserWarning):
+    """
+    A :meth:`~bsb_hdf5.HDF5Engine.write_scope` block exited without any
+    decorated ``@handles_handles("a")`` operation running inside. The cluster-
+    wide write lock was held for nothing; other writers could not proceed.
+
+    Replace with :meth:`~bsb_hdf5.HDF5Engine.read_scope` if you only needed
+    reads, or remove the scope entirely if you don't need batching.
+    """
+
+
+def _lookup_handle(engine, requested_mode):
+    """Return an open handle on ``engine`` that satisfies ``requested_mode``,
+    or ``None`` if no compatible handle is open in the current context.
+
+    A write-mode handle satisfies both read and write requests; a read-mode
+    handle only satisfies read requests. A write request encountered while a
+    read scope is active returns ``None`` so the decorator opens a fresh write
+    handle; mpilock promotes our held read lock to write for that block and
+    returns us to the read state on release. (Hence
+    :class:`PromotedHandleWarning` exists to flag the pattern.)
+    """
+    cur = _get_handles().get(id(engine))
+    if cur is None:
+        return None
+    held_mode, held_handle = cur
+    if requested_mode == "r":
+        return held_handle
+    # requested_mode == "a"
+    if held_mode == "a":
+        return held_handle
+    return None
+
+
 # Decorator to inject handles
 def handles_handles(handle_type, handler=lambda args: args[0]._engine):
     """
-    Decorator for :class:`~.resource.Resource` methods to lock and open hdf5 files.
+    Decorator for :class:`~.resource.Resource` methods to lock and open hdf5
+    files. The decorator does three things:
 
-    By default, the first argument of the decorated function should be the Resource.
+    1. If the caller passed ``handle=`` explicitly, the inner function gets
+       that handle. Period.
+    2. Otherwise the decorator checks the per-engine handle ContextVar (set by
+       :meth:`~bsb_hdf5.HDF5Engine.read_scope` /
+       :meth:`~bsb_hdf5.HDF5Engine.write_scope` or by
+       any outer ``@handles_handles`` call that opened a handle). If a
+       compatible handle is open, it is reused. No mpilock acquire, no
+       ``h5py.File`` open.
+    3. Otherwise the decorator acquires the appropriate mpilock, opens a fresh
+       ``h5py.File`` in ``handle_type`` mode, registers it on the ContextVar
+       so any nested ``@handles_handles`` call inherits it, runs the function,
+       and tears down on exit.
+
+    A write operation called from inside a read scope is legal (mpilock
+    promotes the lock under the hood) but emits :class:`PromotedHandleWarning`
+    unless the call site passes ``promote_from_read=True``.
+
+    By default, the first argument of the decorated function should be the
+    Resource. ``handler`` overrides this for static/class methods that expose
+    the engine differently.
     """
 
     lock_f = {"r": lambda eng: eng._read, "a": lambda eng: eng._write}.get(handle_type)
@@ -33,9 +132,42 @@ def handles_handles(handle_type, handler=lambda args: args[0]._engine):
             )
 
         @functools.wraps(f)
-        def handle_indirection(*args, handle=None, **kwargs):
+        def handle_indirection(
+            *args, handle=None, promote_from_read=False, **kwargs
+        ):
             engine = handler(args)
-            lock = lock_f(engine)
+
+            # 1. Explicit `handle=` wins. Otherwise look up the ambient scope.
+            if handle is None:
+                handle = _lookup_handle(engine, handle_type)
+                if handle is None and handle_type == "a":
+                    # The lookup returned None for a write request. Either no
+                    # scope is open (fine), or we're inside a read scope and
+                    # about to trigger an mpilock promotion. Detect the second
+                    # case by checking whether ANY handle is open on this
+                    # engine in the current context.
+                    cur = _get_handles().get(id(engine))
+                    if cur is not None and not promote_from_read:
+                        warnings.warn(
+                            f"`{f.__module__}.{f.__name__}` is a write "
+                            f"operation called from inside a read scope. "
+                            f"mpilock will promote the read to a write for "
+                            f"this call; every promotion briefly serializes "
+                            f"all readers and writers across the cluster. "
+                            f"If this is intentional and the write is small "
+                            f"and one-off, pass `promote_from_read=True` at "
+                            f"the call site to silence this. Otherwise, move "
+                            f"the write outside the read scope.",
+                            PromotedHandleWarning,
+                            stacklevel=2,
+                        )
+
+            # 2. Mark the enclosing write_scope as used, if any.
+            if handle_type == "a":
+                state = _write_scope_state.get()
+                if state is not None:
+                    state.wrote = True
+
             _path = getattr(args[0], "_path", None)
             _attrs = {"hdf5.mode": handle_type}
             if _path is not None:
@@ -50,16 +182,67 @@ def handles_handles(handle_type, handler=lambda args: args[0]._engine):
                     except TypeError as e:
                         # Re-raise the exception from None for better stack trace
                         raise e from None
-                if bound.arguments.get("handle", None) is None:
-                    with lock(), engine._handle(handle_type) as handle:
-                        bound.arguments["handle"] = handle
-                        return f(*bound.args, **bound.kwargs)
-                else:
+                # The wrapper captures `handle` as its own keyword-only
+                # parameter, so any handle we resolved above is NOT in
+                # `bound.arguments`. Inject it before calling f.
+                if handle is not None:
+                    bound.arguments["handle"] = handle
                     return f(*bound.args, **bound.kwargs)
+
+                # 3. No handle to reuse: open one and register on the ContextVar
+                # so nested calls inherit it. The `with lock()` block does the
+                # mpilock promotion under the hood when we're inside a read
+                # scope and `handle_type == "a"`.
+                with lock_f(engine)(), engine._handle(handle_type) as new_handle:
+                    bound.arguments["handle"] = new_handle
+                    current = _get_handles()
+                    tok = _engine_handle.set(
+                        {**current, id(engine): (handle_type, new_handle)}
+                    )
+                    try:
+                        return f(*bound.args, **bound.kwargs)
+                    finally:
+                        _engine_handle.reset(tok)
 
         return handle_indirection
 
     return decorator
+
+
+@contextlib.contextmanager
+def _push_scope(engine, mode):
+    """Open a handle on ``engine`` in ``mode``, push it onto the engine-handle
+    ContextVar, and yield the handle. Used by
+    :meth:`~bsb_hdf5.HDF5Engine.read_scope` and
+    :meth:`~bsb_hdf5.HDF5Engine.write_scope`. Also installs a
+    :class:`_WriteScopeState` on the ``_write_scope_state`` ContextVar when
+    ``mode == "a"`` so :class:`UnusedWriteScopeWarning` can fire on exit.
+    """
+    lock_f = {"r": lambda eng: eng._read, "a": lambda eng: eng._write}[mode]
+    with lock_f(engine)(), engine._handle(mode) as handle:
+        current = _get_handles()
+        engine_tok = _engine_handle.set({**current, id(engine): (mode, handle)})
+        scope_tok = None
+        state = None
+        if mode == "a":
+            state = _WriteScopeState()
+            scope_tok = _write_scope_state.set(state)
+        try:
+            yield handle
+        finally:
+            _engine_handle.reset(engine_tok)
+            if scope_tok is not None:
+                _write_scope_state.reset(scope_tok)
+            if state is not None and not state.wrote:
+                warnings.warn(
+                    "`engine.write_scope()` opened but no @handles_handles('a') "
+                    "operation ran inside. The cluster-wide write lock was held "
+                    "unnecessarily. Use `read_scope()` if you only need reads, "
+                    "or drop the scope and let individual decorated calls open "
+                    "their own short-lived handles.",
+                    UnusedWriteScopeWarning,
+                    stacklevel=3,
+                )
 
 
 def handles_static_handles(handle_type):

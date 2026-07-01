@@ -1,12 +1,87 @@
+import contextlib
 import functools
 import json
 import os
+import sys
 import tempfile
 import typing
 import unittest
 from collections import deque
 
 from opentelemetry import trace
+
+
+def _abort_run_on_mpi_failure(label):
+    """Bring the whole MPI job down when a test errors or fails on this rank.
+
+    Under ``mpiexec -n >1`` a failure on one rank but not another desynchronises
+    the ranks: the failing rank unwinds past in-test collectives that the peer
+    ranks are still blocked on, so the run deadlocks at the next mismatched
+    collective (surfacing as a multi-hour CI timeout rather than a test result).
+    There is no safe point to coordinate a graceful stop from -- the peers are
+    already stuck mid-collective -- so abort the job now. CI then reports a fast
+    failure. No-op in single-rank runs, where unittest reports failures
+    normally; the serial test pass still produces the full failure list.
+    """
+    try:
+        from mpi4py import MPI
+    except ImportError:
+        return
+    comm = MPI.COMM_WORLD
+    if comm.Get_size() <= 1:
+        return
+    print(
+        f"\n[bsb-otel] {label} on MPI rank {comm.Get_rank()}; aborting all ranks "
+        f"to avoid a collective-mismatch deadlock (run serially for the full "
+        f"failure report).",
+        file=sys.stderr,
+        flush=True,
+    )
+    with contextlib.suppress(Exception):
+        trace.get_tracer_provider().force_flush()
+    comm.Abort(1)
+
+
+@contextlib.contextmanager
+def detached_span():
+    """
+    Run the enclosed block with no active parent span.
+
+    Attaches an ``INVALID_SPAN`` to the current OpenTelemetry context so that
+    :meth:`bsb_otel.tracer.BsbTracer.trace` sees no valid ambient parent, and
+    detaches it again on exit. Lets parallel telemetry tests exercise the
+    cross-rank broadcast branch without an externally supplied outer span
+    (such as one installed by ``opentelemetry-instrument`` or by the
+    ``load_tests`` wrap span).
+    """
+    from opentelemetry import context as otel_context
+    from opentelemetry.trace import INVALID_SPAN, set_span_in_context
+
+    token = otel_context.attach(set_span_in_context(INVALID_SPAN))
+    try:
+        yield
+    finally:
+        otel_context.detach(token)
+
+
+@contextlib.contextmanager
+def broadcast_root(tracer, name, attributes=None):
+    """
+    Open a broadcast-root span for *tracer* with no ambient parent.
+
+    Runs :func:`detached_span` so that, under MPI, ``tracer.trace(name)`` takes
+    its broadcast-root branch deterministically: rank 0 records the span and
+    broadcasts its context, while the other ranks attach a non-recording copy.
+    Child spans opened inside this block are then recorded on every rank. In
+    serial mode it is just an ordinary span.
+
+    :param bsb_otel.tracer.BsbTracer tracer: tracer used to open the root span
+    :param str name: name of the root span
+    :param dict attributes: OpenTelemetry attributes for the root span
+    :returns: the root span, for use as a context manager.
+    """
+    with detached_span(), tracer.trace(name, attributes=attributes) as span:
+        yield span
 
 
 def _pop(queue):
@@ -79,11 +154,15 @@ def _wrap_case(case: unittest.TestCase):
 
                 def add_error(test, err):
                     _record("error", err)
-                    return _orig_add_error(test, err)
+                    out = _orig_add_error(test, err)
+                    _abort_run_on_mpi_failure(f"{case.id()} errored")
+                    return out
 
                 def add_failure(test, err):
                     _record("failure", err)
-                    return _orig_add_failure(test, err)
+                    out = _orig_add_failure(test, err)
+                    _abort_run_on_mpi_failure(f"{case.id()} failed")
+                    return out
 
                 result.addError = add_error
                 result.addFailure = add_failure
@@ -267,4 +346,4 @@ class OTelFixture:
         self.temp_file.close()
 
 
-__all__ = ["OTelFixture", "wrap_tests_with_traces"]
+__all__ = ["OTelFixture", "broadcast_root", "detached_span", "wrap_tests_with_traces"]

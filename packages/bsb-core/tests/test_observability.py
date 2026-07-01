@@ -8,7 +8,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from bsb_otel.testing import OTelFixture
+from bsb_otel.testing import OTelFixture, broadcast_root, detached_span
 from bsb_otel.tracer import get_bsb_tracer
 
 from bsb import MPI, handle_command
@@ -112,26 +112,21 @@ class TestTelemetryCliCommand(unittest.TestCase):
         """
         Tests whether traces are collected for a normal CLI command.
         """
-        from opentelemetry import context as otel_context
-        from opentelemetry.trace import INVALID_SPAN, set_span_in_context
-
         # Detach the test wrapper's parent span so handle_command's internal
         # BsbTracer.trace("cli") takes the no-parent broadcast branch
         # (rank 0 records, non-root gets a NonRecordingSpan).  Without this
         # the cli span becomes a child of the wrap span and is recorded on
-        # every rank.
-        _token = otel_context.attach(set_span_in_context(INVALID_SPAN))
-        try:
-            with (
-                # Silence output of --version to stdout
-                open(os.devnull, "w") as devnull,
-                contextlib.redirect_stdout(devnull),
-                # Capture otel output
-                OTelFixture() as results,
-            ):
-                handle_command(["--version"])
-        finally:
-            otel_context.detach(_token)
+        # every rank. The broadcast root here is opened by handle_command, not
+        # by the test, so only the detach is needed.
+        with (
+            detached_span(),
+            # Silence output of --version to stdout
+            open(os.devnull, "w") as devnull,
+            contextlib.redirect_stdout(devnull),
+            # Capture otel output
+            OTelFixture() as results,
+        ):
+            handle_command(["--version"])
 
         spans = results()
         if MPI.get_rank() == 0:
@@ -153,10 +148,10 @@ class TestTelemetryInterfaces(unittest.TestCase):
         @config.node (or instrumented via _instrument_node directly) are
         automatically wrapped in an OTel span.
         """
-        with OTelFixture() as results:
+        with OTelFixture() as results, broadcast_root(_tracer, "component_root"):
             _ConcreteImpl().compute()
 
-        spans = results()
+        spans = [s for s in results() if s["name"] == "_ConcreteImpl.compute"]
         self.assertEqual(len(spans), 1, "Expected exactly one component-method span")
         span = spans[0]
         self.assertEqual(span["name"], "_ConcreteImpl.compute")
@@ -175,10 +170,16 @@ class TestTelemetryMPI(unittest.TestCase):
         Every span carries the correct mpi.rank and mpi.size for the rank it
         was recorded on.
         """
-        with OTelFixture() as results, _tracer.trace("probe"):
+        with (
+            OTelFixture() as results,
+            broadcast_root(_tracer, "probe_root"),
+            _tracer.trace("probe"),
+        ):
             pass
 
-        my_spans = results()
+        # Rank 0 also records the broadcast root span; keep just the named probe
+        # spans before the per-rank count assertion.
+        my_spans = [s for s in results() if s["name"] == "probe"]
         all_spans = MPI.allgather(my_spans)  # list[list[dict]], one per rank
 
         for rank, rank_spans in enumerate(all_spans):
@@ -207,24 +208,13 @@ class TestTelemetryMPI(unittest.TestCase):
         This verifies the full "back all the way up to the single broadcasted
         root" property.
         """
-        from opentelemetry import context as otel_context
-        from opentelemetry.trace import INVALID_SPAN, set_span_in_context
-
-        # Detach the current span context so ``broadcast_root`` is created
-        # without a parent and BsbTracer.trace takes the broadcast branch.
-        # Outer span (the test wrapper) would otherwise turn broadcast_root
-        # into a plain per-rank child span.
-        token = otel_context.attach(set_span_in_context(INVALID_SPAN))
-        try:
-            with (
-                OTelFixture() as results,
-                _tracer.trace("broadcast_root"),
-                _tracer.trace("rank_child"),
-                _tracer.trace("rank_grandchild"),
-            ):
-                pass
-        finally:
-            otel_context.detach(token)
+        with (
+            OTelFixture() as results,
+            broadcast_root(_tracer, "broadcast_root"),
+            _tracer.trace("rank_child"),
+            _tracer.trace("rank_grandchild"),
+        ):
+            pass
 
         my_spans = results()
         all_spans = MPI.allgather(my_spans)

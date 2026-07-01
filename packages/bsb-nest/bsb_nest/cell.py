@@ -1,8 +1,9 @@
 import nest
 from bsb import CellModel, config
+from bsb.simulation.parameter import CellParameter
 
 from ._kernel_proxy import NestModelTypeHandler
-from .distributions import NestRandomDistribution, nest_parameter
+from .distributions import NestRandomDistribution, nest_constant
 
 
 class nest_node_model(NestModelTypeHandler):
@@ -16,8 +17,11 @@ class nest_node_model(NestModelTypeHandler):
 class NestCell(CellModel):
     model = config.attr(type=nest_node_model(), default="iaf_psc_alpha")
     """Importable reference to the NEST model describing the cell type."""
-    constants = config.dict(type=nest_parameter())
+    constants = config.dict(type=nest_constant())
     """Dictionary of the constants values to assign to the cell model."""
+    parameters = config.dict(type=CellParameter, default={})
+    """Dictionary of the parameters, computed during simulation loading, 
+       to assign to the cell model."""
 
     def create_population(self, simdata):
         n = len(simdata.placement[self])
@@ -36,5 +40,5 @@ class NestCell(CellModel):
 
     def set_parameters(self, population, simdata):
         ps = simdata.placement[self]
-        for param in self.parameters:
-            population.set(param.name, param.get_value(ps))
+        for key, param in self.parameters.items():
+            population.set(key, param.compute(ps))

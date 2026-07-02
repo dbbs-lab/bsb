@@ -67,7 +67,7 @@ class TestNeuronExamples(
         self.scaffold.compile()
         self._test_scaffold_results()
         results = self.scaffold.run_simulation("neuronsim")
-        self._test_simulation_results(results.analogsignals)
+        self._test_simulation_results(results.block.segments[0].analogsignals)
 
     def test_yaml_example(self):
         self.cfg = parse_configuration_file(
@@ -77,7 +77,7 @@ class TestNeuronExamples(
         self.scaffold.compile()
         self._test_scaffold_results()
         results = self.scaffold.run_simulation("neuronsim")
-        self._test_simulation_results(results.analogsignals)
+        self._test_simulation_results(results.block.segments[0].analogsignals)
 
     def test_python_example(self):
         import scripts.guide_neuron  # noqa: F401

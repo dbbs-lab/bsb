@@ -187,3 +187,110 @@ class TestSimulationModuleLoading(unittest.TestCase):
 
         with self.assertRaises(ConfigurationError):
             load_simulation_modules(model, FakeProxy())
+
+
+class _FakeKernel:
+    """In-process stand-in for the NEST kernel that tracks installed modules.
+
+    Modules contribute extra model names that exist only while the module is
+    loaded, like a NEST dynamic module. The kernel keeps every module it
+    installs for its lifetime, so each ``_FakeKernel`` instance represents a
+    single subprocess that cannot unload a module once installed.
+    """
+
+    MODULE_MODELS = {"sim1mod": ["mod1_model"], "sim2mod": ["mod2_model"]}
+    BASE_MODELS = ["static_synapse"]
+
+    instances = []
+
+    def __init__(self):
+        self._loaded = set()
+        type(self).instances.append(self)
+
+    def load_modules(self, modules):
+        missing = []
+        for module in modules:
+            if module in self._loaded:
+                continue
+            if module not in self.MODULE_MODELS:
+                missing.append(module)
+                continue
+            self._loaded.add(module)
+        return missing
+
+    def models(self, mtype=None):
+        models = list(self.BASE_MODELS)
+        for module in self._loaded:
+            models.extend(self.MODULE_MODELS[module])
+        return models
+
+
+class TestKernelSimulationIsolation(unittest.TestCase):
+    """A module loaded for one simulation must not leak into the validation of a
+    later simulation: each simulation is validated against a kernel carrying only
+    its own modules, achieved by respawning the kernel at simulation boundaries.
+    """
+
+    @staticmethod
+    def _two_sims():
+        from bsb import config
+
+        @config.node
+        class Sim:
+            modules = config.list(type=str)
+
+        @config.node
+        class Model:
+            pass
+
+        sim1 = Sim(modules=["sim1mod"])
+        sim2 = Sim(modules=["sim2mod"])
+        return (
+            Model({}, _parent=sim1),
+            Model({}, _parent=sim2),
+        )
+
+    def _patch_kernel(self):
+        _FakeKernel.instances = []
+        return patch(
+            "bsb_nest._kernel_proxy._connect_kernel",
+            side_effect=lambda: (_FakeKernel(), lambda: None),
+        )
+
+    def test_module_does_not_leak_across_simulations(self):
+        from bsb_nest._kernel_proxy import (
+            get_nest_kernel_proxy,
+            load_simulation_modules,
+        )
+
+        model1, model2 = self._two_sims()
+        with self._patch_kernel(), build_context():
+            proxy1 = get_nest_kernel_proxy()
+            proxy1 = load_simulation_modules(model1, proxy1) or proxy1
+            # Sim 1's module model is available while validating sim 1.
+            self.assertIn("mod1_model", proxy1.models())
+
+            proxy2 = get_nest_kernel_proxy()
+            proxy2 = load_simulation_modules(model2, proxy2) or proxy2
+            # Moving to sim 2 respawns the kernel, so sim 1's module is gone and
+            # only sim 2's module is available.
+            self.assertNotIn("mod1_model", proxy2.models())
+            self.assertIn("mod2_model", proxy2.models())
+
+        # A fresh subprocess was spawned for the second simulation.
+        self.assertEqual(len(_FakeKernel.instances), 2)
+
+    def test_same_simulation_reuses_kernel(self):
+        from bsb_nest._kernel_proxy import (
+            get_nest_kernel_proxy,
+            load_simulation_modules,
+        )
+
+        model1, _ = self._two_sims()
+        with self._patch_kernel(), build_context():
+            proxy = get_nest_kernel_proxy()
+            load_simulation_modules(model1, proxy)
+            load_simulation_modules(model1, proxy)
+
+        # Repeated validation within one simulation does not respawn the kernel.
+        self.assertEqual(len(_FakeKernel.instances), 1)

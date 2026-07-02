@@ -204,6 +204,24 @@ class Storage:
     def root(self):
         return self._engine.root
 
+    def read_scope(self):
+        """Open a batched read scope on the underlying engine.
+
+        Inside the block every decorated read call reuses one handle behind
+        one lock acquire, instead of each call paying the lock + open cost.
+        See the engine's ``read_scope`` for the full contract.
+        """
+        return self._engine.read_scope()
+
+    def write_scope(self):
+        """Open a batched write scope on the underlying engine.
+
+        Inside the block every decorated read or write call reuses one handle.
+        Emits a warning on exit if the scope was opened but no actual write
+        happened. See the engine's ``write_scope`` for the full contract.
+        """
+        return self._engine.write_scope()
+
     @property
     def root_slug(self):
         return self._engine.root_slug

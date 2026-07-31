@@ -7,13 +7,11 @@ class MockedWindowController:
     def __init__(self, comm=None, master=0):
         from . import MPI
 
-        self._comm = comm
         if comm is None:
-            self._size = MPI.get_size()
-            self._rank = MPI.get_rank()
-        else:
-            self._size = comm.Get_size()
-            self._rank = comm.Get_rank()
+            comm = MPI
+        self._comm = comm
+        self._size = comm.get_size()
+        self._rank = comm.get_rank()
         self._master = master
         self._mocked = True
         self._closed = False

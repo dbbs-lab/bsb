@@ -89,7 +89,7 @@ class TestModelBuilding(SchematicsFixture, unittest.TestCase):
     def test_arbor_build_mech_painting(self):
         decor = get_decor(self.schematic)
         pas = [
-            (label, mech.mech.values)
+            (label, dict(mech.mech.values))
             for label, mech in decor.paintings()
             if isinstance(mech, arbor.density) and mech.mech.name == "pas"
         ]

@@ -38,7 +38,9 @@ test = [
   "bsb-arbor~=7.0",
   "bsb-otel[sdk]~=7.2",
   "coverage~=7.0",
-  "nestml~=8.3.0rc2"
+  # Builds the minimal extension module in test_nestml_module; must match the
+  # NEST version under test (the test skips if the build is unavailable).
+  "nestml~=8.3.0"
 ]
 docs = [ "furo~=2024.0", "sphinxext-bsb~=7.0" ]
 dev = [ "pre-commit~=3.5", "snakeviz~=2.1", "ruff>=0.8.2" ]

@@ -40,11 +40,11 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ env.NEST_FOLDER }}
-          key: ${{ runner.os }}-3.12-nest-${{ env.NEST_VERSION }}
+          key: ${{ runner.os }}-3.14-nest-${{ env.NEST_VERSION }}
 
       - name: Run unittests
         run: |
           ./nx run examples:test
         env:
-          UV_PYTHON: 3.12
+          UV_PYTHON: 3.14
           BSB_QUIET: true

@@ -36,4 +36,4 @@ jobs:
           fi
           ./nx affected -t lint --base=$NX_BASE --head=HEAD
         env:
-          UV_PYTHON: 3.12
+          UV_PYTHON: 3.14

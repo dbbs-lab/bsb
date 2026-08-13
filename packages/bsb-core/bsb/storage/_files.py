@@ -6,6 +6,7 @@ import datetime as _dt
 import email.utils as _eml
 import functools as _ft
 import hashlib as _hl
+import importlib.util
 import os
 import pathlib as _pl
 import tempfile as _tf
@@ -407,6 +408,44 @@ class FileDependencyNode:
         return self.file.get_stored_file()
 
 
+def _looks_like_code_file_path(module: str) -> bool:
+    """
+    Heuristic to tell a filesystem path apart from a dotted Python import string, for
+    :class:`CodeDependencyNode`'s ``module`` field: it's a path if it contains a path
+    separator, or already ends in a ``.py`` extension. A plain dotted string like
+    ``"my_package.my_module"`` has neither.
+    """
+    return (
+        os.sep in module
+        or (os.altsep is not None and os.altsep in module)
+        or "/" in module
+        or module.endswith(".py")
+    )
+
+
+def _resolve_code_module_path(module: str) -> str:
+    """
+    Resolve a :class:`CodeDependencyNode` ``module`` value (a path to a python file, or
+    an import-like string) to an absolute file path.
+    """
+    if _looks_like_code_file_path(module):
+        # A path to a python file, relative to the current working directory
+        # (or already absolute).
+        return os.path.abspath(os.path.join(os.getcwd(), module))
+    # A dotted Python import string (e.g. "my_package.my_module"): resolve it through
+    # the regular import machinery, so it is found regardless of the current working
+    # directory. This is essential for modules that live inside an installed package,
+    # where guessing a path relative to the working directory generally doesn't work.
+    try:
+        spec = importlib.util.find_spec(module)
+    except (ImportError, ValueError):
+        spec = None
+    if spec is not None and spec.origin is not None:
+        return spec.origin
+    # Not importable either: fall back to a relative-path guess.
+    return os.path.abspath(os.path.join(os.getcwd(), module.replace(".", os.sep) + ".py"))
+
+
 @config.node
 class CodeDependencyNode(FileDependencyNode, classmap_entry="code"):
     """
@@ -428,12 +467,7 @@ class CodeDependencyNode(FileDependencyNode, classmap_entry="code"):
             file_store = self.scaffold.files
         else:
             file_store = None
-        if os.path.isfile(self.module):
-            # Convert potential relative path to absolute path
-            module_file = os.path.abspath(os.path.join(os.getcwd(), self.module))
-        else:
-            # Module like string converted to a path string relative to current folder
-            module_file = "./" + self.module.replace(".", os.sep) + ".py"
+        module_file = _resolve_code_module_path(self.module)
         return FileDependency(module_file, file_store=file_store)
 
     def __init__(self, module=None, **kwargs):

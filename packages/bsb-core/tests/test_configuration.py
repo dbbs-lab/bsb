@@ -6,6 +6,7 @@ import os.path
 import pathlib
 import pickle
 import sys
+import tempfile
 import unittest
 
 import numpy as np
@@ -1501,6 +1502,39 @@ class TestTypes(unittest.TestCase):
             _parent=TestRoot(),
         )
         self.assertEqual(b.c.load_object(), module.tree)
+
+    def test_code_dependency_node_installed_module(self):
+        # Regression test: a dotted import string pointing to a module of an
+        # installed package (i.e. not located relative to the current working
+        # directory) must be resolved through the import machinery, instead of
+        # being naively guessed as a path relative to `cwd`.
+        @config.node
+        class Test:
+            c = config.attr(type=CodeDependencyNode)
+
+        import bsb_test.configs as installed_module
+
+        expected_path = os.path.abspath(installed_module.__file__)
+        expected_uri = pathlib.Path(expected_path).as_uri()
+        old_cwd = os.getcwd()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            os.chdir(tmpdir)
+            try:
+                b = Test(
+                    c="bsb_test.configs",
+                    _parent=TestRoot(),
+                )
+                self.assertEqual(
+                    b.c.file.uri,
+                    expected_uri,
+                    "module-like string should resolve through the import "
+                    "machinery, not a path guess relative to cwd",
+                )
+                loaded = b.c.load_object()
+                self.assertEqual(os.path.abspath(loaded.__file__), expected_path)
+                self.assertTrue(hasattr(loaded, "get_test_config_module"))
+            finally:
+                os.chdir(old_cwd)
 
 
 @config.dynamic(

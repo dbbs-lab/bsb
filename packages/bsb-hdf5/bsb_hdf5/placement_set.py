@@ -285,7 +285,7 @@ class PlacementSet(
         if not isinstance(chunk, Chunk):
             chunk = Chunk(chunk, None)
         if positions is not None:
-            positions = np.array(positions, copy=False)
+            positions = np.asarray(positions)
         if count is not None:
             if not (positions is None and morphologies is None):
                 raise ValueError(
@@ -345,20 +345,20 @@ class PlacementSet(
 
     @handles_handles("a")
     def label_by_mask(self, labels, mask, handle=HANDLED):
-        cells = np.array(mask, copy=False)
+        cells = np.asarray(mask)
         if cells.dtype != bool or len(cells) != len(self):
             raise LabellingError("Mask doesn't fit data.")
         self.label(labels, np.where(cells)[0], handle=handle)
 
     @handles_handles("a")
     def remove_labels_by_mask(self, labels, mask, handle=HANDLED):
-        cells = np.array(mask, copy=False)
+        cells = np.asarray(mask)
         if cells.dtype != bool or len(cells) != len(self):
             raise LabellingError("Mask doesn't fit data.")
         self.remove_labels(labels, np.where(cells)[0], handle=handle)
 
     def _check_cell_ids(self, cells):
-        cells = np.array(cells, copy=False)
+        cells = np.asarray(cells)
         len_ = len(self)
         oob = (cells >= len_) + (cells < 0)
         if np.any(oob):

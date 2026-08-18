@@ -529,7 +529,7 @@ class CSIterator:
 
 
 def _point_to_2d(arr):
-    arr = np.array(arr, copy=False, dtype=int)
+    arr = np.asarray(arr, dtype=int)
     if arr.ndim == 1:
         ret = np.full((len(arr), 3), -1)
         ret[:, 0] = arr

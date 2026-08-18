@@ -19,6 +19,7 @@ from .connectivity_set import ConnectivitySet
 from .file_store import FileStore
 from .morphology_repository import MorphologyRepository
 from .placement_set import PlacementSet
+from .resource import _push_scope
 
 __all__ = [
     "ConnectivitySet",
@@ -141,8 +142,12 @@ class HDF5Engine(Engine):
 
     @staticmethod
     def recognizes(root, comm):
-        lock = MPILock.sync(comm)
-        with lock.read():
+        # Close the controller on exit instead of leaking it: every storage
+        # probe creates one, and a leaked controller keeps a progress-pump
+        # thread (and its background MPI traffic) alive for the whole process.
+        # `recognizes` runs symmetrically on every rank, so the collective
+        # window free in close() is safe here.
+        with MPILock.sync(comm) as lock, lock.read():
             try:
                 h5py.File(root, "r").close()
                 return True
@@ -165,6 +170,36 @@ class HDF5Engine(Engine):
             raise OSError("Can't perform write operations in readonly mode.")
         else:
             return self._lock.single_write()
+
+    def read_scope(self):
+        """Open a single read handle and hold it for the duration of the
+        block.
+
+        Any ``@handles_handles("r")`` call inside this scope reuses the
+        handle automatically: no extra mpilock acquires, no extra
+        ``h5py.File`` opens. Use to batch many top-level decorated reads
+        behind one lock. A ``@handles_handles("a")`` call inside a read scope
+        is legal (mpilock promotes for that one call) but emits
+        :class:`bsb_hdf5.resource.PromotedHandleWarning` unless silenced with
+        ``promote_from_read=True`` at the call site.
+
+        Returns a context manager yielding the open ``h5py.File`` handle.
+        """
+        return _push_scope(self, "r")
+
+    def write_scope(self):
+        """Open a single write handle and hold it for the duration of the
+        block.
+
+        Any ``@handles_handles("r")`` or ``@handles_handles("a")`` call
+        inside this scope reuses the handle automatically. A write scope
+        held without any actual write happening inside emits
+        :class:`bsb_hdf5.resource.UnusedWriteScopeWarning` on exit (the
+        write lock blocks the rest of the cluster while held).
+
+        Returns a context manager yielding the open ``h5py.File`` handle.
+        """
+        return _push_scope(self, "a")
 
     def _handle(self, mode):
         if self._readonly and mode != "r":

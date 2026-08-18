@@ -184,10 +184,7 @@ class TestVoxelSet(NumpyTestCase, unittest.TestCase):
             _unb_size = VoxelSet([[1, 0, 1]], [1, 1, 1, 1])
 
     def test_ragged(self):
-        with (
-            self.assertRaises(ValueError),
-            self.assertWarns(np.VisibleDeprecationWarning),
-        ):
+        with self.assertRaises(ValueError):
             _ragged = VoxelSet([[1, 0, 1], [1, 1]], [1, 1, 1, 1])
 
     def test_get_size(self):

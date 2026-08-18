@@ -1,13 +1,18 @@
+import os
+import shutil
+import tempfile
 import unittest
 
 import numpy as np
-from bsb_arbor import SpikeRecorder
+from bsb_arbor import ArborSimulation, SpikeRecorder
 from bsb_test import FixedPosConfigFixture, NumpyTestCase, RandomStorageFixture
+from neo import io
 
 from bsb import (
     MPI,
     AttributeMissingError,
     Scaffold,
+    SimulationResult,
     config,
     get_simulation_adapter,
     options,
@@ -299,6 +304,8 @@ class SpikeController(
     def implement(self, adapter, simulation, simdata):
         super().implement(adapter, simulation, simdata)
         self._simdata = simdata
+        # Reset the checkpoint counter per run so a reused simulation re-checkpoints.
+        self._status = 0
 
     def get_next_checkpoint(self):
         return self._status + self.step
@@ -312,7 +319,6 @@ class SpikeController(
         return self._status
 
 
-@unittest.skipIf(MPI.get_size() > 1, "Skipped during parallel testing.")
 class TestAdapterControllers(
     FixedPosConfigFixture,
     RandomStorageFixture,
@@ -396,6 +402,7 @@ class TestAdapterControllers(
         self.network = Scaffold(self.cfg, self.storage)
         self.network.compile()
 
+    @unittest.skipIf(MPI.get_size() > 1, "Skipped during parallel testing.")
     def test_controller_registration(self):
         self.network.simulations.test.devices["rec_15"] = dict(
             device="spike_controller",
@@ -427,6 +434,7 @@ class TestAdapterControllers(
             "Only rec_15 device should be registered",
         )
 
+    @unittest.skipIf(MPI.get_size() > 1, "Skipped during parallel testing.")
     def test_registration_of_listener(self):
         self.network.simulations.test.devices["rec_15"] = dict(
             device="spike_controller",
@@ -451,6 +459,7 @@ class TestAdapterControllers(
             "The first controller should be the listener",
         )
 
+    @unittest.skipIf(MPI.get_size() > 1, "Skipped during parallel testing.")
     def test_incorrect_controller(self):
         @config.node
         class RottenController(
@@ -479,6 +488,7 @@ class TestAdapterControllers(
         with self.assertRaises(AttributeMissingError):
             adapter.prepare(sim)
 
+    @unittest.skipIf(MPI.get_size() > 1, "Skipped during parallel testing.")
     def test_record_checkpoint(self):
         """Create a test with an AdapterController that flushes every 10 steps,
         so with a simulation of 100 of duration it will create 10 segments plus
@@ -516,6 +526,7 @@ class TestAdapterControllers(
             "Spike times in segment 6 fall outside the expected range (60–70).",
         )
 
+    @unittest.skipIf(MPI.get_size() > 1, "Skipped during parallel testing.")
     def test_two_controllers(self):
         """Test two AdapterController instances together, one configured with 15 steps
         and the other with 40 steps, it will flush at [ 15,30,40,45,60,75,80,90].
@@ -563,3 +574,167 @@ class TestAdapterControllers(
             & (segments[-1].spiketrains[0].magnitude < 100),
             "Spike times in last segment fall outside the expected range (90-100).",
         )
+
+    def _tmp_nio(self):
+        tmpdir = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, tmpdir, ignore_errors=True)
+        return os.path.join(tmpdir, "results.nio")
+
+    @unittest.skipIf(MPI.get_size() > 1, "Skipped during parallel testing.")
+    def test_multiple_runs_append_blocks(self):
+        """Two differently-named simulations streamed to one file become two separate,
+        independent blocks, each with its own checkpoint segments."""
+        self.network.simulations.test.devices["new_recorder"] = dict(
+            device="spike_controller",
+            targetting={"strategy": "cell_model", "cell_models": ["test_cell"]},
+            step=10,
+        )
+        sim_2 = dict(
+            simulator="arbor",
+            duration=50,
+            resolution=0.5,
+            cell_models={
+                "test_cell": {
+                    "model_strategy": "lif",
+                    "constants": {
+                        "C_m": 250,
+                        "tau_m": 20,
+                        "t_ref": 2.0,
+                        "E_L": 0.0,
+                        "E_R": 0.0,
+                        "V_m": 0.0,
+                        "V_th": 20,
+                    },
+                },
+                "h_cell": {
+                    "model_strategy": "lif",
+                    "constants": {
+                        "C_m": 250,
+                        "tau_m": 20,
+                        "t_ref": 2.0,
+                        "E_L": 0.0,
+                        "E_R": 0.0,
+                        "V_m": 0.0,
+                        "V_th": 20,
+                    },
+                },
+            },
+            connection_models={
+                "test_to_h_cell": {"weight": 20.68015524367846, "delay": 1.5}
+            },
+            devices=dict(
+                pg={
+                    "device": "poisson_generator",
+                    "rate": 1600,
+                    "targetting": {"strategy": "all"},
+                    "weight": 2000,
+                    "delay": 1.5,
+                },
+                new_recorder=dict(
+                    device="spike_controller",
+                    targetting={"strategy": "cell_model", "cell_models": ["test_cell"]},
+                    step=10,
+                ),
+            ),
+        )
+        self.network.simulations["sim_2"] = ArborSimulation(sim_2)
+
+        nio_file = self._tmp_nio()
+        self.network.run_simulation("test", output_filename=nio_file)
+        self.network.run_simulation("sim_2", output_filename=nio_file)
+
+        blocks = {b.name: b for b in io.NixIO(nio_file, "ro").read_all_blocks()}
+        self.assertEqual(set(blocks), {"test", "sim_2"}, "Expected one block per sim")
+        # test: step 10 / duration 100 -> 10 + 1 final = 11 segments
+        self.assertEqual(len(blocks["test"].segments), 11)
+        # sim_2: step 10 / duration 50 -> 5 + 1 final = 6 segments
+        self.assertEqual(len(blocks["sim_2"].segments), 6)
+
+    @unittest.skipIf(MPI.get_size() > 1, "Skipped during parallel testing.")
+    def test_rerun_same_name_does_not_overwrite(self):
+        """Re-running the same simulation into one file appends a new block instead of
+        overwriting the first; both blocks survive intact with distinct storage keys."""
+        self.network.simulations.test.devices["new_recorder"] = dict(
+            device="spike_controller",
+            targetting={"strategy": "cell_model", "cell_models": ["test_cell"]},
+            step=10,
+        )
+        nio_file = self._tmp_nio()
+        self.network.run_simulation("test", output_filename=nio_file)
+        self.network.run_simulation("test", output_filename=nio_file)
+
+        blocks = io.NixIO(nio_file, "ro").read_all_blocks()
+        self.assertEqual(len(blocks), 2, "Re-run must append a block, not overwrite")
+        self.assertEqual([b.name for b in blocks], ["test", "test"], "Label repeats")
+        self.assertEqual(
+            len({b.annotations["nix_name"] for b in blocks}),
+            2,
+            "Each run must get a unique storage key",
+        )
+        self.assertEqual(
+            sorted(b.annotations["run_index"] for b in blocks),
+            [0, 1],
+            "run_index must increment per same-named run",
+        )
+        # Each run resets its checkpoint controller, so both blocks keep the full 10
+        # checkpoint flushes + 1 final = 11 segments; neither run overwrote the other.
+        self.assertEqual(
+            [len(b.segments) for b in blocks],
+            [11, 11],
+            "Both runs must keep their own 11 segments",
+        )
+
+    def test_RAM_usage(self):
+        """
+        This test writes over 7 GB of data in 60 segments of 120 MB each.
+
+        It checks that peak memory usage never exceeds 500 MB.
+        If PLOT_GRAPH is set to True, it will also plot the graph of memory
+        after every flush.
+        """
+        import os
+        import tracemalloc
+
+        from neo import AnalogSignal
+        from quantities import ms
+
+        tracemalloc.start()
+        PLOT_GRAPH = False
+        MB = 1024 * 1024
+        total_threshold = 500
+        rank = MPI.get_rank()
+
+        sim = self.network.simulations.test
+        nio_file = "out" + str(rank) + ".nio"
+        my_result = SimulationResult(sim, nio_file)
+
+        def my_flush(segment):
+            # Creates a signal of 120 MB
+            signal = np.ones(15 * MB)
+            segment.analogsignals.append(
+                AnalogSignal(signal, sampling_period=0.1 * ms, units="mV")
+            )
+
+        my_result.create_recorder(my_flush)
+        num_samples = 60
+        mem_size = np.zeros(num_samples)
+        for _sample in range(num_samples):
+            my_result.flush()
+            mem_size_after, mem_peak = tracemalloc.get_traced_memory()
+            mem_size[_sample] = mem_size_after / MB
+
+        _, mem_peak = tracemalloc.get_traced_memory()
+
+        if PLOT_GRAPH:
+            import matplotlib.pyplot as plt
+
+            plt.plot(mem_size)
+
+            plt.xlabel("step")
+            plt.ylabel("Mem Size")
+            plt.ylim(0, 400)
+
+            plt.grid(True)
+            plt.show()
+        self.assertLess(mem_peak / MB, total_threshold)
+        os.remove("out" + str(rank) + ".nio")

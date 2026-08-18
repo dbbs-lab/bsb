@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "arborize"
-version = "7.4.0"
+version = "7.6.0"
 readme = "README.md"
 requires-python = ">=3.10,<4"
 dynamic = [ "description" ]
@@ -12,10 +12,10 @@ classifiers = [
   "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"
 ]
 dependencies = [
-  "numpy~=1.21",
+  "numpy>=1.21",
   "errr~=1.2",
   "morphio>=3.3.6,<4",
-  "bsb-core~=7.0"
+  "bsb-core~=7.4"
 ]
 
   [[project.authors]]
@@ -29,7 +29,7 @@ dependencies = [
   parallel = [ "mpi4py~=4.1.0" ]
   bluepyopt = [ "bluepyopt~=1.14", "dill>=0.3.8" ]
   neuron = [ "nrn-patch~=7.0", "nmodl-glia[neuron]~=7.0" ]
-  arbor = [ "arbor==0.11", "nmodl-glia[arbor]~=7.0" ]
+  arbor = [ "arbor~=0.12", "nmodl-glia[arbor]~=7.0" ]
 
 [dependency-groups]
 docs = [

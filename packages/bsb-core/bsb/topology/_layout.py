@@ -79,9 +79,9 @@ class PartitionData(abc.ABC):
 class RhomboidData(PartitionData):
     def __init__(self, ldc, mdc):
         # Least dominant corner
-        self.ldc = np.array(ldc, dtype=float, copy=False)
+        self.ldc = np.asarray(ldc, dtype=float)
         # Most dominant corner
-        self.mdc = np.array(mdc, dtype=float, copy=False)
+        self.mdc = np.asarray(mdc, dtype=float)
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.ldc}, {self.mdc})"

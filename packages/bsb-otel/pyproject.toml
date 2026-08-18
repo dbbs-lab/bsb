@@ -4,14 +4,14 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "bsb-otel"
-version = "7.4.0"
+version = "7.6.0"
 readme = "README.md"
 requires-python = ">=3.10,<4"
 dynamic = [ "description" ]
 classifiers = [
   "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"
 ]
-dependencies = [ "bsb-core~=7.2", "opentelemetry-api~=1.0" ]
+dependencies = [ "bsb-core~=7.4", "opentelemetry-api~=1.0" ]
 
   [project.optional-dependencies]
   sdk = [
@@ -50,7 +50,7 @@ bsb_jsonlines = "bsb_otel._distro:BsbJsonlinesConfigurator"
 [dependency-groups]
 test = [
   "bsb-core[parallel]",
-  "bsb-test~=7.0",
+  "bsb-test~=7.4",
   "coverage>=7.3",
   "opentelemetry-sdk~=1.0"
 ]

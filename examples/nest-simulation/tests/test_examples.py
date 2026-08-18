@@ -62,7 +62,7 @@ class TestNestExamples(
         self.scaffold.compile()
         self._test_scaffold_results()
         results = self.scaffold.run_simulation("basal_activity")
-        self._test_simulation_results(results.spiketrains)
+        self._test_simulation_results(results.block.segments[0].spiketrains)
 
     def test_yaml_example(self):
         self.cfg = parse_configuration_file(
@@ -72,7 +72,7 @@ class TestNestExamples(
         self.scaffold.compile()
         self._test_scaffold_results()
         results = self.scaffold.run_simulation("basal_activity")
-        self._test_simulation_results(results.spiketrains)
+        self._test_simulation_results(results.block.segments[0].spiketrains)
 
     def test_python_example(self):
         import scripts.guide_nest  # noqa: F401

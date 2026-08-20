@@ -131,7 +131,8 @@ fn locs_to_array<'py>(py: Python<'py>, locs: &[[i64; 3]]) -> Bound<'py, PyArray2
 #[pyfunction]
 #[pyo3(signature = (
     lib_p, lib_q, lib_radius, lib_branch, lib_point, lib_offsets,
-    pre_morpho, pre_rot, pre_pos, post_morpho, post_rot, post_pos,
+    pre_morpho, pre_rot, pre_pos, pre_ids,
+    post_morpho, post_rot, post_pos, post_ids,
     contact, favor = "pre", affinity = 1.0, seed = 0
 ))]
 #[allow(clippy::too_many_arguments)]
@@ -146,9 +147,11 @@ fn connect_segments<'py>(
     pre_morpho: PyReadonlyArray1<i64>,
     pre_rot: PyReadonlyArray3<f64>,
     pre_pos: PyReadonlyArray2<f64>,
+    pre_ids: PyReadonlyArray1<i64>,
     post_morpho: PyReadonlyArray1<i64>,
     post_rot: PyReadonlyArray3<f64>,
     post_pos: PyReadonlyArray2<f64>,
+    post_ids: PyReadonlyArray1<i64>,
     contact: f64,
     favor: &str,
     affinity: f64,
@@ -167,15 +170,24 @@ fn connect_segments<'py>(
         build_library(&lib_p, &lib_q, &lib_radius, &lib_branch, &lib_point, &lib_offsets);
     let (pre_m, pre_r, pre_p) = build_instances(&pre_morpho, &pre_rot, &pre_pos);
     let (post_m, post_r, post_p) = build_instances(&post_morpho, &post_rot, &post_pos);
+    let pre_i = pre_ids.as_slice()?;
+    let post_i = post_ids.as_slice()?;
+    if pre_i.len() != pre_m.len() || post_i.len() != post_m.len() {
+        return Err(PyValueError::new_err(
+            "pre_ids/post_ids must have one id per cell",
+        ));
+    }
     let pre = Instances {
         morpho: &pre_m,
         rot: &pre_r,
         pos: &pre_p,
+        ids: pre_i,
     };
     let post = Instances {
         morpho: &post_m,
         rot: &post_r,
         pos: &post_p,
+        ids: post_i,
     };
     // Release the GIL for the heavy, Python-free computation.
     let (a, b) = py.allow_threads(|| {

@@ -2,6 +2,7 @@ import itertools
 import zlib
 
 import numpy as np
+from bsb_native import poisson_disk
 
 from .. import config
 from ..storage._chunks import Chunk
@@ -26,10 +27,10 @@ class PoissonDiskPlacement(PlacementStrategy):
     treated as an upper bound on how many cells are placed. If you need an exact
     count rather than a spacing guarantee, use :class:`RandomPlacement`.
 
-    Chunks are sampled independently with a deterministic per-chunk seed, so the
-    minimum-distance guarantee holds within a chunk; it can be violated right at
-    chunk borders. A seamless cross-chunk mode (a neighbour halo with colored
-    wavefront scheduling) is planned.
+    Each chunk is sampled with a deterministic per-chunk seed. With ``seamless``
+    on, already-placed neighbouring chunks are read back as a fixed halo, so the
+    minimum distance holds across chunk borders as well as inside them; with it
+    off, chunks are sampled independently and the guarantee stops at the border.
 
     :param min_distance: minimum distance between somas. If omitted, it is
         derived from the indicated count and the region volume, and never goes
@@ -37,6 +38,10 @@ class PoissonDiskPlacement(PlacementStrategy):
     :param tries: Bridson attempts per active sample.
     :param seed: base seed, combined with the chunk coordinates and cell-type
         name for reproducibility.
+    :param seamless: enforce ``min_distance`` across chunk borders too, by
+        scheduling chunks in eight non-adjacent colour waves and seeding each
+        chunk with its already-placed neighbours. Turning it off drops the
+        cross-border guarantee, but lets every chunk be placed in parallel.
     """
 
     min_distance = config.attr(type=float, required=False)
@@ -81,10 +86,6 @@ class PoissonDiskPlacement(PlacementStrategy):
             )
 
     def place(self, chunk, indicators):
-        # Lazily import the compiled kernel: bsb-core stays importable without
-        # the bsb-native wheel; only running this strategy requires it.
-        from bsb_native import poisson_disk
-
         voxels = VoxelSet.concatenate(
             *(p.chunk_to_voxels(chunk) for p in self.partitions)
         )

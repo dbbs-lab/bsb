@@ -22,6 +22,9 @@ pub struct Instances<'a> {
     pub rot: &'a [Mat3],
     /// Per cell: position.
     pub pos: &'a [Vec3],
+    /// Per cell: stable network-wide id. Keys the affinity RNG, so subsampling
+    /// follows the cell rather than its offset in this job's arrays.
+    pub ids: &'a [i64],
 }
 
 impl Instances<'_> {
@@ -61,7 +64,8 @@ fn subsample(cands: &mut Vec<usize>, affinity: f64, rng: &mut Rng) {
 /// row per contact, aligned so row `i` of each is the two ends of one contact.
 ///
 /// `affinity` in `[0, 1]` keeps that random fraction of each query cell's
-/// candidate partners (1.0 = no subsampling); `seed` makes that reproducible.
+/// candidate partners (1.0 = no subsampling); `seed`, mixed with the query
+/// cell's id, makes that reproducible across chunkings and thread schedules.
 pub fn connect_segments(
     library: &[Vec<Segment>],
     pre: &Instances,
@@ -131,10 +135,12 @@ pub fn connect_segments(
 
             let mut candidates = tlas.query_aabb(&qbox);
             if affinity < 1.0 && !candidates.is_empty() {
-                // Per-query RNG keyed on (seed, qi) so subsampling is
-                // reproducible and independent of thread scheduling.
-                let mut rng =
-                    Rng::seeded(seed ^ (qi as u64).wrapping_mul(0x9E3779B97F4A7C15));
+                // Per-query RNG keyed on (seed, cell id) so subsampling is
+                // reproducible and independent of thread scheduling, and of how
+                // the network is split into chunks.
+                let mut rng = Rng::seeded(
+                    seed ^ (queries.ids[qi] as u64).wrapping_mul(0x9E3779B97F4A7C15),
+                );
                 subsample(&mut candidates, affinity, &mut rng);
             }
 
@@ -260,15 +266,19 @@ mod tests {
         let post_m = [1u32, 0];
         let post_r = [ID, ID];
         let post_p = [[2.2, 0.2, 0.0], [0.2, 0.2, 0.0]];
+        let pre_i = [0i64, 1, 2];
+        let post_i = [3i64, 4];
         let pre = Instances {
             morpho: &pre_m,
             rot: &pre_r,
             pos: &pre_p,
+            ids: &pre_i,
         };
         let post = Instances {
             morpho: &post_m,
             rot: &post_r,
             pos: &post_p,
+            ids: &post_i,
         };
         let contact = 0.5;
 
@@ -286,6 +296,59 @@ mod tests {
     }
 
     #[test]
+    fn affinity_follows_cell_id_not_array_offset() {
+        // The same cell must keep the same partners no matter where it sits in
+        // the query arrays, so a run reproduces under a different chunking.
+        let library = vec![vec![seg([-2., 0., 0.], [2., 0., 0.], 0.2, 0, 0)]];
+        let n_targets = 40;
+        let t_m = vec![0u32; n_targets];
+        let t_r = vec![ID; n_targets];
+        let t_p: Vec<Vec3> = (0..n_targets).map(|i| [0.0, i as f64 * 0.1, 0.0]).collect();
+        let t_i: Vec<i64> = (0..n_targets as i64).collect();
+        let targets = Instances {
+            morpho: &t_m,
+            rot: &t_r,
+            pos: &t_p,
+            ids: &t_i,
+        };
+        // Cell 7 alone, then the same cell trailing another one: its offset in
+        // the arrays changes, its id does not.
+        let pos = [0.0, 2.0, 0.0];
+        let alone = Instances {
+            morpho: &[0u32],
+            rot: &[ID],
+            pos: &[pos],
+            ids: &[7i64],
+        };
+        let trailing = Instances {
+            morpho: &[0u32, 0],
+            rot: &[ID, ID],
+            pos: &[[0.0, 3.0, 0.0], pos],
+            ids: &[5i64, 7],
+        };
+        // Compare *which* targets are kept, not how many: for an even candidate
+        // count the kept count is fixed, so only the identities discriminate.
+        let partners_of = |q: &[[i64; 3]], t: &[[i64; 3]], offset: i64| {
+            q.iter()
+                .zip(t.iter())
+                .filter(|(ql, _)| ql[0] == offset)
+                .map(|(_, tl)| tl[0])
+                .collect::<std::collections::HashSet<_>>()
+        };
+        let (qa, ta) =
+            connect_segments(&library, &alone, &targets, 5.0, Favor::Post, 0.5, 99);
+        let (qb, tb) =
+            connect_segments(&library, &trailing, &targets, 5.0, Favor::Post, 0.5, 99);
+        let kept_a = partners_of(&qa, &ta, 0);
+        let kept_b = partners_of(&qb, &tb, 1);
+        assert!(!kept_a.is_empty(), "test is vacuous if nothing was kept");
+        assert_eq!(
+            kept_a, kept_b,
+            "cell 7 subsampled differently after moving in the query array"
+        );
+    }
+
+    #[test]
     fn affinity_subsamples() {
         // A query cell overlapping many target cells; affinity should thin the
         // partners. One query morphology, many target instances around it.
@@ -294,18 +357,22 @@ mod tests {
         let t_m = vec![0u32; n_targets];
         let t_r = vec![ID; n_targets];
         let t_p: Vec<Vec3> = (0..n_targets).map(|i| [0.0, i as f64 * 0.1, 0.0]).collect();
+        let t_i: Vec<i64> = (0..n_targets as i64).collect();
         let targets = Instances {
             morpho: &t_m,
             rot: &t_r,
             pos: &t_p,
+            ids: &t_i,
         };
         let q_m = [0u32];
         let q_r = [ID];
         let q_p = [[0.0, 2.0, 0.0]];
+        let q_i = [1000i64];
         let queries = Instances {
             morpho: &q_m,
             rot: &q_r,
             pos: &q_p,
+            ids: &q_i,
         };
         let full =
             connect_segments(&library, &queries, &targets, 5.0, Favor::Post, 1.0, 0)

@@ -24,9 +24,11 @@ def connect_segments(
     pre_morpho: NDArray[np.int64],
     pre_rot: NDArray[np.float64],
     pre_pos: NDArray[np.float64],
+    pre_ids: NDArray[np.int64],
     post_morpho: NDArray[np.int64],
     post_rot: NDArray[np.float64],
     post_pos: NDArray[np.float64],
+    post_ids: NDArray[np.int64],
     contact: float,
     favor: str = ...,
     affinity: float = ...,
@@ -37,9 +39,10 @@ def connect_segments(
     The morphology library is passed as flat per-segment arrays (``lib_*``) plus
     ``lib_offsets`` (length ``M+1``) delimiting each morphology's segment range.
     Each population is given as instances: a per-cell ``morpho`` index into the
-    library, a per-cell ``(N, 3, 3)`` rotation matrix, and a per-cell ``(N, 3)``
-    position. ``favor`` (``"pre"`` or ``"post"``) selects which side builds the
-    trees; ``affinity`` keeps that random fraction of each query cell's candidate
-    partners (``seed`` makes it reproducible). Returns ``(pre_locs, post_locs)``,
-    each an ``(K, 3)`` int64 array of ``[cell, branch, point]`` triples aligned
-    row-by-row, one per contact."""
+    library, a per-cell ``(N, 3, 3)`` rotation matrix, a per-cell ``(N, 3)``
+    position, and a per-cell stable ``id``. ``favor`` (``"pre"`` or ``"post"``)
+    selects which side builds the trees; ``affinity`` keeps that random fraction
+    of each query cell's candidate partners, reproducibly from ``seed`` mixed with
+    that cell's id. Returns ``(pre_locs, post_locs)``, each an ``(K, 3)`` int64
+    array of ``[cell, branch, point]`` triples aligned row-by-row, one per
+    contact."""

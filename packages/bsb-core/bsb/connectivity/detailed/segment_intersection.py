@@ -1,4 +1,5 @@
 import numpy as np
+from bsb_native import connect_segments
 
 from ... import config
 from ...config import types
@@ -28,10 +29,14 @@ class SegmentIntersection(Intersectional, ConnectionStrategy):
         which two segments form a contact.
     :param favor_cache: build the segment trees on the ``pre`` or ``post`` side;
         favor the side with fewer unique morphologies.
+    :param seed: base seed for the ``affinity`` subsampling. It is combined with
+        each cell's id, so a run is reproducible regardless of how the network is
+        chunked or how the jobs are scheduled. Unused when ``affinity`` is 1.
     """
 
-    contact_distance = config.attr(type=float, default=0.0)
+    contact_distance = config.attr(type=types.float(min=0), default=0.0)
     favor_cache = config.attr(type=types.in_(["pre", "post"]), default="pre")
+    seed = config.attr(type=int, required=False)
 
     def connect(self, pre, post):
         for pre_set in pre.placement:
@@ -39,10 +44,6 @@ class SegmentIntersection(Intersectional, ConnectionStrategy):
                 self._connect_sets(pre_set, post_set)
 
     def _connect_sets(self, pre_set, post_set):
-        # Lazily import the compiled kernel: bsb-core stays importable without
-        # the bsb-native wheel; only running this strategy requires it.
-        from bsb_native import connect_segments
-
         pre_ms = self.presynaptic.morpho_loader(pre_set)
         post_ms = self.postsynaptic.morpho_loader(post_set)
         library, pre_idx, post_idx = _build_library(pre_ms, post_ms)
@@ -66,13 +67,15 @@ class SegmentIntersection(Intersectional, ConnectionStrategy):
             pre_idx,
             _rotation_matrices(pre_set),
             pre_pos,
+            np.ascontiguousarray(pre_set.load_ids(), dtype=np.int64),
             post_idx,
             _rotation_matrices(post_set),
             post_pos,
+            np.ascontiguousarray(post_set.load_ids(), dtype=np.int64),
             self.contact_distance,
             self.favor_cache,
             self.affinity,
-            0,
+            0 if self.seed is None else int(self.seed),
         )
         if len(pre_locs):
             self.connect_cells(pre_set, post_set, pre_locs, post_locs)

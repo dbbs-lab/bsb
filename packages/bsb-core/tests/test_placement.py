@@ -747,16 +747,6 @@ class VoxelParticleTest(Partition, classmap_entry="test"):
     surface = volume = scale = translate = rotate = lambda self, smth: 5
 
 
-def _has_bsb_native():
-    try:
-        import bsb_native  # noqa: F401
-
-        return True
-    except ImportError:
-        return False
-
-
-@unittest.skipUnless(_has_bsb_native(), "requires the bsb-native compiled kernels")
 class TestPoissonDiskPlacement(
     RandomStorageFixture, unittest.TestCase, engine_name="hdf5"
 ):

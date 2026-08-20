@@ -1100,16 +1100,6 @@ class TestOutputNamingConnect(
             self.network.connectivity.x.connect_cells(ps_pre, ps_post, [], [])
 
 
-def _has_bsb_native():
-    try:
-        import bsb_native  # noqa: F401
-
-        return True
-    except ImportError:
-        return False
-
-
-@unittest.skipUnless(_has_bsb_native(), "requires the bsb-native compiled kernels")
 class TestSegmentIntersection(
     RandomStorageFixture,
     NetworkFixture,

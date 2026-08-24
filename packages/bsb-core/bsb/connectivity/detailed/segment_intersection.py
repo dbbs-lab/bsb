@@ -23,7 +23,8 @@ class SegmentIntersection(Intersectional, ConnectionStrategy):
     chunks a job loads.
 
     Emits the same ``[cell, branch, point]`` location triples as
-    :class:`VoxelIntersection`, so the two are interchangeable.
+    :class:`~bsb.connectivity.detailed.voxel_intersection.VoxelIntersection`, so
+    the two are interchangeable.
 
     :param contact_distance: distance, on top of the two segment radii, within
         which two segments form a contact.

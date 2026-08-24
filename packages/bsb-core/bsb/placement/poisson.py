@@ -25,7 +25,8 @@ class PoissonDiskPlacement(PlacementStrategy):
 
     ``min_distance`` is the hard constraint; the indicated count/density is
     treated as an upper bound on how many cells are placed. If you need an exact
-    count rather than a spacing guarantee, use :class:`RandomPlacement`.
+    count rather than a spacing guarantee, use
+    :class:`~bsb.placement.random.RandomPlacement`.
 
     Each chunk is sampled with a deterministic per-chunk seed. With ``seamless``
     on, already-placed neighbouring chunks are read back as a fixed halo, so the

@@ -160,6 +160,7 @@ with a mean of 10 and a standard deviation of 2.
 .. note::
   Normal distribution is just one option but all the distributions available in your scipy package
   can be used.
+
 :class:`SegmentIntersection <bsb:bsb.connectivity.detailed.segment_intersection.SegmentIntersection>`
 =====================================================================================================
 

@@ -33,8 +33,11 @@ jobs:
         platform:
           - { runner: ubuntu-latest, target: x86_64, manylinux: auto }
           - { runner: ubuntu-latest, target: aarch64, manylinux: auto }
-          - { runner: macos-13, target: x86_64 }
-          - { runner: macos-14, target: aarch64 }
+          # Default macOS runners are arm64, so Intel needs the explicit
+          # `-intel` label. GitHub drops x86_64 macOS entirely once the macOS 15
+          # image retires, at which point that leg has to go.
+          - { runner: macos-15-intel, target: x86_64 }
+          - { runner: macos-15, target: aarch64 }
           - { runner: windows-latest, target: x64 }
     steps:
       - uses: actions/checkout@v5

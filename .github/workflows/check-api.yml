@@ -11,6 +11,11 @@ jobs:
       with:
         fetch-depth: 0
 
+    # bsb-native (a bsb-core dependency) is a Rust extension; uv builds it
+    # when syncing the workspace, so the toolchain must be present.
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+
     - name: Install uv
       uses: astral-sh/setup-uv@v7
 

@@ -212,3 +212,79 @@ middle of the layer along the *z*-axis (``loc=0.5``, ``scale=0.15``):
  via the ratio interval of the chunk, so choose distribution parameters accordingly.
  For instance, a ``norm`` with ``loc=0.5, scale=0.15`` concentrates cells near the
  centre of the partition with a spread of roughly ±15 % of the full layer height.
+
+:class:`PoissonDiskPlacement <bsb:bsb.placement.poisson.PoissonDiskPlacement>`
+==============================================================================
+
+This strategy places cells by Poisson disk sampling, so that no two somas end up closer
+together than :guilabel:`min_distance`. Where
+:class:`RandomPlacement <bsb:bsb.placement.random.RandomPlacement>` samples positions
+independently and lets somas fall arbitrarily close, this strategy guarantees a minimum
+spacing, which gives a more even, tissue like packing.
+
+The spacing is the hard constraint, and the indicated count or density is treated as an
+upper bound: if the volume cannot hold that many cells at that spacing, fewer are placed.
+When you need an exact count rather than a spacing guarantee, use
+:class:`RandomPlacement <bsb:bsb.placement.random.RandomPlacement>` instead.
+
+The sampling runs in the ``bsb-native`` compiled kernel, so the strategy requires that
+package (a dependency of ``bsb-core``, installed with it).
+
+* :guilabel:`min_distance`: the minimum distance between two somas. If omitted, it is
+  derived from the indicated count and the volume of the region, and never drops below
+  twice the soma radius.
+* :guilabel:`tries`: how many candidate points are attempted around each active sample
+  before it is retired. Higher values pack cells more densely at some cost in runtime.
+  Defaults to ``30``.
+* :guilabel:`seed`: base seed for the sampling. It is combined with the chunk coordinates
+  and the cell type name, so each chunk samples reproducibly and independently.
+* :guilabel:`seamless`: whether to enforce :guilabel:`min_distance` across chunk borders as
+  well as inside them, by scheduling chunks in eight non adjacent colour waves and seeding
+  each chunk with its already placed neighbours. Defaults to ``true``. Turning it off drops
+  the cross border guarantee, but lets every chunk be placed in parallel.
+
+.. tab-set-code::
+
+    .. code-block:: json
+
+        "cell_types": {
+            "my_cell": {
+                "spatial": {
+                    "count": 100,
+                    "radius": 2
+                }
+            }
+        },
+
+        "placement": {
+            "place_by_poisson": {
+                "strategy": "bsb.placement.PoissonDiskPlacement",
+                "partitions": ["my_layer"],
+                "cell_types": ["my_cell"],
+                "min_distance": 8.0,
+                "seed": 42
+            }
+        },
+
+    .. code-block:: python
+
+      config.cell_types.add(
+        "my_cell",
+        spatial=dict(radius=2, count=100)
+      )
+      config.placement.add(
+        "place_by_poisson",
+        strategy="bsb.placement.PoissonDiskPlacement",
+        partitions=["my_layer"],
+        cell_types=["my_cell"],
+        min_distance=8.0,
+        seed=42,
+      )
+
+This places up to ``100`` cells in ``my_layer``, no two of them closer than ``8``
+micrometers, and places fewer if the layer cannot hold that many at that spacing.
+
+.. note::
+  Because the count is an upper bound, check the resulting placement set if you depend on
+  the exact number of cells. Lowering :guilabel:`min_distance` or raising
+  :guilabel:`tries` both let more cells fit.

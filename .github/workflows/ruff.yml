@@ -13,6 +13,11 @@ jobs:
         with:
           fetch-depth: 0
 
+      # bsb-native (a bsb-core dependency) is a Rust extension; uv builds it
+      # when syncing the workspace, so the toolchain must be present.
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
       - name: Install apt dependencies
         run: |
           sudo apt update
@@ -36,4 +41,4 @@ jobs:
           fi
           ./nx affected -t lint --base=$NX_BASE --head=HEAD
         env:
-          UV_PYTHON: 3.12
+          UV_PYTHON: 3.14

@@ -4,6 +4,14 @@ bsb.connectivity.detailed package
 Submodules
 ----------
 
+bsb.connectivity.detailed.segment\_intersection module
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. automodule:: bsb.connectivity.detailed.segment_intersection
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 bsb.connectivity.detailed.shared module
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

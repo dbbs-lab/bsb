@@ -1,0 +1,29 @@
+[package]
+name = "bsb_native"
+version = "0.0.0"  # Internal crate version; the published Python version comes
+                   # from pyproject.toml (nx-release bumps that, not this).
+edition = "2021"
+publish = false
+
+[lib]
+name = "_native"
+# cdylib: the Python extension module built by maturin.
+# rlib:   lets `cargo test` build and exercise the pure-Rust core.
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+rayon = "1"
+# PyO3 / rust-numpy only compile in for the `python` feature, so `cargo test`
+# (which does not enable it) builds the pure algorithm core without needing a
+# Python interpreter to link against.
+pyo3 = { version = "0.22", features = ["extension-module", "abi3-py310"], optional = true }
+numpy = { version = "0.22", optional = true }
+
+[features]
+default = []
+python = ["dep:pyo3", "dep:numpy"]
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1

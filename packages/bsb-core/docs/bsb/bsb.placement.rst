@@ -25,6 +25,13 @@ bsb.placement.indicator module
    :members:
    :undoc-members:
 
+bsb.placement.poisson module
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. automodule:: bsb.placement.poisson
+   :members:
+   :undoc-members:
+
 bsb.placement.random module
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

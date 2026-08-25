@@ -17,8 +17,17 @@ _install_dirs = appdirs.AppDirs(appname="Glia", appauthor="DBBS")
 LogLevel = typing.Literal["log"] | typing.Literal["warn"] | typing.Literal["error"]
 
 
+def get_log_path() -> Path:
+    """
+    Path of the calling process' logfile. The name is the pid, so that processes
+    running side by side (e.g. MPI ranks) each append to their own file instead
+    of interleaving into a shared one.
+    """
+    return Path(get_cache_path(f"{os.getpid()}.txt"))
+
+
 def log(message: str, *, level: LogLevel = None, category=None, exc: Exception = None):
-    log_path = Path(get_cache_path(f"{id('5')}.txt"))
+    log_path = get_log_path()
     if exc is not None and level is None:
         level = "error"
     if level:

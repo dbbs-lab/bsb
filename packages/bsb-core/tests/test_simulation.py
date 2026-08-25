@@ -10,9 +10,11 @@ from neo import io
 
 from bsb import (
     MPI,
+    AfterSimulationHook,
     AttributeMissingError,
     Scaffold,
     SimulationResult,
+    SimulatorAdapter,
     config,
     get_simulation_adapter,
     options,
@@ -738,3 +740,90 @@ class TestAdapterControllers(
             plt.show()
         self.assertLess(mem_peak / MB, total_threshold)
         os.remove("out" + str(rank) + ".nio")
+
+
+class TestAfterSimulationHook(
+    FixedPosConfigFixture,
+    RandomStorageFixture,
+    NumpyTestCase,
+    unittest.TestCase,
+    engine_name="hdf5",
+):
+    def setUp(self):
+        super().setUp()
+        self.cfg.connectivity.add(
+            "all_to_all",
+            dict(
+                strategy="bsb.connectivity.AllToAll",
+                presynaptic=dict(cell_types=["test_cell"]),
+                postsynaptic=dict(cell_types=["test_cell"]),
+            ),
+        )
+        self.network = Scaffold(self.cfg, self.storage)
+        self.network.compile(clear=True)
+        self.calls = calls = []
+
+        @config.node
+        class RecordCalls(AfterSimulationHook):
+            def postprocess(self, adapter, simulation, result):
+                # Record the scaffold too, to assert the hook is booted into context.
+                calls.append((self.name, adapter, simulation, result, self.scaffold))
+
+        self.network.simulations.add(
+            "test",
+            simulator="arbor",
+            duration=100,
+            resolution=1.0,
+            cell_models=dict(),
+            connection_models=dict(),
+            devices=dict(),
+            after_simulation={"first": RecordCalls(), "second": RecordCalls()},
+        )
+
+    def test_hooks_receive_the_result(self):
+        result = self.network.run_simulation("test")
+
+        self.assertEqual(
+            ["first", "second"],
+            [call[0] for call in self.calls],
+            "Each hook should run once, in configuration order.",
+        )
+        for name, adapter, simulation, hook_result, scaffold in self.calls:
+            self.assertIs(result, hook_result, f"'{name}' got the wrong result")
+            self.assertIs(self.network.simulations.test, simulation)
+            self.assertIs(self.network, scaffold)
+            self.assertIsInstance(adapter, SimulatorAdapter)
+
+    def test_hooks_are_stored_with_the_results(self):
+        result = self.network.run_simulation("test")
+
+        self.assertEqual(
+            ["first", "second"],
+            list(result.block.annotations["config"]["after_simulation"]),
+            "Hooks should be part of the configuration stored with the results.",
+        )
+
+    @unittest.skipIf(MPI.get_size() > 1, "Skipped during parallel testing.")
+    def test_hooks_run_on_streamed_results(self):
+        """Streamed results, which is the route the CLI takes, reach the hooks after
+        the run has been flushed, so the hooks can read it back off disk."""
+        tmpdir = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, tmpdir, ignore_errors=True)
+        nio_file = os.path.join(tmpdir, "results.nio")
+
+        self.network.run_simulation("test", output_filename=nio_file)
+
+        self.assertEqual(["first", "second"], [call[0] for call in self.calls])
+        for name, _, _, result, _ in self.calls:
+            self.assertEqual(nio_file, result.filename, f"'{name}' got the wrong file")
+            with self.assertRaises(RuntimeError, msg="Streamed results hold no block"):
+                _ = result.block
+            blocks = io.NixIO(result.filename, "ro").read_all_blocks()
+            block = next(
+                b for b in blocks if b.annotations["nix_name"] == result.block_key
+            )
+            self.assertEqual(
+                1,
+                len(block.segments),
+                "The run should already be flushed by the time the hooks run.",
+            )

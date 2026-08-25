@@ -160,3 +160,75 @@ with a mean of 10 and a standard deviation of 2.
 .. note::
   Normal distribution is just one option but all the distributions available in your scipy package
   can be used.
+
+:class:`SegmentIntersection <bsb:bsb.connectivity.detailed.segment_intersection.SegmentIntersection>`
+=====================================================================================================
+
+This strategy connects cells whose morphology branches come within a given distance of
+each other. Each branch segment is treated as a capsule, a line segment with a radius, and
+an exact segment to segment distance test decides every contact. Unlike
+:class:`VoxelIntersection <bsb:bsb.connectivity.detailed.voxel_intersection.VoxelIntersection>`,
+which groups compartments into cubic voxels and so trades away morphological detail, this
+strategy keeps the full spatial specificity of the traced morphology. Use it when that
+detail matters and you have morphologies that justify it.
+
+The geometric search runs in the ``bsb-native`` compiled kernel, so the strategy requires
+that package (a dependency of ``bsb-core``, installed with it). It emits the same
+``[cell, branch, point]`` location triples as
+:class:`VoxelIntersection <bsb:bsb.connectivity.detailed.voxel_intersection.VoxelIntersection>`,
+so the two are interchangeable.
+
+* :guilabel:`contact_distance`: the distance, on top of the two segment radii, within which
+  two segments form a contact. Must be positive; defaults to ``0``, meaning the capsules
+  have to touch.
+* :guilabel:`affinity`: a fraction between ``0`` and ``1`` giving the tendency of cells to
+  connect to the partners they intersect with. Use it to downregulate how many cells any
+  one cell connects to. Defaults to ``1``, which keeps every partner.
+* :guilabel:`seed`: base seed for the :guilabel:`affinity` subsampling. It is combined with
+  each cell's id, so a run reproduces regardless of how the network is chunked or how its
+  jobs happen to be scheduled. Unused when :guilabel:`affinity` is ``1``.
+* :guilabel:`favor_cache`: which side builds the segment trees, ``"pre"`` (default) or
+  ``"post"``. The trees are cached per morphology, so favor the side with fewer unique
+  morphologies.
+
+.. tab-set-code::
+
+    .. code-block:: json
+
+        {
+          "A_to_B": {
+            "strategy": "bsb.connectivity.SegmentIntersection",
+            "presynaptic": {
+              "cell_types": [
+                "A"
+              ]
+            },
+            "postsynaptic": {
+              "cell_types": [
+                "B"
+              ]
+            },
+            "contact_distance": 3.0,
+            "affinity": 0.5,
+            "seed": 42
+          }
+        }
+
+    .. code-block:: python
+
+      config.connectivity.add(
+        "A_to_B",
+        strategy="bsb.connectivity.SegmentIntersection",
+        presynaptic=dict(cell_types=["A"]),
+        postsynaptic=dict(cell_types=["B"]),
+        contact_distance=3.0,
+        affinity=0.5,
+        seed=42,
+      )
+
+This connects cells of type A to cells of type B wherever their branches pass within
+``3`` micrometers of each other, keeping half of the partners found, reproducibly.
+
+.. note::
+  :guilabel:`affinity` limits how many partner cells are kept, not how many contacts are
+  formed with each partner. Every contact found between a kept pair is emitted.

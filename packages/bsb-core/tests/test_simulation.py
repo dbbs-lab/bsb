@@ -741,6 +741,7 @@ class TestAdapterControllers(
         os.remove("out" + str(rank) + ".nio")
 
 
+@unittest.skipIf(MPI.get_size() > 1, "Skipped during parallel testing.")
 class TestResultConfiguration(
     FixedPosConfigFixture,
     RandomStorageFixture,
@@ -790,7 +791,6 @@ class TestResultConfiguration(
 
         self.assertConfigTree(read_simulation_config(result.block))
 
-    @unittest.skipIf(MPI.get_size() > 1, "Skipped during parallel testing.")
     def test_config_of_streamed_results(self):
         """Streamed results are the route the CLI takes, and a nix file used to receive
         the configuration as nothing but its top level keys."""

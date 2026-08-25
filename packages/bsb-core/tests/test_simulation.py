@@ -16,6 +16,7 @@ from bsb import (
     config,
     get_simulation_adapter,
     options,
+    read_simulation_config,
 )
 
 
@@ -738,3 +739,67 @@ class TestAdapterControllers(
             plt.show()
         self.assertLess(mem_peak / MB, total_threshold)
         os.remove("out" + str(rank) + ".nio")
+
+
+class TestResultConfiguration(
+    FixedPosConfigFixture,
+    RandomStorageFixture,
+    NumpyTestCase,
+    unittest.TestCase,
+    engine_name="hdf5",
+):
+    """The configuration that produced a set of results is stored alongside them."""
+
+    def setUp(self):
+        super().setUp()
+        self.network = Scaffold(self.cfg, self.storage)
+        self.network.compile(clear=True)
+        self.network.simulations.add(
+            "test",
+            simulator="arbor",
+            duration=100,
+            resolution=1.0,
+            cell_models={
+                "test_cell": {
+                    "model_strategy": "lif",
+                    "constants": {"C_m": 250, "V_th": 20},
+                }
+            },
+            connection_models=dict(),
+            devices=dict(
+                pg={
+                    "device": "poisson_generator",
+                    "rate": 1600,
+                    "targetting": {"strategy": "all"},
+                    "weight": 2000,
+                    "delay": 1.5,
+                }
+            ),
+        )
+
+    def assertConfigTree(self, tree):
+        self.assertEqual(100, tree["duration"])
+        self.assertEqual("arbor", tree["simulator"])
+        # Nested values are what a dict annotation loses on its way into a nix file.
+        self.assertEqual(1600, tree["devices"]["pg"]["rate"])
+        self.assertEqual("all", tree["devices"]["pg"]["targetting"]["strategy"])
+        self.assertEqual(250, tree["cell_models"]["test_cell"]["constants"]["C_m"])
+
+    def test_config_of_in_memory_results(self):
+        result = self.network.run_simulation("test")
+
+        self.assertConfigTree(read_simulation_config(result.block))
+
+    @unittest.skipIf(MPI.get_size() > 1, "Skipped during parallel testing.")
+    def test_config_of_streamed_results(self):
+        """Streamed results are the route the CLI takes, and a nix file used to receive
+        the configuration as nothing but its top level keys."""
+        tmpdir = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, tmpdir, ignore_errors=True)
+        nio_file = os.path.join(tmpdir, "results.nio")
+
+        result = self.network.run_simulation("test", output_filename=nio_file)
+
+        blocks = io.NixIO(result.filename, "ro").read_all_blocks()
+        block = next(b for b in blocks if b.annotations["nix_name"] == result.block_key)
+        self.assertConfigTree(read_simulation_config(block))

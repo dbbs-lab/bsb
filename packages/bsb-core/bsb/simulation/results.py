@@ -1,13 +1,53 @@
 import contextlib
+import json
 import shutil
 import traceback
 import typing
 from datetime import datetime
 
+import numpy as np
+
 from ..reporting import warn
 
 if typing.TYPE_CHECKING:  # pragma: nocover
     import neo
+
+
+def _json_default(value):
+    if isinstance(value, np.ndarray):
+        return value.tolist()
+    if isinstance(value, np.generic):
+        return value.item()
+    raise TypeError(f"Can't encode '{value}' ({type(value)})")
+
+
+def _encode_simulation_config(tree):
+    try:
+        return json.dumps(tree, default=_json_default)
+    except TypeError as e:
+        warn(f"Could not store the simulation configuration with the results: {e}")
+        return "null"
+
+
+def read_simulation_config(block: "neo.core.Block") -> dict | None:
+    """
+    Read the configuration of the simulation that produced a block of results.
+
+    :param block: Block of results, either taken from a
+        :class:`~bsb.simulation.results.SimulationResult` or read back out of a
+        results file.
+    :type block: neo.core.Block
+    :returns: The configuration tree of the simulation, or ``None`` if it could not be
+        stored with the results.
+    :rtype: dict | None
+    :raises ValueError: If the block carries no readable configuration.
+    """
+    config = block.annotations.get("config")
+    if not isinstance(config, str):
+        raise ValueError(
+            f"Block '{block.name}' carries no readable simulation configuration."
+        )
+    return json.loads(config)
 
 
 class SimulationResult:
@@ -19,7 +59,9 @@ class SimulationResult:
             del tree["post_prepare"]
         self.recorders = []
         self.filename = filename
-        block = Block(name=simulation.name, config=tree)
+        # neo stores a dict annotation as nothing but its keys, so the configuration
+        # is encoded as JSON, which reaches a results file intact.
+        block = Block(name=simulation.name, config=_encode_simulation_config(tree))
         block.rec_datetime = datetime.now()
         if filename:
             from neo import io
@@ -89,4 +131,4 @@ class SimulationRecorder:
         raise NotImplementedError("Recorders need to implement the `flush` function.")
 
 
-__all__ = ["SimulationResult", "SimulationRecorder"]
+__all__ = ["SimulationResult", "SimulationRecorder", "read_simulation_config"]

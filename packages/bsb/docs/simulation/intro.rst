@@ -213,6 +213,27 @@ To retrieve the blocks from a ``.nio`` file:
 
 For more information, please refer to the :doc:`Neo documentation <neo:read_and_analyze>`.
 
+Simulation configuration
+------------------------
+
+Each block carries the configuration of the simulation that produced it, so a results
+file says for itself how it was made. Read it back with
+:func:`read_simulation_config <bsb:bsb.simulation.results.read_simulation_config>`:
+
+.. code-block:: python
+
+  from bsb import read_simulation_config
+
+  tree = read_simulation_config(block)
+  duration = tree["duration"]
+  poisson_rate = tree["devices"]["pg"]["rate"]
+
+The tree is the same one a configuration file holds, minus the
+:guilabel:`post_prepare` hooks, which are plain functions and cannot be stored. It is
+kept on the block as a JSON string, under the ``config`` annotation, because a
+:doc:`Neo <neo:index>` annotation that is a dictionary reaches the file as nothing but
+its keys.
+
 Spike Trains
 ------------
 

@@ -10,6 +10,7 @@ from ._backends import get_simulation_nodes
 from .cell import CellModel
 from .connection import ConnectionModel
 from .device import DeviceModel
+from .postprocessing import AfterSimulationHook
 
 if typing.TYPE_CHECKING:  # pragma: nocover
     from ..cell_types import CellType
@@ -59,6 +60,13 @@ class Simulation:
     )
     """
     List of hook functions to call after the simulation has been prepared.
+    """
+    after_simulation: cfgdict[str, AfterSimulationHook] = config.dict(
+        type=AfterSimulationHook,
+    )
+    """
+    Dictionary of hooks to run once the simulation has finished and its results have
+    been collected.
     """
 
     @staticmethod

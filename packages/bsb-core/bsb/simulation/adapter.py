@@ -119,8 +119,24 @@ class SimulatorAdapter(abc.ABC):
                     hook(self, simulation, data)
             if post_prepare:
                 post_prepare(self, simulations, alldata)
-            results = self.run(*simulations)
-            return self.collect(results)
+            results = self.collect(self.run(*simulations))
+        # The hooks run outside of the read-only storage context, so that they may
+        # write their findings back to the network.
+        self.run_after_simulation(simulations, results)
+        return results
+
+    def run_after_simulation(self, simulations, results):
+        """
+        Run the :guilabel:`after_simulation` hooks of each simulation on its own result.
+
+        :param simulations: The simulation configurations that were run.
+        :type simulations: list[~bsb.simulation.simulation.Simulation]
+        :param results: The collected result of each simulation, in the same order.
+        :type results: list[~bsb.simulation.results.SimulationResult]
+        """
+        for simulation, result in zip(simulations, results, strict=True):
+            for hook in simulation.after_simulation.values():
+                hook.postprocess(self, simulation, result)
 
     @abc.abstractmethod
     def prepare(self, simulation, filename=None):  # pragma: nocover

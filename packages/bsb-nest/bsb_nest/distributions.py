@@ -49,9 +49,9 @@ class NestRandomDistribution:
         return getattr(self._distr, attr)
 
 
-class nest_parameter(TypeHandler):
+class nest_constant(TypeHandler):
     """
-    Type validator. Type casts the value or node to a Nest parameter, that can be either
+    Type validator. Type casts the value or node to a Nest constant, that can be either
     a value or a NestRandomDistribution.
     """
 

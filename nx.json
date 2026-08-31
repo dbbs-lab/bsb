@@ -1,8 +1,8 @@
 {
   "installation": {
-    "version": "21.1.3",
+    "version": "23.1.2",
     "plugins": {
-      "@nxlv/python": "21.0.2"
+      "@nxlv/python": "npm:@helveg/nx-python@23.0.1"
     }
   },
   "plugins": [
@@ -27,12 +27,12 @@
       "git": {
         "commit": true,
         "tag": true,
-        "commitMessage": "chore(release): {version} [skip ci]"
+        "commitMessage": "chore(release): {version}"
       }
     },
     "version": {
       "conventionalCommits": true,
-      "versionActions": "@nxlv/python/src/release/version-actions"
+      "versionActions": "@nxlv/python/release/version-actions"
     }
   },
   "generators": {

@@ -13,6 +13,41 @@ jobs:
         with:
           task_types: '["feat","fix","chore","docs","test","ci","refactor","perf","revert"]'
 
+  # A CI skip marker in a commit message survives into the squash-merge commit,
+  # because GitHub's default squash message concatenates the merged commits. A
+  # `next` -> `main` merge carrying one silently suppresses the release run, which
+  # is what happened in #193. Blocking the marker at the PR keeps it out of the
+  # history in the first place, rather than relying on nobody reintroducing it.
+  forbid-ci-skip-markers:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Reject CI skip markers in commit messages
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_COMMITS_URL: repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/commits
+        run: |
+          set -euo pipefail
+          # The markers GitHub Actions itself honours.
+          markers='\[(skip ci|ci skip|no ci|skip actions|actions skip)\]'
+          found=0
+          # Messages are base64'd so a multi-line body stays on one record.
+          commits=$(gh api "$PR_COMMITS_URL" --paginate \
+            --jq '.[] | [.sha, (.commit.message | @base64)] | @tsv')
+          while IFS=$'\t' read -r sha encoded; do
+            [ -n "$sha" ] || continue
+            message=$(printf '%s' "$encoded" | base64 -d)
+            if printf '%s' "$message" | grep -Eqi "$markers"; then
+              echo "::error::Commit $sha contains a CI skip marker: $(printf '%s' "$message" | head -1)"
+              found=1
+            fi
+          done <<< "$commits"
+          if [ "$found" -ne 0 ]; then
+            echo "A CI skip marker is inherited by the squash-merge commit and suppresses"
+            echo "the release workflow on main. Reword the offending commits."
+            exit 1
+          fi
+          echo "No CI skip markers found."
+
   get-modified:
     runs-on: ubuntu-latest
     if: github.event.action != 'edited'

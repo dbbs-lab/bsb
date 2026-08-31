@@ -2,9 +2,9 @@ import typing
 
 from .. import config
 from ..config import refs
-from ..config._attrs import cfglist
+from ..config._attrs import cfgdict
 from .component import SimulationComponent
-from .parameter import Parameter
+from .parameter import CellParameter, parameter
 
 if typing.TYPE_CHECKING:  # pragma: nocover
     from ..cell_types import CellType
@@ -20,9 +20,12 @@ class CellModel(SimulationComponent):
     """
     The cell type that this model represents.
     """
-    parameters: cfglist[Parameter] = config.list(type=Parameter)
+    parameters: cfgdict[str, CellParameter] = config.dict(type=parameter(CellParameter))
     """
-    The parameters of the model.
+    Parameters of the model, computed once per cell when the simulation is loaded.
+
+    Keyed by the model parameter they set. A bare value is a constant; a node with a
+    ``strategy`` selects a :class:`~bsb.simulation.parameter.CellParameter`.
     """
 
     def __lt__(self, other):

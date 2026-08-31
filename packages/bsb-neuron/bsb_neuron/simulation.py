@@ -1,4 +1,4 @@
-from bsb import Simulation, config, types
+from bsb import Simulation, config
 
 from .cell import NeuronCell
 from .connection import NeuronConnection
@@ -13,8 +13,6 @@ class NeuronSimulation(Simulation):
 
     initial = config.attr(type=float, default=-65.0)
     """Initial membrane potential for all neurons."""
-    resolution = config.attr(type=types.float(min=0.0), default=0.1)
-    """Simulation time step size in milliseconds."""
     temperature = config.attr(type=float, required=True)
     """Temperature of the circuit during simulation."""
     cell_models: config._attrs.cfgdict[NeuronCell] = config.dict(

@@ -41,6 +41,10 @@ class Simulation:
     """
     Duration of the simulation in milliseconds.
     """
+    resolution: float = config.attr(type=cfgtypes.float(min=0.0), default=0.1)
+    """
+    Duration of a simulation time step, in milliseconds.
+    """
     cell_models: cfgdict[CellModel] = config.slot(type=CellModel, required=True)
     """
     Dictionary linking the cell population name to its model.

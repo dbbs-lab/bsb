@@ -164,6 +164,7 @@ CastError: type["bsb.exceptions.CastError"]
 CellModel: type["bsb.simulation.cell.CellModel"]
 CellModelFilter: type["bsb.simulation.targetting.CellModelFilter"]
 CellModelTargetting: type["bsb.simulation.targetting.CellModelTargetting"]
+CellParameter: type["bsb.simulation.parameter.CellParameter"]
 CellTargetting: type["bsb.simulation.targetting.CellTargetting"]
 CellType: type["bsb.cell_types.CellType"]
 CfgReferenceError: type["bsb.exceptions.CfgReferenceError"]
@@ -187,12 +188,14 @@ ConfigurationParser: type["bsb.config.parsers.ConfigurationParser"]
 ConfigurationSyncError: type["bsb.exceptions.ConfigurationSyncError"]
 ConfigurationWarning: type["bsb.exceptions.ConfigurationWarning"]
 ConnectionModel: type["bsb.simulation.connection.ConnectionModel"]
+ConnectionParameter: type["bsb.simulation.parameter.ConnectionParameter"]
 ConnectionStrategy: type["bsb.connectivity.strategy.ConnectionStrategy"]
 ConnectionTargetting: type["bsb.simulation.targetting.ConnectionTargetting"]
 ConnectivityError: type["bsb.exceptions.ConnectivityError"]
 ConnectivityIterator: type["bsb.storage.interfaces.ConnectivityIterator"]
 ConnectivitySet: type["bsb.storage.interfaces.ConnectivitySet"]
 ConnectivityWarning: type["bsb.exceptions.ConnectivityWarning"]
+Constant: type["bsb.simulation.parameter.Constant"]
 ContinuityError: type["bsb.exceptions.ContinuityError"]
 Convergence: type["bsb.connectivity.general.Convergence"]
 CsvImportConnectivity: type["bsb.connectivity.import_.CsvImportConnectivity"]
@@ -206,6 +209,7 @@ DatasetExistsError: type["bsb.exceptions.DatasetExistsError"]
 DatasetNotFoundError: type["bsb.exceptions.DatasetNotFoundError"]
 DependencyError: type["bsb.exceptions.DependencyError"]
 DeviceModel: type["bsb.simulation.device.DeviceModel"]
+DistanceDelayParameter: type["bsb.simulation.parameter.DistanceDelayParameter"]
 Distribution: type["bsb.config.Distribution"]
 DistributionCastError: type["bsb.exceptions.DistributionCastError"]
 DistributionContext: type["bsb.placement.distributor.DistributionContext"]
@@ -310,7 +314,7 @@ ParallelArrayPlacement: type["bsb.placement.arrays.ParallelArrayPlacement"]
 Parallelepiped: type["bsb.connectivity.geometric.geometric_shapes.Parallelepiped"]
 Parameter: type["bsb.simulation.parameter.Parameter"]
 ParameterError: type["bsb.exceptions.ParameterError"]
-ParameterValue: type["bsb.simulation.parameter.ParameterValue"]
+ParameterizedModel: type["bsb.simulation.parameter.ParameterizedModel"]
 ParserError: type["bsb.exceptions.ParserError"]
 ParsesReferences: type["bsb.config.parsers.ParsesReferences"]
 Partition: type["bsb.topology.partition.Partition"]
@@ -323,6 +327,7 @@ PlacementStrategy: type["bsb.placement.strategy.PlacementStrategy"]
 PlacementWarning: type["bsb.exceptions.PlacementWarning"]
 Plotting: type["bsb.cell_types.Plotting"]
 PluginError: type["bsb.exceptions.PluginError"]
+PointParameter: type["bsb.simulation.parameter.PointParameter"]
 PoissonDiskPlacement: type["bsb.placement.poisson.PoissonDiskPlacement"]
 ProfilingSession: type["bsb.profiling.ProfilingSession"]
 ProgressEvent: type["bsb.simulation.simulation.ProgressEvent"]
@@ -404,6 +409,7 @@ branch_iter: "bsb.morphologies.branch_iter"
 build_context: "bsb.config.build_context"
 chunklist: "bsb.storage._chunks.chunklist"
 compose_nodes: "bsb.config.compose_nodes"
+constant: "bsb.simulation.parameter.constant"
 copy_configuration_template: "bsb.config.copy_configuration_template"
 create_engine: "bsb.storage.create_engine"
 create_topology: "bsb.topology.create_topology"
@@ -439,6 +445,7 @@ make_configuration_diagram: "bsb.config.make_configuration_diagram"
 on_main: "bsb.storage.decorators.on_main"
 on_main_until: "bsb.storage.decorators.on_main_until"
 open_storage: "bsb.storage.open_storage"
+parameter: "bsb.simulation.parameter.parameter"
 parse_configuration_content: "bsb.config.parse_configuration_content"
 parse_configuration_content_to_dict: "bsb.config.parse_configuration_content_to_dict"
 parse_configuration_file: "bsb.config.parse_configuration_file"

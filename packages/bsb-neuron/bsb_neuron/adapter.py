@@ -1,4 +1,3 @@
-import contextlib
 import itertools
 
 import numpy as np
@@ -43,17 +42,6 @@ class NeuronResult(SimulationResult):
                 v.remove(0, v.size() - 1)
 
         self.create_recorder(flush)
-
-
-@contextlib.contextmanager
-def fill_parameter_data(parameters, data):
-    for param in parameters:
-        if hasattr(param, "load_data"):
-            param.load_data(*data)
-    yield
-    for param in parameters:
-        if hasattr(param, "load_data"):
-            param.drop_data()
 
 
 class NeuronAdapter(SimulatorAdapter):
@@ -171,10 +159,9 @@ class NeuronAdapter(SimulatorAdapter):
         self._allocate_transmitters(simulation)
         for conn_model in simulation.connection_models.values():
             cs = simulation.scaffold.get_connectivity_set(conn_model.name)
-            with fill_parameter_data(conn_model.parameters, []):
-                simdata.connections[conn_model] = conn_model.create_connections(
-                    simulation, simdata, cs
-                )
+            simdata.connections[conn_model] = conn_model.create_connections(
+                simulation, simdata, cs
+            )
 
     def _allocate_transmitters(self, simulation):
         simdata = self.simdata[simulation]
@@ -283,9 +270,8 @@ class NeuronAdapter(SimulatorAdapter):
             except DatasetNotFoundError:
                 data.append(itertools.repeat(None))
 
-        with fill_parameter_data(cell_model.parameters, data):
-            instances = cell_model.create_instances(len(ps), *data)
-            simdata.populations[cell_model] = NeuronPopulation(cell_model, instances)
+        instances = cell_model.create_instances(len(ps), *data)
+        simdata.populations[cell_model] = NeuronPopulation(cell_model, instances)
 
 
 class NeuronPopulation(list):

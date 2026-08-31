@@ -1,5 +1,5 @@
 import psutil
-from bsb import Simulation, config, types
+from bsb import Simulation, config
 
 from .cell import ArborCell
 from .connection import ArborConnection
@@ -12,8 +12,6 @@ class ArborSimulation(Simulation):
     Interface between the scaffold model and the Arbor simulator.
     """
 
-    resolution = config.attr(type=types.float(min=0.0), default=0.1)
-    """Simulation time step size in milliseconds."""
     profiling = config.attr(type=bool)
     """Flag to perform profiling during the simulation."""
     cell_models: config._attrs.cfgdict[ArborCell] = config.dict(

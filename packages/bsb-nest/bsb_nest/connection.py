@@ -1,10 +1,14 @@
+import builtins
 import functools
 import sys
 
 import numpy as np
 import psutil
 from bsb import (
+    AdapterError,
     ConnectionModel,
+    ConnectionParameter,
+    ParameterizedModel,
     compose_nodes,
     config,
     options,
@@ -13,7 +17,7 @@ from bsb import (
 from tqdm import tqdm
 
 from ._kernel_proxy import NestModelTypeHandler, query_kernel
-from .distributions import nest_parameter
+from .distributions import nest_constant, nest_parameter
 
 
 class nest_synapse_model(NestModelTypeHandler):
@@ -21,6 +25,17 @@ class nest_synapse_model(NestModelTypeHandler):
 
     mtype = "synapses"
     kind = "synapse"
+
+
+def _is_weight_required(kwargs):
+    """
+    ``required=`` checker for :attr:`NestSynapseSettings.weight`.
+
+    A weight is always needed, but it may be given as a computed parameter instead
+    of as this attribute. ``constants`` is the node's catch-all, so a declared
+    attribute never lands there; only ``parameters`` can stand in for it.
+    """
+    return "weight" not in kwargs.get("parameters", {})
 
 
 def _is_delay_required(kwargs):
@@ -35,6 +50,8 @@ def _is_delay_required(kwargs):
     returns ``False`` so config loading stays robust; the real error surfaces
     later at adapter prepare/connect time.
     """
+    if "delay" in kwargs.get("parameters", {}):
+        return False
     model_name = kwargs.get("model", NestSynapseSettings.model.default)
     return query_kernel(
         getattr(kwargs, "partial_node", None),
@@ -51,21 +68,46 @@ def _is_delay_required(kwargs):
 
 
 @config.node
-class NestSynapseSettings:
+class NestSynapseSettings(ParameterizedModel):
     """
     Class interfacing a NEST synapse model.
     """
 
     model = config.attr(type=nest_synapse_model(), default="static_synapse")
     """Importable reference to the NEST model describing the synapse type."""
-    weight = config.attr(type=float, required=True)
+    weight = config.attr(
+        type=nest_parameter(ConnectionParameter), required=_is_weight_required
+    )
     """Weight of the connection between the presynaptic and the postsynaptic cells."""
-    delay = config.attr(type=float, required=_is_delay_required, default=None)
+    delay = config.attr(
+        type=nest_parameter(ConnectionParameter),
+        required=_is_delay_required,
+        default=None,
+    )
     """Delay of the transmission between the presynaptic and the postsynaptic cells."""
-    receptor_type = config.attr(type=int)
+    receptor_type = config.attr(type=nest_parameter(ConnectionParameter))
     """Index of the postsynaptic receptor to target."""
-    constants = config.catch_all(type=nest_parameter())
-    """Dictionary of the constants values to assign to the synapse model."""
+    constants = config.catch_all(type=nest_constant())
+    """
+    Constant values to assign to the synapse model, written directly on the node.
+
+    A computed parameter belongs in :attr:`parameters`.
+    """
+    parameters = config.dict(type=nest_parameter(ConnectionParameter))
+    """
+    Parameters of the synapse model, resolved when the simulation loads.
+
+    Accepts everything :attr:`constants` does, plus a ``strategy`` node selecting a
+    :class:`~bsb.simulation.parameter.ConnectionParameter` computed per connection.
+    """
+
+    def get_parameter_groups(self):
+        named = {
+            name: value
+            for name in ("weight", "delay", "receptor_type")
+            if (value := getattr(self, name)) is not None
+        }
+        return (named, self.constants, self.parameters)
 
 
 @config.node
@@ -123,13 +165,12 @@ class NestConnection(compose_nodes(NestConnectionSettings, ConnectionModel)):
     def create_connections(self, simdata, pre_nodes, post_nodes, cs, comm):
         import nest
 
-        syn_specs = self.get_syn_specs()
         if self.rule is not None:
             nest.Connect(
                 pre_nodes,
                 post_nodes,
                 self.get_conn_spec(),
-                nest.CollocatedSynapses(*syn_specs),
+                nest.CollocatedSynapses(*self.get_syn_specs()),
             )
         else:
             comm.barrier()
@@ -139,8 +180,13 @@ class NestConnection(compose_nodes(NestConnectionSettings, ConnectionModel)):
                 comm.barrier()
                 if len(pre_locs) == 0 or len(post_locs) == 0:
                     continue
-                cell_pairs, multiplicity = np.unique(
+                # Several connections may join the same pair of cells; NEST is asked
+                # for one connection per pair, carrying the summed weight. `take` is
+                # the first row of each pair, which is where a per-connection
+                # parameter's value for that pair is read from.
+                cell_pairs, take, multiplicity = np.unique(
                     np.column_stack((pre_locs[:, 0], post_locs[:, 0])),
+                    return_index=True,
                     return_counts=True,
                     axis=0,
                 )
@@ -148,12 +194,21 @@ class NestConnection(compose_nodes(NestConnectionSettings, ConnectionModel)):
                 postl = post_nodes.tolist()
                 # cannot use CollocatedSynapses with a list of weight and delay
                 # so loop over the syn_specs
-                for syn_spec in syn_specs:
+                for syn_spec in self.get_syn_specs(cs, pre_locs, post_locs, take):
                     ssw = {**syn_spec}
-                    bw = syn_spec["weight"]
-                    ssw["weight"] = [bw * m for m in multiplicity]
-                    if "delay" in syn_spec:
-                        ssw["delay"] = [syn_spec["delay"]] * len(ssw["weight"])
+                    # The weight of a collapsed pair is the sum of the connections it
+                    # stands for, whether it came from a constant or was computed.
+                    weight = ssw["weight"]
+                    ssw["weight"] = (
+                        np.asarray(weight) * multiplicity
+                        if isinstance(weight, np.ndarray)
+                        else [weight * m for m in multiplicity]
+                    )
+                    for name, value in ssw.items():
+                        if name not in ("weight", "synapse_model") and not isinstance(
+                            value, np.ndarray | builtins.list
+                        ):
+                            ssw[name] = [value] * len(cell_pairs)
                     nest.Connect(
                         [prel[x] for x in cell_pairs[:, 0]],
                         [postl[x] for x in cell_pairs[:, 1]],
@@ -230,20 +285,35 @@ class NestConnection(compose_nodes(NestConnectionSettings, ConnectionModel)):
             **self.constants,
         }
 
-    def get_syn_specs(self):
-        return [
-            {
-                **{
-                    label: value
-                    for attr, label in (
-                        ("model", "synapse_model"),
-                        ["weight"] * 2,
-                        ["delay"] * 2,
-                        ["receptor_type"] * 2,
+    def get_syn_specs(self, cs=None, pre_locs=None, post_locs=None, take=None):
+        """
+        Build one ``syn_spec`` per configured synapse.
+
+        Every notation a synapse can be written in is collected by
+        :meth:`~bsb.simulation.parameter.ParameterizedModel.get_parameters`, so this
+        only has to compute each parameter and add the model's identity.
+
+        Called without connection locations -- the ``rule`` path, where NEST decides
+        the pairs itself -- only parameters that yield a single value can be honoured.
+        ``take`` selects one value per unique cell pair from a per-connection result,
+        since duplicate pairs are collapsed before connecting.
+        """
+        per_connection = cs is not None and pre_locs is not None and post_locs is not None
+        specs = []
+        for synapse in self.synapses:
+            spec = {"synapse_model": synapse.model}
+            for name, param in synapse.get_parameters().items():
+                if param.is_constant:
+                    spec[name] = param.compute()
+                elif per_connection:
+                    values = param.compute(self.simulation, cs, pre_locs, post_locs)
+                    spec[name] = values if take is None else values[take]
+                else:
+                    raise AdapterError(
+                        f"Parameter '{name}' of synapse '{synapse.model}' in "
+                        f"{self.name} is computed per connection, which needs the "
+                        "connections themselves. Remove the connection `rule` so BSB "
+                        "connects cell by cell, or make the parameter constant."
                     )
-                    if (value := getattr(synapse, attr)) is not None
-                },
-                **synapse.constants,
-            }
-            for synapse in self.synapses
-        ]
+            specs.append(spec)
+        return specs

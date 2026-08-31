@@ -1,8 +1,15 @@
-import builtins
 import typing
 
 import errr
-from bsb import DistributionCastError, Scaffold, TypeHandler, config, types
+from bsb import (
+    DistributionCastError,
+    Parameter,
+    Scaffold,
+    config,
+    constant,
+    parameter,
+    types,
+)
 
 
 class _LazyDistributionNames:
@@ -15,10 +22,16 @@ class _LazyDistributionNames:
 
 
 @config.node
-class NestRandomDistribution:
+class NestRandomDistribution(Parameter):
     """
-    Class to handle NEST random distributions.
+    A NEST random distribution, drawn per node by NEST itself.
+
+    It yields the one :class:`nest.Parameter` object NEST expands across the nodes it
+    is assigned to, so it reports itself as constant: nothing on our side broadcasts
+    it.
     """
+
+    is_constant = True
 
     scaffold: "Scaffold"
     distribution: str = config.attr(
@@ -42,6 +55,9 @@ class NestRandomDistribution:
     def __call__(self):
         return self._distr
 
+    def compute(self, *args, **kwargs):
+        return self._distr
+
     def __getattr__(self, attr):
         # hasattr does not work here. So we use __dict__
         if "_distr" not in self.__dict__:
@@ -49,20 +65,51 @@ class NestRandomDistribution:
         return getattr(self._distr, attr)
 
 
-class nest_parameter(TypeHandler):
+class nest_parameter(parameter):
     """
-    Type validator. Type casts the value or node to a Nest parameter, that can be either
-    a value or a NestRandomDistribution.
+    Cast a value to a parameter, adding NEST's own random distributions.
+
+    Extends the framework handler with one more shorthand, so every notation NEST
+    users already write keeps working:
+
+    * ``{"distribution": "uniform", ...}`` becomes a :class:`.NestRandomDistribution`;
+    * everything else is handled by :class:`~bsb.simulation.parameter.parameter`.
     """
 
     def __call__(self, value, _key=None, _parent=None):
-        if isinstance(value, builtins.dict) and "distribution" in value:
+        if isinstance(value, dict) and "distribution" in value:
             return NestRandomDistribution(**value, _key=_key, _parent=_parent)
-        return types.or_(types.list_or_scalar(types.number()), str)(value)
+        return super().__call__(value, _key=_key, _parent=_parent)
 
     @property
     def __name__(self):  # pragma: nocover
         return "nest parameter"
 
     def __inv__(self, value):
-        return value
+        if isinstance(value, NestRandomDistribution):
+            return value.__tree__()
+        return super().__inv__(value)
+
+
+class nest_constant(constant):
+    """
+    Cast a value to a constant, adding NEST's own random distributions.
+
+    The narrow counterpart of :class:`.nest_parameter`, for ``constants`` blocks. A
+    distribution counts as a constant here because NEST expands it itself: nothing
+    on our side computes per cell or per connection.
+    """
+
+    def __call__(self, value, _key=None, _parent=None):
+        if isinstance(value, dict) and "distribution" in value:
+            return NestRandomDistribution(**value, _key=_key, _parent=_parent)
+        return super().__call__(value, _key=_key, _parent=_parent)
+
+    @property
+    def __name__(self):  # pragma: nocover
+        return "nest constant"
+
+    def __inv__(self, value):
+        if isinstance(value, NestRandomDistribution):
+            return value.__tree__()
+        return super().__inv__(value)

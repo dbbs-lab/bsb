@@ -5,9 +5,34 @@ import typing
 from datetime import datetime
 
 from ..reporting import warn
+from ..storage.provenance import decode_annotation, encode_annotation
 
 if typing.TYPE_CHECKING:  # pragma: nocover
     import neo
+
+
+def read_simulation_config(block: "neo.core.Block") -> dict | None:
+    """
+    Read the configuration of the simulation that produced a block of results.
+
+    :param block: Block of results, either taken from a
+        :class:`~bsb.simulation.results.SimulationResult` or read back out of a
+        results file.
+    :type block: neo.core.Block
+    :returns: The configuration tree of the simulation, or ``None`` if the block
+        carries none. A file written before the configuration was encoded carries
+        only the tree's top-level keys, which are returned as they were found,
+        after a warning: the values were never written and cannot be recovered.
+    :rtype: dict | None
+    """
+    stored = block.annotations.get("config")
+    decoded = decode_annotation(stored)
+    if decoded is not None and not isinstance(decoded, dict):
+        warn(
+            f"Block '{block.name}' carries a simulation configuration written before "
+            "it was stored intact; only its top-level keys were ever written to file."
+        )
+    return decoded
 
 
 class SimulationResult:
@@ -19,7 +44,12 @@ class SimulationResult:
             del tree["post_prepare"]
         self.recorders = []
         self.filename = filename
-        block = Block(name=simulation.name, config=tree)
+        # neo stores a dict annotation as nothing but its keys, so the configuration
+        # is encoded, which reaches a results file intact.
+        block = Block(
+            name=simulation.name,
+            config=encode_annotation(tree, "simulation configuration with the results"),
+        )
         block.rec_datetime = datetime.now()
         if filename:
             from neo import io
@@ -89,4 +119,4 @@ class SimulationRecorder:
         raise NotImplementedError("Recorders need to implement the `flush` function.")
 
 
-__all__ = ["SimulationResult", "SimulationRecorder"]
+__all__ = ["SimulationRecorder", "SimulationResult", "read_simulation_config"]

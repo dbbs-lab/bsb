@@ -2,7 +2,6 @@
 HDF5 storage engine for the BSB framework.
 """
 
-import contextlib
 import importlib.metadata
 import json
 import os
@@ -22,7 +21,11 @@ from bsb import (
     warn,
 )
 from bsb import StorageNode as IStorageNode
-from bsb.storage.provenance import build_root_metadata
+from bsb.storage.provenance import (
+    build_root_metadata,
+    decode_annotation,
+    encode_annotation,
+)
 
 from ._telemetry import _hdf5_tracer
 from .connectivity_set import ConnectivitySet
@@ -396,7 +399,7 @@ def _write_root_metadata(handle, bundle: dict) -> None:
             continue
         value = bundle[key]
         if key in _JSON_ROOT_KEYS:
-            handle.attrs[key] = json.dumps(value)
+            handle.attrs[key] = encode_annotation(value, f"'{key}' provenance")
         else:
             handle.attrs[key] = value
 
@@ -409,8 +412,7 @@ def _read_root_metadata(handle) -> dict:
             continue
         value = handle.attrs[key]
         if key in _JSON_ROOT_KEYS:
-            with contextlib.suppress(TypeError, json.JSONDecodeError):
-                value = json.loads(value)
+            value = decode_annotation(value)
         else:
             # h5py returns numpy scalars; normalise to plain Python.
             if hasattr(value, "item"):

@@ -3,7 +3,9 @@ Provenance helpers shared by storage engines and the simulation result writer.
 
 Exposes ``new_storage_id``, ``iso_now``, ``collect_plugin_manifest``,
 ``collect_host_info``, and ``build_root_metadata`` (the canonical assembler of
-the root-level provenance bundle an engine writes on ``create()``).
+the root-level provenance bundle an engine writes on ``create()``), plus the
+``encode_annotation``/``decode_annotation`` codec that gets structured metadata
+into a file intact.
 """
 
 import copy
@@ -11,12 +13,16 @@ import datetime
 import functools
 import getpass
 import importlib.metadata
+import json
 import os
 import platform
 import socket
 import uuid
 
+import numpy as np
+
 from .. import plugins
+from ..reporting import warn
 
 # Bump this when the layout of the provenance bundle written to storage roots
 # or to ``.nio`` files changes in an incompatible way.
@@ -32,6 +38,60 @@ _PLUGIN_CATEGORIES = (
     "commands",
     "options",
 )
+
+
+def _json_default(value):
+    """Encode the numpy scalars and arrays that reach metadata from config values."""
+    if isinstance(value, np.ndarray):
+        return value.tolist()
+    if isinstance(value, np.generic):
+        return value.item()
+    raise TypeError(f"Can't encode '{value}' ({type(value)})")
+
+
+def encode_annotation(value, what: str = "metadata") -> str:
+    """
+    Encode structured metadata as JSON for storage.
+
+    Flat scalars survive a write on their own and should be stored as they are.
+    Anything nested must not: ``neo``'s ``NixIO`` stores a dict annotation as
+    nothing but its top-level keys, and HDF5 attributes have no nested form either,
+    so a bundle written as a mapping reaches the file gutted of every value.
+
+    Encoding failures degrade rather than taking a completed run down with them: a
+    value that cannot be encoded warns and stores ``"null"``, because losing the
+    metadata is a smaller loss than losing the results it describes.
+
+    :param value: The metadata to encode.
+    :param what: What is being encoded, named in the warning if it cannot be.
+    :returns: A JSON string, or ``"null"`` if the value could not be encoded.
+    """
+    try:
+        return json.dumps(value, default=_json_default)
+    except TypeError as e:
+        warn(f"Could not store the {what}: {e}")
+        return "null"
+
+
+def decode_annotation(value, default=None):
+    """
+    Read back what :func:`encode_annotation` wrote.
+
+    A value that is not a JSON string is returned as-is, so metadata written before
+    this codec existed reads back as whatever it was rather than raising.
+
+    :param value: The stored value.
+    :param default: What to return when there is nothing stored at all.
+    :returns: The decoded metadata.
+    """
+    if value is None:
+        return default
+    if not isinstance(value, str):
+        return value
+    try:
+        return json.loads(value)
+    except json.JSONDecodeError:
+        return value
 
 
 def new_storage_id() -> str:
@@ -134,6 +194,8 @@ def build_root_metadata(
 
 
 __all__ = [
+    "decode_annotation",
+    "encode_annotation",
     "SCHEMA_VERSION",
     "build_root_metadata",
     "collect_host_info",

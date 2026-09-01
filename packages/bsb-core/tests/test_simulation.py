@@ -18,6 +18,7 @@ from bsb import (
     config,
     get_simulation_adapter,
     options,
+    read_simulation_config,
 )
 
 
@@ -799,7 +800,7 @@ class TestAfterSimulationHook(
 
         self.assertEqual(
             ["first", "second"],
-            list(result.block.annotations["config"]["after_simulation"]),
+            list(read_simulation_config(result.block)["after_simulation"]),
             "Hooks should be part of the configuration stored with the results.",
         )
 

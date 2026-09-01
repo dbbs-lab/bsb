@@ -91,6 +91,7 @@ Content
    /core/scaffold
    /config/configuration-toc
    /core/storage
+   /core/randomness
    /core/job-distribution
 
 .. toctree::

@@ -8,6 +8,7 @@ from ..cell_types import CellType
 from ..connectivity import ConnectionStrategy
 from ..placement import PlacementStrategy
 from ..postprocessing import AfterConnectivityHook, AfterPlacementHook
+from ..rng import RandomNode
 from ..simulation.simulation import Simulation
 from ..storage._files import (
     CodeDependencyNode,
@@ -87,6 +88,15 @@ class Configuration:
     )
     """
     Files to attach to the network.
+    """
+    rng: RandomNode = config.attr(
+        type=RandomNode,
+        default=dict,
+        call_default=True,
+    )
+    """
+    Configured randomness. Leave its seed unset for replicates; set it, or feed back
+    the one a run recorded, to reproduce that run.
     """
     storage: StorageNode = config.attr(
         type=StorageNode,

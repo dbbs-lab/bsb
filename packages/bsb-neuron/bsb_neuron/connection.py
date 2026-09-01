@@ -1,5 +1,5 @@
 import numpy as np
-from bsb import AdapterError, ConnectionModel, Parameter, config, types
+from bsb import AdapterError, ConnectionModel, config, types
 
 from bsb_neuron._util import ignore_arborize_proxy_warnings
 
@@ -44,8 +44,6 @@ class SynapseSpec:
     """Weight of the connection between the presynaptic and the postsynaptic cells."""
     delay = config.attr(type=float, default=0.0)
     """Delay of the transmission between the presynaptic and the postsynaptic cells."""
-    parameters = config.list(type=Parameter)
-    """List of parameters to assign to the synapse model."""
 
     def __init__(self, synapse_name=None, /, **kwargs):
         if synapse_name is not None:
@@ -59,8 +57,6 @@ class TransceiverModel(NeuronConnection, classmap_entry="transceiver"):
         required=True,
     )
     """List of synapse models to use for a connection."""
-    parameters = config.list(type=Parameter)
-    """List of parameters to assign to the connection."""
     source = config.attr(type=str)
     """Source variable to assign to the connection."""
 

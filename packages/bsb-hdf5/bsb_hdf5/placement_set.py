@@ -110,6 +110,8 @@ class PlacementSet(
         if path in handle:
             raise DatasetExistsError(f"PlacementSet '{tag}' already exists.")
         handle.create_group(path)
+        _init_ps_attrs(handle, path, cell_type.name)
+        _bump_root_state(handle)
         return cls(engine, cell_type)
 
     @staticmethod
@@ -331,6 +333,9 @@ class PlacementSet(
 
     def append_additional(self, name, chunk, data):
         self._additional_chunks.append(chunk, name, data)
+        with self._engine._write(), self._engine._handle("a") as handle:
+            _bump_ps_state(handle, self._path, self._engine)
+            _bump_root_state(handle)
 
     @handles_handles("a")
     def clear(self, chunks=None, handle=HANDLED):
@@ -342,6 +347,8 @@ class PlacementSet(
                 stats[chunk]["placed"] -= len(data["position"])
                 del g[chunk]
         self._engine._write_chunk_stats(handle, stats)
+        _bump_ps_state(handle, self._path, self._engine)
+        _bump_root_state(handle)
 
     @handles_handles("a")
     def label_by_mask(self, labels, mask, handle=HANDLED):
@@ -421,6 +428,8 @@ class PlacementSet(
             handle[self._path].attrs["labelsets"] = json.dumps(
                 updated_labels, default=list
             )
+        _bump_ps_state(handle, self._path, self._engine)
+        _bump_root_state(handle)
 
     def set_morphology_label_filter(self, morphology_labels):
         """
@@ -476,6 +485,8 @@ class PlacementSet(
         chunk_stats = json.loads(handle[self._path].attrs.get("chunks", "{}"))
         chunk_stats[str(chunk.id)] = chunk_stats.get(str(chunk.id), 0) + int(count)
         handle[self._path].attrs["chunks"] = json.dumps(chunk_stats)
+        _bump_ps_state(handle, self._path, self._engine)
+        _bump_root_state(handle)
 
     @handles_handles("r")
     def get_chunk_stats(self, handle=HANDLED):
@@ -559,3 +570,49 @@ def encode_labels(data, ds):
     serialized = json.dumps(EncodedLabels.none(1).labels, default=list)
     labels = json.loads(ps_group.attrs.get("labelsets", serialized))
     return EncodedLabels(shape=data.shape, buffer=data, labels=labels)
+
+
+def _init_ps_attrs(handle, ps_path, cell_type_name):
+    """Stamp the provenance attrs that every PlacementSet should have."""
+    from bsb.storage.provenance import iso_now
+
+    grp = handle[ps_path]
+    grp.attrs["cell_type"] = cell_type_name
+    grp.attrs["revision"] = 0
+    grp.attrs["created_at"] = iso_now()
+
+
+def _bump_ps_state(handle, ps_path, engine):
+    """
+    Bump the per-PS ``revision`` and refresh the informational
+    ``morphology_hashes`` from the morphology repo on the same open handle (no
+    re-locking).
+    """
+    grp = handle[ps_path]
+    current = grp.attrs.get("revision", 0)
+    if hasattr(current, "item"):
+        current = current.item()
+    grp.attrs["revision"] = int(current) + 1
+    loaders = grp.attrs.get("morphology_loaders")
+    if loaders is not None and len(loaders):
+        all_meta = _read_morphology_meta_from_handle(handle)
+        names = loaders.tolist() if hasattr(loaders, "tolist") else list(loaders)
+        hashes = [(all_meta.get(name) or {}).get("hash") for name in names]
+        grp.attrs["morphology_hashes"] = json.dumps(hashes)
+
+
+def _read_morphology_meta_from_handle(handle):
+    """Read morphology_meta directly from an open handle without re-locking."""
+    if "morphology_meta" not in handle:
+        return {}
+    try:
+        return json.loads(handle["morphology_meta"][()])
+    except (TypeError, json.JSONDecodeError):
+        return {}
+
+
+def _bump_root_state(handle):
+    """Forward to the engine module so we don't reach into HDF5Engine directly."""
+    from . import _bump_state_attrs
+
+    _bump_state_attrs(handle)

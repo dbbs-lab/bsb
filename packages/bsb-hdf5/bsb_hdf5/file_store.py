@@ -1,4 +1,6 @@
 import contextlib
+import hashlib
+import importlib.metadata
 import json
 import time
 from uuid import uuid4
@@ -35,6 +37,9 @@ class FileStore(Resource, IFileStore):
     def remove(self, id):
         with self._engine._write(), self._engine._handle("a") as root:
             del root[f"{self._path}/{id}"]
+            from . import _bump_state_attrs
+
+            _bump_state_attrs(root)
 
     def store(self, content, meta=None, id=None, encoding=None, overwrite=False):
         if id is None:
@@ -48,6 +53,7 @@ class FileStore(Resource, IFileStore):
                 if encoding is None:
                     encoding = "utf-8"
                 content = content.encode(encoding)
+            meta.setdefault("content_sha256", hashlib.sha256(content).hexdigest())
             content = np.array(content)
             if overwrite:
                 with contextlib.suppress(KeyError):
@@ -60,6 +66,9 @@ class FileStore(Resource, IFileStore):
                 ds.attrs["encoding"] = encoding
             ds.attrs["meta"] = json.dumps(meta)
             ds.attrs["mtime"] = meta["mtime"]
+            from . import _bump_state_attrs
+
+            _bump_state_attrs(root)
         return id
 
     def load_active_config(self):
@@ -99,6 +108,13 @@ class FileStore(Resource, IFileStore):
         active_id = None
         if self._engine.comm.get_rank() == 0:
             meta = {k: v for k, v in config._meta.items() if v is not None}
+            meta.setdefault(
+                "producer",
+                {
+                    "package": "bsb-core",
+                    "version": importlib.metadata.version("bsb-core"),
+                },
+            )
             active_id = self.store(json.dumps(config.__tree__()), meta)
         return self._engine.comm.bcast(active_id, root=0)
 

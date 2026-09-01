@@ -129,6 +129,7 @@ if typing.TYPE_CHECKING:  # pragma: nocover
   import bsb.storage._files
   import bsb.storage.decorators
   import bsb.storage.interfaces
+  import bsb.storage.provenance
   import bsb.topology
   import bsb.topology.partition
   import bsb.topology.region
@@ -154,6 +155,7 @@ BranchLocTargetting: type["bsb.simulation.targetting.BranchLocTargetting"]
 BsbCommand: type["bsb.cli.commands.BsbCommand"]
 BsbOption: type["bsb.option.BsbOption"]
 BsbParser: type["bsb.morphologies.parsers.parser.BsbParser"]
+BsbProvenanceUpgradeWarning: type["bsb.exceptions.BsbProvenanceUpgradeWarning"]
 BuildContext: type["bsb.config.BuildContext"]
 ByIdTargetting: type["bsb.simulation.targetting.ByIdTargetting"]
 ByLabelTargetting: type["bsb.simulation.targetting.ByLabelTargetting"]
@@ -259,7 +261,7 @@ Intersectional: type["bsb.connectivity.detailed.shared.Intersectional"]
 InvalidReferenceError: type["bsb.exceptions.InvalidReferenceError"]
 InvertedRoI: type["bsb.mixins.InvertedRoI"]
 JobCancelledError: type["bsb.exceptions.JobCancelledError"]
-JobPool: type["bsb.services.JobPool"]
+JobPool: "bsb.services.JobPool"
 JobPoolContextError: type["bsb.exceptions.JobPoolContextError"]
 JobPoolError: type["bsb.exceptions.JobPoolError"]
 JobSchedulingError: type["bsb.exceptions.JobSchedulingError"]
@@ -268,8 +270,8 @@ LabellingError: type["bsb.exceptions.LabellingError"]
 Layer: type["bsb.topology.partition.Layer"]
 LayoutError: type["bsb.exceptions.LayoutError"]
 LocationTargetting: type["bsb.simulation.targetting.LocationTargetting"]
-MPI: type["bsb.services.MPI"]
-MPILock: type["bsb.services.MPILock"]
+MPI: "bsb.services.MPI"
+MPILock: "bsb.services.MPILock"
 MissingActiveConfigError: type["bsb.exceptions.MissingActiveConfigError"]
 MissingMorphologyError: type["bsb.exceptions.MissingMorphologyError"]
 MissingSourceError: type["bsb.exceptions.MissingSourceError"]
@@ -347,6 +349,7 @@ RootCommand: type["bsb.cli.commands.RootCommand"]
 RotationDistributor: type["bsb.placement.distributor.RotationDistributor"]
 RotationSet: type["bsb.morphologies.RotationSet"]
 RoundRobinMorphologies: type["bsb.placement.distributor.RoundRobinMorphologies"]
+SCHEMA_VERSION: "bsb.storage.provenance.SCHEMA_VERSION"
 Scaffold: type["bsb.core.Scaffold"]
 ScaffoldError: type["bsb.exceptions.ScaffoldError"]
 ScaffoldWarning: type["bsb.exceptions.ScaffoldWarning"]
@@ -402,7 +405,10 @@ activate_session: "bsb.profiling.activate_session"
 box_layout: "bsb.topology.box_layout"
 branch_iter: "bsb.morphologies.branch_iter"
 build_context: "bsb.config.build_context"
+build_root_metadata: "bsb.storage.provenance.build_root_metadata"
 chunklist: "bsb.storage._chunks.chunklist"
+collect_host_info: "bsb.storage.provenance.collect_host_info"
+collect_plugin_manifest: "bsb.storage.provenance.collect_plugin_manifest"
 compose_nodes: "bsb.config.compose_nodes"
 copy_configuration_template: "bsb.config.copy_configuration_template"
 create_engine: "bsb.storage.create_engine"
@@ -434,8 +440,10 @@ inside_mbox: "bsb.connectivity.geometric.geometric_shapes.inside_mbox"
 is_module_option_set: "bsb.options.is_module_option_set"
 is_partition: "bsb.topology.is_partition"
 is_region: "bsb.topology.is_region"
+iso_now: "bsb.storage.provenance.iso_now"
 load_root_command: "bsb.cli.commands.load_root_command"
 make_configuration_diagram: "bsb.config.make_configuration_diagram"
+new_storage_id: "bsb.storage.provenance.new_storage_id"
 on_main: "bsb.storage.decorators.on_main"
 on_main_until: "bsb.storage.decorators.on_main_until"
 open_storage: "bsb.storage.open_storage"

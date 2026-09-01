@@ -13,9 +13,27 @@ def _assign_targets(assign: ast.Assign, id_: str):
 
 @functools.cache
 def get_public_api_map():
+    return _scan_public_api()[0]
+
+
+@functools.cache
+def get_public_api_kinds():
+    """
+    What each public name is bound to in its own module: ``"class"``, or ``"value"``
+    for anything else. A name the module only re-exports is absent.
+
+    Read from the syntax tree rather than guessed from capitalisation, because a
+    constant like ``SCHEMA_VERSION`` is capitalised too and is not a type.
+    """
+    return _scan_public_api()[1]
+
+
+@functools.cache
+def _scan_public_api():
     root = Path(__file__).parent.parent / "bsb"
 
     public_api_map = {}
+    api_kinds = {}
 
     for file in root.rglob("*.py"):
         module_parts = file.relative_to(root).parts
@@ -24,7 +42,16 @@ def get_public_api_map():
             + ((module_parts[-1][:-3],) if module_parts[-1] != "__init__.py" else tuple())
         )
         module_api = []
+        module_kinds = {}
         for assign in ast.parse(file.read_text()).body:
+            if isinstance(assign, ast.ClassDef):
+                module_kinds[assign.name] = "class"
+            elif isinstance(assign, ast.FunctionDef | ast.AsyncFunctionDef):
+                module_kinds[assign.name] = "value"
+            elif isinstance(assign, ast.Assign):
+                for target in assign.targets:
+                    if isinstance(target, ast.Name):
+                        module_kinds.setdefault(target.id, "value")
             if isinstance(assign, ast.Assign):
                 is_api = _assign_targets(assign, "__api__")
                 is_either = is_api or _assign_targets(assign, "__all__")
@@ -43,15 +70,21 @@ def get_public_api_map():
                     f" and bsb.{public_api_map[api]}.{api}"
                 )
             public_api_map[api] = module
+            if api in module_kinds:
+                api_kinds[api] = module_kinds[api]
 
-    return public_api_map
+    return public_api_map, api_kinds
 
 
 def public_annotations():
     annotations = []
     for api, module in get_public_api_map().items():
         annotation = f'"bsb.{module}.{api}"'
-        if api[0].isupper():
+        kind = get_public_api_kinds().get(api)
+        # A name this module only re-exports is invisible to the syntax tree, so its
+        # capitalisation is all there is to go on.
+        is_class = kind == "class" if kind is not None else api[0].isupper()
+        if is_class:
             annotation = f"type[{annotation}]"
         annotations.append(f"{api}: {annotation}")
 

@@ -1,3 +1,4 @@
+import copy
 import os
 import shutil
 import tempfile
@@ -828,3 +829,80 @@ class TestAfterSimulationHook(
                 len(block.segments),
                 "The run should already be flushed by the time the hooks run.",
             )
+
+
+class TestTargettingRandomness(
+    FixedPosConfigFixture,
+    RandomStorageFixture,
+    NumpyTestCase,
+    unittest.TestCase,
+    engine_name="hdf5",
+):
+    """
+    A fraction of a population has to be the same fraction on every rank.
+
+    Drawn unseeded, each rank picked its own subset, so a device ended up connected
+    to different cells on different ranks while the simulator's own connect call is
+    collective over a description the ranks disagreed about.
+    """
+
+    def network(self, seed):
+        cfg = copy.deepcopy(self.cfg)
+        cfg.rng = {"seed": seed}
+        network = Scaffold(cfg, self.random_storage())
+        network.simulations.add(
+            "test",
+            simulator="arbor",
+            duration=100,
+            resolution=0.5,
+            cell_models={
+                "test_cell": {
+                    "model_strategy": "lif",
+                    "constants": {
+                        "C_m": 250,
+                        "tau_m": 20,
+                        "t_ref": 2.0,
+                        "E_L": 0.0,
+                        "E_R": 0.0,
+                        "V_m": 0.0,
+                        "V_th": 20,
+                    },
+                }
+            },
+            connection_models=dict(),
+            devices=dict(
+                rec={
+                    "device": "spike_recorder",
+                    "targetting": {
+                        "strategy": "cell_model",
+                        "cell_models": ["test_cell"],
+                        "fraction": 0.5,
+                    },
+                }
+            ),
+        )
+        return network
+
+    def selection(self, network):
+        # `satisfy_fractions` is where the draw happens, so it is asked directly
+        # rather than through a whole prepared simulation.
+        targetting = network.simulations.test.devices["rec"].targetting
+        model = network.simulations.test.cell_models.test_cell
+        return list(targetting.satisfy_fractions({model: np.arange(40)})[model])
+
+    def test_the_same_seed_picks_the_same_subset(self):
+        first, second = self.network(1234), self.network(1234)
+
+        self.assertEqual(
+            self.selection(first),
+            self.selection(second),
+            "every rank must draw the same subset, or they disagree on the network",
+        )
+
+    def test_the_selection_is_still_random(self):
+        picks = {tuple(self.selection(self.network(seed))) for seed in (1, 2, 3)}
+
+        self.assertEqual(3, len(picks), "different seeds must still select differently")
+
+    def test_half_of_the_population_is_taken(self):
+        self.assertEqual(20, len(self.selection(self.network(1234))))

@@ -4,13 +4,12 @@ import itertools
 import typing
 
 from .. import config
-from ..config import types as cfgtypes
-from ..config._attrs import cfgdict, cfglist
+from ..config._attrs import cfgdict
 from ._backends import get_simulation_nodes
 from .cell import CellModel
 from .connection import ConnectionModel
 from .device import DeviceModel
-from .postprocessing import AfterSimulationHook
+from .postprocessing import AfterPrepareHook, AfterSimulationHook
 
 if typing.TYPE_CHECKING:  # pragma: nocover
     from ..cell_types import CellType
@@ -55,11 +54,11 @@ class Simulation:
     """
     Dictionary linking the device name to its model.
     """
-    post_prepare: cfglist[typing.Callable[[Simulation, typing.Any], None]] = config.list(
-        type=cfgtypes.function_()
+    after_prepare: cfgdict[str, AfterPrepareHook] = config.dict(
+        type=AfterPrepareHook,
     )
     """
-    List of hook functions to call after the simulation has been prepared.
+    Dictionary of hooks to run once the simulation has been prepared, before it runs.
     """
     after_simulation: cfgdict[str, AfterSimulationHook] = config.dict(
         type=AfterSimulationHook,

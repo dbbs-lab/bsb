@@ -2,9 +2,9 @@ import abc
 import warnings
 
 import nest
-from bsb import DeviceModel, Targetting, config, refs, types
+from bsb import DeviceModel, ParameterizedModel, Targetting, config, refs, types
 
-from .distributions import nest_parameter
+from .distributions import nest_constant
 
 
 @config.node
@@ -133,19 +133,28 @@ class NestDevice(DeviceModel):
 
 
 @config.node
-class ExtNestDevice(NestDevice, classmap_entry="external"):
+class ExtNestDevice(ParameterizedModel, NestDevice, classmap_entry="external"):
     """
     Class interfacing Nest devices.
     """
 
     nest_model = config.attr(type=str, required=True)
     """Importable reference to the NEST model describing the device type."""
-    constants = config.dict(type=nest_parameter())
-    """Dictionary of the constants values to assign to the device model."""
+    constants = config.dict(type=nest_constant())
+    """
+    Constant values to assign to the device model.
+
+    A bare value, or a ``distribution`` node NEST draws itself. A device's own
+    settings do not vary over cells or connections, so there is no computed
+    counterpart here.
+    """
+
+    def get_parameter_groups(self):
+        return (self.constants,)
 
     def implement(self, adapter, simulation, simdata):
         simdata.devices[self] = device = nest.Create(
-            self.nest_model, params=self.constants
+            self.nest_model, params=self.compute_parameters()
         )
         nodes = self.get_target_nodes(adapter, simulation, simdata)
         self.connect_to_nodes(device, nodes)

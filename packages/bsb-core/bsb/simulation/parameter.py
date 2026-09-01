@@ -212,6 +212,21 @@ class ParameterizedModel:
                 merged[key] = param
         return merged
 
+    def compute_parameters(self, *args, **kwargs) -> dict:
+        """
+        Every parameter of this model, computed into the values a backend assigns.
+
+        The consumption counterpart of :meth:`get_parameters`: the arguments are
+        whatever the arity of this model's parameters takes, and a constant ignores
+        them.
+
+        :returns: The configured parameters, keyed by name, as plain values.
+        """
+        return {
+            name: param.compute(*args, **kwargs)
+            for name, param in self.get_parameters().items()
+        }
+
 
 class constant(TypeHandler):
     """

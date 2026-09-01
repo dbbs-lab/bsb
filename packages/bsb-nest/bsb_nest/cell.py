@@ -41,6 +41,7 @@ class NestCell(ParameterizedModel, CellModel):
         return population
 
     def set_parameters(self, population, simdata):
+        # NEST assigns a whole mapping at once; setting them one by one would be a
+        # kernel round trip per parameter.
         ps = simdata.placement[self]
-        for name, param in self.get_parameters().items():
-            population.set(name, param.compute(self.simulation, ps))
+        population.set(self.compute_parameters(self.simulation, ps))

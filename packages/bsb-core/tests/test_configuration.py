@@ -15,6 +15,7 @@ from bsb_test import (
     list_test_configs,
 )
 from bsb_test.configs import get_test_config_module
+from packaging.requirements import Requirement
 
 from bsb import (
     AttributeOrderError,
@@ -1985,6 +1986,21 @@ class TestPackageRequirements(RandomStorageFixture, unittest.TestCase, engine_na
         self.assertIsNotNone(get_missing_requirement_reason("bsb-core-soup==4.0"))
         with self.assertWarns(PackageRequirementWarning):
             Configuration.default(packages=["bsb-core-soup==4.0"])
+
+    def test_requirement_tree_roundtrip(self):
+        # Requirements that are met, so that construction emits no warnings, spelled
+        # with whitespace that `str(Requirement)` would normalize away.
+        specs = [
+            f"bsb-core == {importlib.metadata.version('bsb-core')}",
+            "numpy >= 1.0",
+        ]
+        cfg = Configuration.default(packages=specs)
+        for requirement in cfg.packages:
+            self.assertIsInstance(requirement, Requirement)
+        # The config must inverse to the user's own spelling, ...
+        self.assertEqual(specs, cfg.__tree__()["packages"])
+        # ... and that tree must parse back into equivalent requirements.
+        self.assertEqual(cfg.packages, Configuration(cfg.__tree__()).packages)
 
     def test_installed_package(self):
         self.assertIsNone(

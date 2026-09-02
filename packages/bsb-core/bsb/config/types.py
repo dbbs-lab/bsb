@@ -5,6 +5,7 @@ import math
 from weakref import WeakKeyDictionary
 
 import numpy as np
+from packaging.requirements import Requirement
 
 from ..exceptions import (
     CastError,
@@ -828,11 +829,24 @@ def none():
     return type_handler
 
 
+class _CfgRequirement(Requirement):
+    """
+    A :class:`packaging.requirements.Requirement` that can carry the config inversion
+    string it was parsed from.
+
+    :class:`~packaging.requirements.Requirement` declares ``__slots__``, so its instances
+    reject arbitrary attributes; the subclass adds a slot of its own to hold the
+    requirement specifier exactly as the user spelled it. Without it, inverting the
+    config would emit ``str(requirement)``, which normalizes away whitespace and extras
+    spelling.
+    """
+
+    __slots__ = ("_cfg_inv",)
+
+
 class PackageRequirement(TypeHandler):
     def __call__(self, value):
-        from packaging.requirements import Requirement
-
-        requirement = Requirement(value)
+        requirement = _CfgRequirement(value)
         requirement._cfg_inv = value
         return requirement
 

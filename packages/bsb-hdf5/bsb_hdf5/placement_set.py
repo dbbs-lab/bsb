@@ -246,11 +246,30 @@ class PlacementSet(
             self.load_morphologies(),
         )
 
-    def __len__(self):
+    @handles_handles("r")
+    def __len__(self, handle=HANDLED):
         if self._labels:
-            return np.sum(self._labels_chunks.load().get_mask(self._labels))
-        else:
-            return len(self._position_chunks.load())
+            return int(np.sum(self.get_label_mask(self._labels, handle=handle)))
+        return self._count(handle)
+
+    def _count(self, handle):
+        """
+        Count the cells in the chunks under the chunk filter, ignoring any label filter.
+
+        Reads the count tracked per chunk on the placement set, so that it also counts
+        entities, which store a count but no data.
+        """
+        try:
+            chunk_stats = json.loads(handle[self._path].attrs["chunks"])
+        except KeyError:
+            # Sets stored without a tracked count have to be counted the hard way. An
+            # entity set is indistinguishable from an empty one here, but counting the
+            # positions is still the best guess available.
+            return len(self._position_chunks.load(handle=handle))
+        if self._chunks:
+            filter_ = {str(chunk.id) for chunk in self._chunks}
+            return sum(c for id_, c in chunk_stats.items() if id_ in filter_)
+        return sum(chunk_stats.values())
 
     @handles_handles("a")
     def append_data(
@@ -337,10 +356,17 @@ class PlacementSet(
         path = _root + self.tag
         g = handle.require_group(path)
         stats = self._engine._read_chunk_stats(handle)
-        for chunk, data in g.items():
+        chunk_stats = json.loads(g.attrs.get("chunks", "{}"))
+        for chunk in list(g.keys()):
             if chunks is None or chunk in chunks:
-                stats[chunk]["placed"] -= len(data["position"])
+                count = chunk_stats.pop(chunk, None)
+                if count is None:
+                    # Untracked chunk, fall back to the amount of stored positions.
+                    count = len(g[chunk].get("position", ()))
+                stats[chunk]["placed"] -= count
                 del g[chunk]
+        g.attrs["chunks"] = json.dumps(chunk_stats)
+        g.attrs["len"] = sum(chunk_stats.values())
         self._engine._write_chunk_stats(handle, stats)
 
     @handles_handles("a")
@@ -484,17 +510,18 @@ class PlacementSet(
     @handles_handles("r")
     def load_ids(self, handle=HANDLED):
         if self._chunks is None or not len(self._chunks):
-            return self.get_labelled(self._labels, handle=handle)
-        stats = self.get_chunk_stats(handle)
-        ranges = []
-        ctr = 0
-        for chunk, len_ in sorted(
-            stats.items(), key=lambda k: Chunk.from_id(int(k[0]), None).id
-        ):
-            if chunk in self._chunks:
-                ranges.append(np.arange(ctr, ctr + len_))
-            ctr += len_
-        ranges = np.concatenate(ranges)
+            ranges = np.arange(self._count(handle))
+        else:
+            stats = self.get_chunk_stats(handle)
+            ranges = []
+            ctr = 0
+            for chunk, len_ in sorted(
+                stats.items(), key=lambda k: Chunk.from_id(int(k[0]), None).id
+            ):
+                if chunk in self._chunks:
+                    ranges.append(np.arange(ctr, ctr + len_))
+                ctr += len_
+            ranges = np.concatenate(ranges)
         if self._labels:
             ranges = ranges[self.get_label_mask(self._labels, handle=handle)]
         return ranges

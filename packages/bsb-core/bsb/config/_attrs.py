@@ -542,11 +542,14 @@ class ConfigurationAttribute:
             # This value error should only arise when users are manually setting
             # attributes in an already bootstrapped config tree.
             raise CastError(
-                f"'{value}' is not convertible to {self.type.__name__},"
-                f" for attribute '{self.attr_name}' of {instance}."
+                f"'{value}' is not convertible to {self.type.__name__}.",
+                instance,
+                self.attr_name,
             ) from None
         except (RequirementError, CastError) as e:
-            if not hasattr(e, "node") or not e.node:
+            # Only claim errors that no deeper node has claimed yet. Test against
+            # `None`: a node that is an empty container is falsy, but not unclaimed.
+            if getattr(e, "node", None) is None:
                 e.node, e.attr = instance, self.attr_name
             raise
         except Exception as e:
@@ -728,7 +731,7 @@ class cfglist(builtins.list):
                 + e.msg,
                 *e.args,
             )
-            if not e.node:
+            if getattr(e, "node", None) is None:
                 e.node, e.attr = self, index
             raise
         except Exception as e:
@@ -825,7 +828,7 @@ class cfgdict(builtins.dict):
         try:
             value = self._elem_type(value, _parent=self, _key=key)
         except (RequirementError, CastError) as e:
-            if not (hasattr(e, "node") and e.node):
+            if getattr(e, "node", None) is None:
                 e.node, e.attr = self, key
             raise
         except Exception:

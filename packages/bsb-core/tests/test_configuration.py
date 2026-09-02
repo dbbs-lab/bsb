@@ -2046,6 +2046,56 @@ class TestPackageRequirements(RandomStorageFixture, unittest.TestCase, engine_na
         )
 
 
+class TestErrorNodeAttribution(unittest.TestCase):
+    """
+    Configuration errors have to name the node they occurred on, and not the nearest
+    ancestor that happened to be able to name itself.
+    """
+
+    def setUp(self):
+        @config.dynamic(attr_name="kind", auto_classmap=True)
+        class Widget:
+            pass
+
+        @config.node
+        class RoundWidget(Widget, classmap_entry="round"):
+            size = config.attr(type=int)
+
+        @config.node
+        class Leaf:
+            pass
+
+        @config.node
+        class Holder:
+            widgets = config.dict(type=Widget)
+            leaf = config.attr(type=Leaf)
+
+        @config.root
+        class Root:
+            holders = config.dict(type=Holder)
+
+        self.Root = Root
+
+    def test_missing_dynamic_attr(self):
+        """
+        The dynamic class of a node is determined before the node exists, so the error
+        has to be attributed to the slot the node was being built for.
+        """
+        with self.assertRaises(RequirementError) as ctx:
+            self.Root(holders={"h": {"widgets": {"w": {}}}})
+        self.assertIn("{root}.holders.h.widgets.w", str(ctx.exception))
+
+    def test_unconvertible_node_value(self):
+        with self.assertRaises(CastError) as ctx:
+            self.Root(holders={"h": {"leaf": "nonsense"}})
+        self.assertIn("{root}.holders.h.leaf", str(ctx.exception))
+
+    def test_unconvertible_attr_of_dynamic_node(self):
+        with self.assertRaises(CastError) as ctx:
+            self.Root(holders={"h": {"widgets": {"w": {"kind": "round", "size": "nan"}}}})
+        self.assertIn("{root}.holders.h.widgets.w.size", str(ctx.exception))
+
+
 class TestSurfaceErrorAttribution(unittest.TestCase):
     """
     Partitions that can't calculate a surface have to say which partition they are, and

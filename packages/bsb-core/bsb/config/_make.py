@@ -243,7 +243,15 @@ def compile_new(node_cls, dynamic=False, pluggable=False, root=False):
         class_determinant = _node_determinant
 
     def __new__(_cls, *args, _parent=None, _key=None, **kwargs):
-        ncls = class_determinant(_cls, kwargs)
+        try:
+            ncls = class_determinant(_cls, kwargs)
+        except (CastError, RequirementError) as e:
+            # The node that is being determined does not exist yet, so it can't name
+            # itself the way `__post_new__` errors do. Point at the slot it was being
+            # built for instead, or an ancestor ends up taking the blame.
+            if _parent is not None and getattr(e, "node", None) is None:
+                e.node, e.attr = _parent, _key
+            raise
         instance = object.__new__(ncls)
         instance._config_pos_init = bool(len(args))
         _set_pk(instance, _parent, _key)

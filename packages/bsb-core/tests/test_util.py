@@ -1,6 +1,9 @@
+import contextlib
 import unittest
+from unittest import mock
 
 import numpy as np
+import requests
 from bsb_test import (
     FixedPosConfigFixture,
     NumpyTestCase,
@@ -9,7 +12,7 @@ from bsb_test import (
 )
 from scipy.spatial.transform import Rotation
 
-from bsb import FileDependency, NeuroMorphoScheme, Scaffold
+from bsb import FileDependency, NeuroMorphoScheme, Scaffold, UrlScheme
 from bsb._util import assert_samelen, rotation_matrix_from_vectors
 
 
@@ -93,6 +96,58 @@ class TestUriSchemes(RandomStorageFixture, unittest.TestCase, engine_name="fs"):
                 file.get_meta()
         finally:
             NeuroMorphoScheme._nm_url = url
+
+
+class TestOfflineUrlScheme(RandomStorageFixture, unittest.TestCase, engine_name="fs"):
+    """
+    Cached URL files must stay usable when the host can't be reached, e.g. on compute
+    nodes whose outbound connection is closed once the job starts.
+    """
+
+    url = "https://example.com/cached.txt"
+
+    def setUp(self):
+        super().setUp()
+        self.file = FileDependency(self.url, Scaffold(storage=self.storage).files)
+        with mock.patch.object(
+            UrlScheme, "get_meta", return_value={"headers": {"ETag": "v1"}}
+        ):
+            self.file.store_content(b"cached content")
+
+    @contextlib.contextmanager
+    def _head_raises(self, error):
+        with mock.patch.object(requests.Session, "head", side_effect=error):
+            yield
+
+    def test_connection_error_keeps_cache(self):
+        with self._head_raises(requests.ConnectionError("Network is unreachable")):
+            with self.assertWarns(UserWarning):
+                self.assertFalse(self.file.should_update(), "should keep cached copy")
+            self.assertEqual(b"cached content", self.file.get_content()[0], "not cached")
+
+    def test_timeout_keeps_cache(self):
+        with (
+            self._head_raises(requests.ConnectTimeout("timed out")),
+            self.assertWarns(UserWarning),
+        ):
+            self.assertFalse(self.file.should_update(), "should keep cached copy")
+
+    def test_other_request_errors_propagate(self):
+        with (
+            self._head_raises(requests.TooManyRedirects("redirect loop")),
+            self.assertRaises(requests.TooManyRedirects),
+        ):
+            self.file.should_update()
+
+    def test_http_status_is_not_a_connection_error(self):
+        # HTTP statuses don't raise: a 404 comes back as a response without validation
+        # headers, and falls through to the expiration check, unlike an unreachable host.
+        not_found = mock.Mock(status_code=404, headers={"Content-Length": "0"})
+        with mock.patch.object(requests.Session, "head", return_value=not_found):
+            self.assertFalse(self.file.should_update(), "cached copy hasn't expired yet")
+        changed = mock.Mock(status_code=200, headers={"ETag": "v2"})
+        with mock.patch.object(requests.Session, "head", return_value=changed):
+            self.assertTrue(self.file.should_update(), "new ETag should trigger update")
 
 
 class TestAssertSameLength(unittest.TestCase):

@@ -4,13 +4,15 @@ import os
 import pathlib
 import tempfile
 import unittest
+from unittest import mock
 
 import toml
 
-from bsb import OptionError, ReadOnlyOptionError, options
+from bsb import OptionError, ReadOnlyOptionError, option, options
 from bsb._options import QuietFlag
 from bsb.cli import handle_command
-from bsb.option import _pyproject_content, _pyproject_path
+from bsb.option import _clear_pyproject_cache, _pyproject_content
+from bsb.reporting import report
 
 
 class TestCLIOption(unittest.TestCase):
@@ -113,11 +115,11 @@ class TestProjectOption(unittest.TestCase):
 
     def setUp(self):
         super().setUp()
-        _pyproject_path.cache_clear()
+        _clear_pyproject_cache()
 
     def tearDown(self):
         super().tearDown()
-        _pyproject_path.cache_clear()
+        _clear_pyproject_cache()
         with contextlib.suppress(OSError):
             self.proj.unlink(missing_ok=True)
 
@@ -137,7 +139,7 @@ class TestProjectOption(unittest.TestCase):
         deep.mkdir(parents=True, exist_ok=True)
         os.chdir(deep)
         try:
-            _pyproject_path.cache_clear()
+            _clear_pyproject_cache()
             path, content = _pyproject_content()
         finally:
             os.chdir(self.path)
@@ -147,7 +149,7 @@ class TestProjectOption(unittest.TestCase):
         self.create_toml({"_dbl_": True}, proj=deep / "pyproject.toml")
         os.chdir(deep)
         try:
-            _pyproject_path.cache_clear()
+            _clear_pyproject_cache()
             path, content = _pyproject_content()
         finally:
             os.chdir(self.path)
@@ -177,6 +179,28 @@ class TestProjectOption(unittest.TestCase):
         self.assertTrue(type(opt).project.is_set(opt), "written and read but not is_set")
         del opt.project
         self.assertEqual(None, options.read_option("config"), "not deleted")
+
+    def test_project_content_cached(self):
+        # `report` looks up the verbosity option, which cascades into the project
+        # options, so parsing the file per call would tax every reported message.
+        self.create_toml({"tools": {"bsb": {"verbosity": 4}}})
+        _clear_pyproject_cache()
+        with mock.patch.object(option.toml, "load", wraps=toml.load) as load:
+            self.assertEqual(4, options.verbosity, "project verbosity not picked up")
+            for _ in range(10):
+                report("ongoing progress", level=5)
+            self.assertEqual(1, load.call_count, "pyproject.toml parsed more than once")
+
+    def test_project_content_cache_invalidated_on_write(self):
+        self.create_toml({"tools": {"bsb": {"verbosity": 4}}})
+        _clear_pyproject_cache()
+        self.assertEqual(4, options.verbosity, "project verbosity not picked up")
+        options.store_option("verbosity", 2)
+        self.assertEqual(2, options.verbosity, "stale project options after write")
+        with open(self.proj) as f:
+            self.assertEqual(2, toml.load(f)["tools"]["bsb"]["verbosity"], "not written")
+        del options.get_option_descriptors()["verbosity"].project
+        self.assertEqual(1, options.verbosity, "stale project options after delete")
 
 
 class TestScriptOption(unittest.TestCase):

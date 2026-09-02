@@ -386,13 +386,34 @@ def _pyproject_path():
         path = path.parent
 
 
+@functools.cache
+def _read_pyproject(path):
+    """
+    Parse a ``pyproject.toml`` file. The result is memoized, because project options are
+    looked up on every :func:`~bsb.reporting.report` call. The returned dict is shared
+    between callers; mutating it must be followed by a write and a cache clear.
+    """
+    with open(path) as f:
+        return path.resolve(), toml.load(f)
+
+
 def _pyproject_content():
     path = _pyproject_path()
     if path:
-        with open(path) as f:
-            return path.resolve(), toml.load(f)
+        return _read_pyproject(path)
     else:
         return None, {}  # pragma: nocover
+
+
+def _clear_pyproject_cache():
+    """
+    Discard the memoized location and parsed content of the ``pyproject.toml`` file.
+
+    Must be called whenever the file is written to, or moves out of scope (e.g. when the
+    working directory changes), otherwise project options are read from a stale cache.
+    """
+    _pyproject_path.cache_clear()
+    _read_pyproject.cache_clear()
 
 
 def _pyproject_bsb():
@@ -410,6 +431,7 @@ def _save_pyproject_bsb(project):
     content.setdefault("tools", {})["bsb"] = project
     with open(path, "w") as f:
         toml.dump(content, f)
+    _clear_pyproject_cache()
 
 
 __all__ = [

@@ -1935,6 +1935,43 @@ class TestNodeClass(unittest.TestCase):
 
         self.assertEqual("{root}", Test().get_node_name())
 
+    def test_node_name_inside_empty_container(self):
+        """
+        A node that is cast into a container that is still empty has to report its full
+        config path, and not disown its parents as `{standalone}`.
+        """
+
+        @config.node
+        class Child:
+            needed = config.attr(required=True)
+
+        @config.root
+        class Root:
+            d = config.dict(type=Child)
+            ls = config.list(type=Child)
+
+        with self.assertRaises(RequirementError) as ctx:
+            Root(d={"first": {}})
+        self.assertIn("{root}.d.first", str(ctx.exception))
+        with self.assertRaises(RequirementError) as ctx:
+            Root(ls=[{}])
+        self.assertIn("{root}.ls", str(ctx.exception))
+
+    def test_node_name_during_configuration_default(self):
+        """
+        Regression test for the node names of nodes built by `Configuration.default`.
+        """
+        with self.assertRaises(RequirementError) as ctx:
+            Configuration.default(
+                connectivity=dict(
+                    x=dict(
+                        strategy="bsb.connectivity.VoxelIntersection",
+                        presynaptic=dict(cell_types=["A"]),
+                    )
+                )
+            )
+        self.assertIn("{root}.connectivity.x", str(ctx.exception))
+
 
 class TestNodeComposition(unittest.TestCase):
     def setUp(self):

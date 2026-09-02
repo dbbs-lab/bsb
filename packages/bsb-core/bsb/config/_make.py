@@ -506,8 +506,12 @@ def _get_node_name(self):
             name = "[" + str(self._config_index) + "]"
     if getattr(self, "name", None) is not None:
         name = "." + self.name
-    if getattr(self, "_config_parent", None):
-        return self._config_parent.get_node_name() + name
+    # Test the parent against `None`, not against its truthiness: parents are often
+    # `cfgdict`/`cfglist` containers, and while a node is being cast into one it is
+    # still empty, which would make a truthiness test disown the whole node path.
+    parent = getattr(self, "_config_parent", None)
+    if parent is not None:
+        return parent.get_node_name() + name
     else:
         return "{standalone}" + name
 

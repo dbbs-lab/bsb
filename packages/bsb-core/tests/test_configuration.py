@@ -26,15 +26,19 @@ from bsb import (
     ConfigurationWarning,
     DynamicClassInheritanceError,
     DynamicObjectNotFoundError,
+    LayoutError,
     NrrdDependencyNode,
     PackageRequirementWarning,
     Partition,
+    PlacementIndicator,
     Region,
     RegionGroup,
     RequirementError,
     Scaffold,
     UnfitClassCastError,
     UnresolvedClassCastError,
+    Voxels,
+    VoxelSet,
     config,
     from_storage,
     refs,
@@ -2003,3 +2007,35 @@ class TestPackageRequirements(RandomStorageFixture, unittest.TestCase, engine_na
         self.assertEqual(
             self.network.configuration.packages, network2.configuration.packages
         )
+
+
+class TestSurfaceErrorAttribution(unittest.TestCase):
+    """
+    Partitions that can't calculate a surface have to say which partition they are, and
+    the planar density estimate has to say which cell type and strategy asked for it.
+    """
+
+    def test_planar_density_on_surfaceless_partition(self):
+        @config.node
+        class SurfacelessVoxels(Voxels, classmap_entry="surfaceless_voxels"):
+            def to_voxels(self):
+                return VoxelSet([[0, 0, 0]], 100)
+
+        cfg = Configuration.default(
+            cell_types=dict(cell_A=dict(spatial=dict(radius=1, planar_density=0.1))),
+            partitions=dict(vox=dict(type="surfaceless_voxels")),
+            placement=dict(
+                placement_A=dict(
+                    strategy="bsb.placement.RandomPlacement",
+                    cell_types=["cell_A"],
+                    partitions=["vox"],
+                )
+            ),
+        )
+        indicator = PlacementIndicator(cfg.placement.placement_A, cfg.cell_types.cell_A)
+        with self.assertRaises(LayoutError) as ctx:
+            indicator.guess()
+        msg = str(ctx.exception)
+        self.assertIn("'vox'", msg, "surface error should name the partition")
+        self.assertIn("'cell_A'", msg, "surface error should name the cell type")
+        self.assertIn("'placement_A'", msg, "surface error should name the strategy")

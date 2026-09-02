@@ -11,6 +11,7 @@ from neo import io
 
 from bsb import (
     MPI,
+    AfterPrepareHook,
     AfterSimulationHook,
     AttributeMissingError,
     Scaffold,
@@ -906,3 +907,76 @@ class TestTargettingRandomness(
 
     def test_half_of_the_population_is_taken(self):
         self.assertEqual(20, len(self.selection(self.network(1234))))
+
+
+class TestAfterPrepareHook(
+    FixedPosConfigFixture,
+    RandomStorageFixture,
+    NumpyTestCase,
+    unittest.TestCase,
+    engine_name="hdf5",
+):
+    def setUp(self):
+        super().setUp()
+        self.cfg.connectivity.add(
+            "all_to_all",
+            dict(
+                strategy="bsb.connectivity.AllToAll",
+                presynaptic=dict(cell_types=["test_cell"]),
+                postsynaptic=dict(cell_types=["test_cell"]),
+            ),
+        )
+        self.network = Scaffold(self.cfg, self.storage)
+        self.network.compile(clear=True)
+        self.calls = calls = []
+
+        @config.node
+        class RecordCalls(AfterPrepareHook):
+            def postprocess(self, adapter, simulation, simdata):
+                # Record the scaffold too, to assert the hook is booted into context.
+                calls.append((self.name, adapter, simulation, simdata, self.scaffold))
+
+        self.network.simulations.add(
+            "test",
+            simulator="arbor",
+            duration=100,
+            resolution=1.0,
+            cell_models=dict(),
+            connection_models=dict(),
+            devices=dict(),
+            after_prepare={"first": RecordCalls(), "second": RecordCalls()},
+        )
+
+    def test_hooks_receive_what_was_prepared(self):
+        self.network.run_simulation("test")
+
+        self.assertEqual(2, len(self.calls), "every hook should run once")
+        names = [call[0] for call in self.calls]
+        self.assertEqual(["first", "second"], names, "hooks run in configured order")
+        for name, adapter, simulation, simdata, scaffold in self.calls:
+            with self.subTest(hook=name):
+                self.assertIsInstance(adapter, SimulatorAdapter)
+                self.assertIs(self.network.simulations.test, simulation)
+                self.assertIs(self.network, scaffold, "hook is booted into context")
+                self.assertIsNotNone(simdata.result, "prepared data carries its result")
+
+    def test_hooks_run_before_the_simulation(self):
+        order = []
+
+        @config.node
+        class NoteWhenPrepared(AfterPrepareHook):
+            def postprocess(inner, adapter, simulation, simdata):
+                order.append("prepared")
+
+        @config.node
+        class NoteWhenFinished(AfterSimulationHook):
+            def postprocess(inner, adapter, simulation, result):
+                order.append("finished")
+
+        self.network.simulations.test.after_prepare["note"] = NoteWhenPrepared()
+        self.network.simulations.test.after_simulation["note"] = NoteWhenFinished()
+
+        self.network.run_simulation("test")
+
+        self.assertEqual("prepared", order[0], "prepare hook runs first")
+        self.assertEqual("finished", order[-1], "simulation hook runs last")

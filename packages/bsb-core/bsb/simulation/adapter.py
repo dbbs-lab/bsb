@@ -98,7 +98,9 @@ class SimulatorAdapter(abc.ABC):
 
         :param simulations: One or a list of simulation configurations to simulate.
         :type simulations: ~bsb.simulation.simulation.Simulation
-        :param post_prepare: Optional callable to run after the simulations' preparation.
+        :param post_prepare: Optional callable to run after every simulation has been
+          prepared, for a caller driving the adapter from Python. Configured hooks go
+          in a simulation's :guilabel:`after_prepare` block instead.
         :return: List of simulation results for each simulation run.
         :rtype: list[~bsb.simulation.results.SimulationResult]
         """
@@ -115,8 +117,7 @@ class SimulatorAdapter(abc.ABC):
             for simulation in simulations:
                 data = self.prepare(simulation, filename)
                 alldata.append(data)
-                for hook in simulation.post_prepare:
-                    hook(self, simulation, data)
+                self.run_after_prepare(simulation, data)
             if post_prepare:
                 post_prepare(self, simulations, alldata)
             results = self.collect(self.run(*simulations))
@@ -124,6 +125,18 @@ class SimulatorAdapter(abc.ABC):
         # write their findings back to the network.
         self.run_after_simulation(simulations, results)
         return results
+
+    def run_after_prepare(self, simulation, simdata):
+        """
+        Run the :guilabel:`after_prepare` hooks of a simulation on what was prepared.
+
+        :param simulation: The simulation configuration that was prepared.
+        :type simulation: ~bsb.simulation.simulation.Simulation
+        :param simdata: What the backend built for it.
+        :type simdata: ~bsb.simulation.adapter.SimulationData
+        """
+        for hook in simulation.after_prepare.values():
+            hook.postprocess(self, simulation, simdata)
 
     def run_after_simulation(self, simulations, results):
         """

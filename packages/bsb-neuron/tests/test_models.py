@@ -9,6 +9,8 @@ from bsb_test import (
 )
 
 from bsb_neuron.cell import ArborizedModel, ArborizeModelTypeHandler
+from bsb_neuron.connection import SynapseSpec
+from bsb_neuron.simulation import NeuronSimulation
 
 
 class TestArborizedModel(
@@ -69,4 +71,20 @@ class TestArborizedModel(
             {"U": 0.77},
             new_cell_mdl._synapse_types["ExpSyn"].parameters,
             "Cell models synapses are not correctly converted to tree obj.",
+        )
+
+
+class TestSynapseSpecDefaults(unittest.TestCase):
+    def test_default_delay_is_a_usable_mindelay(self):
+        # The delays in a network determine NEURON's `mindelay`, and
+        # `NeuronAdapter.run` always calls `pc.set_maxstep`, which rejects a `mindelay`
+        # of 0 or below the fixed timestep. A default that cannot be simulated is not a
+        # default, so it has to clear both bounds for the default resolution.
+        delay = SynapseSpec("ExpSyn").delay
+        resolution = NeuronSimulation.resolution.default
+        self.assertGreater(delay, 0, "a mindelay of 0 aborts every NEURON simulation")
+        self.assertGreaterEqual(
+            delay,
+            resolution,
+            "a mindelay below the timestep aborts fixed step NEURON simulations",
         )

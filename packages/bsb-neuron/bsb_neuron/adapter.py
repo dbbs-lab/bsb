@@ -25,7 +25,7 @@ class NeuronSimulationData(SimulationData):
 
 
 class NeuronResult(SimulationResult):
-    def record(self, obj, **annotations):
+    def record(self, obj, device=None, **annotations):
         from patch import p
         from quantities import ms
 
@@ -41,7 +41,7 @@ class NeuronResult(SimulationResult):
             if v.size():
                 v.remove(0, v.size() - 1)
 
-        self.create_recorder(flush)
+        self.create_recorder(flush, device=device)
 
 
 class NeuronAdapter(SimulatorAdapter):

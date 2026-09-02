@@ -121,6 +121,11 @@ class SimulatorAdapter(abc.ABC):
             if post_prepare:
                 post_prepare(self, simulations, alldata)
             results = self.collect(self.run(*simulations))
+        # Under MPI each rank has written its own part; they become the one file the
+        # run was asked for here, before any hook is handed a result, so a hook never
+        # sees one rank's share of a run.
+        for result in results:
+            result.finalize()
         # The hooks run outside of the read-only storage context, so that they may
         # write their findings back to the network.
         self.run_after_simulation(simulations, results)

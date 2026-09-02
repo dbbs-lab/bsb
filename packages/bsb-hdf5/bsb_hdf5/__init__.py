@@ -174,8 +174,15 @@ class HDF5Engine(Engine):
             return {}
 
     def _bump_state(self) -> None:
-        """Increment ``state_id``. MPI-safe."""
-        if self._readonly:
+        """
+        Record that the storage changed. MPI-safe.
+
+        Inside a write scope the scope settles this on close: a scope is one atomic
+        change, so its ``state_id`` moves once rather than once per write within it.
+        """
+        from .resource import mark_dirty
+
+        if self._readonly or mark_dirty():
             return
         self._bump_state_collective()
 

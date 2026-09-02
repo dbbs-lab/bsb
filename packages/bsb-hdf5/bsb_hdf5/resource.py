@@ -32,12 +32,21 @@ def _get_handles() -> dict:
 
 
 class _WriteScopeState:
-    """Mutable flag for :class:`UnusedWriteScopeWarning` detection."""
+    """
+    What happened inside one write scope.
 
-    __slots__ = ("wrote",)
+    ``wrote`` drives :class:`UnusedWriteScopeWarning`. ``dirty`` and
+    ``dirty_sets`` defer the provenance counters: a scope is one atomic change to
+    the storage, so its revision moves once when the scope closes rather than once
+    per write inside it.
+    """
+
+    __slots__ = ("wrote", "dirty", "dirty_sets")
 
     def __init__(self):
         self.wrote = False
+        self.dirty = False
+        self.dirty_sets = set()
 
 
 _write_scope_state: contextvars.ContextVar = contextvars.ContextVar(
@@ -209,6 +218,33 @@ def handles_handles(handle_type, handler=lambda args: args[0]._engine):
     return decorator
 
 
+def mark_dirty(path: str | None = None) -> bool:
+    """
+    Record that the storage changed, for the scope to account for on exit.
+
+    :param path: Path of a placement set that changed, if it was one.
+    :returns: ``True`` when a scope took responsibility for the counters, ``False``
+        when there is no scope and the caller has to bump them itself.
+    """
+    state = _write_scope_state.get()
+    if state is None:
+        return False
+    state.dirty = True
+    if path is not None:
+        state.dirty_sets.add(path)
+    return True
+
+
+def _settle_scope_state(handle, state) -> None:
+    """Move the provenance counters once, for everything the scope changed."""
+    from . import _bump_state_attrs
+    from .placement_set import _bump_ps_revision
+
+    for path in sorted(state.dirty_sets):
+        _bump_ps_revision(handle, path)
+    _bump_state_attrs(handle)
+
+
 @contextlib.contextmanager
 def _push_scope(engine, mode):
     """Open a handle on ``engine`` in ``mode``, push it onto the engine-handle
@@ -230,6 +266,10 @@ def _push_scope(engine, mode):
         try:
             yield handle
         finally:
+            if state is not None and state.dirty:
+                # The scope is the atom: its revision moves once, here, rather
+                # than once per write that happened inside it.
+                _settle_scope_state(handle, state)
             _engine_handle.reset(engine_tok)
             if scope_tok is not None:
                 _write_scope_state.reset(scope_tok)

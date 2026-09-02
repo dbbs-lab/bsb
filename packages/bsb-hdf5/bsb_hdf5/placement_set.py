@@ -334,7 +334,7 @@ class PlacementSet(
     def append_additional(self, name, chunk, data):
         self._additional_chunks.append(chunk, name, data)
         with self._engine._write(), self._engine._handle("a") as handle:
-            _bump_ps_state(handle, self._path, self._engine)
+            _bump_ps_state(handle, self._path)
             _bump_root_state(handle)
 
     @handles_handles("a")
@@ -347,7 +347,7 @@ class PlacementSet(
                 stats[chunk]["placed"] -= len(data["position"])
                 del g[chunk]
         self._engine._write_chunk_stats(handle, stats)
-        _bump_ps_state(handle, self._path, self._engine)
+        _bump_ps_state(handle, self._path)
         _bump_root_state(handle)
 
     @handles_handles("a")
@@ -428,7 +428,7 @@ class PlacementSet(
             handle[self._path].attrs["labelsets"] = json.dumps(
                 updated_labels, default=list
             )
-        _bump_ps_state(handle, self._path, self._engine)
+        _bump_ps_state(handle, self._path)
         _bump_root_state(handle)
 
     def set_morphology_label_filter(self, morphology_labels):
@@ -485,7 +485,7 @@ class PlacementSet(
         chunk_stats = json.loads(handle[self._path].attrs.get("chunks", "{}"))
         chunk_stats[str(chunk.id)] = chunk_stats.get(str(chunk.id), 0) + int(count)
         handle[self._path].attrs["chunks"] = json.dumps(chunk_stats)
-        _bump_ps_state(handle, self._path, self._engine)
+        _bump_ps_state(handle, self._path)
         _bump_root_state(handle)
 
     @handles_handles("r")
@@ -582,11 +582,30 @@ def _init_ps_attrs(handle, ps_path, cell_type_name):
     grp.attrs["created_at"] = iso_now()
 
 
-def _bump_ps_state(handle, ps_path, engine):
+def _bump_ps_state(handle, ps_path):
     """
-    Bump the per-PS ``revision`` and refresh the informational
-    ``morphology_hashes`` from the morphology repo on the same open handle (no
-    re-locking).
+    Record that a placement set changed.
+
+    Inside a write scope the scope accounts for it on close, because the scope is
+    the atomic change and its revision should move once rather than once per write
+    within it. Outside one, the revision moves here; the root ``state_id`` is the
+    caller's to bump either way.
+    """
+    from .resource import mark_dirty
+
+    if mark_dirty(ps_path):
+        return
+    _bump_ps_revision(handle, ps_path)
+
+
+def _bump_ps_revision(handle, ps_path):
+    """
+    Move a placement set's ``revision`` and refresh its ``morphology_hashes``.
+
+    The hashes are refreshed here rather than on every write: appending positions
+    to a chunk cannot change a morphology's hash, and re-reading the whole
+    morphology metadata per chunk cost a quarter of the placement write path on a
+    network with a thousand morphologies.
     """
     grp = handle[ps_path]
     current = grp.attrs.get("revision", 0)

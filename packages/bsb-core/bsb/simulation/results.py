@@ -361,7 +361,9 @@ class SimulationResult:
             except Exception:
                 traceback.print_exc()
                 warn("Recorder errored out!")
-            else:
+            finally:
+                # A recorder that raised part way through still appended what it
+                # got to, and unlabelled signals are worse than missing ones.
                 _stamp_device(segment, before, recorder.device_name)
         self.checkpoint_index += 1
         self._t_cursor = t_stop

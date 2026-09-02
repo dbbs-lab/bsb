@@ -1,6 +1,7 @@
 import unittest
 
 from bsb import MPI, Configuration, Scaffold
+from bsb.simulation.results import read_provenance
 from bsb_test import RandomStorageFixture, get_test_config_tree
 
 
@@ -19,18 +20,26 @@ class TestArbor(RandomStorageFixture, unittest.TestCase, engine_name="hdf5"):
         result = network.run_simulation("test_arbor")
 
         spiketrains = result.block.segments[0].spiketrains
-        sr_exc, sr_inh = None, None
-        for st in spiketrains:
-            if st.annotations["device"] == "sr_exc":
-                sr_exc = st
-            elif st.annotations["device"] == "sr_inh":
-                sr_inh = st
+        # A recorder emits one train per cell it observed, so a device's spikes are
+        # gathered, and how many cells it watched comes from its recorded targets.
+        targets = read_provenance(result.block)["devices"]
 
-        self.assertIsNotNone(sr_exc)
-        self.assertIsNotNone(sr_inh)
+        def spikes_of(device_name):
+            return [
+                float(t)
+                for train in spiketrains
+                if train.annotations.get("bsb_device_name") == device_name
+                for t in train
+            ]
 
-        rate_ex = len(sr_exc) / simcfg.duration * 1000.0 / sr_exc.annotations["pop_size"]
-        rate_in = len(sr_inh) / simcfg.duration * 1000.0 / sr_inh.annotations["pop_size"]
+        sr_exc, sr_inh = spikes_of("sr_exc"), spikes_of("sr_inh")
+        self.assertTrue(sr_exc, "the excitatory recorder saw nothing")
+        self.assertTrue(sr_inh, "the inhibitory recorder saw nothing")
+
+        n_exc = sum(len(ids) for ids in targets["sr_exc"].values())
+        n_inh = sum(len(ids) for ids in targets["sr_inh"].values())
+        rate_ex = len(sr_exc) / simcfg.duration * 1000.0 / n_exc
+        rate_in = len(sr_inh) / simcfg.duration * 1000.0 / n_inh
 
         # These are temporary circular values, taken from the output. May be incorrect.
         self.assertAlmostEqual(rate_in, 34.2, delta=1)

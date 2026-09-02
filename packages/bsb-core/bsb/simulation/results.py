@@ -1,3 +1,4 @@
+import dataclasses
 import pathlib
 import shutil
 import traceback
@@ -129,6 +130,21 @@ def merge_rank_results(parts, filename) -> None:
             out.write_block(merged[key])
 
 
+def _device_kind(device) -> str:
+    """
+    Name a device by the kind it is configured as, rather than by its class.
+
+    The configured name is what a user wrote and what they will look for; the class
+    name is an implementation detail that can be refactored out from under them.
+    """
+    entry = getattr(type(device), "_config_dynamic_classmap", None)
+    if entry:
+        for name, cls in entry.items():
+            if cls is type(device):
+                return name
+    return type(device).__name__
+
+
 class SimulationResult:
     """
     The results of one simulation, and the provenance of the run that made them.
@@ -147,6 +163,7 @@ class SimulationResult:
         self.recorders = []
         self.checkpoint_index = 0
         self._t_cursor = 0.0
+        self._device_targets = {}
 
         # One identity for the whole run, agreed by every rank. Drawn on rank 0 and
         # broadcast: drawn per rank, the parts of one run could not be recognised as
@@ -218,6 +235,7 @@ class SimulationResult:
                 }
             ],
             "mpi_size": self.comm.get_size(),
+            "devices": self._device_targets,
         }
 
     @staticmethod
@@ -235,6 +253,136 @@ class SimulationResult:
                 "from the file, not from the result object."
             )
         return self._block
+
+    @property
+    def segment_id(self) -> str:
+        """Identity of the segment currently being flushed."""
+        return f"{self.simulation_id}:{self.checkpoint_index}"
+
+    def _annotations(self, *, device, recording_kind, direction, fields):
+        """
+        Compose the ``bsb_*`` annotations every recorded object carries.
+
+        A baseline says which run, which flush, which rank and which device the
+        object came from. ``recording_kind`` says *what* is addressed -- a cell, a
+        morphology point -- and ``direction`` says whether data flowed out of the
+        network or into it, which is an orthogonal question: a stimulator's own
+        output describes the same targets a recorder would.
+
+        Everything is a flat scalar, so it survives a write without encoding and
+        stays queryable in the file.
+        """
+        annotations = {
+            "bsb_device_name": getattr(device, "name", device),
+            "bsb_device_kind": _device_kind(device),
+            "bsb_recording_kind": recording_kind,
+            "bsb_direction": direction,
+            "bsb_simulation_id": self.simulation_id,
+            "bsb_segment_id": self.segment_id,
+            # Recorded per object because the per-rank files are merged into one,
+            # which is where a file-level rank would be lost.
+            "bsb_mpi_rank": self.comm.get_rank(),
+        }
+        annotations.update(
+            {f"bsb_{key}": value for key, value in fields.items() if value is not None}
+        )
+        return annotations
+
+    def spike_train(
+        self,
+        *,
+        times,
+        device,
+        t_stop,
+        ps_name=None,
+        cell_id=None,
+        cell_model=None,
+        units: str = "ms",
+        recording_kind: str = "cell",
+        direction: str = "record",
+        **fields,
+    ):
+        """
+        A :class:`~neo.core.SpikeTrain` carrying the recorder convention.
+
+        A convenience, not a contract: a recorder may emit whatever Neo objects it
+        wants, in any quantity. Using this is what makes its output findable by
+        :func:`iter_recordings`.
+        """
+        from neo import SpikeTrain
+
+        return SpikeTrain(
+            times=times,
+            units=units,
+            t_stop=t_stop,
+            **self._annotations(
+                device=device,
+                recording_kind=recording_kind,
+                direction=direction,
+                fields={
+                    "ps_name": ps_name,
+                    "cell_id": None if cell_id is None else int(cell_id),
+                    "cell_model": getattr(cell_model, "name", cell_model),
+                    **fields,
+                },
+            ),
+        )
+
+    def analog_signal(
+        self,
+        *,
+        data,
+        units,
+        sampling_period,
+        device,
+        name=None,
+        ps_name=None,
+        cell_id=None,
+        cell_model=None,
+        recording_kind: str = "cell",
+        direction: str = "record",
+        **fields,
+    ):
+        """
+        An :class:`~neo.core.AnalogSignal` carrying the recorder convention.
+
+        See :meth:`spike_train`; the same annotations apply.
+        """
+        from neo import AnalogSignal
+
+        return AnalogSignal(
+            data,
+            units=units,
+            sampling_period=sampling_period,
+            name=name,
+            **self._annotations(
+                device=device,
+                recording_kind=recording_kind,
+                direction=direction,
+                fields={
+                    "ps_name": ps_name,
+                    "cell_id": None if cell_id is None else int(cell_id),
+                    "cell_model": getattr(cell_model, "name", cell_model),
+                    **fields,
+                },
+            ),
+        )
+
+    def record_device_targets(self, device, targets: dict) -> None:
+        """
+        Record which cells a device was pointed at.
+
+        A recorder only emits objects for cells it actually observed, so a cell that
+        stayed silent leaves nothing behind. Storing what was *targeted* is what
+        makes the difference recoverable: silent cells are the targets that produced
+        no recording, without writing an empty object for each of them.
+
+        :param device: The device the targets belong to.
+        :param targets: Cell ids per placement set name.
+        """
+        self._device_targets[getattr(device, "name", device)] = {
+            name: [int(cell_id) for cell_id in ids] for name, ids in targets.items()
+        }
 
     def add(self, recorder):
         self.recorders.append(recorder)
@@ -278,14 +426,34 @@ class SimulationResult:
         else:
             self._block.segments.append(segment)
 
+    def _write_provenance(self) -> None:
+        """
+        Store the run's provenance, once everything in it is known.
+
+        Devices record what they were pointed at while the simulation is prepared,
+        which is after the block is created, so the bundle is written at the end of
+        the run rather than at the start.
+        """
+        encoded = encode_annotation(
+            self._build_provenance(self.simulation), "simulation provenance"
+        )
+        if self._block is not None:
+            self._block.annotate(bsb_provenance=encoded)
+            return
+        from neo import io
+
+        with io.NixIO(str(self.part_filename), mode="rw") as out:
+            out.nix_file.blocks[self.block_key].metadata["bsb_provenance"] = encoded
+
     def finalize(self) -> None:
         """
-        Turn the per-rank parts into the one file the run was asked for.
+        Store the run's provenance and turn the per-rank parts into one file.
 
         Every rank waits until all parts are written, then rank 0 merges them and
         removes the parts. A failed merge leaves them in place: they are the only
         copy of a completed run's results.
         """
+        self._write_provenance()
         if self.filename is None or self.comm.get_size() == 1:
             return
         self.comm.barrier()
@@ -318,6 +486,92 @@ class SimulationResult:
             io.NixIO(str(filename), mode=mode).write(self._block)
 
 
+@dataclasses.dataclass
+class Recording:
+    """One recorded object, with the parts of its annotation you filter on."""
+
+    device: str
+    recording_kind: str
+    direction: str
+    ps_name: str | None
+    cell_id: int | None
+    name: str
+    data: typing.Any
+    annotations: dict
+
+
+def read_nio(path) -> list:
+    """
+    Read every block in a results file.
+
+    A file holds one block per run and is appended to, so a reader that took only
+    the first would quietly ignore every run after it.
+
+    :param path: The results file.
+    :returns: Its blocks, in the order they were written.
+    """
+    from neo import io
+
+    return io.NixIO(str(path), mode="ro").read_all_blocks()
+
+
+def iter_recordings(block, **match) -> "typing.Iterator[Recording]":
+    """
+    Walk everything recorded in a block, filtered by its annotations.
+
+    Anything carrying the recorder convention is yielded, whether it recorded a
+    cell or stimulated one. Objects that do not follow the convention -- output
+    from a plugin doing its own thing -- are yielded too, with empty fields, so a
+    reader can see that they are there rather than have them silently dropped.
+
+    :param block: A block from :func:`read_nio`.
+    :param match: Annotation values to filter on, without the ``bsb_`` prefix, e.g.
+        ``recording_kind="point"`` or ``ps_name="granule"``.
+    :returns: The matching recordings.
+    """
+    for segment in block.segments:
+        for obj in [*segment.spiketrains, *segment.analogsignals]:
+            annotations = dict(obj.annotations or {})
+            if any(
+                annotations.get(f"bsb_{key}") != value for key, value in match.items()
+            ):
+                continue
+            cell_id = annotations.get("bsb_cell_id")
+            yield Recording(
+                device=annotations.get("bsb_device_name", ""),
+                recording_kind=annotations.get("bsb_recording_kind", ""),
+                direction=annotations.get("bsb_direction", ""),
+                ps_name=annotations.get("bsb_ps_name"),
+                cell_id=None if cell_id is None else int(cell_id),
+                name=getattr(obj, "name", "") or "",
+                data=obj,
+                annotations=annotations,
+            )
+
+
+def silent_cells(block, device: str) -> dict:
+    """
+    The cells a device was pointed at that produced no recording.
+
+    A recorder emits nothing for a cell that stayed silent, so silence is the
+    difference between what a device targeted and what it recorded.
+
+    :param block: A block from :func:`read_nio`.
+    :param device: Name of the device.
+    :returns: Silent cell ids per placement set.
+    """
+    provenance = read_provenance(block) or {}
+    targeted = (provenance.get("devices") or {}).get(device, {})
+    recorded: dict[str, set] = {}
+    for recording in iter_recordings(block, device_name=device):
+        if recording.ps_name is not None and recording.cell_id is not None:
+            recorded.setdefault(recording.ps_name, set()).add(recording.cell_id)
+    return {
+        ps_name: sorted(set(ids) - recorded.get(ps_name, set()))
+        for ps_name, ids in targeted.items()
+    }
+
+
 class SimulationRecorder:
     def __init__(self, device=None):
         self.device = device
@@ -332,10 +586,14 @@ class SimulationRecorder:
 
 
 __all__ = [
+    "Recording",
     "SimulationRecorder",
     "SimulationResult",
     "merge_rank_results",
     "rank_part_path",
+    "iter_recordings",
+    "read_nio",
     "read_provenance",
     "read_simulation_config",
+    "silent_cells",
 ]

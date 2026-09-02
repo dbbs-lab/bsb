@@ -16,22 +16,26 @@ class CurrentClamp(NeuronDevice, classmap_entry="current_clamp"):
     """Duration of the current step"""
 
     def implement(self, adapter, simulation, simdata):
-        for _model, pop in self.targetting.get_targets(
+        targets = {}
+        for model, pop in self.targetting.get_targets(
             adapter, simulation, simdata
         ).items():
+            ps_name = model.cell_type.name
             for target in pop:
                 clamped = False
+                targets.setdefault(ps_name, []).append(target.id)
                 for location in self.locations.get_locations(target):
                     if clamped:
                         warn(f"Multiple current clamps placed on {target}")
                     self._add_clamp(
                         simdata,
                         location,
-                        name=self.name,
-                        cell_type=target.cell_model.name,
+                        ps_name=ps_name,
                         cell_id=target.id,
+                        cell_model=target.cell_model.name,
                     )
                     clamped = True
+        simdata.result.record_device_targets(self, targets)
 
     @ignore_arborize_proxy_warnings()
     def _add_clamp(self, simdata, location, **annotations):
@@ -39,4 +43,17 @@ class CurrentClamp(NeuronDevice, classmap_entry="current_clamp"):
         clamp = location.section.iclamp(
             x=sx, delay=self.before, duration=self.duration, amplitude=self.amplitude
         )
-        simdata.result.record(clamp._ref_i, **annotations, units="nA")
+        simdata.result.record(
+            clamp._ref_i,
+            device=self,
+            name="i",
+            units="nA",
+            # The clamp drives the cell rather than observing it, at a point of its
+            # morphology.
+            recording_kind="point",
+            direction="stimulate",
+            branch=int(location.location[0]),
+            point=int(location.location[1]),
+            arc=float(sx),
+            **annotations,
+        )

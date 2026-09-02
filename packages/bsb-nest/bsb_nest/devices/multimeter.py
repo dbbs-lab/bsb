@@ -2,7 +2,6 @@ import nest
 import numpy as np
 import quantities as pq
 from bsb import ConfigurationError, _util, config, types
-from neo import AnalogSignal
 
 from ..device import NestDevice
 
@@ -26,7 +25,16 @@ class Multimeter(NestDevice, classmap_entry="multimeter"):
     def implement(self, adapter, simulation, simdata):
         targets_dict = self.get_dict_targets(adapter, simulation, simdata)
         nodes = self._flatten_nodes_ids(targets_dict)
-        inv_targets = self._invert_targets_dict(targets_dict)
+        # NEST id -> the cell it stands for. NEST's own ids do not leave the adapter.
+        lookup = {}
+        targets = {}
+        for cell_model, collection in targets_dict.items():
+            ps_name = simdata.placement[cell_model].cell_type.name
+            ids = collection.tolist()
+            for cell_id, sim_id in enumerate(ids):
+                lookup[int(sim_id)] = (cell_model, ps_name, cell_id)
+            targets.setdefault(ps_name, []).extend(range(len(ids)))
+        simdata.result.record_device_targets(self, targets)
         device = self.register_device(
             simdata,
             nest.Create(
@@ -40,20 +48,25 @@ class Multimeter(NestDevice, classmap_entry="multimeter"):
         self.connect_to_nodes(device, nodes)
 
         def recorder(segment):
-            senders = device.events["senders"]
+            senders = np.asarray(device.events["senders"])
             for sender in np.unique(senders):
+                entry = lookup.get(int(sender))
+                if entry is None:
+                    continue
+                cell_model, ps_name, cell_id = entry
                 sender_filter = senders == sender
                 for prop, unit in zip(self.properties, self.units, strict=False):
                     segment.analogsignals.append(
-                        AnalogSignal(
-                            device.events[prop][sender_filter],
+                        simdata.result.analog_signal(
+                            data=device.events[prop][sender_filter],
                             units=pq.units.__dict__[unit],
                             sampling_period=self.simulation.resolution * pq.ms,
-                            name=self.name,
-                            cell_type=inv_targets[sender],
-                            cell_id=sender,
-                            prop_recorded=prop,
+                            name=prop,
+                            ps_name=ps_name,
+                            cell_id=cell_id,
+                            cell_model=cell_model,
+                            device=self,
                         )
                     )
 
-        simdata.result.create_recorder(recorder)
+        simdata.result.create_recorder(recorder, device=self)

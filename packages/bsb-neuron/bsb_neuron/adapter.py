@@ -12,7 +12,6 @@ from bsb import (
     SimulatorAdapter,
     report,
 )
-from neo import AnalogSignal
 
 
 class NeuronSimulationData(SimulationData):
@@ -26,23 +25,27 @@ class NeuronSimulationData(SimulationData):
 
 
 class NeuronResult(SimulationResult):
-    def record(self, obj, **annotations):
+    def record(self, obj, device=None, units="mV", **annotations):
         from patch import p
         from quantities import ms
 
         v = p.record(obj)
 
         def flush(segment):
-            if "units" not in annotations:
-                annotations["units"] = "mV"
             segment.analogsignals.append(
-                AnalogSignal(list(v), sampling_period=p.dt * ms, **annotations)
+                self.analog_signal(
+                    data=list(v),
+                    units=units,
+                    sampling_period=p.dt * ms,
+                    device=device,
+                    **annotations,
+                )
             )
             # Free the memory
             if v.size():
                 v.remove(0, v.size() - 1)
 
-        self.create_recorder(flush)
+        self.create_recorder(flush, device=device)
 
 
 @contextlib.contextmanager

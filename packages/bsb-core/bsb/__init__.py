@@ -338,6 +338,7 @@ RandomProvider: type["bsb.rng.RandomProvider"]
 RandomRotations: type["bsb.placement.distributor.RandomRotations"]
 ReadOnlyManager: type["bsb.storage.interfaces.ReadOnlyManager"]
 ReadOnlyOptionError: type["bsb.exceptions.ReadOnlyOptionError"]
+Recording: type["bsb.simulation.results.Recording"]
 RedoError: type["bsb.exceptions.RedoError"]
 Reference: type["bsb.config.refs.Reference"]
 ReferenceLambdaError: type["bsb.exceptions.ReferenceLambdaError"]
@@ -448,6 +449,7 @@ is_module_option_set: "bsb.options.is_module_option_set"
 is_partition: "bsb.topology.is_partition"
 is_region: "bsb.topology.is_region"
 iso_now: "bsb.storage.provenance.iso_now"
+iter_recordings: "bsb.simulation.results.iter_recordings"
 load_root_command: "bsb.cli.commands.load_root_command"
 make_configuration_diagram: "bsb.config.make_configuration_diagram"
 merge_rank_results: "bsb.simulation.results.merge_rank_results"
@@ -462,6 +464,7 @@ parse_morphology_content: "bsb.morphologies.parsers.parse_morphology_content"
 parse_morphology_file: "bsb.morphologies.parsers.parse_morphology_file"
 pool_cache: "bsb.services.pool_cache"
 rank_part_path: "bsb.simulation.results.rank_part_path"
+read_nio: "bsb.simulation.results.read_nio"
 read_option: "bsb.options.read_option"
 read_provenance: "bsb.simulation.results.read_provenance"
 read_simulation_config: "bsb.simulation.results.read_simulation_config"
@@ -472,6 +475,7 @@ report: "bsb.reporting.report"
 reset_module_option: "bsb.options.reset_module_option"
 set_config_build_context: "bsb.config.set_config_build_context"
 set_module_option: "bsb.options.set_module_option"
+silent_cells: "bsb.simulation.results.silent_cells"
 store_option: "bsb.options.store_option"
 types: "bsb.config.types"
 unregister_option: "bsb.options.unregister_option"

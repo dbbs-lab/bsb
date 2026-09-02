@@ -10,6 +10,7 @@ from bsb import BootError, CastError, ConfigurationError, RequirementError
 from bsb.config import Configuration, build_context
 from bsb.core import Scaffold
 from bsb.services import MPI
+from bsb.simulation.results import read_provenance
 from bsb_test import NumpyTestCase, RandomStorageFixture, get_test_config
 from neo import io
 from packaging.version import Version
@@ -83,6 +84,16 @@ def _conf_two_cells():
             "simulations": {},
         }
     )
+
+
+def _device_spikes(spiketrains, device_name):
+    """Every spike a device recorded, across the cells it emitted a train for."""
+    return [
+        float(t)
+        for train in spiketrains
+        if train.annotations.get("bsb_device_name") == device_name
+        for t in train
+    ]
 
 
 @unittest.skipIf(MPI.get_size() > 1, "Skipped during parallel testing.")
@@ -199,18 +210,19 @@ class TestNest(
         result = network.run_simulation("test_nest")
 
         spiketrains = result.block.segments[0].spiketrains
-        sr_exc, sr_inh = None, None
-        for st in spiketrains:
-            if st.annotations["device"] == "sr_exc":
-                sr_exc = st
-            elif st.annotations["device"] == "sr_inh":
-                sr_inh = st
+        # A recorder emits one train per cell it observed, so a device's spikes are
+        # gathered, and how many cells it watched comes from its recorded targets.
+        targets = read_provenance(result.block)["devices"]
+        sr_exc = _device_spikes(spiketrains, "sr_exc")
+        sr_inh = _device_spikes(spiketrains, "sr_inh")
 
-        self.assertIsNotNone(sr_exc)
-        self.assertIsNotNone(sr_inh)
+        self.assertTrue(sr_exc, "the excitatory recorder saw nothing")
+        self.assertTrue(sr_inh, "the inhibitory recorder saw nothing")
 
-        rate_ex = len(sr_exc) / simcfg.duration * 1000.0 / sr_exc.annotations["pop_size"]
-        rate_in = len(sr_inh) / simcfg.duration * 1000.0 / sr_inh.annotations["pop_size"]
+        n_exc = sum(len(ids) for ids in targets["sr_exc"].values())
+        n_inh = sum(len(ids) for ids in targets["sr_inh"].values())
+        rate_ex = len(sr_exc) / simcfg.duration * 1000.0 / n_exc
+        rate_in = len(sr_inh) / simcfg.duration * 1000.0 / n_inh
 
         self.assertAlmostEqual(rate_in, 50, delta=1)
         self.assertAlmostEqual(rate_ex, 50, delta=1)
@@ -224,18 +236,19 @@ class TestNest(
         result = network.run_simulation("test_nest")
 
         spiketrains = result.block.segments[0].spiketrains
-        sr_exc, sr_inh = None, None
-        for st in spiketrains:
-            if st.annotations["device"] == "sr_exc":
-                sr_exc = st
-            elif st.annotations["device"] == "sr_inh":
-                sr_inh = st
+        # A recorder emits one train per cell it observed, so a device's spikes are
+        # gathered, and how many cells it watched comes from its recorded targets.
+        targets = read_provenance(result.block)["devices"]
+        sr_exc = _device_spikes(spiketrains, "sr_exc")
+        sr_inh = _device_spikes(spiketrains, "sr_inh")
 
-        self.assertIsNotNone(sr_exc)
-        self.assertIsNotNone(sr_inh)
+        self.assertTrue(sr_exc, "the excitatory recorder saw nothing")
+        self.assertTrue(sr_inh, "the inhibitory recorder saw nothing")
 
-        rate_ex = len(sr_exc) / simcfg.duration * 1000.0 / sr_exc.annotations["pop_size"]
-        rate_in = len(sr_inh) / simcfg.duration * 1000.0 / sr_inh.annotations["pop_size"]
+        n_exc = sum(len(ids) for ids in targets["sr_exc"].values())
+        n_inh = sum(len(ids) for ids in targets["sr_inh"].values())
+        rate_ex = len(sr_exc) / simcfg.duration * 1000.0 / n_exc
+        rate_in = len(sr_inh) / simcfg.duration * 1000.0 / n_inh
 
         self.assertAlmostEqual(rate_in, 50, delta=1)
         self.assertAlmostEqual(rate_ex, 50, delta=1)
@@ -295,11 +308,12 @@ class TestNest(
         netw.compile()
         results = netw.run_simulation("test")
         spike_times_bsb = results.block.segments[0].spiketrains[0]
-        self.assertTrue(np.unique(spike_times_bsb.array_annotations["senders"]) == 1)
+        # BSB's own index within the placement set, not NEST's global node id.
+        self.assertEqual(0, spike_times_bsb.annotations["bsb_cell_id"])
         membrane_potentials = results.block.segments[0].analogsignals[0]
         # last time point is not recorded because of recorder delay.
         self.assertTrue(len(membrane_potentials) == duration / resolution - 1)
-        self.assertTrue(membrane_potentials.annotations["cell_id"] == 1)
+        self.assertEqual(0, membrane_potentials.annotations["bsb_cell_id"])
         defaults = nest.GetDefaults("iaf_cond_alpha")
         # since current injected is positive, the V_m should be clamped between default
         # initial V_m = -70mV and spike threshold V_th = -55 mV
@@ -817,7 +831,9 @@ class TestNest(
 
         # get spike time of first spike of C
         spike_times_bsb = results.block.segments[0].spiketrains[1]
-        self.assertEqual("record_C_spikes", spike_times_bsb.annotations["device"])
+        self.assertEqual(
+            "record_C_spikes", spike_times_bsb.annotations["bsb_device_name"]
+        )
         membrane_potentials = results.block.segments[0].analogsignals[0].magnitude[:, 0]
         time_effect_first_syn = int((spike_times_bsb.magnitude[0] + 1) / resolution)
         time_effect_sec_syn = int((spike_times_bsb.magnitude[0] + 30) / resolution)

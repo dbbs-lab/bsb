@@ -6,6 +6,7 @@ Simulation
    :caption: Simulation
 
    intro
+   results
    nest
    neuron
    arbor

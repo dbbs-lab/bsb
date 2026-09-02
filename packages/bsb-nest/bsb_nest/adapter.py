@@ -99,7 +99,10 @@ class NestAdapter(SimulatorAdapter):
         :rtype: bsb.simulation.adapter.SimulationData
         """
         self.simdata[simulation] = SimulationData(
-            simulation, result=NestResult(simulation, filename)
+            simulation,
+            result=NestResult(
+                simulation, filename, comm=self.comm, simulation_id=self.new_run_id()
+            ),
         )
         try:
             report("Installing  NEST modules...", level=2)

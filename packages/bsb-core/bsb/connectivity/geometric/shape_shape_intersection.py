@@ -2,6 +2,7 @@ import numpy as np
 
 from ... import config
 from ...config import types
+from ...rng import get_rng
 from ...trees import BoxTree
 from .. import ConnectionStrategy
 from ..strategy import Hemitype
@@ -78,9 +79,24 @@ class ShapeToShapeIntersection(ConnectionStrategy):
     def connect(self, pre, post):
         for pre_ps in pre.placement:
             for post_ps in post.placement:
-                self._connect_type(pre_ps.cell_type, pre_ps, post_ps.cell_type, post_ps)
+                # Keyed on the strategy, the cell type pair and the chunks involved, so
+                # every rank draws the same connections for the same chunk pair.
+                rng = get_rng(
+                    self,
+                    key=(
+                        "connectivity",
+                        self.name,
+                        pre_ps.cell_type.name,
+                        post_ps.cell_type.name,
+                        [c.id for c in pre.roi],
+                        [c.id for c in post.roi],
+                    ),
+                )
+                self._connect_type(
+                    pre_ps.cell_type, pre_ps, post_ps.cell_type, post_ps, rng
+                )
 
-    def _connect_type(self, pre_ct, pre_ps, post_ct, post_ps):
+    def _connect_type(self, pre_ct, pre_ps, post_ct, post_ps, rng):
         pre_pos = pre_ps.load_positions()
         post_pos = post_ps.load_positions()
 
@@ -131,11 +147,11 @@ class ShapeToShapeIntersection(ConnectionStrategy):
                         def sizemod(q, aff):
                             ln = len(q)
                             return int(
-                                np.floor(ln * aff) + (np.random.rand() < ((ln * aff) % 1))
+                                np.floor(ln * aff) + (rng.random() < ((ln * aff) % 1))
                             )
 
                         selected = selected[
-                            np.random.randint(
+                            rng.integers(
                                 len(selected), size=sizemod(selected, self.affinity)
                             ),
                             :,
@@ -153,7 +169,7 @@ class ShapeToShapeIntersection(ConnectionStrategy):
             pre_shapes_cache.translate(-pre_coord)
 
         if self.pruning_ratio < 1 and len(to_connect_pre) > 0:
-            ids_to_select = np.random.choice(
+            ids_to_select = rng.choice(
                 len(to_connect_pre),
                 int(np.floor(self.pruning_ratio * len(to_connect_pre))),
                 replace=False,

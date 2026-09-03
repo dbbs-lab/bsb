@@ -41,16 +41,19 @@ class TestNestExamples(
         self.assertEqual(len(self.scaffold.get_connectivity_set("A_to_B")), 40 * 1560)
 
     def _test_simulation_results(self, spiketrains):
-        neuron_ids = []
-        self.assertEqual(len(spiketrains), 3)
+        # Spikes are recorded one train per cell, so the devices are recovered from
+        # the annotations rather than from the number of trains.
+        devices = {}
         for signal in spiketrains:
-            neuron_ids = np.concatenate(
-                [neuron_ids, np.unique(signal.array_annotations["senders"])]
-            )
+            devices.setdefault(signal.annotations["device"], []).append(signal)
             self.assertEqual(signal.t_start, 0)
             self.assertEqual(signal.t_stop, 5000)
+        self.assertEqual(len(devices), 3)
 
-        # test the number of cell recorded
+        neuron_ids = np.array(
+            [signal.annotations["cell_id"] for signal in spiketrains], dtype=int
+        )
+        # A cell that never fired writes no train, so this counts the cells that did
         self.assertLess(neuron_ids.size, 1600 + 1)
         self.assertEqual(np.max(neuron_ids), 1600 + 1)
 

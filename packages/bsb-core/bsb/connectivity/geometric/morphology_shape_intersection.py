@@ -3,8 +3,8 @@ import numpy as np
 from ... import config
 from ...config import types
 from ...rng import get_rng
-from ...connectivity.strategy import roi_key
 from .. import ConnectionStrategy
+from ..strategy import roi_key
 from .shape_morphology_intersection import _create_geometric_conn_arrays
 from .shape_shape_intersection import ShapeHemitype
 

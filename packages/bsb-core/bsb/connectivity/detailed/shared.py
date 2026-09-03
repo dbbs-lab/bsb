@@ -7,8 +7,8 @@ from ...config import types
 from ...exceptions import ConnectivityWarning
 from ...reporting import warn
 from ...rng import get_rng
-from ..strategy import roi_key
 from ...storage._chunks import Chunk
+from ..strategy import roi_key
 
 
 class Intersectional:

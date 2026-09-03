@@ -3,10 +3,9 @@ import numpy as np
 from ... import config
 from ...config import types
 from ...rng import get_rng
-from ...connectivity.strategy import roi_key
 from ...trees import BoxTree
 from .. import ConnectionStrategy
-from ..strategy import Hemitype
+from ..strategy import Hemitype, roi_key
 from .geometric_shapes import ShapesComposition
 
 

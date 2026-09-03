@@ -7,8 +7,7 @@ from ..config import types
 from ..exceptions import ConnectivityError
 from ..mixins import InvertedRoI
 from ..rng import get_rng
-from .strategy import roi_key
-from .strategy import ConnectionStrategy
+from .strategy import ConnectionStrategy, roi_key
 
 if typing.TYPE_CHECKING:  # pragma: nocover
     from ..config import Distribution

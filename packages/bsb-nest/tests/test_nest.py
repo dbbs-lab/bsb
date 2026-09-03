@@ -428,9 +428,8 @@ class TestNest(
         netw = Scaffold(cfg, self.random_storage())
         netw.compile()
         result = netw.run_simulation("test")
-        spikes = np.concatenate(
-            [np.asarray(st.magnitude).ravel() for st in result.block.segments[0].spiketrains]
-        )
+        trains = result.block.segments[0].spiketrains
+        spikes = np.concatenate([np.asarray(st.magnitude).ravel() for st in trains])
         return spikes, cfg.simulations.test.seed, cfg
 
     def test_master_seed_is_drawn_and_recorded(self):

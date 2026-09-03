@@ -191,4 +191,29 @@ def get_rng(obj, provider: str = "bsb", key=()) -> np.random.Generator:
     return scaffold.configuration.rng.get_rng(provider, key)
 
 
-__all__ = ["RandomNode", "RandomProvider", "get_rng"]
+def resolve_seed(node, attr_name: str = "seed", *, provider: str = "bsb", key=()) -> int:
+    """
+    Settle a seed attribute on a node, drawing and recording one if it is unset.
+
+    A simulator that seeds itself needs a plain number, and its own default is
+    usually a fixed constant, which would make every run of every simulation repeat
+    the same streams. The seed is derived from the network's randomness instead, so
+    one root seed still reproduces everything, and it is written back as though it
+    had been configured so the stored configuration carries the seed the run used.
+
+    :param node: Configuration node holding the seed.
+    :param attr_name: Name of the seed attribute on the node.
+    :param provider: Name of the provider to derive from.
+    :param key: What the seed is for; see :meth:`RandomNode.get_rng`.
+    :returns: The resolved seed.
+    """
+    seed = getattr(node, attr_name, None)
+    if seed is None:
+        # Simulators generally want a positive 32 bit seed, so stay inside that.
+        seed = int(get_rng(node, provider, key).integers(1, 2**31 - 1))
+        setattr(node, attr_name, seed)
+        _mark_written(node, attr_name)
+    return seed
+
+
+__all__ = ["RandomNode", "RandomProvider", "get_rng", "resolve_seed"]

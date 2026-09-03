@@ -1178,20 +1178,22 @@ class TestConnectivityReproducibility(
     """
     Connectivity draws have to come from the configured randomness, or a seed cannot
     reproduce a connectome and two ranks can disagree about the same chunk pair.
+
+    Positions are fixed so that only the connectivity draw varies: placement has its
+    own randomness, and letting it move would test that instead of this.
     """
 
     def _cfg(self, seed):
         cfg = Configuration.default(
-            network=dict(x=100, y=100, z=100, chunk_size=[50, 50, 50]),
-            partitions=dict(layer=dict(type="layer", thickness=100)),
+            network=dict(x=100, y=100, z=100, chunk_size=[100, 100, 100]),
             cell_types=dict(
-                pre=dict(spatial=dict(radius=2, count=60)),
-                post=dict(spatial=dict(radius=2, count=60)),
+                pre=dict(spatial=dict(radius=2, count=40)),
+                post=dict(spatial=dict(radius=2, count=40)),
             ),
             placement=dict(
-                place=dict(
-                    strategy="bsb.placement.RandomPlacement",
-                    partitions=["layer"],
+                fixed=dict(
+                    strategy="bsb.placement.strategy.FixedPositions",
+                    partitions=[],
                     cell_types=["pre", "post"],
                 )
             ),
@@ -1203,6 +1205,9 @@ class TestConnectivityReproducibility(
                     postsynaptic=dict(cell_types=["post"]),
                 )
             ),
+        )
+        cfg.placement.fixed.positions = MPI.bcast(
+            np.random.default_rng(0).random((80, 3)) * 90
         )
         cfg.rng.seed = seed
         return cfg

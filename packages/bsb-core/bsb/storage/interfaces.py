@@ -6,7 +6,7 @@ from pathlib import Path
 import numpy as np
 
 from .. import config, plugins
-from .._util import immutable, obj_str_insert
+from .._util import immutable, instance_cache, obj_str_insert
 from ..trees import BoxTree
 from ._chunks import Chunk
 
@@ -1205,8 +1205,8 @@ class ConnectivityIterator:
         return pre_locs, post_locs
 
     def _offset_block(self, direction: str, lchunk, gchunk, data):
-        loff = self._local_chunk_offsets()
-        goff = self._global_chunk_offsets()
+        loff = self._local_chunk_offsets
+        goff = self._global_chunk_offsets
         llocs, glocs = data
         llocs[:, 0] += loff.get(lchunk, 0)
         glocs[:, 0] += goff.get(gchunk, 0)
@@ -1215,12 +1215,12 @@ class ConnectivityIterator:
         else:
             return gchunk, glocs, lchunk, llocs
 
-    @functools.cache
+    @functools.cached_property
     def _local_chunk_offsets(self):
         source = self._cs.post_type if self._dir == "inc" else self._cs.pre_type
         return self._chunk_offsets(source, self._lchunks)
 
-    @functools.cache
+    @functools.cached_property
     def _global_chunk_offsets(self):
         source = self._cs.pre_type if self._dir == "inc" else self._cs.post_type
         return self._chunk_offsets(source, self._gchunks)
@@ -1262,7 +1262,7 @@ class StoredMorphology:
             labels = tuple(labels)
         return self._cached_load(labels)
 
-    @functools.cache
+    @instance_cache
     def _cached_load(self, labels):
         return self.load().set_label_filter(labels).as_filtered()
 

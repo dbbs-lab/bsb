@@ -2,14 +2,13 @@ from __future__ import annotations
 
 import abc
 import typing
-from functools import cache
 from itertools import chain
 
 import numpy as np
 from opentelemetry import trace as _otel_trace
 
 from .. import config
-from .._util import ichain, obj_str_insert
+from .._util import ichain, instance_cache, obj_str_insert
 from ..config import refs, types
 from ..exceptions import ConnectivityError
 from ..mixins import HasDependencies
@@ -72,7 +71,7 @@ class Hemitype:
             c for ct in self.cell_types for c in ct.get_placement_set().get_all_chunks()
         ]
 
-    @cache
+    @instance_cache
     def _get_rect_ext(self, chunk_size):
         # Returns the lower and upper boundary Chunk of the box containing the cell type
         # population, based on the cell type's morphology if it exists.

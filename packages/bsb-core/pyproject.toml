@@ -150,7 +150,7 @@ indent-width = 4
 
   [tool.ruff.lint]
   select = [ "E", "F", "UP", "B", "SIM", "I" ]
-  ignore = [ "F822", "B019" ]
+  ignore = [ "F822" ]
   fixable = [ "ALL" ]
   unfixable = [ ]
 

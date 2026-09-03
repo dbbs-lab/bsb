@@ -574,7 +574,10 @@ class AllenStructure(NrrdVoxels, classmap_entry="allen"):
     """
 
     @classmethod
-    @functools.cache
+    # B019 is about caches on instance methods keeping instances alive. This is
+    # keyed on the class, which is a module level singleton that outlives any
+    # network anyway, and it holds one downloaded volume, not per instance data.
+    @functools.cache  # noqa: B019
     def _dl_mask(cls):
         node = NrrdDependencyNode()
         node._file = _cached_file(
@@ -583,7 +586,8 @@ class AllenStructure(NrrdVoxels, classmap_entry="allen"):
         return node
 
     @classmethod
-    @functools.cache
+    # Keyed on the class, not on an instance: see `_dl_mask`.
+    @functools.cache  # noqa: B019
     def _dl_structure_ontology(cls):
         content = _cached_file(
             "http://api.brain-map.org/api/v2/structure_graph_download/1.json"

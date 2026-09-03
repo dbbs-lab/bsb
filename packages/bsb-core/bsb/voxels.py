@@ -291,8 +291,7 @@ class VoxelSet:
     def raw(self):
         return self.get_raw()
 
-    @property
-    @functools.cache
+    @functools.cached_property
     def bounds(self):
         """
         The minimum and maximum coordinates of this set.
@@ -448,13 +447,13 @@ class VoxelSet:
 
     def as_boxes(self, cache=False):
         if cache:
-            return self._boxes_cache()
+            return self._boxes_cache
         else:
             return self._boxes()
 
     def as_boxtree(self, cache=False):
         if cache:
-            return self._boxtree_cache()
+            return self._boxtree_cache
         else:
             return self._boxtree()
 
@@ -525,14 +524,14 @@ class VoxelSet:
     def _to_spatial_coords(self):
         return self._indices * self._size
 
-    @functools.cache
+    @functools.cached_property
     def _boxtree_cache(self):
         return self._boxtree()
 
     def _boxtree(self):
         return BoxTree(self.as_boxes())
 
-    @functools.cache
+    @functools.cached_property
     def _boxes_cache(self):
         return self._boxes()
 

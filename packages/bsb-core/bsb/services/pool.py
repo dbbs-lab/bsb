@@ -1045,7 +1045,11 @@ def free_stale_pool_cache(scaffold, required_cache_items: set[int]):
 
 
 def pool_cache(caching_function):
-    @functools.cache
+    # B019 warns that a cache on a method keeps its instances alive. Here that is the
+    # point and the lifetime is managed: every call registers a cleanup with the
+    # scaffold, and `free_stale_pool_cache` clears this cache once the job pool no
+    # longer needs the item.
+    @functools.cache  # noqa: B019
     def decorated(self, *args, **kwargs):
         self.scaffold.register_pool_cached_item(
             decorated.get_pool_cache_id(self), cleanup

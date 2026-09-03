@@ -11,6 +11,36 @@ import numpy as _np
 ichain = _it.chain.from_iterable
 
 
+def instance_cache(method):
+    """
+    Cache a method's results on the instance instead of on the function.
+
+    :func:`functools.cache` on a method keys on ``self``, so the function's cache
+    holds a strong reference to every instance it has ever been called on and none
+    of them can be collected for as long as the class exists. Keeping the results on
+    the instance means they are freed with it.
+
+    The cached values are keyed on the arguments, as ``functools.cache`` does, so
+    the arguments still have to be hashable.
+
+    :param method: The method whose results to cache per instance.
+    :returns: The wrapped method.
+    """
+    name = f"_cache_{method.__name__}"
+
+    @_ft.wraps(method)
+    def wrapper(self, *args, **kwargs):
+        cache = self.__dict__.setdefault(name, {})
+        key = (args, tuple(sorted(kwargs.items()))) if kwargs else args
+        try:
+            return cache[key]
+        except KeyError:
+            cache[key] = value = method(self, *args, **kwargs)
+            return value
+
+    return wrapper
+
+
 def merge_dicts(a, b):
     """
     Merge 2 dictionaries and their subdictionaries.

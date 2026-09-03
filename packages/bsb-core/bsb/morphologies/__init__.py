@@ -27,6 +27,7 @@ from scipy.spatial.transform import Rotation
 
 from .. import _util as _gutil
 from .._encoding import EncodedLabels
+from .._util import instance_cache
 from ..exceptions import EmptyBranchError, MorphologyDataError, MorphologyError
 from ..voxels import VoxelSet
 
@@ -280,7 +281,7 @@ class RotationSet:
         else:
             yield from (self._rot(d) for d in self._data)
 
-    @functools.cache
+    @instance_cache
     def _cached_rot(self, angles):
         return self._rot(angles)
 
@@ -661,7 +662,7 @@ class SubTree:
         """
         return VoxelSet.from_morphology(self, N)
 
-    @functools.cache
+    @instance_cache
     def cached_voxelize(self, N):
         """
         Turn the morphology or subtree into an approximating set of axis-aligned cuboids
@@ -1713,7 +1714,7 @@ class Branch:
         self.radii = self.radii[reduced]
 
     @functools.wraps(SubTree.cached_voxelize)
-    @functools.cache
+    @instance_cache
     def cached_voxelize(self, *args, **kwargs):
         return SubTree([self]).voxelize(*args, **kwargs)
 

@@ -131,8 +131,7 @@ class MPIModule(MockModule):
     Module provider of the MPI interface.
     """
 
-    @property
-    @functools.cache
+    @functools.cached_property
     def COMM_WORLD(self):
         if (
             any("mpi" in key.lower() for key in os.environ)

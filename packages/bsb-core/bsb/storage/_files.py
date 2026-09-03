@@ -23,7 +23,7 @@ import requests as _rq
 from voxcell import VoxelData
 
 from .. import config
-from .._util import obj_str_insert
+from .._util import instance_cache, obj_str_insert
 from ..config import types
 from ..config._attrs import cfglist
 from ..morphologies.parsers import MorphologyParser
@@ -290,7 +290,7 @@ class NeuroMorphoScheme(UrlScheme):
         meta = self.get_nm_meta(file)
         return self._swc_url(meta["archive"], meta["neuron_name"])
 
-    @_ft.cache
+    @instance_cache
     def get_nm_meta(self, file: FileDependency):
         name = _up.urlparse(file.uri).hostname
         # urlparse gives lowercase, so slice out the original cased NM name

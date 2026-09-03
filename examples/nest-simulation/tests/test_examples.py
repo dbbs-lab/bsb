@@ -50,12 +50,23 @@ class TestNestExamples(
             self.assertEqual(signal.t_stop, 5000)
         self.assertEqual(len(devices), 3)
 
+        # Recordings of a cell carry its id; a device level record, such as a
+        # generator's own spikes, has no cell to name and so carries none.
         neuron_ids = np.array(
-            [signal.annotations["cell_id"] for signal in spiketrains], dtype=int
+            [
+                signal.annotations["cell_id"]
+                for signal in spiketrains
+                if "cell_id" in signal.annotations
+            ],
+            dtype=int,
         )
-        # A cell that never fired writes no train, so this counts the cells that did
+        # A cell that never fired writes no train, so this counts the cells that did,
+        # and which of them fired is drawn afresh on a run that pins no seed. What
+        # holds every run is that something fired and that every train names a cell
+        # of the population.
+        self.assertGreater(neuron_ids.size, 0)
         self.assertLess(neuron_ids.size, 1600 + 1)
-        self.assertEqual(np.max(neuron_ids), 1600 + 1)
+        self.assertLessEqual(np.max(neuron_ids), 1600 + 1)
 
     def test_json_example(self):
         self.cfg = parse_configuration_file(

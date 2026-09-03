@@ -25,14 +25,19 @@ class SpikeRecorder(ArborDevice, classmap_entry="spike_recorder"):
                         times[gid].append(time)
                 # One train per cell that spiked. A cell that stayed silent writes
                 # nothing: absence from the results is what silence looks like.
-                for gid in sorted(times):
+                #
+                # A device none of whose cells spiked still writes one row of its
+                # own, with no cell to name, or which cells it watched would be
+                # lost with them and a silent population would be indexed from
+                # nothing at all.
+                for gid in sorted(times) or [None]:
                     segment.spiketrains.append(
                         neo.SpikeTrain(
-                            times[gid],
+                            times[gid] if gid is not None else [],
                             units="ms",
                             t_stop=self.simulation.duration,
                             name=self.name,
-                            cell_id=gid,
+                            **({} if gid is None else {"cell_id": gid}),
                             # Which cells the device watched, so a silent cell is
                             # still answerable from the results alone.
                             gids=sorted(self._gids),

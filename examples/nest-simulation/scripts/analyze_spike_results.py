@@ -22,6 +22,10 @@ fig, ax = plt.subplots(
 for i, (name, recordings) in enumerate(devices.items()):
     axis = ax[i][0]
     for recording in recordings:
+        if recording.cell_id is None:
+            # A device level record, such as a device that watched a population none
+            # of which fired. There is no row to draw it on.
+            continue
         spike_times = recording.signal.magnitude  # Retrieve the spike times
         # One row per cell, at the height of the id the recording belongs to
         axis.scatter(
@@ -31,5 +35,11 @@ for i, (name, recordings) in enumerate(devices.items()):
     axis.set_xlabel(f"Time ({units})")
     axis.set_ylabel("Neuron ID")
     axis.set_title(f"Spikes from {name}")
+    # A cell that never fired has no train, so the rows are drawn from the cells the
+    # device watched rather than from the ones that turned up: scaled to the cells
+    # that spiked, a mostly silent population would look like a busy small one.
+    watched = recordings[0].signal.annotations.get("gids")
+    if watched:
+        axis.set_ylim(min(watched) - 0.5, max(watched) + 0.5)
 plt.tight_layout()
 plt.savefig("simulation-results/raster_plot.png", dpi=200)

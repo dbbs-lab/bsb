@@ -4,8 +4,7 @@ from .. import config
 from ..config import types
 from ..exceptions import ConnectivityError
 from ..mixins import InvertedRoI
-from ..rng import get_rng
-from .strategy import ConnectionStrategy
+from .strategy import ConnectionStrategy, roi_key
 
 
 @config.node
@@ -27,15 +26,14 @@ class AllToAll(ConnectionStrategy):
                 ml = fl * len_
                 # Keyed on the strategy, the cell type pair and the chunks involved, so
                 # every rank draws the same connections for the same chunk pair.
-                rng = get_rng(
-                    self,
+                rng = self.get_rng(
                     key=(
                         "connectivity",
                         self.name,
                         from_ps.cell_type.name,
                         to_ps.cell_type.name,
-                        [c.id for c in pre.roi],
-                        [c.id for c in post.roi],
+                        roi_key(pre),
+                        roi_key(post),
                     ),
                 )
                 filtered_ = rng.binomial(1, p=self.affinity, size=ml) > 0
@@ -51,14 +49,13 @@ def _connect_fixed_degree(self, pre, post, degree, is_in):
     # Generalized connect function for Fixed in- and out-degree
     # Keyed on the strategy and the chunks involved, so every rank draws the same
     # targets for the same chunk pair.
-    rng = get_rng(
-        self,
+    rng = self.get_rng(
         key=(
             "connectivity",
             self.name,
             "fixed_degree",
-            [c.id for c in pre.roi],
-            [c.id for c in post.roi],
+            roi_key(pre),
+            roi_key(post),
         ),
     )
     ps_counted = pre.placement if is_in else post.placement

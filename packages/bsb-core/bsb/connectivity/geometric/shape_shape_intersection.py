@@ -2,7 +2,7 @@ import numpy as np
 
 from ... import config
 from ...config import types
-from ...rng import get_rng
+from ...connectivity.strategy import roi_key
 from ...trees import BoxTree
 from .. import ConnectionStrategy
 from ..strategy import Hemitype
@@ -81,15 +81,14 @@ class ShapeToShapeIntersection(ConnectionStrategy):
             for post_ps in post.placement:
                 # Keyed on the strategy, the cell type pair and the chunks involved, so
                 # every rank draws the same connections for the same chunk pair.
-                rng = get_rng(
-                    self,
+                rng = self.get_rng(
                     key=(
                         "connectivity",
                         self.name,
                         pre_ps.cell_type.name,
                         post_ps.cell_type.name,
-                        [c.id for c in pre.roi],
-                        [c.id for c in post.roi],
+                        roi_key(pre),
+                        roi_key(post),
                     ),
                 )
                 self._connect_type(
@@ -109,7 +108,7 @@ class ShapeToShapeIntersection(ConnectionStrategy):
         for pre_id, pre_coord in enumerate(pre_pos):
             # Generate pre point cloud
             pre_shapes_cache.translate(pre_coord)
-            pre_point_cloud = pre_shapes_cache.generate_point_cloud()
+            pre_point_cloud = pre_shapes_cache.generate_point_cloud(rng)
 
             def find_mbb(coords):
                 maxima = np.max(coords, axis=0)

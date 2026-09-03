@@ -6,8 +6,8 @@ from ... import config
 from ...config import types
 from ...exceptions import ConnectivityWarning
 from ...reporting import warn
-from ...rng import get_rng
 from ...storage._chunks import Chunk
+from ..strategy import roi_key
 
 
 class Intersectional:
@@ -58,8 +58,8 @@ class Intersectional:
                         key=(
                             tset.cell_type.name,
                             cset.cell_type.name,
-                            [c.id for c in target_coll.roi],
-                            [c.id for c in candidate_coll.roi],
+                            roi_key(target_coll),
+                            roi_key(candidate_coll),
                         ),
                     ),
                 )
@@ -71,7 +71,7 @@ class Intersectional:
             aff = self.affinity
             # Keyed on the strategy, the cell type pair and the chunks involved, so
             # every rank draws the same candidates for the same chunk pair.
-            rng = get_rng(self, key=("connectivity", self.name, "affinity", *key))
+            rng = self.get_rng(key=("connectivity", self.name, "affinity", *key))
 
             def sizemod(q):
                 ln = len(q)

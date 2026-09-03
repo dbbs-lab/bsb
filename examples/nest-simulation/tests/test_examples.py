@@ -50,8 +50,15 @@ class TestNestExamples(
             self.assertEqual(signal.t_stop, 5000)
         self.assertEqual(len(devices), 3)
 
+        # Recordings of a cell carry its id; a device level record, such as a
+        # generator's own spikes, has no cell to name and so carries none.
         neuron_ids = np.array(
-            [signal.annotations["cell_id"] for signal in spiketrains], dtype=int
+            [
+                signal.annotations["cell_id"]
+                for signal in spiketrains
+                if "cell_id" in signal.annotations
+            ],
+            dtype=int,
         )
         # A cell that never fired writes no train, so this counts the cells that did
         self.assertLess(neuron_ids.size, 1600 + 1)

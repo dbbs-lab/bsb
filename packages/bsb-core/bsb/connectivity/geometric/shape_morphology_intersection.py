@@ -3,6 +3,7 @@ import numpy as np
 from ... import config
 from ...config import types
 from ...rng import get_rng
+from ...connectivity.strategy import roi_key
 from .. import ConnectionStrategy
 from .shape_shape_intersection import ShapeHemitype
 
@@ -65,8 +66,8 @@ class ShapeToMorphologyIntersection(ConnectionStrategy):
                         self.name,
                         pre_ps.cell_type.name,
                         post_ps.cell_type.name,
-                        [c.id for c in pre.roi],
-                        [c.id for c in post.roi],
+                        roi_key(pre),
+                        roi_key(post),
                     ),
                 )
                 self._connect_type(

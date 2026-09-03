@@ -1,17 +1,14 @@
 import itertools
-import random
 
 import numpy as np
-from numpy.random import default_rng
 
 from ... import config
 from ..._util import ichain
 from ...config import types
 from ...reporting import warn
+from ...rng import get_rng
 from ..strategy import ConnectionStrategy
 from .shared import Intersectional
-
-_rng = default_rng()
 
 
 @config.node
@@ -94,6 +91,19 @@ class VoxelIntersection(Intersectional, ConnectionStrategy):
             )
 
     def _match_voxel_intersection(self, matches, tset, cset, tmset, cmset):
+        # Keyed on the strategy and the cell type pair, so the same intersection is
+        # picked the same way wherever it is computed. Threaded down to the picking
+        # rather than taken from a module level generator, which was seeded once per
+        # process and so differed on every rank.
+        rng = get_rng(
+            self,
+            key=(
+                "connectivity",
+                self.name,
+                tset.cell_type.name,
+                cset.cell_type.name,
+            ),
+        )
         # Soft-caching caches at the IO level and gives you a fresh copy of the morphology
         # each time, the `cached_voxelize` function we need wouldn't have any effect!
         tm_iter = tmset.iter_morphologies(cache=self.cache, hard_cache=self.cache)
@@ -135,7 +145,7 @@ class VoxelIntersection(Intersectional, ConnectionStrategy):
                 overlap = [(i, v) for i, v in enumerate(tree.query(boxes)) if v]
                 if overlap:
                     locations = self._pick_locations(
-                        target, cand, tvoxels, cvoxels, overlap
+                        target, cand, tvoxels, cvoxels, overlap, rng
                     )
                     data_acc.append(locations)
 
@@ -161,7 +171,7 @@ class VoxelIntersection(Intersectional, ConnectionStrategy):
 
         self.connect_cells(src_set, dest_set, src_locs, dest_locs)
 
-    def _pick_locations(self, tid, cid, tvoxels, cvoxels, overlap):
+    def _pick_locations(self, tid, cid, tvoxels, cvoxels, overlap, rng):
         n = int(self.contacts.draw(1)[0])
         if n <= 0:
             return np.empty((0, 3), dtype=int), np.empty((0, 3), dtype=int)
@@ -173,12 +183,16 @@ class VoxelIntersection(Intersectional, ConnectionStrategy):
                 np.array([*ichain(tpool)], dtype=object),
             )
         )
-        weights = [len(c) * len(t) for c, t in pool]
+        weights = np.asarray([len(c) * len(t) for c, t in pool], dtype=float)
         tlocs = []
         clocs = []
-        for cpick, tpick in random.choices(pool, weights, k=n):
-            clocs.append((cid, *random.choice(cpick)))
-            tlocs.append((tid, *random.choice(tpick)))
+        # Weighted sampling with replacement, as the stdlib `choices` did, but from
+        # the network's randomness instead of the process global one.
+        picks = rng.choice(len(pool), size=n, p=weights / weights.sum())
+        for pick in picks:
+            cpick, tpick = pool[pick]
+            clocs.append((cid, *cpick[rng.integers(len(cpick))]))
+            tlocs.append((tid, *tpick[rng.integers(len(tpick))]))
         return tlocs, clocs
 
 

@@ -7,6 +7,7 @@ from ...config import types
 from ...exceptions import ConnectivityWarning
 from ...reporting import warn
 from ...rng import get_rng
+from ..strategy import roi_key
 from ...storage._chunks import Chunk
 
 
@@ -58,8 +59,8 @@ class Intersectional:
                         key=(
                             tset.cell_type.name,
                             cset.cell_type.name,
-                            [c.id for c in target_coll.roi],
-                            [c.id for c in candidate_coll.roi],
+                            roi_key(target_coll),
+                            roi_key(candidate_coll),
                         ),
                     ),
                 )

@@ -94,6 +94,24 @@ class Hemitype:
         return lbounds, ubounds
 
 
+def roi_key(collection):
+    """
+    Name the chunks a hemitype covers, so a draw can be keyed on them.
+
+    Sorted, because the order chunks arrive in is not part of what is being
+    connected, and a collection with no region of interest covers the whole network,
+    which is as stable a thing to key on as an explicit list.
+
+    :param collection: The hemitype collection being connected.
+    :type collection: HemitypeCollection
+    :returns: A stable, rank independent name for the chunks involved.
+    """
+    roi = getattr(collection, "roi", None)
+    if roi is None:
+        return "all"
+    return sorted(int(chunk.id) for chunk in roi)
+
+
 class HemitypeCollection:
     """
     Class used to iterate over an ``Hemitype`` placement sets within a list of chunks, and

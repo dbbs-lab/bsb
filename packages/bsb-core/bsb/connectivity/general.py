@@ -7,6 +7,7 @@ from ..config import types
 from ..exceptions import ConnectivityError
 from ..mixins import InvertedRoI
 from ..rng import get_rng
+from .strategy import roi_key
 from .strategy import ConnectionStrategy
 
 if typing.TYPE_CHECKING:  # pragma: nocover
@@ -52,8 +53,8 @@ class AllToAll(ConnectionStrategy):
                         self.name,
                         from_ps.cell_type.name,
                         to_ps.cell_type.name,
-                        [c.id for c in pre.roi],
-                        [c.id for c in post.roi],
+                        roi_key(pre),
+                        roi_key(post),
                     ),
                 )
                 filtered_ = rng.binomial(1, p=self.affinity, size=ml) > 0
@@ -75,8 +76,8 @@ def _connect_fixed_degree(self, pre, post, degree, is_in):
             "connectivity",
             self.name,
             "fixed_degree",
-            [c.id for c in pre.roi],
-            [c.id for c in post.roi],
+            roi_key(pre),
+            roi_key(post),
         ),
     )
     ps_counted = pre.placement if is_in else post.placement

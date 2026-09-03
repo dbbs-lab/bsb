@@ -1170,3 +1170,61 @@ class TestSegmentIntersection(
         self.assertGreater(
             total, 0, "expected the overlapping A/B morphologies to connect"
         )
+
+
+class TestConnectivityReproducibility(
+    RandomStorageFixture, NumpyTestCase, unittest.TestCase, engine_name="hdf5"
+):
+    """
+    Connectivity draws have to come from the configured randomness, or a seed cannot
+    reproduce a connectome and two ranks can disagree about the same chunk pair.
+    """
+
+    def _cfg(self, seed):
+        cfg = Configuration.default(
+            network=dict(x=100, y=100, z=100, chunk_size=[50, 50, 50]),
+            partitions=dict(layer=dict(type="layer", thickness=100)),
+            cell_types=dict(
+                pre=dict(spatial=dict(radius=2, count=60)),
+                post=dict(spatial=dict(radius=2, count=60)),
+            ),
+            placement=dict(
+                place=dict(
+                    strategy="bsb.placement.RandomPlacement",
+                    partitions=["layer"],
+                    cell_types=["pre", "post"],
+                )
+            ),
+            connectivity=dict(
+                connect=dict(
+                    strategy="bsb.connectivity.AllToAll",
+                    affinity=0.4,
+                    presynaptic=dict(cell_types=["pre"]),
+                    postsynaptic=dict(cell_types=["post"]),
+                )
+            ),
+        )
+        cfg.rng.seed = seed
+        return cfg
+
+    def _connections(self, seed):
+        network = Scaffold(self._cfg(seed), self.random_storage())
+        network.compile(append=False, redo=False)
+        pre, post = network.get_connectivity_set("connect").load_connections().all()
+        order = np.lexsort((post[:, 0], pre[:, 0]))
+        return pre[order], post[order]
+
+    def test_same_seed_reproduces_connections(self):
+        first_pre, first_post = self._connections(1234)
+        again_pre, again_post = self._connections(1234)
+        self.assertEqual(first_pre.shape, again_pre.shape, "same seed, same count")
+        self.assertClose(first_pre, again_pre, "same seed must connect the same cells")
+        self.assertClose(first_post, again_post, "same seed must connect the same cells")
+
+    def test_different_seeds_differ(self):
+        first_pre, _ = self._connections(1234)
+        other_pre, _ = self._connections(4321)
+        self.assertFalse(
+            first_pre.shape == other_pre.shape and np.allclose(first_pre, other_pre),
+            "different seeds must not produce the same connectome",
+        )

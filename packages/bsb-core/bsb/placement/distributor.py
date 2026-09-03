@@ -1,4 +1,5 @@
 import abc
+import typing
 import uuid
 from dataclasses import dataclass
 
@@ -10,6 +11,7 @@ from bsb import pool_cache
 from .. import config
 from ..exceptions import EmptySelectionError
 from ..morphologies import MorphologySet, RotationSet
+from ..rng import get_rng
 from ..topology.partition import Partition
 from ..voxels import voxel_rotation_of
 from .indicator import PlacementIndications
@@ -19,6 +21,9 @@ from .indicator import PlacementIndications
 class DistributionContext:
     indicator: PlacementIndications
     partitions: list[Partition]
+    #: The chunk the cells were placed in. Distributors that draw randomly key
+    #: their stream on it, so a chunk is distributed the same way on every rank.
+    chunk: typing.Any = None
 
 
 @config.dynamic(attr_name="strategy", required=True)
@@ -86,7 +91,17 @@ class RandomMorphologies(MorphologyDistributor, classmap_entry="random"):
         Uses the morphology selection indicators to select morphologies and returns a
         MorphologySet of randomly assigned morphologies.
         """
-        return np.random.default_rng().integers(len(morphologies), size=len(positions))
+        # Keyed on the cell type and the chunk: an unseeded generator here gave a
+        # different assignment every run, and a different one on every rank.
+        rng = get_rng(
+            self,
+            key=(
+                "morphologies",
+                getattr(context.indicator.cell_type, "name", None),
+                getattr(context.chunk, "id", None),
+            ),
+        )
+        return rng.integers(len(morphologies), size=len(positions))
 
 
 @config.node
@@ -160,7 +175,18 @@ class ImplicitNoRotations(ExplicitNoRotations, Implicit, classmap_entry="none"):
 @config.node
 class RandomRotations(RotationDistributor, classmap_entry="random"):
     def distribute(self, positions, context):
-        return np.random.rand(len(positions), 3) * 360
+        # Keyed on the cell type and the chunk, so the cells of a chunk are rotated
+        # the same way wherever it is distributed, and cells in different chunks do
+        # not all share one stream.
+        rng = get_rng(
+            self,
+            key=(
+                "rotations",
+                getattr(context.indicator.cell_type, "name", None),
+                getattr(context.chunk, "id", None),
+            ),
+        )
+        return rng.random((len(positions), 3)) * 360
 
 
 @config.node
@@ -218,8 +244,10 @@ class DistributorsNode:
     )
     properties: dict[Distributor] = config.catch_all(type=Distributor)
 
-    def __call__(self, key, partitions, indicator, positions, loaders=None):
-        context = DistributionContext(indicator, partitions)
+    def __call__(
+        self, key, partitions, indicator, positions, loaders=None, chunk=None
+    ):
+        context = DistributionContext(indicator, partitions, chunk)
         if key == "morphologies":
             distributor = getattr(self, key)
             if hasattr(distributor, "generate"):
@@ -246,9 +274,9 @@ class DistributorsNode:
             distribute = self.properties[key].distribute
         return distribute(positions, context)
 
-    def _curry(self, partitions, indicator, positions, loaders=None):
+    def _curry(self, partitions, indicator, positions, loaders=None, chunk=None):
         def curried(key):
-            return self(key, partitions, indicator, positions, loaders)
+            return self(key, partitions, indicator, positions, loaders, chunk)
 
         return curried
 
@@ -263,9 +291,9 @@ class DistributorsNode:
             )
         return loaders
 
-    def _specials(self, partitions, indicator, positions):
+    def _specials(self, partitions, indicator, positions, chunk=None):
         loaders = self._get_morpho_loaders(indicator)
-        distr = self._curry(partitions, indicator, positions, loaders)
+        distr = self._curry(partitions, indicator, positions, loaders, chunk)
         morphologies, rotations = distr("morphologies")
         if morphologies is not None and (
             rotations is None or not isinstance(self.rotations, Implicit)

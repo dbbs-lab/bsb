@@ -7,6 +7,7 @@ from ..config import types
 from ..exceptions import ConfigurationError, PackingError
 from ..mixins import NotParallel
 from ..reporting import report
+from ..rng import get_rng
 from .strategy import PlacementStrategy
 
 
@@ -43,8 +44,11 @@ class ParallelArrayPlacement(NotParallel, PlacementStrategy):
             for prt in self.partitions:
                 width, depth, height = prt.data.mdc - prt.data.ldc
                 ldc = prt.data.ldc
+                # Keyed on the cell type and partition, so every rank draws the same
+                # lattice regardless of who happens to run this (NotParallel) job.
+                rng = get_rng(self, key=(cell_type.name, prt.name))
                 # Add a random shift to the starting points of the arrays for variation.
-                x_shift = np.random.rand() * self.spacing_x
+                x_shift = rng.random() * self.spacing_x
                 # Place cells equally spaced over the entire length of the X axis kept
                 # apart by the provided space.
                 # They are placed in straight lines, tilted by a certain angle by adding
@@ -99,11 +103,11 @@ class ParallelArrayPlacement(NotParallel, PlacementStrategy):
                         ldc[1]
                         + y_pos[i]
                         + epsilon
-                        * (np.random.rand(x.shape[0]) - 0.5)
+                        * (rng.random(x.shape[0]) - 0.5)
                         * math.cos(self.angle)
                     )
                     # Place them at a uniformly random height throughout the partition.
-                    z = ldc[2] + np.random.uniform(radius, height - radius, x.shape[0])
+                    z = ldc[2] + rng.uniform(radius, height - radius, x.shape[0])
                     # Store this stack's cells
                     cells[(i * len(x)) : ((i + 1) * len(x)), 0] = x
                     cells[(i * len(x)) : ((i + 1) * len(x)), 1] = y

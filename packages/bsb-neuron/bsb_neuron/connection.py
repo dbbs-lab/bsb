@@ -48,9 +48,9 @@ class SynapseSpec:
     milliseconds. Defaults to NEURON's own ``NetCon`` delay of 1 ms.
 
     The delays of a network set NEURON's ``mindelay``, which
-    :meth:`~neuron.hoc.ParallelContext.set_maxstep` requires to be strictly positive and
-    at least one :attr:`~bsb_neuron.simulation.NeuronSimulation.resolution` step. A
-    delay of 0 therefore aborts the simulation with ``usable mindelay is 0``.
+    ``ParallelContext.set_maxstep`` requires to be strictly positive and at least one
+    :attr:`~bsb_neuron.simulation.NeuronSimulation.resolution` step. A delay of 0
+    therefore aborts the simulation with ``usable mindelay is 0``.
     """
     parameters = config.list(type=Parameter)
     """List of parameters to assign to the synapse model."""

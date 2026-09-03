@@ -1713,8 +1713,8 @@ class Branch:
         self.points = self.points[reduced]
         self.radii = self.radii[reduced]
 
-    @functools.wraps(SubTree.cached_voxelize)
     @instance_cache
+    @functools.wraps(SubTree.cached_voxelize)
     def cached_voxelize(self, *args, **kwargs):
         return SubTree([self]).voxelize(*args, **kwargs)
 

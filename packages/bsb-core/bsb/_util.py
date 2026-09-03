@@ -11,7 +11,7 @@ import numpy as _np
 ichain = _it.chain.from_iterable
 
 
-def instance_cache(method):
+class instance_cache:
     """
     Cache a method's results on the instance instead of on the function.
 
@@ -20,25 +20,48 @@ def instance_cache(method):
     of them can be collected for as long as the class exists. Keeping the results on
     the instance means they are freed with it.
 
-    The cached values are keyed on the arguments, as ``functools.cache`` does, so
-    the arguments still have to be hashable.
+    The bound method exposes ``cache_clear()``, which empties the cache of that one
+    instance, for values that go stale when the instance changes.
 
-    :param method: The method whose results to cache per instance.
-    :returns: The wrapped method.
+    Results are keyed on the arguments, as :func:`functools.cache` does, so the
+    arguments still have to be hashable.
     """
-    name = f"_cache_{method.__name__}"
 
-    @_ft.wraps(method)
-    def wrapper(self, *args, **kwargs):
-        cache = self.__dict__.setdefault(name, {})
+    def __init__(self, method):
+        self._method = method
+        self._name = f"_cache_{method.__name__}"
+        _ft.update_wrapper(self, method)
+
+    def __set_name__(self, owner, name):
+        self._name = f"_cache_{name}"
+
+    def __get__(self, instance, owner=None):
+        if instance is None:
+            return self
+        return _BoundInstanceCache(self._method, self._name, instance)
+
+
+class _BoundInstanceCache:
+    """One instance's view of an :class:`instance_cache` method."""
+
+    def __init__(self, method, name, instance):
+        self._method = method
+        self._name = name
+        self._instance = instance
+        _ft.update_wrapper(self, method)
+
+    def __call__(self, *args, **kwargs):
+        cache = self._instance.__dict__.setdefault(self._name, {})
         key = (args, tuple(sorted(kwargs.items()))) if kwargs else args
         try:
             return cache[key]
         except KeyError:
-            cache[key] = value = method(self, *args, **kwargs)
+            cache[key] = value = self._method(self._instance, *args, **kwargs)
             return value
 
-    return wrapper
+    def cache_clear(self):
+        """Forget what was cached for this instance."""
+        self._instance.__dict__.pop(self._name, None)
 
 
 def merge_dicts(a, b):

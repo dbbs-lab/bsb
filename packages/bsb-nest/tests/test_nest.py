@@ -395,6 +395,80 @@ class TestNest(
             "Current injected should raise membrane potential",
         )
 
+    def _seedless_sim_config(self):
+        """A single stochastic cell recorded by a spike recorder, and no seed set."""
+        conf = _conf_single_cell()
+        conf.simulations = {
+            "test": {
+                "simulator": "nest",
+                "duration": 500,
+                "resolution": 0.1,
+                "cell_models": {
+                    # gif_cond_exp spikes stochastically, so its spike times are a
+                    # direct readout of which RNG stream NEST used.
+                    "A": {"model": "gif_cond_exp", "constants": {"I_e": 200.0}}
+                },
+                "connection_models": {},
+                "devices": {
+                    "record_A_spikes": {
+                        "device": "spike_recorder",
+                        "delay": 0.5,
+                        "targetting": {"strategy": "cell_model", "cell_models": ["A"]},
+                    }
+                },
+            }
+        }
+        return Configuration(conf)
+
+    def _run_seedless(self, seed=None):
+        """Run the stochastic network, returning its spike times and resolved seed."""
+        cfg = self._seedless_sim_config()
+        if seed is not None:
+            cfg.simulations.test.seed = seed
+        netw = Scaffold(cfg, self.random_storage())
+        netw.compile()
+        result = netw.run_simulation("test")
+        trains = result.block.segments[0].spiketrains
+        spikes = np.concatenate([np.asarray(st.magnitude).ravel() for st in trains])
+        return spikes, cfg.simulations.test.seed, cfg
+
+    def test_master_seed_is_drawn_and_recorded(self):
+        """An unseeded simulation draws a master seed and stores it in the
+        configuration, so the run it describes can be reproduced (#123)."""
+        cfg = self._seedless_sim_config()
+        self.assertIsNone(cfg.simulations.test.seed, "seed should start unset")
+        netw = Scaffold(cfg, self.storage)
+        netw.compile()
+        netw.run_simulation("test")
+
+        seed = cfg.simulations.test.seed
+        self.assertIsNotNone(seed, "an unseeded run must draw a seed")
+        self.assertEqual(
+            seed,
+            cfg.__tree__()["simulations"]["test"]["seed"],
+            "a drawn seed has to reach the stored configuration",
+        )
+
+    def test_unseeded_runs_are_replicates(self):
+        """NEST's own default seed is a fixed constant, so an unset seed must draw
+        rather than fall back to it, or every run would repeat the same streams."""
+        first, seed_a, _ = self._run_seedless()
+        second, seed_b, _ = self._run_seedless()
+        self.assertNotEqual(seed_a, seed_b, "unseeded runs must draw different seeds")
+        self.assertFalse(
+            first.shape == second.shape and np.allclose(first, second),
+            "unseeded runs must not produce identical spike trains",
+        )
+
+    def test_recorded_seed_reproduces_the_run(self):
+        """Feeding a recorded seed back in reproduces that run exactly, which is the
+        whole point of recording it."""
+        first, seed, _ = self._run_seedless()
+        self.assertIsNotNone(seed)
+        again, seed_again, _ = self._run_seedless(seed=seed)
+        self.assertEqual(seed, seed_again, "a configured seed is used verbatim")
+        self.assertClose(first, again, "the same seed must reproduce the same spikes")
+
     def test_nest_randomness(self):
         nest.ResetKernel()
         nest.resolution = 0.1

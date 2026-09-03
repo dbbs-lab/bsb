@@ -10,6 +10,7 @@ from bsb import (
     SimulatorAdapter,
     options,
     report,
+    resolve_seed,
     warn,
 )
 from neo import SpikeTrain
@@ -100,6 +101,9 @@ class NestAdapter(SimulatorAdapter):
         :returns: The prepared simulation data associated with the given simulation.
         :rtype: bsb.simulation.adapter.SimulationData
         """
+        # Settled before the result is made: the result snapshots the configuration,
+        # and a seed drawn afterwards would never reach the stored copy.
+        resolve_seed(simulation, key=("nest", simulation.name))
         self.simdata[simulation] = SimulationData(
             simulation, result=NestResult(simulation, filename)
         )
@@ -219,5 +223,7 @@ class NestAdapter(SimulatorAdapter):
         # the NESTAdapter has been prepared.
         if "mpi4py" in sys.modules:
             nest.set_communicator.__func__(self.comm._comm)
-        if simulation.seed is not None:
-            nest.rng_seed = simulation.seed
+        # Always set: NEST's own default is a fixed constant, so leaving it alone
+        # would give every run of every simulation the same streams. NEST derives its
+        # per virtual process and per rank seeds from this one.
+        nest.rng_seed = resolve_seed(simulation, key=("nest", simulation.name))

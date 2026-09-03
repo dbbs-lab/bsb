@@ -366,7 +366,10 @@ class Voxels(Partition, abc.ABC, classmap_entry=None):
         raise LayoutError("Voxelset translation not supported.")
 
     def surface(self, chunk=None):
-        raise LayoutError("Voxelset surface calculations not supported.")
+        raise LayoutError(
+            f"Surface calculations are not supported by the voxel based partition"
+            f" '{self.name}'."
+        )
 
     def volume(self, chunk=None):
         vs = self.chunk_to_voxels(chunk) if chunk is not None else self.voxelset

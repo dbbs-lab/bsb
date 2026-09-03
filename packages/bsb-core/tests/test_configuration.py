@@ -26,15 +26,19 @@ from bsb import (
     ConfigurationWarning,
     DynamicClassInheritanceError,
     DynamicObjectNotFoundError,
+    LayoutError,
     NrrdDependencyNode,
     PackageRequirementWarning,
     Partition,
+    PlacementIndicator,
     Region,
     RegionGroup,
     RequirementError,
     Scaffold,
     UnfitClassCastError,
     UnresolvedClassCastError,
+    Voxels,
+    VoxelSet,
     config,
     from_storage,
     refs,
@@ -1931,6 +1935,43 @@ class TestNodeClass(unittest.TestCase):
 
         self.assertEqual("{root}", Test().get_node_name())
 
+    def test_node_name_inside_empty_container(self):
+        """
+        A node that is cast into a container that is still empty has to report its full
+        config path, and not disown its parents as `{standalone}`.
+        """
+
+        @config.node
+        class Child:
+            needed = config.attr(required=True)
+
+        @config.root
+        class Root:
+            d = config.dict(type=Child)
+            ls = config.list(type=Child)
+
+        with self.assertRaises(RequirementError) as ctx:
+            Root(d={"first": {}})
+        self.assertIn("{root}.d.first", str(ctx.exception))
+        with self.assertRaises(RequirementError) as ctx:
+            Root(ls=[{}])
+        self.assertIn("{root}.ls", str(ctx.exception))
+
+    def test_node_name_during_configuration_default(self):
+        """
+        Regression test for the node names of nodes built by `Configuration.default`.
+        """
+        with self.assertRaises(RequirementError) as ctx:
+            Configuration.default(
+                connectivity=dict(
+                    x=dict(
+                        strategy="bsb.connectivity.VoxelIntersection",
+                        presynaptic=dict(cell_types=["A"]),
+                    )
+                )
+            )
+        self.assertIn("{root}.connectivity.x", str(ctx.exception))
+
 
 class TestNodeComposition(unittest.TestCase):
     def setUp(self):
@@ -2003,3 +2044,85 @@ class TestPackageRequirements(RandomStorageFixture, unittest.TestCase, engine_na
         self.assertEqual(
             self.network.configuration.packages, network2.configuration.packages
         )
+
+
+class TestErrorNodeAttribution(unittest.TestCase):
+    """
+    Configuration errors have to name the node they occurred on, and not the nearest
+    ancestor that happened to be able to name itself.
+    """
+
+    def setUp(self):
+        @config.dynamic(attr_name="kind", auto_classmap=True)
+        class Widget:
+            pass
+
+        @config.node
+        class RoundWidget(Widget, classmap_entry="round"):
+            size = config.attr(type=int)
+
+        @config.node
+        class Leaf:
+            pass
+
+        @config.node
+        class Holder:
+            widgets = config.dict(type=Widget)
+            leaf = config.attr(type=Leaf)
+
+        @config.root
+        class Root:
+            holders = config.dict(type=Holder)
+
+        self.Root = Root
+
+    def test_missing_dynamic_attr(self):
+        """
+        The dynamic class of a node is determined before the node exists, so the error
+        has to be attributed to the slot the node was being built for.
+        """
+        with self.assertRaises(RequirementError) as ctx:
+            self.Root(holders={"h": {"widgets": {"w": {}}}})
+        self.assertIn("{root}.holders.h.widgets.w", str(ctx.exception))
+
+    def test_unconvertible_node_value(self):
+        with self.assertRaises(CastError) as ctx:
+            self.Root(holders={"h": {"leaf": "nonsense"}})
+        self.assertIn("{root}.holders.h.leaf", str(ctx.exception))
+
+    def test_unconvertible_attr_of_dynamic_node(self):
+        with self.assertRaises(CastError) as ctx:
+            self.Root(holders={"h": {"widgets": {"w": {"kind": "round", "size": "nan"}}}})
+        self.assertIn("{root}.holders.h.widgets.w.size", str(ctx.exception))
+
+
+class TestSurfaceErrorAttribution(unittest.TestCase):
+    """
+    Partitions that can't calculate a surface have to say which partition they are, and
+    the planar density estimate has to say which cell type and strategy asked for it.
+    """
+
+    def test_planar_density_on_surfaceless_partition(self):
+        @config.node
+        class SurfacelessVoxels(Voxels, classmap_entry="surfaceless_voxels"):
+            def to_voxels(self):
+                return VoxelSet([[0, 0, 0]], 100)
+
+        cfg = Configuration.default(
+            cell_types=dict(cell_A=dict(spatial=dict(radius=1, planar_density=0.1))),
+            partitions=dict(vox=dict(type="surfaceless_voxels")),
+            placement=dict(
+                placement_A=dict(
+                    strategy="bsb.placement.RandomPlacement",
+                    cell_types=["cell_A"],
+                    partitions=["vox"],
+                )
+            ),
+        )
+        indicator = PlacementIndicator(cfg.placement.placement_A, cfg.cell_types.cell_A)
+        with self.assertRaises(LayoutError) as ctx:
+            indicator.guess()
+        msg = str(ctx.exception)
+        self.assertIn("'vox'", msg, "surface error should name the partition")
+        self.assertIn("'cell_A'", msg, "surface error should name the cell type")
+        self.assertIn("'placement_A'", msg, "surface error should name the strategy")

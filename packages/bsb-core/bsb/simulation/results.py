@@ -1,3 +1,4 @@
+import dataclasses
 import pathlib
 import shutil
 import traceback
@@ -127,6 +128,98 @@ def merge_rank_results(parts, filename) -> None:
     with io.NixIO(str(filename), mode="ow") as out:
         for key in order:
             out.write_block(merged[key])
+
+
+#: The Neo containers a recording can land in, in the order a reader sees them.
+_RECORDING_LISTS = ("spiketrains", "analogsignals")
+
+
+def _recording_counts(segment) -> dict:
+    """How many recordings the segment holds per container, to spot new ones."""
+    return {name: len(getattr(segment, name)) for name in _RECORDING_LISTS}
+
+
+def _stamp_device(segment, before: dict, device_name) -> None:
+    """
+    Annotate what a recorder just appended with the device it came from.
+
+    The device is stamped here rather than by each recorder so that every backend
+    answers "which device produced this?" the same way, without every device
+    author having to remember to say so. A recorder that already named a device
+    keeps its own answer.
+    """
+    if device_name is None:
+        return
+    for name in _RECORDING_LISTS:
+        recordings = getattr(segment, name)
+        for recording in recordings[before[name] :]:
+            recording.annotations.setdefault("device", device_name)
+
+
+@dataclasses.dataclass(frozen=True)
+class Recording:
+    """
+    One recording and the cell it came from.
+
+    Recordings are written one per cell, so this is the unit a reader iterates:
+    it says which device produced the signal and which cell it belongs to,
+    whatever backend ran the simulation and whichever Neo container it landed in.
+    """
+
+    #: Name of the device that produced the recording.
+    device: str | None
+    #: The cell the recording belongs to, or ``None`` for a device-level record
+    #: such as a generator's own spikes.
+    cell_id: int | None
+    #: Name of the cell model, when the backend knows it.
+    cell_type: str | None
+    #: The Neo object itself, a ``SpikeTrain`` or an ``AnalogSignal``.
+    signal: typing.Any
+
+    @property
+    def is_spike_train(self) -> bool:
+        return type(self.signal).__name__ == "SpikeTrain"
+
+
+def iter_recordings(
+    source, device: str | None = None, cell_id: int | None = None
+) -> "typing.Iterator[Recording]":
+    """
+    Iterate the recordings of a block, a segment, or a list of either.
+
+    :param source: What to read: a :class:`neo.core.Block`, a
+        :class:`neo.core.Segment`, or an iterable of either.
+    :param device: Only yield recordings made by this device.
+    :param cell_id: Only yield recordings of this cell.
+    :returns: The recordings, in the order they were written.
+    :rtype: typing.Iterator[Recording]
+    """
+    for segment in _iter_segments(source):
+        for name in _RECORDING_LISTS:
+            for signal in getattr(segment, name, ()):
+                annotations = signal.annotations
+                recording = Recording(
+                    device=annotations.get("device"),
+                    cell_id=annotations.get("cell_id"),
+                    cell_type=annotations.get("cell_type"),
+                    signal=signal,
+                )
+                if device is not None and recording.device != device:
+                    continue
+                if cell_id is not None and recording.cell_id != cell_id:
+                    continue
+                yield recording
+
+
+def _iter_segments(source):
+    """Take a block, a segment, or any nesting of them, and yield the segments."""
+    if hasattr(source, "segments"):
+        yield from source.segments
+    elif hasattr(source, "spiketrains"):
+        yield source
+    else:
+        for item in source:
+            yield from _iter_segments(item)
 
 
 class SimulationResult:
@@ -262,11 +355,16 @@ class SimulationResult:
             mpi_rank=self.comm.get_rank(),
         )
         for recorder in self.recorders:
+            before = _recording_counts(segment)
             try:
                 recorder.flush(segment)
             except Exception:
                 traceback.print_exc()
                 warn("Recorder errored out!")
+            finally:
+                # A recorder that raised part way through still appended what it
+                # got to, and unlabelled signals are worse than missing ones.
+                _stamp_device(segment, before, recorder.device_name)
         self.checkpoint_index += 1
         self._t_cursor = t_stop
 
@@ -332,8 +430,10 @@ class SimulationRecorder:
 
 
 __all__ = [
+    "Recording",
     "SimulationRecorder",
     "SimulationResult",
+    "iter_recordings",
     "merge_rank_results",
     "rank_part_path",
     "read_provenance",

@@ -26,6 +26,7 @@ class SynapseRecorder(NeuronDevice, classmap_entry="synapse_recorder"):
                             _record_synaptic_current(
                                 simdata.result,
                                 synapse,
+                                device=self,
                                 name=self.name,
                                 cell_type=target.cell_model.name,
                                 cell_id=target.id,
@@ -33,5 +34,5 @@ class SynapseRecorder(NeuronDevice, classmap_entry="synapse_recorder"):
                             )
 
 
-def _record_synaptic_current(result, synapse, **annotations):
-    result.record(synapse._pp._ref_i, **annotations, units="nA")
+def _record_synaptic_current(result, synapse, device=None, **annotations):
+    result.record(synapse._pp._ref_i, device=device, **annotations, units="nA")

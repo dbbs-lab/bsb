@@ -10,6 +10,7 @@ from bsb import BootError, CastError, ConfigurationError, RequirementError
 from bsb.config import Configuration, build_context
 from bsb.core import Scaffold
 from bsb.services import MPI
+from bsb.simulation.results import iter_recordings
 from bsb_test import NumpyTestCase, RandomStorageFixture, get_test_config
 from neo import io
 from packaging.version import Version
@@ -22,6 +23,22 @@ from scipy.optimize import curve_fit
 
 from bsb_nest import NestAdapter
 from bsb_nest.exceptions import NestKernelError
+
+
+def _population_rate(block, device, duration):
+    """
+    Mean firing rate over a device's targets, in Hz.
+
+    Spikes are recorded one train per cell, so the population's spikes are the
+    trains of that device summed; cells that never fired have no train at all,
+    which is why the divisor is the device's target count and not the number of
+    trains.
+    """
+    recordings = list(iter_recordings(block, device=device))
+    assert recordings, f"no recordings for device {device!r}"
+    n_spikes = sum(len(recording.signal) for recording in recordings)
+    pop_size = recordings[0].signal.annotations["pop_size"]
+    return n_spikes / duration * 1000.0 / pop_size
 
 
 def _conf_single_cell():
@@ -198,19 +215,8 @@ class TestNest(
         network.compile()
         result = network.run_simulation("test_nest")
 
-        spiketrains = result.block.segments[0].spiketrains
-        sr_exc, sr_inh = None, None
-        for st in spiketrains:
-            if st.annotations["device"] == "sr_exc":
-                sr_exc = st
-            elif st.annotations["device"] == "sr_inh":
-                sr_inh = st
-
-        self.assertIsNotNone(sr_exc)
-        self.assertIsNotNone(sr_inh)
-
-        rate_ex = len(sr_exc) / simcfg.duration * 1000.0 / sr_exc.annotations["pop_size"]
-        rate_in = len(sr_inh) / simcfg.duration * 1000.0 / sr_inh.annotations["pop_size"]
+        rate_ex = _population_rate(result.block, "sr_exc", simcfg.duration)
+        rate_in = _population_rate(result.block, "sr_inh", simcfg.duration)
 
         self.assertAlmostEqual(rate_in, 50, delta=1)
         self.assertAlmostEqual(rate_ex, 50, delta=1)
@@ -223,19 +229,8 @@ class TestNest(
         network.compile()
         result = network.run_simulation("test_nest")
 
-        spiketrains = result.block.segments[0].spiketrains
-        sr_exc, sr_inh = None, None
-        for st in spiketrains:
-            if st.annotations["device"] == "sr_exc":
-                sr_exc = st
-            elif st.annotations["device"] == "sr_inh":
-                sr_inh = st
-
-        self.assertIsNotNone(sr_exc)
-        self.assertIsNotNone(sr_inh)
-
-        rate_ex = len(sr_exc) / simcfg.duration * 1000.0 / sr_exc.annotations["pop_size"]
-        rate_in = len(sr_inh) / simcfg.duration * 1000.0 / sr_inh.annotations["pop_size"]
+        rate_ex = _population_rate(result.block, "sr_exc", simcfg.duration)
+        rate_in = _population_rate(result.block, "sr_inh", simcfg.duration)
 
         self.assertAlmostEqual(rate_in, 50, delta=1)
         self.assertAlmostEqual(rate_ex, 50, delta=1)
@@ -295,7 +290,7 @@ class TestNest(
         netw.compile()
         results = netw.run_simulation("test")
         spike_times_bsb = results.block.segments[0].spiketrains[0]
-        self.assertTrue(np.unique(spike_times_bsb.array_annotations["senders"]) == 1)
+        self.assertEqual(1, spike_times_bsb.annotations["cell_id"])
         membrane_potentials = results.block.segments[0].analogsignals[0]
         # last time point is not recorded because of recorder delay.
         self.assertTrue(len(membrane_potentials) == duration / resolution - 1)
@@ -816,8 +811,8 @@ class TestNest(
         results = netw.run_simulation("test")
 
         # get spike time of first spike of C
-        spike_times_bsb = results.block.segments[0].spiketrains[1]
-        self.assertEqual("record_C_spikes", spike_times_bsb.annotations["device"])
+        (recording,) = iter_recordings(results.block, device="record_C_spikes")
+        spike_times_bsb = recording.signal
         membrane_potentials = results.block.segments[0].analogsignals[0].magnitude[:, 0]
         time_effect_first_syn = int((spike_times_bsb.magnitude[0] + 1) / resolution)
         time_effect_sec_syn = int((spike_times_bsb.magnitude[0] + 30) / resolution)

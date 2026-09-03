@@ -83,7 +83,7 @@ class PlacementStrategy(abc.ABC, HasDependencies):
             selector_error = None
             try:
                 morphologies, rotations = self.distribute._specials(
-                    self.partitions, indicator, positions
+                    self.partitions, indicator, positions, chunk
                 )
             except EmptySelectionError as e:
                 selector_error = ", ".join(str(s) for s in e.selectors)
@@ -98,13 +98,15 @@ class PlacementStrategy(abc.ABC, HasDependencies):
                 )
         elif self.distribute._has_rdistr():
             rotations = self.distribute(
-                "rotations", self.partitions, indicator, positions
+                "rotations", self.partitions, indicator, positions, chunk=chunk
             )
             morphologies = None
         else:
             morphologies, rotations = None, None
 
-        distr = self.distribute._curry(self.partitions, indicator, positions)
+        distr = self.distribute._curry(
+            self.partitions, indicator, positions, chunk=chunk
+        )
         additional.update({prop: distr(prop) for prop in self.distribute.properties})
         self.scaffold.place_cells(
             indicator.cell_type,

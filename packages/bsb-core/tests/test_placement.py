@@ -832,3 +832,51 @@ class TestPoissonDiskPlacement(
             min_distance - 1e-6,
             "seamless placement violated min-distance across a chunk border",
         )
+
+
+class TestPlacementReproducibility(
+    RandomStorageFixture, NumpyTestCase, unittest.TestCase, engine_name="hdf5"
+):
+    """
+    Placement draws have to come from the configured randomness, or a seed cannot
+    reproduce a reconstruction and two ranks can disagree about the same chunk.
+    """
+
+    def _cfg(self, seed=None):
+        cfg = Configuration.default(
+            network=dict(x=100, y=100, z=100, chunk_size=[50, 50, 50]),
+            partitions=dict(layer=dict(type="layer", thickness=100)),
+            cell_types=dict(cell=dict(spatial=dict(radius=2, count=200))),
+            placement=dict(
+                place=dict(
+                    strategy="bsb.placement.RandomPlacement",
+                    partitions=["layer"],
+                    cell_types=["cell"],
+                )
+            ),
+        )
+        if seed is not None:
+            cfg.rng.seed = seed
+        return cfg
+
+    def _positions(self, seed=None):
+        network = Scaffold(self._cfg(seed), self.random_storage())
+        network.compile(append=False, redo=False)
+        ps = network.cell_types.cell.get_placement_set()
+        positions = ps.load_positions()
+        # Sorted, because which chunk a rank writes first is not part of the result
+        return positions[np.lexsort(positions.T)]
+
+    def test_same_seed_reproduces_positions(self):
+        first = self._positions(seed=1234)
+        again = self._positions(seed=1234)
+        self.assertEqual(first.shape, again.shape, "the same seed must place as many")
+        self.assertClose(first, again, "the same seed must place in the same spots")
+
+    def test_different_seeds_differ(self):
+        first = self._positions(seed=1234)
+        other = self._positions(seed=4321)
+        self.assertFalse(
+            first.shape == other.shape and np.allclose(first, other),
+            "different seeds must not place identically",
+        )

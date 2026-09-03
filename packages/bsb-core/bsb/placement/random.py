@@ -3,6 +3,7 @@ import numpy as np
 from .. import config, types
 from ..exceptions import PackingError, PackingWarning
 from ..reporting import report, warn
+from ..rng import get_rng
 from ..voxels import VoxelSet
 from .strategy import PlacementStrategy
 
@@ -29,7 +30,9 @@ class _VoxelBasedFiller:
             for name, indicator in indicators.items()
         ]
         # Create and fill the particle system.
-        system = VolumeFiller(track_displaced=False, scaffold=self.scaffold, strat=self)
+        system = VolumeFiller(
+            track_displaced=False, scaffold=self.scaffold, strat=self, chunk=chunk
+        )
         system.fill(voxels, particles, check_pack=check_pack)
         return system
 
@@ -110,12 +113,15 @@ class ParticleVoxel:
 
 
 class VolumeFiller:
-    def __init__(self, track_displaced=False, scaffold=None, strat=None):
+    def __init__(self, track_displaced=False, scaffold=None, strat=None, chunk=None):
         self.particle_types = []
         self.voxels = []
         self.track_displaced = track_displaced
         self.scaffold = scaffold
         self.strat = strat
+        # The chunk being filled, so draws can be keyed on it and every rank
+        # fills a given chunk the same way.
+        self.chunk = chunk
 
     def fill(self, voxels, particles, check_pack=True):
         """
@@ -193,9 +199,19 @@ class VolumeFiller:
                 f"Particle system voxel mismatch. "
                 f"Given {len(voxel_counts)} expected {len(self.voxels)}"
             )
+        rng = get_rng(
+            self.strat,
+            key=(
+                "placement",
+                getattr(self.strat, "name", None),
+                "fill_per_voxel",
+                particle_type["name"],
+                getattr(self.chunk, "id", None),
+            ),
+        )
         for voxel, count in zip(self.voxels, voxel_counts, strict=False):
             particle_type["placed"] = particle_type.get("placed", 0) + count
-            placement_matrix = np.random.rand(count, self.dimensions)
+            placement_matrix = rng.random((count, self.dimensions))
             for in_voxel_pos in placement_matrix:
                 particle_position = voxel.origin + in_voxel_pos * voxel.size
                 self.add_particle(radius, particle_position, type=particle_type)
@@ -206,7 +222,17 @@ class VolumeFiller:
         radius = particle_type["radius"]
         # Generate a matrix with random positions for the particles
         # Add an extra dimension to determine in which voxels to place the particles
-        placement_matrix = np.random.rand(particle_count, self.dimensions + 1)
+        rng = get_rng(
+            self.strat,
+            key=(
+                "placement",
+                getattr(self.strat, "name", None),
+                "fill_global",
+                particle_type["name"],
+                getattr(self.chunk, "id", None),
+            ),
+        )
+        placement_matrix = rng.random((particle_count, self.dimensions + 1))
         # Generate each particle
         for row in placement_matrix:
             # Determine the voxel to be placed in.
@@ -346,6 +372,12 @@ class DistributionPlacement(PlacementStrategy):
     def place(self, chunk, indicators):
         # For each placement indicator
         for indicator in indicators.values():
+            # Keyed on the strategy, the cell type and the chunk, so a chunk is
+            # placed the same way whichever rank happens to compute it.
+            rng = get_rng(
+                self,
+                key=("placement", self.name, indicator.cell_type.name, chunk.id),
+            )
             # Prepare an array to store positions
             all_positions = np.empty((0, 3))
             # For each partitions
@@ -375,12 +407,12 @@ class DistributionPlacement(PlacementStrategy):
                 num_selected = int(num_selected * np.prod(ratio_area))
                 if num_selected > 0:
                     # Assign a random position to the cells within this Chunk
-                    positions = np.random.rand(num_selected, 2)
+                    positions = rng.random((num_selected, 2))
                     positions = positions * np.delete(
                         chunk.dimensions, self.axis
                     ) + np.delete(chunk.ldc, self.axis)
 
-                    pos_on_axis = np.random.choice(
+                    pos_on_axis = rng.choice(
                         random_values, num_selected, replace=False
                     )
                     if self.direction == "negative":

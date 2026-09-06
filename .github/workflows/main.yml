@@ -4,24 +4,35 @@ on:
   push:
     branches:
       - main
+  # Manual escape hatch, so a release can always be driven by hand when a push
+  # trigger is missed or deliberately skipped.
+  workflow_dispatch:
 
 env:
   NX_DAEMON: false  # may prevent GHA to stall for some reason
 
 jobs:
+  # The release flow pushes its own `chore(release):` commit back to main. That push
+  # re-triggers this workflow, so every job is gated on the head commit not being one.
+  # `head_commit` is null on a workflow_dispatch run, so a manual run is never gated.
   check-api:
+    if: ${{ !startsWith(github.event.head_commit.message, 'chore(release):') }}
     uses: ./.github/workflows/check-api.yml
   build:
+    if: ${{ !startsWith(github.event.head_commit.message, 'chore(release):') }}
     uses: ./.github/workflows/build.yml
     secrets:
       CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
   docs:
+    if: ${{ !startsWith(github.event.head_commit.message, 'chore(release):') }}
     uses: ./.github/workflows/docs.yml
   ruff:
+    if: ${{ !startsWith(github.event.head_commit.message, 'chore(release):') }}
     uses: ./.github/workflows/ruff.yml
 
   release:
     needs: [ruff, build, docs, check-api]
+    if: ${{ !startsWith(github.event.head_commit.message, 'chore(release):') }}
     runs-on: ubuntu-latest
     permissions:
       id-token: write

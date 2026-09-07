@@ -213,6 +213,22 @@ class TestProjectOption(unittest.TestCase):
         options.store_option("verbosity", 2)
         self.assertEqual(before, content, "store mutated the shared cached document")
 
+    def test_failed_write_leaves_file_intact(self):
+        # Serializing into the file itself would truncate it before failing, losing the
+        # whole project table rather than just the option being stored.
+        self.create_toml({"tools": {"bsb": {"verbosity": 4}}})
+        _clear_pyproject_cache()
+        self.assertEqual(4, options.verbosity, "project verbosity not picked up")
+        with (
+            mock.patch.object(option.toml, "dump", side_effect=OSError("disk full")),
+            self.assertRaises(OSError),
+        ):
+            options.store_option("verbosity", 2)
+        _clear_pyproject_cache()
+        self.assertEqual(4, options.verbosity, "failed write clobbered pyproject.toml")
+        leftovers = list(self.proj.parent.glob(self.proj.name + ".*"))
+        self.assertEqual([], leftovers, "failed write left a temp file behind")
+
     def test_project_content_cache_invalidated_on_write(self):
         self.create_toml({"tools": {"bsb": {"verbosity": 4}}})
         _clear_pyproject_cache()

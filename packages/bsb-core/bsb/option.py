@@ -8,6 +8,7 @@ import copy
 import functools
 import os
 import pathlib
+import tempfile
 
 import toml
 
@@ -449,10 +450,21 @@ def _save_pyproject_bsb(project):
     # fails must not leave the change visible in memory.
     content = copy.deepcopy(content)
     content.setdefault("tools", {})["bsb"] = project
-    with open(path, "w") as f:
-        toml.dump(content, f)
-    # Filesystem mtime is too coarse to tell a same-size rewrite apart from the copy just
-    # parsed, so a write of our own invalidates the cache instead of relying on the stat.
+    # Serialize beside the target and rename over it. Opening the file itself truncates
+    # it before the first byte is written, which loses the whole project on a failure
+    # part way through; a rename either happens or it doesn't.
+    fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=path.name + ".", suffix=".tmp")
+    try:
+        with os.fdopen(fd, "w") as f:
+            toml.dump(content, f)
+        os.replace(tmp, path)
+    except BaseException:
+        with contextlib.suppress(OSError):
+            os.unlink(tmp)
+        raise
+    # Only reached once the rename went through, so a failed write leaves the cache
+    # matching what is still on disk. The stat can't stand in for this: a same-size
+    # rewrite within one clock tick keeps the mtime it was parsed at.
     _clear_pyproject_cache()
 
 

@@ -4,9 +4,47 @@ import typing
 from .. import config
 
 if typing.TYPE_CHECKING:  # pragma: nocover
-    from .adapter import SimulatorAdapter
+    from .adapter import SimulationData, SimulatorAdapter
     from .results import SimulationResult
     from .simulation import Simulation
+
+
+@config.dynamic(attr_name="strategy", auto_classmap=True)
+class AfterPrepareHook(abc.ABC):
+    """
+    Hook that runs once the simulation it is configured on has been prepared, before
+    it is run.
+
+    Its counterpart to :class:`.AfterSimulationHook`: this one sees the simulation
+    the backend has just built and can still change it, where that one sees what the
+    run produced.
+
+    The hook runs on every node that took part in preparing the simulation, so a
+    hook that writes output is responsible for its own MPI awareness, through
+    ``adapter.comm``.
+    """
+
+    name: str = config.attr(key=True)
+
+    @abc.abstractmethod
+    def postprocess(
+        self,
+        adapter: "SimulatorAdapter",
+        simulation: "Simulation",
+        simdata: "SimulationData",
+    ):  # pragma: nocover
+        """
+        Process the prepared simulation.
+
+        :param adapter: Adapter that prepared the simulation.
+        :type adapter: ~bsb.simulation.adapter.SimulatorAdapter
+        :param simulation: Simulation configuration that was prepared.
+        :type simulation: ~bsb.simulation.simulation.Simulation
+        :param simdata: What the backend built for it: its populations, connections
+            and devices.
+        :type simdata: ~bsb.simulation.adapter.SimulationData
+        """
+        pass
 
 
 @config.dynamic(attr_name="strategy", auto_classmap=True)
@@ -43,4 +81,4 @@ class AfterSimulationHook(abc.ABC):
         pass
 
 
-__all__ = ["AfterSimulationHook"]
+__all__ = ["AfterPrepareHook", "AfterSimulationHook"]

@@ -138,6 +138,7 @@ if typing.TYPE_CHECKING:  # pragma: nocover
 AdapterError: type["bsb.exceptions.AdapterError"]
 AfterConnectivityHook: type["bsb.postprocessing.AfterConnectivityHook"]
 AfterPlacementHook: type["bsb.postprocessing.AfterPlacementHook"]
+AfterPrepareHook: type["bsb.simulation.postprocessing.AfterPrepareHook"]
 AfterSimulationHook: type["bsb.simulation.postprocessing.AfterSimulationHook"]
 AllToAll: type["bsb.connectivity.general.AllToAll"]
 AllenApiError: type["bsb.exceptions.AllenApiError"]

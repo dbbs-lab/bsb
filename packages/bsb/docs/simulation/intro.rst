@@ -13,8 +13,9 @@ All simulation details are specified within the simulation block, which includes
  * set of ``cell models`` : the simulator specific representations of the network's :doc:`CellTypes </cells/intro>`
  * set of ``connection models`` :  that instruct the simulator on how to handle the :doc:`ConnectivityStrategies </connectivity/defining>` of the network
  * set of ``devices`` : define the experimental setup (such as input stimuli and recorders).
- * optionally, a set of ``after_simulation`` hooks : run on the results once the
-   simulation has finished (see :doc:`/postprocess/postprocessing`).
+ * optionally, a set of ``after_prepare`` hooks : run on the prepared simulation
+   before it runs, and a set of ``after_simulation`` hooks : run on the results once
+   the simulation has finished (see :doc:`/postprocess/postprocessing`).
 
 All of the above is simulation backend specific and is covered in the corresponding sections:
 
@@ -46,6 +47,7 @@ When using the CLI, the framework sets up a "hands off" simulation workflow:
 * Read the simulation configuration
 * Translate the simulation configuration to the simulator
 * Create all cells, connections and devices
+* Run the :guilabel:`after_prepare` hooks on what was prepared
 * Run the simulation
 * Collect all the output
 * Run the :guilabel:`after_simulation` hooks on the collected results

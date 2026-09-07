@@ -236,7 +236,15 @@ class UrlScheme(UriScheme):
 
     def should_update(self, file: FileDependency, stored_file):
         mtime = stored_file.mtime
-        headers = self.get_meta(file).get("headers", {})
+        try:
+            headers = self.get_meta(file).get("headers", {})
+        except (_rq.ConnectionError, _rq.Timeout) as e:
+            # The host is unreachable, e.g. on a compute node without outbound network
+            # access. The cached copy is the best available answer, so keep it, instead
+            # of failing the whole job over a freshness check. HTTP error statuses do
+            # not raise, so a 404 still takes the regular path below.
+            warn(f"Could not reach {file.uri} ({e}), using the cached copy.")
+            return False
         stored_headers = stored_file.meta.get("headers", {})
         if "ETag" in headers:
             new_etag = headers["ETag"]

@@ -1,8 +1,10 @@
+import copy
 import importlib.metadata
 import inspect
 import json
 import os.path
 import pathlib
+import pickle
 import sys
 import tempfile
 import unittest
@@ -2001,6 +2003,18 @@ class TestPackageRequirements(RandomStorageFixture, unittest.TestCase, engine_na
         self.assertEqual(specs, cfg.__tree__()["packages"])
         # ... and that tree must parse back into equivalent requirements.
         self.assertEqual(cfg.packages, Configuration(cfg.__tree__()).packages)
+
+    def test_requirement_survives_copy(self):
+        # A requirement pickles through `str(self)` upstream, which would drop the
+        # spelling the config inverts to.
+        spec = "numpy >= 1.0"
+        requirement = types.PackageRequirement()(spec)
+        for copied in (
+            copy.deepcopy(requirement),
+            pickle.loads(pickle.dumps(requirement)),
+        ):
+            self.assertEqual(requirement, copied)
+            self.assertEqual(spec, types.PackageRequirement().__inv__(copied))
 
     def test_installed_package(self):
         self.assertIsNone(

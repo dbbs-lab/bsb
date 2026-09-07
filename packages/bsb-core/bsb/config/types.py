@@ -829,19 +829,38 @@ def none():
     return type_handler
 
 
+def _rebuild_cfg_requirement(spec):
+    requirement = _CfgRequirement(spec)
+    requirement._cfg_inv = spec
+    return requirement
+
+
 class _CfgRequirement(Requirement):
     """
     A :class:`packaging.requirements.Requirement` that can carry the config inversion
     string it was parsed from.
 
-    :class:`~packaging.requirements.Requirement` declares ``__slots__``, so its instances
-    reject arbitrary attributes; the subclass adds a slot of its own to hold the
-    requirement specifier exactly as the user spelled it. Without it, inverting the
-    config would emit ``str(requirement)``, which normalizes away whitespace and extras
-    spelling.
+    As of packaging 25, :class:`~packaging.requirements.Requirement` declares
+    ``__slots__``, so its instances reject arbitrary attributes; the subclass adds a slot
+    of its own to hold the requirement specifier exactly as the user spelled it. Without
+    it, inverting the config would emit ``str(requirement)``, which normalizes away
+    whitespace and extras spelling.
+
+    :class:`WeakInverter` is not an option here: a slotted
+    :class:`~packaging.requirements.Requirement` has no ``__weakref__`` slot, so a
+    :class:`~weakref.WeakKeyDictionary` cannot hold one.
     """
 
     __slots__ = ("_cfg_inv",)
+
+    def __reduce__(self):
+        # packaging 26.2+ pickles a requirement as `str(self)` and reparses it, which
+        # drops the slot. Serialize the spelling instead: it reparses into an equal
+        # requirement and is the only state worth carrying across a copy.
+        return (
+            _rebuild_cfg_requirement,
+            (getattr(self, "_cfg_inv", builtins.str(self)),),
+        )
 
 
 class PackageRequirement(TypeHandler):

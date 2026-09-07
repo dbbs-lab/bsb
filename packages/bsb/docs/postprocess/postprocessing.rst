@@ -85,11 +85,6 @@ method takes the adapter, the simulation, and the
       }
     }
 
-Driving the adapter from Python, rather than configuring a hook, there is also a
-``post_prepare`` argument to
-:meth:`simulate <bsb:bsb.simulation.adapter.SimulatorAdapter.simulate>`, which takes a
-plain callable and runs after every simulation has been prepared.
-
 The hook runs on every node that took part in preparing the simulation, so a hook that
 writes output guards itself with ``adapter.comm.get_rank()``.
 

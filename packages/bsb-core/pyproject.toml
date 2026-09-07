@@ -32,6 +32,7 @@ dependencies = [
   "shortuuid~=1.0",
   "quantities~=0.16",
   "exceptiongroup>=1.2.0",
+  "packaging>=24.0",
   "opentelemetry-api~=1.0"
 ]
 

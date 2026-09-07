@@ -156,8 +156,12 @@ class TestNest(
                 with self.subTest(param=param, value=value):
                     self.assertEqual(value, syn.get(param))
 
-        network.simulations.test_nest.post_prepare.append(probe)
-        network.run_simulation("test_nest")
+        # `after_prepare` takes configured hooks; a test closure over local state is
+        # what the adapter's `post_prepare` argument is for.
+        NestAdapter().simulate(
+            network.simulations.test_nest,
+            post_prepare=lambda adapter, sims, datas: probe(adapter, sims[0], datas[0]),
+        )
 
         mean_nspike = np.mean(nspike)
         mean_rate = mean_nspike / pop_size / simulation.resolution * 1000.0

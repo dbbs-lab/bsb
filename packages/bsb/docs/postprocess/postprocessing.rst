@@ -42,6 +42,58 @@ the connectivity stage is complete.
 The BSB provides several built-in :doc:`hooks </postprocess/afterconnectivity_list>`.
 
 
+AfterPrepareHook
+================
+
+The :class:`AfterPrepareHook <bsb:bsb.simulation.postprocessing.AfterPrepareHook>` runs
+once a simulation has been prepared, before it runs. It sees what the backend has just
+built -- its populations, connections and devices -- and can still change it, which
+makes it the place to reach for a simulator feature BSB does not model, or to attach
+something extra to a prepared network.
+
+Like the hook below it belongs to a single simulation rather than to the root node,
+under that simulation's :guilabel:`after_prepare` block. Its :guilabel:`postprocess`
+method takes the adapter, the simulation, and the
+:class:`SimulationData <bsb:bsb.simulation.adapter.SimulationData>` the backend built:
+
+.. code-block:: python
+
+    from bsb import AfterPrepareHook, config
+
+
+    @config.node
+    class ExtraVoltmeter(AfterPrepareHook):
+        population = config.attr(type=str, required=True)
+
+        def postprocess(self, adapter, simulation, simdata):
+            import nest
+
+            model = simulation.cell_models[self.population]
+            voltmeter = nest.Create("voltmeter")
+            nest.Connect(voltmeter, simdata.populations[model])
+
+.. code-block:: json
+
+    "simulations": {
+      "my_simulation": {
+        "after_prepare": {
+          "extra_voltmeter": {
+            "strategy": "my_module.ExtraVoltmeter",
+            "population": "my_cells"
+          }
+        }
+      }
+    }
+
+Driving the adapter from Python, rather than configuring a hook, there is also a
+``post_prepare`` argument to
+:meth:`simulate <bsb:bsb.simulation.adapter.SimulatorAdapter.simulate>`, which takes a
+plain callable and runs after every simulation has been prepared.
+
+The hook runs on every node that took part in preparing the simulation, so a hook that
+writes output guards itself with ``adapter.comm.get_rank()``.
+
+
 AfterSimulationHook
 ===================
 

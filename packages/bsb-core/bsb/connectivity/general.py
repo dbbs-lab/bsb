@@ -1,5 +1,3 @@
-import typing
-
 import numpy as np
 
 from .. import config
@@ -7,22 +5,6 @@ from ..config import types
 from ..exceptions import ConnectivityError
 from ..mixins import InvertedRoI
 from .strategy import ConnectionStrategy
-
-if typing.TYPE_CHECKING:  # pragma: nocover
-    from ..config import Distribution
-
-
-@config.node
-class Convergence(ConnectionStrategy):
-    """
-    Connect cells based on a convergence distribution, i.e. by connecting each source cell
-    to X target cells.
-    """
-
-    convergence: "Distribution" = config.attr(type=types.distribution(), required=True)
-
-    def connect(self):
-        raise NotImplementedError("Needs to be restored, please open an issue.")
 
 
 @config.node
@@ -120,4 +102,4 @@ class FixedOutdegree(ConnectionStrategy):
         _connect_fixed_degree(self, pre, post, self.outdegree, False)
 
 
-__all__ = ["AllToAll", "Convergence", "FixedIndegree", "FixedOutdegree"]
+__all__ = ["AllToAll", "FixedIndegree", "FixedOutdegree"]

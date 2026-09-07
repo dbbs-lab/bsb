@@ -4,6 +4,7 @@ This module contains the classes required to construct options.
 
 import argparse
 import contextlib
+import copy
 import functools
 import os
 import pathlib
@@ -169,6 +170,9 @@ class ProjectOptionDescriptor(OptionDescriptor, slug="project"):
     def __set__(self, instance, value):
         if self.tags:
             path, proj = _pyproject_bsb()
+            # `_pyproject_bsb` hands out a table of the memoized document, so detach
+            # before editing: readers must not see the change until it is on disk.
+            proj = copy.deepcopy(proj)
             deeper = proj
             for tag in self.tags[:-1]:
                 deeper = deeper.setdefault(tag, {})
@@ -178,12 +182,14 @@ class ProjectOptionDescriptor(OptionDescriptor, slug="project"):
     def __delete__(self, instance):
         if self.tags:
             path, proj = _pyproject_bsb()
+            proj = copy.deepcopy(proj)
+            deeper = proj
             for tag in self.tags[:-1]:
-                proj = proj.get(tag, None)
-                if proj is None:
+                deeper = deeper.get(tag, None)
+                if deeper is None:
                     return None
             try:
-                del proj[self.tags[-1]]
+                del deeper[self.tags[-1]]
             except KeyError:
                 pass
             else:
@@ -376,9 +382,9 @@ class BsbOption:
         options.unregister_option(self)
 
 
-@functools.cache
-def _pyproject_path():
-    path = pathlib.Path.cwd()
+@functools.lru_cache(maxsize=8)
+def _find_pyproject(cwd):
+    path = cwd
     while str(path)[len(path.drive) :] != path.root:
         proj = path / "pyproject.toml"
         if proj.exists():
@@ -386,15 +392,29 @@ def _pyproject_path():
         path = path.parent
 
 
-@functools.cache
-def _read_pyproject(path):
+def _pyproject_path():
+    # Keyed on the working directory, so moving between projects picks up the right file.
+    # A `pyproject.toml` appearing closer to an already visited directory still needs
+    # `_clear_pyproject_cache`.
+    return _find_pyproject(pathlib.Path.cwd())
+
+
+@functools.lru_cache(maxsize=8)
+def _parse_pyproject(path, mtime_ns, size):
     """
-    Parse a ``pyproject.toml`` file. The result is memoized, because project options are
-    looked up on every :func:`~bsb.reporting.report` call. The returned dict is shared
-    between callers; mutating it must be followed by a write and a cache clear.
+    Parse a ``pyproject.toml`` file, memoized on its path and stat, because project
+    options are looked up on every :func:`~bsb.reporting.report` call and parsing costs
+    a thousand times more than stat'ing.
+
+    The returned dict is shared between callers and must not be mutated.
     """
     with open(path) as f:
         return path.resolve(), toml.load(f)
+
+
+def _read_pyproject(path):
+    st = path.stat()
+    return _parse_pyproject(path, st.st_mtime_ns, st.st_size)
 
 
 def _pyproject_content():
@@ -408,12 +428,9 @@ def _pyproject_content():
 def _clear_pyproject_cache():
     """
     Discard the memoized location and parsed content of the ``pyproject.toml`` file.
-
-    Must be called whenever the file is written to, or moves out of scope (e.g. when the
-    working directory changes), otherwise project options are read from a stale cache.
     """
-    _pyproject_path.cache_clear()
-    _read_pyproject.cache_clear()
+    _find_pyproject.cache_clear()
+    _parse_pyproject.cache_clear()
 
 
 def _pyproject_bsb():
@@ -428,9 +445,14 @@ def _save_pyproject_bsb(project):
             "No 'pyproject.toml' in current dir or parents,"
             + " can't set project settings."
         )
+    # The parsed content is shared with every other reader, so edit a copy: a write that
+    # fails must not leave the change visible in memory.
+    content = copy.deepcopy(content)
     content.setdefault("tools", {})["bsb"] = project
     with open(path, "w") as f:
         toml.dump(content, f)
+    # Filesystem mtime is too coarse to tell a same-size rewrite apart from the copy just
+    # parsed, so a write of our own invalidates the cache instead of relying on the stat.
     _clear_pyproject_cache()
 
 

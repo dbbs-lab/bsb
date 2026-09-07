@@ -1,4 +1,5 @@
 import contextlib
+import copy
 import importlib.metadata
 import os
 import pathlib
@@ -190,6 +191,27 @@ class TestProjectOption(unittest.TestCase):
             for _ in range(10):
                 report("ongoing progress", level=5)
             self.assertEqual(1, load.call_count, "pyproject.toml parsed more than once")
+
+    def test_project_content_reloaded_on_external_edit(self):
+        # An edit made outside this process is picked up off the file's stat, without
+        # anyone having to invalidate by hand. The two verbosities differ in width so
+        # the rewrite changes the file size: mtime alone is too coarse to catch a
+        # same-size rewrite made within the same clock tick.
+        self.create_toml({"tools": {"bsb": {"verbosity": 4}}})
+        _clear_pyproject_cache()
+        self.assertEqual(4, options.verbosity, "project verbosity not picked up")
+        self.create_toml({"tools": {"bsb": {"verbosity": 10}}})
+        self.assertEqual(10, options.verbosity, "external edit not picked up")
+
+    def test_write_does_not_mutate_cached_content(self):
+        # The parsed document is handed out to every reader, so storing an option must
+        # build its new document from a copy instead of editing the shared one.
+        self.create_toml({"tools": {"bsb": {"verbosity": 4}}})
+        _clear_pyproject_cache()
+        _, content = _pyproject_content()
+        before = copy.deepcopy(content)
+        options.store_option("verbosity", 2)
+        self.assertEqual(before, content, "store mutated the shared cached document")
 
     def test_project_content_cache_invalidated_on_write(self):
         self.create_toml({"tools": {"bsb": {"verbosity": 4}}})

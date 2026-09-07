@@ -99,10 +99,5 @@
       "outputs": []
     }
   },
-  "tags": [],
-  "release": {
-    "version": {
-      "generator": "@nxlv/python:release-version"
-    }
-  }
+  "tags": []
 }

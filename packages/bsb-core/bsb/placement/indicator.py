@@ -1,11 +1,17 @@
 import typing
 
+import errr
 import numpy as np
 
 from .. import config
 from ..config import refs, types
 from ..config._attrs import cfglist
-from ..exceptions import IndicatorError, PlacementError, PlacementRelationError
+from ..exceptions import (
+    IndicatorError,
+    LayoutError,
+    PlacementError,
+    PlacementRelationError,
+)
 from ..morphologies.selector import MorphologySelector
 
 if typing.TYPE_CHECKING:  # pragma: nocover
@@ -217,7 +223,20 @@ class PlacementIndicator:
         return sum(p.volume(chunk) * density for p in self._strat.partitions)
 
     def _pdensity_to_estim(self, planar_density, chunk=None):
-        return sum(p.surface(chunk) * planar_density for p in self._strat.partitions)
+        estimate = 0
+        for p in self._strat.partitions:
+            try:
+                estimate += p.surface(chunk) * planar_density
+            except LayoutError as e:
+                # The partition only knows it can't do surfaces; name the placement
+                # that asked for it, so the user can find the offending config.
+                errr.wrap(
+                    type(e),
+                    e,
+                    append=f" It is required to place '{self._cell_type.name}'"
+                    f" by planar density in '{self._strat.name}'.",
+                )
+        return estimate
 
     def _estim_for_chunk(self, chunk, count):
         if chunk is None:

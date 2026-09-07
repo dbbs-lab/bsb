@@ -1,16 +1,19 @@
 import contextlib
+import copy
 import importlib.metadata
 import os
 import pathlib
 import tempfile
 import unittest
+from unittest import mock
 
 import toml
 
-from bsb import OptionError, ReadOnlyOptionError, options
+from bsb import OptionError, ReadOnlyOptionError, option, options
 from bsb._options import QuietFlag
 from bsb.cli import handle_command
-from bsb.option import _pyproject_content, _pyproject_path
+from bsb.option import _clear_pyproject_cache, _pyproject_content
+from bsb.reporting import report
 
 
 class TestCLIOption(unittest.TestCase):
@@ -113,11 +116,11 @@ class TestProjectOption(unittest.TestCase):
 
     def setUp(self):
         super().setUp()
-        _pyproject_path.cache_clear()
+        _clear_pyproject_cache()
 
     def tearDown(self):
         super().tearDown()
-        _pyproject_path.cache_clear()
+        _clear_pyproject_cache()
         with contextlib.suppress(OSError):
             self.proj.unlink(missing_ok=True)
 
@@ -137,7 +140,7 @@ class TestProjectOption(unittest.TestCase):
         deep.mkdir(parents=True, exist_ok=True)
         os.chdir(deep)
         try:
-            _pyproject_path.cache_clear()
+            _clear_pyproject_cache()
             path, content = _pyproject_content()
         finally:
             os.chdir(self.path)
@@ -147,7 +150,7 @@ class TestProjectOption(unittest.TestCase):
         self.create_toml({"_dbl_": True}, proj=deep / "pyproject.toml")
         os.chdir(deep)
         try:
-            _pyproject_path.cache_clear()
+            _clear_pyproject_cache()
             path, content = _pyproject_content()
         finally:
             os.chdir(self.path)
@@ -177,6 +180,65 @@ class TestProjectOption(unittest.TestCase):
         self.assertTrue(type(opt).project.is_set(opt), "written and read but not is_set")
         del opt.project
         self.assertEqual(None, options.read_option("config"), "not deleted")
+
+    def test_project_content_cached(self):
+        # `report` looks up the verbosity option, which cascades into the project
+        # options, so parsing the file per call would tax every reported message.
+        self.create_toml({"tools": {"bsb": {"verbosity": 4}}})
+        _clear_pyproject_cache()
+        with mock.patch.object(option.toml, "load", wraps=toml.load) as load:
+            self.assertEqual(4, options.verbosity, "project verbosity not picked up")
+            for _ in range(10):
+                report("ongoing progress", level=5)
+            self.assertEqual(1, load.call_count, "pyproject.toml parsed more than once")
+
+    def test_project_content_reloaded_on_external_edit(self):
+        # An edit made outside this process is picked up off the file's stat, without
+        # anyone having to invalidate by hand. The two verbosities differ in width so
+        # the rewrite changes the file size: mtime alone is too coarse to catch a
+        # same-size rewrite made within the same clock tick.
+        self.create_toml({"tools": {"bsb": {"verbosity": 4}}})
+        _clear_pyproject_cache()
+        self.assertEqual(4, options.verbosity, "project verbosity not picked up")
+        self.create_toml({"tools": {"bsb": {"verbosity": 10}}})
+        self.assertEqual(10, options.verbosity, "external edit not picked up")
+
+    def test_write_does_not_mutate_cached_content(self):
+        # The parsed document is handed out to every reader, so storing an option must
+        # build its new document from a copy instead of editing the shared one.
+        self.create_toml({"tools": {"bsb": {"verbosity": 4}}})
+        _clear_pyproject_cache()
+        _, content = _pyproject_content()
+        before = copy.deepcopy(content)
+        options.store_option("verbosity", 2)
+        self.assertEqual(before, content, "store mutated the shared cached document")
+
+    def test_failed_write_leaves_file_intact(self):
+        # Serializing into the file itself would truncate it before failing, losing the
+        # whole project table rather than just the option being stored.
+        self.create_toml({"tools": {"bsb": {"verbosity": 4}}})
+        _clear_pyproject_cache()
+        self.assertEqual(4, options.verbosity, "project verbosity not picked up")
+        with (
+            mock.patch.object(option.toml, "dump", side_effect=OSError("disk full")),
+            self.assertRaises(OSError),
+        ):
+            options.store_option("verbosity", 2)
+        _clear_pyproject_cache()
+        self.assertEqual(4, options.verbosity, "failed write clobbered pyproject.toml")
+        leftovers = list(self.proj.parent.glob(self.proj.name + ".*"))
+        self.assertEqual([], leftovers, "failed write left a temp file behind")
+
+    def test_project_content_cache_invalidated_on_write(self):
+        self.create_toml({"tools": {"bsb": {"verbosity": 4}}})
+        _clear_pyproject_cache()
+        self.assertEqual(4, options.verbosity, "project verbosity not picked up")
+        options.store_option("verbosity", 2)
+        self.assertEqual(2, options.verbosity, "stale project options after write")
+        with open(self.proj) as f:
+            self.assertEqual(2, toml.load(f)["tools"]["bsb"]["verbosity"], "not written")
+        del options.get_option_descriptors()["verbosity"].project
+        self.assertEqual(1, options.verbosity, "stale project options after delete")
 
 
 class TestScriptOption(unittest.TestCase):

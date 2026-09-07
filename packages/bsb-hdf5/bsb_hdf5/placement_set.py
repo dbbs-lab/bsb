@@ -357,6 +357,8 @@ class PlacementSet(
         g = handle.require_group(path)
         stats = self._engine._read_chunk_stats(handle)
         chunk_stats = json.loads(g.attrs.get("chunks", "{}"))
+        # Snapshot the keys: the loop deletes the chunk groups it visits, and h5py does
+        # not support removing members of a group while iterating over it.
         for chunk in list(g.keys()):
             if chunks is None or chunk in chunks:
                 count = chunk_stats.pop(chunk, None)

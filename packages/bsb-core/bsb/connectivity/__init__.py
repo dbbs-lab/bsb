@@ -6,7 +6,7 @@ from .strategy import ConnectionStrategy
 
 # isort: on
 from .detailed import SegmentIntersection, VoxelIntersection
-from .general import AllToAll, Convergence, FixedIndegree, FixedOutdegree
+from .general import AllToAll, FixedIndegree, FixedOutdegree
 from .geometric import (
     Cone,
     Cuboid,

@@ -1,3 +1,6 @@
+import ast
+import inspect
+import textwrap
 import unittest
 from collections import defaultdict
 
@@ -12,6 +15,7 @@ from bsb_test import (
     skip_parallel,
 )
 
+import bsb
 from bsb import (
     MPI,
     Branch,
@@ -1170,3 +1174,58 @@ class TestSegmentIntersection(
         self.assertGreater(
             total, 0, "expected the overlapping A/B morphologies to connect"
         )
+
+
+class TestPublicConnectionStrategies(unittest.TestCase):
+    """
+    Every :class:`~bsb.connectivity.strategy.ConnectionStrategy` reachable from the
+    public ``bsb`` API must be runnable. The job pool invokes ``strategy.connect(pre,
+    post)``, so a public strategy whose ``connect`` cannot bind that call, or whose body
+    is a placeholder, can only fail at compile time, after the user has configured it.
+    """
+
+    def _public_strategies(self):
+        for name in sorted(bsb.__annotations__):
+            obj = getattr(bsb, name)
+            if (
+                isinstance(obj, type)
+                and issubclass(obj, ConnectionStrategy)
+                and not inspect.isabstract(obj)
+            ):
+                yield name, obj
+
+    def test_public_strategies_found(self):
+        # Guards the guard: an empty iteration makes the tests below vacuous.
+        self.assertNotEqual([], [name for name, _ in self._public_strategies()])
+
+    def test_connect_is_callable_by_the_job_pool(self):
+        for name, strategy in self._public_strategies():
+            with self.subTest(strategy=name):
+                signature = inspect.signature(strategy.connect)
+                try:
+                    signature.bind(None, "pre", "post")
+                except TypeError:
+                    self.fail(
+                        f"public strategy '{name}' has connect{signature}, which the "
+                        f"job pool's `connect(pre, post)` call cannot bind"
+                    )
+
+    def test_connect_is_not_a_placeholder(self):
+        for name, strategy in self._public_strategies():
+            with self.subTest(strategy=name):
+                source = textwrap.dedent(inspect.getsource(strategy.connect))
+                body = ast.parse(source).body[0].body
+                if isinstance(body[0], ast.Expr) and isinstance(
+                    body[0].value, ast.Constant
+                ):
+                    body = body[1:]  # Drop the docstring.
+                is_stub = (
+                    len(body) == 1
+                    and isinstance(body[0], ast.Raise)
+                    and "NotImplementedError" in ast.dump(body[0])
+                )
+                self.assertFalse(
+                    is_stub,
+                    f"public strategy '{name}' only raises NotImplementedError; "
+                    f"strategies that cannot run should not be public API",
+                )

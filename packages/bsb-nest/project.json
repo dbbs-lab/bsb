@@ -16,11 +16,10 @@
         "{workspaceRoot}/.nx/installation/nest"
       ],
       "options": {
-        "commands": [
-          "uv pip install cmake cython~=3.0.12",
-          "uv run bash ../../devtools/install-nest.sh"
-        ],
-        "parallel": false,
+        // `--with` layers NEST's build dependencies onto this invocation. The target
+        // runs before anything has synced the project, so there is no environment for
+        // a plain `uv pip install` to install them into.
+        "command": "uv run --with cmake --with cython~=3.0.12 bash ../../devtools/install-nest.sh",
         "cwd": "{projectRoot}"
       },
       "cache": true

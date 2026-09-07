@@ -113,4 +113,8 @@ if (!process.env.NX_WRAPPER_SKIP_INSTALL) {
     ensureUpToDateInstallation();
 }
 
-require('./installation/node_modules/nx/bin/nx');
+// Resolve the CLI entrypoint from nx's own manifest rather than a fixed path:
+// nx moved its bin from `bin/nx` to `dist/bin/nx.js` in v23.
+const nxPackageDir = path.join(__dirname, 'installation', 'node_modules', 'nx');
+const nxBin = require(path.join(nxPackageDir, 'package.json')).bin;
+require(path.join(nxPackageDir, typeof nxBin === 'string' ? nxBin : nxBin.nx));

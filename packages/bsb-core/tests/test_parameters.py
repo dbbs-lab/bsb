@@ -5,15 +5,12 @@ from bsb_test import FixedPosConfigFixture, NumpyTestCase, RandomStorageFixture
 
 from bsb import (
     CellParameter,
-    ConfigurationError,
     ConnectionParameter,
     Constant,
     DistanceDelayParameter,
     Parameter,
-    ParameterizedModel,
     PointParameter,
     Scaffold,
-    config,
     constant,
     parameters_of_type,
 )
@@ -87,38 +84,6 @@ class TestParameterCasting(unittest.TestCase):
         # A constant was written as a bare value, so the config it serialises back to
         # must be that bare value and not a node the user never wrote.
         self.assertEqual(250.0, self.wide.__inv__(self.wide(250.0)))
-
-
-@config.node
-class _Model(ParameterizedModel):
-    constants = config.dict(type=constant())
-    parameters = config.dict(type=parameters_of_type(CellParameter))
-
-    def get_parameter_groups(self):
-        return (self.constants, self.parameters)
-
-    def __str__(self):
-        return "test model"
-
-
-class TestParameterCollection(unittest.TestCase):
-    """Every notation is collected into one mapping."""
-
-    def test_notations_are_collected_together(self):
-        model = _Model(constants={"C_m": 250.0}, parameters={"V_th": -55.0})
-        collected = model.get_parameters()
-        self.assertEqual({"C_m", "V_th"}, set(collected))
-        self.assertEqual(250.0, collected["C_m"].compute())
-        self.assertEqual(-55.0, collected["V_th"].compute())
-
-    def test_naming_a_parameter_twice_is_an_error(self):
-        model = _Model(constants={"C_m": 250.0}, parameters={"C_m": 300.0})
-        with self.assertRaises(ConfigurationError) as ctx:
-            model.get_parameters()
-        self.assertIn("C_m", str(ctx.exception))
-
-    def test_collecting_nothing_is_empty_rather_than_an_error(self):
-        self.assertEqual({}, _Model().get_parameters())
 
 
 class TestDistanceDelay(

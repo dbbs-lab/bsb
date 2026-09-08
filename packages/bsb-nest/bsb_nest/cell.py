@@ -1,7 +1,8 @@
 import nest
-from bsb import CellModel, CellParameter, ParameterizedModel, config
+from bsb import CellModel, CellParameter, config
 
 from ._kernel_proxy import NestModelTypeHandler
+from ._parameters import merged
 from .distributions import nest_constant, nest_parameter
 
 
@@ -13,7 +14,7 @@ class nest_node_model(NestModelTypeHandler):
 
 
 @config.node
-class NestCell(ParameterizedModel, CellModel):
+class NestCell(CellModel):
     model = config.attr(type=nest_node_model(), default="iaf_psc_alpha")
     """Importable reference to the NEST model describing the cell type."""
     constants = config.dict(type=nest_constant())
@@ -31,8 +32,15 @@ class NestCell(ParameterizedModel, CellModel):
     :class:`~bsb.simulation.parameter.CellParameter` computed per cell.
     """
 
-    def get_parameter_groups(self):
-        return (self.constants, self.parameters)
+    @property
+    def all_parameters(self):
+        """
+        Constants and computed parameters together.
+
+        The two are written apart for the reader's sake and mean the same thing to
+        the model, so nothing downstream sees the seam.
+        """
+        return merged(self, self.constants, self.parameters)
 
     def create_population(self, simdata):
         n = len(simdata.placement[self])
@@ -44,4 +52,9 @@ class NestCell(ParameterizedModel, CellModel):
         # NEST assigns a whole mapping at once; setting them one by one would be a
         # kernel round trip per parameter.
         ps = simdata.placement[self]
-        population.set(self.compute_parameters(self.simulation, ps))
+        population.set(
+            {
+                name: param.compute(self.simulation, ps)
+                for name, param in self.all_parameters.items()
+            }
+        )

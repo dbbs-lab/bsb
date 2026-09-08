@@ -7,7 +7,7 @@ from bsb import (
     Scaffold,
     config,
     constant,
-    parameter,
+    parameters_of_type,
     types,
 )
 
@@ -65,7 +65,7 @@ class NestRandomDistribution(Parameter):
         return getattr(self._distr, attr)
 
 
-class nest_parameter(parameter):
+class nest_parameter(parameters_of_type):
     """
     Cast a value to a parameter, adding NEST's own random distributions.
 
@@ -73,7 +73,7 @@ class nest_parameter(parameter):
     users already write keeps working:
 
     * ``{"distribution": "uniform", ...}`` becomes a :class:`.NestRandomDistribution`;
-    * everything else is handled by :class:`~bsb.simulation.parameter.parameter`.
+    * everything else is handled by :class:`~bsb.simulation.parameter.parameters_of_type`.
     """
 
     def __call__(self, value, _key=None, _parent=None):

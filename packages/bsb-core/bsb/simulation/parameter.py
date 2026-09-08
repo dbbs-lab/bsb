@@ -190,68 +190,10 @@ class DistanceDelayParameter(ConnectionParameter, classmap_entry="distance_delay
         return np.maximum(distance / self.axon_speed, simulation.resolution)
 
     def _positions(self, cell_type):
-        # `compute` runs once per block of connections and reads whole position sets,
-        # so they are held for the duration of the run rather than reloaded per block.
-        # Cleared by `drop_caches` when the run ends, so a rerun sees current data.
-        cache = self.__dict__.setdefault("_position_cache", {})
-        if cell_type.name not in cache:
-            cache[cell_type.name] = cell_type.get_placement_set().load_positions()
-        return cache[cell_type.name]
-
-    def drop_caches(self):
-        self.__dict__.pop("_position_cache", None)
-
-
-class ParameterizedModel:
-    """
-    Mixin for models whose parameters can be written in more than one notation.
-
-    A backend is free to keep whatever spellings its users already know — a
-    first-class ``weight`` attribute, a catch-all of constants, an explicit
-    ``parameters`` block — and collect them here into one mapping, so everything
-    downstream deals with parameters and nothing else.
-    """
-
-    def get_parameter_groups(self) -> "typing.Iterable[typing.Mapping]":
-        """
-        The notations to collect, in precedence order.
-
-        Override to add a backend's own spellings. Later groups do not override
-        earlier ones; naming the same parameter twice is a configuration error,
-        because there is no reading of it that is not a mistake.
-        """
-        return (self.parameters,)
-
-    def get_parameters(self) -> dict:
-        """
-        Every parameter configured on this model, whichever notation it was written
-        in, keyed by the model parameter it sets.
-        """
-        merged = {}
-        for group in self.get_parameter_groups():
-            for key, param in group.items():
-                if key in merged:
-                    raise ConfigurationError(
-                        f"Parameter '{key}' of {self} is configured twice; "
-                        "give it in one place only."
-                    )
-                merged[key] = param
-        return merged
-
-    def compute_parameters(self, *args, **kwargs) -> dict:
-        """
-        Every parameter of this model, computed into the values a backend assigns.
-
-        The consumption counterpart of :meth:`get_parameters`: the arguments are
-        whatever the arity of this model's parameters takes, and a constant ignores
-        them.
-
-        :returns: The configured parameters, keyed by name, as plain values.
-        """
-        return {
-            name: param.compute(*args, **kwargs)
-            for name, param in self.get_parameters().items()
-        }
+        # Read per block rather than held: a network large enough for this to be worth
+        # caching is one where holding every position set is what runs the machine out
+        # of memory.
+        return cell_type.get_placement_set().load_positions()
 
 
 class constant(TypeHandler):
@@ -327,7 +269,6 @@ __all__ = [
     "constant",
     "DistanceDelayParameter",
     "Parameter",
-    "ParameterizedModel",
     "PointParameter",
     "parameters_of_type",
 ]

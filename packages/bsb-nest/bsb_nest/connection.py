@@ -8,7 +8,6 @@ from bsb import (
     AdapterError,
     ConnectionModel,
     ConnectionParameter,
-    ParameterizedModel,
     compose_nodes,
     config,
     options,
@@ -17,6 +16,7 @@ from bsb import (
 from tqdm import tqdm
 
 from ._kernel_proxy import NestModelTypeHandler, query_kernel
+from ._parameters import merged
 from .distributions import nest_constant, nest_parameter
 
 
@@ -68,7 +68,7 @@ def _is_delay_required(kwargs):
 
 
 @config.node
-class NestSynapseSettings(ParameterizedModel):
+class NestSynapseSettings:
     """
     Class interfacing a NEST synapse model.
     """
@@ -101,13 +101,20 @@ class NestSynapseSettings(ParameterizedModel):
     :class:`~bsb.simulation.parameter.ConnectionParameter` computed per connection.
     """
 
-    def get_parameter_groups(self):
+    @property
+    def all_parameters(self):
+        """
+        Every notation a synapse can be written in, as one mapping.
+
+        A synapse names its common parameters directly, and takes anything else as a
+        constant or a computed parameter. All of them set a NEST synapse parameter.
+        """
         named = {
             name: value
             for name in ("weight", "delay", "receptor_type")
             if (value := getattr(self, name)) is not None
         }
-        return (named, self.constants, self.parameters)
+        return merged(self, named, self.constants, self.parameters)
 
 
 @config.node
@@ -290,8 +297,8 @@ class NestConnection(compose_nodes(NestConnectionSettings, ConnectionModel)):
         Build one ``syn_spec`` per configured synapse.
 
         Every notation a synapse can be written in is collected by
-        :meth:`~bsb.simulation.parameter.ParameterizedModel.get_parameters`, so this
-        only has to compute each parameter and add the model's identity.
+        :attr:`~.connection.NestSynapseSettings.all_parameters`, so this only has to
+        compute each parameter and add the model's identity.
 
         Called without connection locations -- the ``rule`` path, where NEST decides
         the pairs itself -- only parameters that yield a single value can be honoured.
@@ -302,7 +309,7 @@ class NestConnection(compose_nodes(NestConnectionSettings, ConnectionModel)):
         specs = []
         for synapse in self.synapses:
             spec = {"synapse_model": synapse.model}
-            for name, param in synapse.get_parameters().items():
+            for name, param in synapse.all_parameters.items():
                 if param.is_constant:
                     spec[name] = param.compute()
                 elif per_connection:

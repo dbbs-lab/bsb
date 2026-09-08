@@ -2,7 +2,7 @@ import abc
 import warnings
 
 import nest
-from bsb import DeviceModel, ParameterizedModel, Targetting, config, refs, types
+from bsb import DeviceModel, Targetting, config, refs, types
 
 from .distributions import nest_constant
 
@@ -133,7 +133,7 @@ class NestDevice(DeviceModel):
 
 
 @config.node
-class ExtNestDevice(ParameterizedModel, NestDevice, classmap_entry="external"):
+class ExtNestDevice(NestDevice, classmap_entry="external"):
     """
     Class interfacing Nest devices.
     """
@@ -149,12 +149,10 @@ class ExtNestDevice(ParameterizedModel, NestDevice, classmap_entry="external"):
     counterpart here.
     """
 
-    def get_parameter_groups(self):
-        return (self.constants,)
-
     def implement(self, adapter, simulation, simdata):
         simdata.devices[self] = device = nest.Create(
-            self.nest_model, params=self.compute_parameters()
+            self.nest_model,
+            params={name: p.compute() for name, p in self.constants.items()},
         )
         nodes = self.get_target_nodes(adapter, simulation, simdata)
         self.connect_to_nodes(device, nodes)

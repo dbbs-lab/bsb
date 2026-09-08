@@ -74,6 +74,7 @@ class ConnectivitySet(Resource, IConnectivitySet):
         g.attrs["post"] = post_type.name
         g.require_group(f"{path}/inc")
         g.require_group(f"{path}/out")
+        _init_cs_attrs(handle, path, tag)
         cs = cls(engine, tag, handle=handle)
         cs.pre_type = pre_type
         cs.post_type = post_type
@@ -131,6 +132,8 @@ class ConnectivitySet(Resource, IConnectivitySet):
             )
         g.require_group(path + "/inc")
         g.require_group(path + "/out")
+        if "created_at" not in g.attrs:
+            _init_cs_attrs(handle, path, tag)
         cs = cls(engine, tag, handle=handle)
         cs.pre_type_name = pre_type.name
         cs.post_type_name = post_type.name
@@ -536,3 +539,21 @@ def _point_to_2d(arr):
         return ret
     else:
         return arr
+
+
+def _init_cs_attrs(handle, cs_path, tag):
+    from bsb.storage.provenance import iso_now
+
+    grp = handle[cs_path]
+    grp.attrs["tag"] = tag
+    grp.attrs["revision"] = 0
+    grp.attrs["created_at"] = iso_now()
+
+
+def _bump_cs_revision(handle, cs_path):
+    """Move a connectivity set's ``revision``, once its write handle closes."""
+    grp = handle[cs_path]
+    current = grp.attrs.get("revision", 0)
+    if hasattr(current, "item"):
+        current = current.item()
+    grp.attrs["revision"] = int(current) + 1

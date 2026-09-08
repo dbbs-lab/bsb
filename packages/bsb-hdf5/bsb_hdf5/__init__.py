@@ -2,6 +2,7 @@
 HDF5 storage engine for the BSB framework.
 """
 
+import contextlib
 import importlib.metadata
 import json
 import os
@@ -11,8 +12,17 @@ from datetime import datetime
 
 import h5py
 import shortuuid
-from bsb import Engine, MPILock, ScaffoldWarning, config, report, warn
+from bsb import (
+    BsbProvenanceUpgradeWarning,
+    Engine,
+    MPILock,
+    ScaffoldWarning,
+    config,
+    report,
+    warn,
+)
 from bsb import StorageNode as IStorageNode
+from bsb.storage.provenance import build_root_metadata
 
 from ._telemetry import _hdf5_tracer
 from .connectivity_set import ConnectivitySet
@@ -20,6 +30,11 @@ from .file_store import FileStore
 from .morphology_repository import MorphologyRepository
 from .placement_set import PlacementSet
 from .resource import _push_scope
+
+# The provenance bundle is stored as one JSON attribute. Its shape belongs to
+# `bsb.storage.provenance`, so the engine round-trips whatever it is handed instead of
+# enumerating keys it would have to keep in step with.
+_PROVENANCE_ATTR = "bsb_provenance"
 
 __all__ = [
     "ConnectivitySet",
@@ -125,6 +140,7 @@ class HDF5Engine(Engine):
         super().__init__(root, comm)
         self._lock = MPILock.sync(comm._comm)
         self._readonly = False
+        self._upgrade_if_needed()
 
     @on_main()
     @property
@@ -135,6 +151,69 @@ class HDF5Engine(Engine):
                 "engine": "bsb-hdf5",
                 "version": handle.attrs["bsb_hdf5_version"],
             }
+
+    @property
+    def metadata(self) -> dict:
+        if not self.exists():
+            return {}
+        try:
+            with self._handle("r") as handle:
+                return _read_root_metadata(handle)
+        except Exception:
+            return {}
+
+    def _bump_state(self) -> None:
+        """
+        Record that the storage changed. MPI-safe.
+
+        Inside a write scope the scope settles this on close: a scope is one atomic
+        change, so its ``state_id`` moves once rather than once per write within it.
+        """
+        from .resource import mark_dirty
+
+        if self._readonly or mark_dirty():
+            return
+        self._bump_state_collective()
+
+    @on_main()
+    def _bump_state_collective(self):
+        with self._handle("a") as handle:
+            _bump_state_attrs(handle)
+
+    def _upgrade_if_needed(self):
+        """
+        Stamp a fresh provenance bundle on a pre-schema file that's missing it.
+
+        Triggered automatically on engine instantiation; no-op for fresh files
+        (already stamped by ``create()``), read-only engines, and files that
+        don't exist yet.
+        """
+        if self._readonly or not self.exists():
+            return
+        self._upgrade_collective()
+
+    @on_main()
+    def _upgrade_collective(self):
+        try:
+            with self._handle("r") as handle:
+                if _PROVENANCE_ATTR in handle.attrs:
+                    return
+        except Exception:
+            return
+        bundle = build_root_metadata(
+            engine_name="hdf5",
+            engine_version=importlib.metadata.version("bsb-hdf5"),
+            mpi_size=self.comm.get_size(),
+        )
+        bundle["state_id"] = 1
+        with self._handle("a") as handle:
+            _write_root_metadata(handle, bundle)
+        warn(
+            "Auto-upgraded legacy HDF5 storage with a fresh storage_id and "
+            "provenance bundle.",
+            category=BsbProvenanceUpgradeWarning,
+            stacklevel=3,
+        )
 
     @property
     def root_slug(self):
@@ -235,9 +314,15 @@ class HDF5Engine(Engine):
 
     @on_main_until(lambda self: self.exists())
     def create(self):
+        bundle = build_root_metadata(
+            engine_name="hdf5",
+            engine_version=importlib.metadata.version("bsb-hdf5"),
+            mpi_size=self.comm.get_size(),
+        )
         with self._handle("w") as handle:
             handle.attrs["bsb_hdf5_version"] = importlib.metadata.version("bsb-hdf5")
             handle.attrs["bsb_version"] = importlib.metadata.version("bsb-core")
+            _write_root_metadata(handle, bundle)
             handle.create_group("placement")
             handle.create_group("connectivity")
             handle.create_group("files")
@@ -272,6 +357,7 @@ class HDF5Engine(Engine):
             del handle.attrs["chunk_size"]
             handle.require_group("placement")
             self._write_chunk_stats(handle, {})
+            _bump_state_attrs(handle)
 
     @on_main()
     def clear_connectivity(self):
@@ -285,6 +371,7 @@ class HDF5Engine(Engine):
                 for k, v in stats.items()
             }
             self._write_chunk_stats(handle, stats)
+            _bump_state_attrs(handle)
 
     @on_main()
     def get_chunk_stats(self):
@@ -296,6 +383,27 @@ class HDF5Engine(Engine):
 
     def _write_chunk_stats(self, handle, stats):
         handle.attrs["chunks"] = json.dumps(stats)
+
+
+def _write_root_metadata(handle, bundle: dict) -> None:
+    """Write the provenance bundle to ``handle.attrs`` as a single JSON document."""
+    handle.attrs[_PROVENANCE_ATTR] = json.dumps(bundle)
+
+
+def _read_root_metadata(handle) -> dict:
+    """Read the provenance bundle back out of ``handle.attrs``."""
+    raw = handle.attrs.get(_PROVENANCE_ATTR)
+    if raw is not None:
+        with contextlib.suppress(TypeError, json.JSONDecodeError):
+            return json.loads(raw)
+    return {}
+
+
+def _bump_state_attrs(handle) -> None:
+    """Increment ``state_id`` in the stored provenance bundle, on an open handle."""
+    bundle = _read_root_metadata(handle)
+    bundle["state_id"] = int(bundle.get("state_id", 0)) + 1
+    _write_root_metadata(handle, bundle)
 
 
 def _get_default_root():

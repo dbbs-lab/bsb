@@ -43,28 +43,55 @@ def _mark_written(node, attr_name: str) -> None:
         attr.flag_dirty(node)
 
 
+# Tags the element kinds apart, so a value never shares an encoding with one of
+# another kind: `None` is not the integer 0, and `False` is not either.
+_KEY_NONE, _KEY_BOOL, _KEY_INT, _KEY_STR, _KEY_SEQ, _KEY_OBJ = range(6)
+
+
+def _zigzag(value: int) -> int:
+    """
+    Fold a signed integer onto the non-negative ones a seed sequence accepts.
+
+    Chunk coordinates go negative, and a negative is rejected outright rather than
+    hashed.
+    """
+    return 2 * value if value >= 0 else -2 * value - 1
+
+
+def _encode_key(key) -> list[int]:
+    import zlib
+
+    parts: list[int] = []
+    for element in key if isinstance(key, tuple | list) else (key,):
+        if isinstance(element, str):
+            parts += [_KEY_STR, zlib.crc32(element.encode())]
+        elif isinstance(element, bool):
+            parts += [_KEY_BOOL, int(element)]
+        elif isinstance(element, int | np.integer):
+            parts += [_KEY_INT, _zigzag(int(element))]
+        elif isinstance(element, tuple | list | np.ndarray):
+            nested = _encode_key(tuple(element))
+            parts += [_KEY_SEQ, len(nested), *nested]
+        elif element is None:
+            parts += [_KEY_NONE]
+        else:
+            parts += [_KEY_OBJ, zlib.crc32(repr(element).encode())]
+    return parts
+
+
 def _stable_ints(key) -> list[int]:
     """
     Turn a derivation key into integers, stably across processes and runs.
 
     Python's own ``hash`` is salted per process, so a string hashed with it would
     seed differently on every invocation and silently break reproducibility.
-    """
-    import zlib
 
-    parts: list[int] = []
-    for element in key if isinstance(key, tuple | list) else (key,):
-        if isinstance(element, str):
-            parts.append(zlib.crc32(element.encode()))
-        elif isinstance(element, bool | int | np.integer):
-            parts.append(int(element))
-        elif isinstance(element, tuple | list | np.ndarray):
-            parts.extend(_stable_ints(tuple(element)))
-        elif element is None:
-            parts.append(0)
-        else:
-            parts.append(zlib.crc32(repr(element).encode()))
-    return parts
+    The encoding leads with its own length, because a seed sequence absorbs a
+    trailing zero: without it a key ending in one hashes the same as the key
+    without that element at all.
+    """
+    parts = _encode_key(key)
+    return [len(parts), *parts]
 
 
 @config.node

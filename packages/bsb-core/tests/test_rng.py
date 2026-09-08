@@ -118,6 +118,48 @@ class TestDerivation(
         )
 
 
+class TestKeyEncoding(unittest.TestCase):
+    """
+    Keys that mean different things must not share a stream.
+
+    A seed sequence absorbs a trailing zero and rejects a negative outright, so the
+    encoding cannot hand it either.
+    """
+
+    def stream(self, key):
+        import numpy as np
+
+        from bsb.rng import _stable_ints
+
+        seq = np.random.SeedSequence([1234, *_stable_ints(key)])
+        return tuple(seq.generate_state(4).tolist())
+
+    def test_keys_that_differ_give_different_streams(self):
+        for name, one, other in [
+            ("None is not the integer 0", ("a", None), ("a", 0)),
+            ("a trailing None is not absent", ("a",), ("a", None)),
+            ("a trailing 0 is not absent", ("a",), ("a", 0)),
+            ("False is not the integer 0", ("a", False), ("a", 0)),
+            ("True is not the integer 1", ("a", True), ("a", 1)),
+            ("nesting is part of the key", ("a", (1, 2)), ("a", 1, 2)),
+            ("order is part of the key", (1, 2), (2, 1)),
+        ]:
+            with self.subTest(case=name):
+                self.assertNotEqual(self.stream(one), self.stream(other), name)
+
+    def test_a_negative_element_is_a_key_like_any_other(self):
+        import numpy as np
+
+        for key in [("chunk", -1), ("chunk", np.array([-3, 0, 7])), ("chunk", -(2**40))]:
+            with self.subTest(key=str(key)):
+                self.assertEqual(self.stream(key), self.stream(key), "not stable")
+        self.assertNotEqual(
+            self.stream(("chunk", -1)),
+            self.stream(("chunk", 1)),
+            "sign is part of the key",
+        )
+
+
 class TestAccessor(
     _NetworkMixin, RandomStorageFixture, unittest.TestCase, engine_name="hdf5"
 ):

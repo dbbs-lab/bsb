@@ -142,7 +142,7 @@ class _Seeded:
 
 
 @config.dynamic(attr_name="strategy", required=False, default="numpy", auto_classmap=True)
-class RandomGenerator(_Seeded):
+class Rng(_Seeded):
     """
     A named source of randomness that is drawn from.
 
@@ -160,7 +160,7 @@ class RandomGenerator(_Seeded):
 
 
 @config.node
-class NumpyRandomGenerator(RandomGenerator, classmap_entry="numpy"):
+class NumpyRng(Rng, classmap_entry="numpy"):
     """
     Draws from :mod:`numpy`'s generators.
     """
@@ -189,7 +189,7 @@ class NumpyRandomGenerator(RandomGenerator, classmap_entry="numpy"):
 
 
 @config.dynamic(attr_name="strategy", auto_classmap=True)
-class RandomSettings(_Seeded):
+class RngSettings(_Seeded):
     """
     Randomness handed *out* to a subsystem that seeds itself.
 
@@ -208,7 +208,7 @@ class RandomSettings(_Seeded):
 
 
 @config.node
-class RandomNode(NumpyRandomGenerator, classmap_entry=None):
+class RngRootNode(NumpyRng, classmap_entry=None):
     """
     The :guilabel:`rng` block: the root seed, and the generator used by default.
 
@@ -232,13 +232,13 @@ class RandomNode(NumpyRandomGenerator, classmap_entry=None):
     stored configuration reproduces this run.
     """
 
-    generators: cfgdict[str, RandomGenerator] = config.dict(type=RandomGenerator)
+    generators: cfgdict[str, Rng] = config.dict(type=Rng)
     """
     Named sources to draw from. One with its own :guilabel:`seed` is held fixed; one
     without derives from :attr:`seed`.
     """
 
-    settings: cfgdict[str, RandomSettings] = config.dict(type=RandomSettings)
+    settings: cfgdict[str, RngSettings] = config.dict(type=RngSettings)
     """
     Named randomness for subsystems that seed themselves, such as a simulator kernel.
     """
@@ -267,14 +267,7 @@ class RandomNode(NumpyRandomGenerator, classmap_entry=None):
         return self.seed
 
 
-# `@config.node` re-creates a class, and the re-creation registers itself in the
-# parent's classmap under its own snake case name. `RandomNode` is the block that holds
-# the generators, not a kind that can be configured inside it, so it does not belong
-# there; `NumpyRandomGenerator` keeps the alias, which names the same class.
-RandomGenerator._config_dynamic_classmap.pop("random_node", None)
-
-
-class RandomConsumer:
+class RngConsumer:
     """
     Mixin for a component that draws.
 
@@ -283,14 +276,14 @@ class RandomConsumer:
     common case.
     """
 
-    rng: RandomGenerator = config.ref(refs.rng_generator_ref, required=False)
+    rng: Rng = config.ref(refs.rng_ref, required=False)
     """
     Name of the :guilabel:`generators` entry to draw from. Unset draws from the
     :guilabel:`rng` block itself.
     """
 
     @property
-    def random_generator(self) -> NumpyRandomGenerator:
+    def random_generator(self) -> NumpyRng:
         """The generator this component draws from, named or inherited."""
         named = getattr(self, "rng", None)
         if named is not None:
@@ -306,24 +299,24 @@ class RandomConsumer:
         """
         A generator for one set of draws, from whatever this component names.
 
-        :param key: What the draws are for; see :meth:`NumpyRandomGenerator.rng`.
+        :param key: What the draws are for; see :meth:`NumpyRng.rng`.
         :returns: A seeded generator.
         """
         return self.random_generator.rng(key)
 
 
 __all__ = [
-    "NumpyRandomGenerator",
-    "RandomConsumer",
-    "RandomGenerator",
-    "RandomNode",
-    "RandomSettings",
+    "NumpyRng",
+    "RngConsumer",
+    "Rng",
+    "RngRootNode",
+    "RngSettings",
 ]
 
 __api__ = [
-    "NumpyRandomGenerator",
-    "RandomConsumer",
-    "RandomGenerator",
-    "RandomNode",
-    "RandomSettings",
+    "NumpyRng",
+    "RngConsumer",
+    "Rng",
+    "RngRootNode",
+    "RngSettings",
 ]

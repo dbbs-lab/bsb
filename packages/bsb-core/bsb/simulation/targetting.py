@@ -7,7 +7,7 @@ from numpy.random import default_rng
 
 from .. import config
 from ..config import refs, types
-from ..rng import RandomConsumer
+from ..rng import RngConsumer
 
 if typing.TYPE_CHECKING:  # pragma: nocover
     from ..cell_types import CellType
@@ -15,7 +15,7 @@ if typing.TYPE_CHECKING:  # pragma: nocover
 
 
 @config.dynamic(attr_name="strategy", default="all", auto_classmap=True)
-class Targetting(RandomConsumer):
+class Targetting(RngConsumer):
     type: typing.Literal["cell"] | typing.Literal["connection"] = config.attr(
         type=types.in_(["cell", "connection"]), default="cell"
     )

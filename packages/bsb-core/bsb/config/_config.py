@@ -8,7 +8,7 @@ from ..cell_types import CellType
 from ..connectivity import ConnectionStrategy
 from ..placement import PlacementStrategy
 from ..postprocessing import AfterConnectivityHook, AfterPlacementHook
-from ..rng import RandomNode
+from ..rng import RngRootNode
 from ..simulation.simulation import Simulation
 from ..storage._files import (
     CodeDependencyNode,
@@ -89,8 +89,8 @@ class Configuration:
     """
     Files to attach to the network.
     """
-    rng: RandomNode = config.attr(
-        type=RandomNode,
+    rng: RngRootNode = config.attr(
+        type=RngRootNode,
         default=dict,
         call_default=True,
     )

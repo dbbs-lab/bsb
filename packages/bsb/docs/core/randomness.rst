@@ -88,13 +88,13 @@ into, and a simulation names the one it uses:
     }
 
 How many numbers a subsystem wants is its own business. One kernel seed is one
-:meth:`derive <bsb:bsb.rng.RandomSettings.derive>` with no key; a backend that seeds per
+:meth:`derive <bsb:bsb.rng.RngSettings.derive>` with no key; a backend that seeds per
 object calls it once per key and gets as many distinct numbers as it has objects.
 
 Streams are derived from the data, not the rank
 ===============================================
 
-:meth:`rng <bsb:bsb.rng.NumpyRandomGenerator.rng>` takes a **key**: what the draws are
+:meth:`rng <bsb:bsb.rng.NumpyRng.rng>` takes a **key**: what the draws are
 *for*, such as a chunk, a cell type, a device or a connection tag.
 
 .. code-block:: python

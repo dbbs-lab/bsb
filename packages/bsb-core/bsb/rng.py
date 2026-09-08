@@ -21,6 +21,7 @@ it draws from stands in the configuration rather than being looked up by a strin
 runtime.
 """
 
+import abc
 import typing
 import zlib
 
@@ -142,12 +143,14 @@ class _Seeded:
 
 
 @config.dynamic(attr_name="strategy", required=False, default="numpy", auto_classmap=True)
-class Rng(_Seeded):
+class Rng(_Seeded, abc.ABC):
     """
     A named source of randomness that is drawn from.
 
     Kinds beyond the bundled one register themselves in this classmap through the
-    ``bsb.components`` plugin group, like any other component.
+    ``bsb.components`` plugin group, like any other component. Whatever a kind does
+    behind it, it answers with a :class:`numpy.random.Generator`, because that is what
+    every component that draws expects to be handed.
     """
 
     name: str = config.attr(key=True)
@@ -157,6 +160,20 @@ class Rng(_Seeded):
     Seed for this generator. Left unset, it is derived from the root seed when the
     configuration is booted, and written back so the run can be reproduced.
     """
+
+    @abc.abstractmethod
+    def rng(self, key=()) -> np.random.Generator:  # pragma: nocover
+        """
+        A generator for one particular set of draws.
+
+        ``key`` is what the draws are *for*: a chunk, a cell type, a device, a
+        connection tag. Two calls with the same key give the same stream, and a key
+        never includes the MPI rank, so which rank happens to do the work cannot
+        change the result.
+
+        :param key: What the draws are for.
+        :returns: A seeded generator.
+        """
 
 
 @config.node
@@ -174,12 +191,7 @@ class NumpyRng(Rng, classmap_entry="numpy"):
 
     def rng(self, key=()) -> np.random.Generator:
         """
-        A generator for one particular set of draws.
-
-        ``key`` is what the draws are *for*: a chunk, a cell type, a device, a
-        connection tag. Two calls with the same key give the same stream, and a key
-        never includes the MPI rank, so which rank happens to do the work cannot
-        change the result.
+        A generator backed by the named bit generator.
 
         :param key: What the draws are for.
         :returns: A seeded generator.
@@ -283,7 +295,7 @@ class RngConsumer:
     """
 
     @property
-    def random_generator(self) -> NumpyRng:
+    def random_generator(self) -> Rng:
         """The generator this component draws from, named or inherited."""
         named = getattr(self, "rng", None)
         if named is not None:

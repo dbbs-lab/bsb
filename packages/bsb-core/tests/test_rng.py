@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 from bsb_test import RandomStorageFixture
 
-from bsb import CfgReferenceError, Scaffold
+from bsb import CfgReferenceError, NumpyRng, Scaffold
 from bsb.config import Configuration
 
 
@@ -241,6 +241,43 @@ class TestWhatAComponentDrawsFrom(
         # rather than quietly drawing a different stream.
         with self.assertRaises(CfgReferenceError):
             self.net({"seed": 42}, "nope")
+
+
+class TestAKindThatIsNotNumpy(
+    _NetworkMixin, RandomStorageFixture, unittest.TestCase, engine_name="hdf5"
+):
+    """
+    `generators` is not a numpy-only block.
+
+    What a kind does behind `rng` is its own business; the block's contract is that a
+    component is handed something it can draw from.
+    """
+
+    def setUp(self):
+        super().setUp()
+        from bsb import config
+        from bsb.rng import Rng
+
+        @config.node
+        class OneNumberRng(Rng, classmap_entry="one_number"):
+            """Hands back a generator that was seeded by hand, not by a bit generator."""
+
+            def rng(self, key=()):
+                return np.random.Generator(np.random.MT19937(self.resolve()))
+
+        self.addCleanup(Rng._config_dynamic_classmap.pop, "one_number", None)
+
+    def test_a_registered_kind_is_named_and_drawn_from(self):
+        net = self.network(
+            {"seed": 1, "generators": {"custom": {"strategy": "one_number"}}}
+        )
+        generator = net.configuration.rng.generators["custom"]
+        self.assertNotIsInstance(generator, NumpyRng, "the block took a kind of its own")
+        self.assertIsInstance(
+            generator.rng(key=("x",)),
+            np.random.Generator,
+            "and it still answers with something to draw from",
+        )
 
 
 class TestKeyEncoding(unittest.TestCase):

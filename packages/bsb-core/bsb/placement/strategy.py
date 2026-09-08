@@ -11,6 +11,7 @@ from ..config._attrs import cfgdict
 from ..exceptions import DistributorError, EmptySelectionError
 from ..mixins import HasDependencies
 from ..reporting import warn
+from ..rng import RandomConsumer
 from ..services import pool_cache
 from ..storage._chunks import Chunk
 from ..voxels import VoxelSet
@@ -24,7 +25,7 @@ if typing.TYPE_CHECKING:  # pragma: nocover
 
 
 @config.dynamic(attr_name="strategy", required=True, auto_classmap=True)
-class PlacementStrategy(abc.ABC, HasDependencies):
+class PlacementStrategy(abc.ABC, HasDependencies, RandomConsumer):
     """
     Quintessential interface of the placement module.
 

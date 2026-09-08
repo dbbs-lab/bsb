@@ -12,14 +12,22 @@ Separately, a run must not depend on how its work was divided. Draws are therefo
 seeded from *what is being drawn for* -- a chunk, a cell type, a device -- and never
 from the MPI rank, so the same configuration gives the same result whatever the rank
 count.
+
+The :guilabel:`rng` block is itself the generator everything draws from unless it says
+otherwise, and it registers two kinds of named node beside it: :guilabel:`generators`,
+which are drawn from, and :guilabel:`settings`, which are handed to a subsystem that
+seeds itself. A component names one through its own :guilabel:`rng` attribute, so what
+it draws from stands in the configuration rather than being looked up by a string at
+runtime.
 """
 
 import typing
+import zlib
 
 import numpy as np
 
 from . import config
-from .config import types
+from .config import refs, types
 from .config._attrs import cfgdict
 from .config._make import get_config_attributes
 from .exceptions import ConfigurationError
@@ -59,8 +67,6 @@ def _zigzag(value: int) -> int:
 
 
 def _encode_key(key) -> list[int]:
-    import zlib
-
     parts: list[int] = []
     for element in key if isinstance(key, tuple | list) else (key,):
         if isinstance(element, str):
@@ -94,74 +100,158 @@ def _stable_ints(key) -> list[int]:
     return [len(parts), *parts]
 
 
-@config.node
-class RandomProvider:
+def _derive(seed: int, key) -> int:
+    """One reproducible 32 bit integer for ``key``, out of ``seed``."""
+    sequence = np.random.SeedSequence([seed, *_stable_ints(key)])
+    return int(sequence.generate_state(1, dtype=np.uint32)[0])
+
+
+class _Seeded:
     """
-    One source of randomness, and the seed it was given or drawn.
+    Shared by the named nodes in the :guilabel:`rng` block.
+
+    A seed left unset is derived from the root seed and the node's own name, and
+    written back, so the stored configuration carries the value the run used.
+    """
+
+    def resolve(self) -> int:
+        """
+        Settle this node's seed, deriving it from the root when it has none.
+
+        :returns: The resolved seed.
+        """
+        if self.seed is None:
+            root = self._config_parent._config_parent
+            self.seed = _derive(root.resolve(), self.name)
+            _mark_written(self, "seed")
+        return self.seed
+
+    def derive(self, key=()) -> int:
+        """
+        A reproducible integer to hand to something that seeds itself.
+
+        Without a key this is the node's own seed, so a subsystem named in the
+        configuration is handed the number written there. With one, a distinct value
+        per key, which is how a backend seeding per object gets as many as it needs.
+
+        :param key: What the seed is for.
+        :returns: The derived seed.
+        """
+        seed = self.resolve()
+        return _derive(seed, key) if key else seed
+
+
+@config.dynamic(attr_name="strategy", required=False, default="numpy", auto_classmap=True)
+class RandomGenerator(_Seeded):
+    """
+    A named source of randomness that is drawn from.
+
+    Kinds beyond the bundled one register themselves in this classmap through the
+    ``bsb.components`` plugin group, like any other component.
     """
 
     name: str = config.attr(key=True)
 
     seed: int = config.attr(type=types.int(), required=False)
     """
-    Seed for this provider. Left unset, it is derived from the root seed when the
+    Seed for this generator. Left unset, it is derived from the root seed when the
     configuration is booted, and written back so the run can be reproduced.
     """
 
-    def __boot__(self):
-        self.resolve()
 
-    def resolve(self) -> int:
-        """
-        Settle this provider's seed, deriving it from the root when it has none.
+@config.node
+class NumpyRandomGenerator(RandomGenerator, classmap_entry="numpy"):
+    """
+    Draws from :mod:`numpy`'s generators.
+    """
 
-        :returns: The resolved seed.
+    bit_generator: str = config.attr(type=types.str(), default="PCG64")
+    """
+    Name of the :mod:`numpy` bit generator backing the draws. Named here rather than
+    left to :func:`numpy.random.default_rng`, whose choice may change between releases
+    and would take every stream with it.
+    """
+
+    def rng(self, key=()) -> np.random.Generator:
         """
-        if self.seed is None:
-            root = self._config_parent._config_parent
-            self.seed = int(
-                np.random.SeedSequence(
-                    [root.resolve_seed(), *_stable_ints(self.name)]
-                ).generate_state(1, dtype=np.uint32)[0]
-            )
-        return self.seed
+        A generator for one particular set of draws.
+
+        ``key`` is what the draws are *for* -- a chunk, a cell type, a device, a
+        connection tag. Two calls with the same key give the same stream, and a key
+        never includes the MPI rank, so which rank happens to do the work cannot
+        change the result.
+
+        :param key: What the draws are for.
+        :returns: A seeded generator.
+        """
+        sequence = np.random.SeedSequence([self.resolve(), *_stable_ints(key)])
+        return np.random.Generator(getattr(np.random, self.bit_generator)(sequence))
+
+
+@config.dynamic(attr_name="strategy", auto_classmap=True)
+class RandomSettings(_Seeded):
+    """
+    Randomness handed *out* to a subsystem that seeds itself.
+
+    A simulator kernel is not drawn from, and how many numbers it wants is its own
+    business, so a backend registers its own kind here through the ``bsb.components``
+    plugin group and reads off it what it needs.
+    """
+
+    name: str = config.attr(key=True)
+
+    seed: int = config.attr(type=types.int(), required=False)
+    """
+    Seed handed to the subsystem. Left unset, it is derived from the root seed and
+    written back.
+    """
 
 
 @config.node
-class RandomNode:
+class RandomNode(NumpyRandomGenerator, classmap_entry=None):
     """
-    The :guilabel:`rng` block: a root seed, and providers that derive from it.
+    The :guilabel:`rng` block: the root seed, and the generator used by default.
 
     Leave :attr:`seed` unset and every run is a replicate, each output carrying the
     seed it used. Set it -- or paste back the one a run recorded -- and that run
-    reproduces exactly. Pin a single provider to hold one part of a model fixed
-    while the rest varies.
+    reproduces exactly. Name a generator on a component to hold one part of a model
+    fixed while the rest varies.
     """
 
     scaffold: "Scaffold"
 
-    seed: int = config.attr(type=types.int(), required=False)
+    name: str = config.attr(type=types.str(), default="rng")
     """
-    Root seed every provider derives from. Left unset, one is drawn when the
-    configuration is booted and written back, so the run can be reproduced by
-    feeding the stored configuration back in.
+    Names the block for derivation. It is the root, so nothing derives from its name.
     """
 
-    providers: cfgdict[str, RandomProvider] = config.dict(type=RandomProvider)
+    seed: int = config.attr(type=types.int(), required=False)
     """
-    Individual sources of randomness. An entry with its own :guilabel:`seed` is
-    held fixed; one without derives from :attr:`seed` like everything else.
+    Root seed everything derives from, and the seed of the block's own draws. Left
+    unset, one is drawn when the configuration is booted and written back, so the
+    stored configuration reproduces this run.
+    """
+
+    generators: cfgdict[str, RandomGenerator] = config.dict(type=RandomGenerator)
+    """
+    Named sources to draw from. One with its own :guilabel:`seed` is held fixed; one
+    without derives from :attr:`seed`.
+    """
+
+    settings: cfgdict[str, RandomSettings] = config.dict(type=RandomSettings)
+    """
+    Named randomness for subsystems that seed themselves, such as a simulator kernel.
     """
 
     def __boot__(self):
-        self.resolve_seed()
-        for provider in self.providers.values():
-            provider.resolve()
+        self.resolve()
+        for node in (*self.generators.values(), *self.settings.values()):
+            node.resolve()
         # The block itself has to be recorded as configured, or a drawn seed would
         # resolve in memory and never reach the stored configuration.
         _mark_written(self._config_parent, "rng")
 
-    def resolve_seed(self) -> int:
+    def resolve(self) -> int:
         """
         Settle the root seed, drawing one if none was configured.
 
@@ -173,49 +263,67 @@ class RandomNode:
         """
         if self.seed is None:
             self.seed = int(np.random.SeedSequence().entropy % (2**32))
+            _mark_written(self, "seed")
         return self.seed
 
-    def get_rng(self, provider: str = "bsb", key=()) -> np.random.Generator:
+
+# `@config.node` re-creates a class, and the re-creation registers itself in the
+# parent's classmap under its own snake case name. `RandomNode` is the block that holds
+# the generators, not a kind that can be configured inside it, so it does not belong
+# there; `NumpyRandomGenerator` keeps the alias, which names the same class.
+RandomGenerator._config_dynamic_classmap.pop("random_node", None)
+
+
+class RandomConsumer:
+    """
+    Mixin for a component that draws.
+
+    Its :guilabel:`rng` attribute names a generator; left unset the block itself is
+    the generator, so there is always one to draw from and nothing to write for the
+    common case.
+    """
+
+    rng: RandomGenerator = config.ref(refs.rng_generator_ref, required=False)
+    """
+    Name of the :guilabel:`generators` entry to draw from. Unset draws from the
+    :guilabel:`rng` block itself.
+    """
+
+    @property
+    def random_generator(self) -> NumpyRandomGenerator:
+        """The generator this component draws from, named or inherited."""
+        named = getattr(self, "rng", None)
+        if named is not None:
+            return named
+        scaffold = getattr(self, "scaffold", None)
+        if scaffold is None:
+            raise ConfigurationError(
+                f"Cannot draw randomness from {self!r}: it is not attached to a network."
+            )
+        return scaffold.configuration.rng
+
+    def get_rng(self, key=()) -> np.random.Generator:
         """
-        A generator for one particular set of draws.
+        A generator for one set of draws, from whatever this component names.
 
-        ``key`` is what the draws are *for* -- a chunk, a cell type, a device, a
-        connection tag. Two calls with the same key give the same stream, and a key
-        never includes the MPI rank, so which rank happens to do the work cannot
-        change the result.
-
-        :param provider: Name of the provider to draw from. Unknown names derive
-            from the root seed like any unpinned provider.
-        :param key: What the draws are for. Strings, integers and nested sequences
-            of them are all hashed stably.
+        :param key: What the draws are for; see :meth:`NumpyRandomGenerator.rng`.
         :returns: A seeded generator.
         """
-        if provider in self.providers:
-            seed = self.providers[provider].resolve()
-        else:
-            seed = int(
-                np.random.SeedSequence(
-                    [self.resolve_seed(), *_stable_ints(provider)]
-                ).generate_state(1, dtype=np.uint32)[0]
-            )
-        return np.random.default_rng(np.random.SeedSequence([seed, *_stable_ints(key)]))
+        return self.random_generator.rng(key)
 
 
-def get_rng(obj, provider: str = "bsb", key=()) -> np.random.Generator:
-    """
-    Draw from a scaffold's configured randomness, from anywhere that can reach one.
+__all__ = [
+    "NumpyRandomGenerator",
+    "RandomConsumer",
+    "RandomGenerator",
+    "RandomNode",
+    "RandomSettings",
+]
 
-    :param obj: A scaffold, or any configuration node booted into one.
-    :param provider: Name of the provider to draw from.
-    :param key: What the draws are for; see :meth:`RandomNode.get_rng`.
-    :returns: A seeded generator.
-    """
-    scaffold = getattr(obj, "scaffold", obj)
-    if scaffold is None or not hasattr(scaffold, "configuration"):
-        raise ConfigurationError(
-            f"Cannot draw randomness from {obj!r}: it is not attached to a network."
-        )
-    return scaffold.configuration.rng.get_rng(provider, key)
-
-
-__all__ = ["RandomNode", "RandomProvider", "get_rng"]
+__api__ = [
+    "NumpyRandomGenerator",
+    "RandomConsumer",
+    "RandomGenerator",
+    "RandomNode",
+    "RandomSettings",
+]

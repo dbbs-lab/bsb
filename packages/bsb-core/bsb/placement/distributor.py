@@ -10,6 +10,7 @@ from bsb import pool_cache
 from .. import config
 from ..exceptions import EmptySelectionError
 from ..morphologies import MorphologySet, RotationSet
+from ..rng import RandomConsumer
 from ..topology.partition import Partition
 from ..voxels import voxel_rotation_of
 from .indicator import PlacementIndications
@@ -22,7 +23,7 @@ class DistributionContext:
 
 
 @config.dynamic(attr_name="strategy", required=True)
-class Distributor(abc.ABC):
+class Distributor(abc.ABC, RandomConsumer):
     @abc.abstractmethod
     def distribute(self, positions, context):  # pragma: nocover
         """

@@ -169,6 +169,28 @@ class SimCellModelReference(Reference):
         return CellModel
 
 
+class RandomGeneratorReference(Reference):
+    def __call__(self, root, here):
+        return root.rng.generators
+
+    @property
+    def type(self):
+        from ..rng import RandomGenerator
+
+        return RandomGenerator
+
+
+class RandomSettingsReference(Reference):
+    def __call__(self, root, here):
+        return root.rng.settings
+
+    @property
+    def type(self):
+        from ..rng import RandomSettings
+
+        return RandomSettings
+
+
 file_ref = FileReference()
 vox_dset_ref = VoxelDatasetReference()
 cell_type_ref = CellTypeReference()
@@ -178,6 +200,8 @@ connectivity_ref = ConnectivityReference()
 regional_ref = RegionalReference()
 region_ref = RegionReference()
 sim_cell_model_ref = SimCellModelReference()
+rng_generator_ref = RandomGeneratorReference()
+rng_settings_ref = RandomSettingsReference()
 
 __all__ = [
     "Reference",
@@ -190,5 +214,7 @@ __all__ = [
     "regional_ref",
     "region_ref",
     "sim_cell_model_ref",
+    "rng_generator_ref",
+    "rng_settings_ref",
 ]
 __api__ = ["Reference"]

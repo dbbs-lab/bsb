@@ -1,5 +1,6 @@
 import unittest
 
+import numpy as np
 from bsb_test import RandomStorageFixture
 
 from bsb import Scaffold
@@ -22,9 +23,7 @@ class TestReplicateAndReproduce(
     """The two modes the whole design exists to provide."""
 
     def draw(self, network):
-        return network.configuration.rng.get_rng(
-            key=("place", (0, 0, 0), "cell")
-        ).random()
+        return network.configuration.rng.rng(key=("place", (0, 0, 0), "cell")).random()
 
     def test_an_unseeded_config_is_a_new_replicate_every_run(self):
         seeds = {self.network().configuration.rng.seed for _ in range(3)}
@@ -51,6 +50,44 @@ class TestReplicateAndReproduce(
         self.assertEqual(1234, network.configuration.__tree__()["rng"]["seed"])
 
 
+class TestTheBlockIsTheDefaultGenerator(
+    _NetworkMixin, RandomStorageFixture, unittest.TestCase, engine_name="hdf5"
+):
+    """
+    The block is a generator itself, so there is always one to draw from.
+
+    Nothing is auto-created and no name is reserved: a configuration that says nothing
+    but a seed still has a generator, and it is the block.
+    """
+
+    def test_the_block_draws_without_declaring_anything(self):
+        rng = self.network({"seed": 42}).configuration.rng
+        self.assertIsInstance(rng.rng(key=("x",)), np.random.Generator)
+
+    def test_nothing_is_added_to_a_bare_block(self):
+        stored = self.network({"seed": 42}).configuration.__tree__()["rng"]
+        self.assertNotIn(
+            "generators", stored, "a bare block must not grow entries nobody wrote"
+        )
+
+    def test_the_bit_generator_is_named_not_inherited_from_numpy(self):
+        # `default_rng` may change which bit generator it returns between releases,
+        # which would move every stream with it.
+        rng = self.network({"seed": 42}).configuration.rng
+        self.assertEqual("PCG64", rng.bit_generator)
+        self.assertEqual(
+            "PCG64", type(rng.rng(key=("x",)).bit_generator).__name__, "not honoured"
+        )
+
+    def test_another_bit_generator_gives_another_stream(self):
+        same_seed = {"seed": 42, "bit_generator": "Philox"}
+        other = self.network(same_seed).configuration.rng
+        self.assertNotEqual(
+            self.network({"seed": 42}).configuration.rng.rng(key=("x",)).random(),
+            other.rng(key=("x",)).random(),
+        )
+
+
 class TestDerivation(
     _NetworkMixin, RandomStorageFixture, unittest.TestCase, engine_name="hdf5"
 ):
@@ -62,13 +99,13 @@ class TestDerivation(
 
     def test_the_same_key_gives_the_same_stream(self):
         self.assertEqual(
-            self.rng.get_rng(key=("place", (0, 0, 0))).random(),
-            self.rng.get_rng(key=("place", (0, 0, 0))).random(),
+            self.rng.rng(key=("place", (0, 0, 0))).random(),
+            self.rng.rng(key=("place", (0, 0, 0))).random(),
         )
 
     def test_different_keys_give_different_streams(self):
         draws = {
-            self.rng.get_rng(key=key).random()
+            self.rng.rng(key=key).random()
             for key in (
                 ("place", (0, 0, 0), "cell_a"),
                 ("place", (1, 0, 0), "cell_a"),
@@ -95,27 +132,57 @@ class TestDerivation(
         }
         self.assertEqual(1, len(runs), f"key hashing is not stable: {runs}")
 
-    def test_providers_derive_from_the_root_seed(self):
-        rng = self.network({"seed": 7, "providers": {"placement": {}}}).configuration.rng
-        provider = rng.providers["placement"]
-        self.assertIsNotNone(provider.seed, "an unpinned provider derives a seed")
-        self.assertNotEqual(7, provider.seed, "and it is not just the root seed")
+    def test_generators_derive_from_the_root_seed(self):
+        rng = self.network({"seed": 7, "generators": {"structure": {}}}).configuration.rng
+        generator = rng.generators["structure"]
+        self.assertIsNotNone(generator.seed, "an unpinned generator derives a seed")
+        self.assertNotEqual(7, generator.seed, "and it is not just the root seed")
 
-    def test_a_pinned_provider_holds_while_the_rest_varies(self):
+    def test_a_pinned_generator_holds_while_the_rest_varies(self):
         # The workflow this exists for: same network, different simulation noise.
-        pinned = {"providers": {"placement": {"seed": 99}}}
+        pinned = {"generators": {"structure": {"seed": 99}}}
         first, second = self.network(pinned), self.network(pinned)
 
         self.assertEqual(
-            first.configuration.rng.get_rng("placement", ("chunk",)).random(),
-            second.configuration.rng.get_rng("placement", ("chunk",)).random(),
-            "a pinned provider must not move between runs",
+            first.configuration.rng.generators["structure"].rng(("chunk",)).random(),
+            second.configuration.rng.generators["structure"].rng(("chunk",)).random(),
+            "a pinned generator must not move between runs",
         )
         self.assertNotEqual(
             first.configuration.rng.seed,
             second.configuration.rng.seed,
             "while the root seed still varies",
         )
+
+
+class TestHandingSeedsOut(
+    _NetworkMixin, RandomStorageFixture, unittest.TestCase, engine_name="hdf5"
+):
+    """
+    A subsystem that seeds itself is handed numbers, not a generator.
+
+    Arity is the subsystem's business: one kernel seed, or one per object, comes from
+    calling `derive` once or once per key.
+    """
+
+    def test_a_pinned_setting_is_handed_the_number_that_was_written(self):
+        rng = self.network(
+            {"seed": 1, "generators": {"kernel": {"seed": 999}}}
+        ).configuration.rng
+        self.assertEqual(
+            999,
+            rng.generators["kernel"].derive(),
+            "a seed written in the configuration is the seed handed out",
+        )
+
+    def test_a_key_gives_a_distinct_number_per_object(self):
+        rng = self.network(
+            {"seed": 1, "generators": {"kernel": {"seed": 999}}}
+        ).configuration.rng
+        node = rng.generators["kernel"]
+        per_gid = {node.derive(("poisson", gid)) for gid in range(50)}
+        self.assertEqual(50, len(per_gid), "each object gets its own seed")
+        self.assertNotIn(999, per_gid, "and none of them is the node's own seed")
 
 
 class TestKeyEncoding(unittest.TestCase):
@@ -127,8 +194,6 @@ class TestKeyEncoding(unittest.TestCase):
     """
 
     def stream(self, key):
-        import numpy as np
-
         from bsb.rng import _stable_ints
 
         seq = np.random.SeedSequence([1234, *_stable_ints(key)])
@@ -148,8 +213,6 @@ class TestKeyEncoding(unittest.TestCase):
                 self.assertNotEqual(self.stream(one), self.stream(other), name)
 
     def test_a_negative_element_is_a_key_like_any_other(self):
-        import numpy as np
-
         for key in [("chunk", -1), ("chunk", np.array([-3, 0, 7])), ("chunk", -(2**40))]:
             with self.subTest(key=str(key)):
                 self.assertEqual(self.stream(key), self.stream(key), "not stable")
@@ -158,29 +221,3 @@ class TestKeyEncoding(unittest.TestCase):
             self.stream(("chunk", 1)),
             "sign is part of the key",
         )
-
-
-class TestAccessor(
-    _NetworkMixin, RandomStorageFixture, unittest.TestCase, engine_name="hdf5"
-):
-    """Reaching randomness from a node booted into a network."""
-
-    def test_a_node_draws_from_its_network(self):
-        from bsb.rng import get_rng
-
-        network = self.network({"seed": 5})
-        self.assertEqual(
-            get_rng(network, key=("x",)).random(),
-            network.configuration.rng.get_rng(key=("x",)).random(),
-        )
-
-    def test_an_unattached_object_says_so(self):
-        from bsb import ConfigurationError
-        from bsb.rng import get_rng
-
-        with self.assertRaises(ConfigurationError):
-            get_rng(object())
-
-
-if __name__ == "__main__":
-    unittest.main()

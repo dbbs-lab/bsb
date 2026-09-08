@@ -302,6 +302,7 @@ NotParallel: type["bsb.mixins.NotParallel"]
 NotSupported: type["bsb.storage.NotSupported"]
 NrrdDependencyNode: type["bsb.storage._files.NrrdDependencyNode"]
 NrrdVoxels: type["bsb.topology.partition.NrrdVoxels"]
+NumpyRandomGenerator: type["bsb.rng.NumpyRandomGenerator"]
 Operation: type["bsb.storage._files.Operation"]
 OptionDescriptor: type["bsb.option.OptionDescriptor"]
 OptionError: type["bsb.exceptions.OptionError"]
@@ -330,11 +331,13 @@ PoissonDiskPlacement: type["bsb.placement.poisson.PoissonDiskPlacement"]
 ProfilingSession: type["bsb.profiling.ProfilingSession"]
 ProgressEvent: type["bsb.simulation.simulation.ProgressEvent"]
 ProjectOptionDescriptor: type["bsb.option.ProjectOptionDescriptor"]
+RandomConsumer: type["bsb.rng.RandomConsumer"]
+RandomGenerator: type["bsb.rng.RandomGenerator"]
 RandomMorphologies: type["bsb.placement.distributor.RandomMorphologies"]
 RandomNode: type["bsb.rng.RandomNode"]
 RandomPlacement: type["bsb.placement.random.RandomPlacement"]
-RandomProvider: type["bsb.rng.RandomProvider"]
 RandomRotations: type["bsb.placement.distributor.RandomRotations"]
+RandomSettings: type["bsb.rng.RandomSettings"]
 ReadOnlyManager: type["bsb.storage.interfaces.ReadOnlyManager"]
 ReadOnlyOptionError: type["bsb.exceptions.ReadOnlyOptionError"]
 RedoError: type["bsb.exceptions.RedoError"]
@@ -432,7 +435,6 @@ get_option_descriptors: "bsb.options.get_option_descriptors"
 get_partitions: "bsb.topology.get_partitions"
 get_project_option: "bsb.options.get_project_option"
 get_provenance_version: "bsb.storage.provenance.get_provenance_version"
-get_rng: "bsb.rng.get_rng"
 get_root_regions: "bsb.topology.get_root_regions"
 get_simulation_adapter: "bsb.simulation.get_simulation_adapter"
 handle_cli: "bsb.cli.handle_cli"

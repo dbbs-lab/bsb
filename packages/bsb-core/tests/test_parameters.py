@@ -15,8 +15,9 @@ from bsb import (
     Scaffold,
     config,
     constant,
-    parameter,
+    parameters_of_type,
 )
+from bsb.config import Configuration
 
 
 class TestParameterArities(unittest.TestCase):
@@ -53,7 +54,7 @@ class TestParameterCasting(unittest.TestCase):
     """The shorthands a value may be written in, and what they cast to."""
 
     def setUp(self):
-        self.wide = parameter(CellParameter)
+        self.wide = parameters_of_type(CellParameter)
         self.narrow = constant()
 
     def test_scalar_casts_to_constant(self):
@@ -67,7 +68,7 @@ class TestParameterCasting(unittest.TestCase):
         self.assertEqual("uniform", self.wide("uniform").compute())
 
     def test_strategy_casts_to_the_arity(self):
-        param = parameter(ConnectionParameter)(
+        param = parameters_of_type(ConnectionParameter)(
             {"strategy": "distance_delay", "axon_speed": 2.0}
         )
         self.assertIsInstance(param, DistanceDelayParameter)
@@ -91,7 +92,7 @@ class TestParameterCasting(unittest.TestCase):
 @config.node
 class _Model(ParameterizedModel):
     constants = config.dict(type=constant())
-    parameters = config.dict(type=parameter(CellParameter))
+    parameters = config.dict(type=parameters_of_type(CellParameter))
 
     def get_parameter_groups(self):
         return (self.constants, self.parameters)
@@ -145,7 +146,7 @@ class TestDistanceDelay(
     def test_delay_is_distance_over_speed(self):
         cs = self.network.get_connectivity_set("all_to_all")
         pre_locs, post_locs = cs.load_connections().all()
-        param = parameter(ConnectionParameter)(
+        param = parameters_of_type(ConnectionParameter)(
             {"strategy": "distance_delay", "axon_speed": 2.0}
         )
         simulation = type("_Sim", (), {"resolution": 1e-9})()
@@ -164,7 +165,7 @@ class TestDistanceDelay(
     def test_delay_never_undercuts_the_resolution(self):
         cs = self.network.get_connectivity_set("all_to_all")
         pre_locs, post_locs = cs.load_connections().all()
-        param = parameter(ConnectionParameter)(
+        param = parameters_of_type(ConnectionParameter)(
             {"strategy": "distance_delay", "axon_speed": 1e12}
         )
         simulation = type("_Sim", (), {"resolution": 0.1})()
@@ -173,6 +174,67 @@ class TestDistanceDelay(
 
         # An implausibly fast axon would otherwise deliver faster than a time step.
         self.assertTrue(np.all(delays >= 0.1))
+
+
+class TestDelayReachesItsSimulation(
+    RandomStorageFixture, unittest.TestCase, engine_name="hdf5"
+):
+    """
+    Flooring a delay at a time step is this parameter's requirement, not the
+    framework's, so it asks the simulation it is configured on for one.
+
+    How deep it sits is the backend's business: a parameter in a model's
+    ``parameters`` is a different depth from one written on a synapse node, so the
+    simulation is found by what it is rather than by counting parents.
+    """
+
+    def network(self, **sim):
+        cfg = Configuration.default(
+            cell_types={"c": {"spatial": {"radius": 1, "count": 2}}},
+            partitions={"l": {"thickness": 10}},
+            placement={
+                "p": {
+                    "strategy": "bsb.placement.RandomPlacement",
+                    "cell_types": ["c"],
+                    "partitions": ["l"],
+                }
+            },
+            connectivity={
+                "cc": {
+                    "strategy": "bsb.connectivity.AllToAll",
+                    "presynaptic": {"cell_types": ["c"]},
+                    "postsynaptic": {"cell_types": ["c"]},
+                }
+            },
+            simulations={
+                "s": {
+                    "simulator": "arbor",
+                    "duration": 10,
+                    "cell_models": {},
+                    "devices": {},
+                    "connection_models": {
+                        "cc": {
+                            "weight": 1.0,
+                            "delay": 1.0,
+                            "parameters": {
+                                "delay": {
+                                    "strategy": "distance_delay",
+                                    "axon_speed": 2.0,
+                                }
+                            },
+                        }
+                    },
+                    **sim,
+                }
+            },
+        )
+        return Scaffold(cfg, self.storage)
+
+    def test_it_finds_the_simulation_it_is_configured_on(self):
+        network = self.network(resolution=0.25)
+        param = network.simulations.s.connection_models.cc.parameters.delay
+        self.assertIs(param.simulation, network.simulations.s)
+        self.assertEqual(0.25, param.simulation.resolution)
 
 
 if __name__ == "__main__":

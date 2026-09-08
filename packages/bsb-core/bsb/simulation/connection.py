@@ -1,7 +1,7 @@
 from .. import config
 from ..config._attrs import cfgdict
 from .component import SimulationComponent
-from .parameter import ConnectionParameter, parameter
+from .parameter import ConnectionParameter, parameters_of_type
 
 
 @config.node
@@ -9,7 +9,7 @@ class ConnectionModel(SimulationComponent):
     tag: str = config.attr(type=str, key=True)
 
     parameters: cfgdict[str, ConnectionParameter] = config.dict(
-        type=parameter(ConnectionParameter)
+        type=parameters_of_type(ConnectionParameter)
     )
     """
     Parameters of the model, computed once per connection when the simulation is

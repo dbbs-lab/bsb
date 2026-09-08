@@ -157,6 +157,32 @@ class DistanceDelayParameter(ConnectionParameter, classmap_entry="distance_delay
     )
     """Axonal conduction speed, in the network's spatial units per millisecond."""
 
+    def __boot__(self):
+        # Flooring a delay at a time step is this parameter's requirement of the
+        # simulator it is configured on, not something the framework asks of every
+        # simulator, so it is asked for here and while the configuration is read.
+        simulation = self.simulation
+        if getattr(simulation, "resolution", None) is None:
+            raise ConfigurationError(
+                f"{self} floors its delay at the simulation's resolution, which "
+                f"'{getattr(simulation, 'name', simulation)}' does not have."
+            )
+
+    @property
+    def simulation(self):
+        """
+        The simulation this parameter is configured on.
+
+        Walked by type rather than by counting parents, because how deeply a
+        parameter sits is the model's business, not this parameter's.
+        """
+        from .simulation import Simulation
+
+        node = self._config_parent
+        while node is not None and not isinstance(node, Simulation):
+            node = getattr(node, "_config_parent", None)
+        return node
+
     def compute(self, simulation, cs, pre_locs, post_locs):
         pre_pos = self._positions(cs.pre_type)[pre_locs[:, 0]]
         post_pos = self._positions(cs.post_type)[post_locs[:, 0]]
@@ -256,7 +282,7 @@ class constant(TypeHandler):
         return value.value if getattr(value, "is_constant", False) else value
 
 
-class parameter(TypeHandler):
+class parameters_of_type(TypeHandler):
     """
     Cast a configuration value to a :class:`.Parameter` of a given arity.
 
@@ -303,5 +329,5 @@ __all__ = [
     "Parameter",
     "ParameterizedModel",
     "PointParameter",
-    "parameter",
+    "parameters_of_type",
 ]

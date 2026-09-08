@@ -4,7 +4,7 @@ from .. import config
 from ..config import refs
 from ..config._attrs import cfgdict
 from .component import SimulationComponent
-from .parameter import CellParameter, parameter
+from .parameter import CellParameter, parameters_of_type
 
 if typing.TYPE_CHECKING:  # pragma: nocover
     from ..cell_types import CellType
@@ -20,7 +20,9 @@ class CellModel(SimulationComponent):
     """
     The cell type that this model represents.
     """
-    parameters: cfgdict[str, CellParameter] = config.dict(type=parameter(CellParameter))
+    parameters: cfgdict[str, CellParameter] = config.dict(
+        type=parameters_of_type(CellParameter)
+    )
     """
     Parameters of the model, computed once per cell when the simulation is loaded.
 

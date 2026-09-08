@@ -1,4 +1,4 @@
-from bsb import Simulation, config
+from bsb import Simulation, config, types
 
 from .cell import NeuronCell
 from .connection import NeuronConnection
@@ -11,6 +11,8 @@ class NeuronSimulation(Simulation):
     Interface between the scaffold model and the NEURON simulator.
     """
 
+    resolution = config.attr(type=types.float(min=0.0), default=0.1)
+    """Simulation time step size in milliseconds."""
     initial = config.attr(type=float, default=-65.0)
     """Initial membrane potential for all neurons."""
     temperature = config.attr(type=float, required=True)

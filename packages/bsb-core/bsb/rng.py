@@ -138,12 +138,14 @@ def _derive(seed: int, key) -> int:
     return int(sequence.generate_state(1, dtype=np.uint32)[0])
 
 
-class _Seeded:
+class SeededNode:
     """
-    Shared by the named nodes in the :guilabel:`rng` block.
+    A node in the :guilabel:`rng` block that owns a seed.
 
     A seed left unset is derived from the root seed and the node's own name, and
-    written back, so the stored configuration carries the value the run used.
+    written back, so the stored configuration carries the value the run used. Both a
+    :class:`generator <.rng.Rng>` and a :class:`setting <.rng.RngSettings>` are seeded
+    that way; what they do with the seed is where they part.
     """
 
     def resolve(self) -> int:
@@ -174,7 +176,7 @@ class _Seeded:
 
 
 @config.dynamic(attr_name="strategy", required=False, default="numpy", auto_classmap=True)
-class Rng(_Seeded, abc.ABC):
+class Rng(SeededNode, abc.ABC):
     """
     A named source of randomness that is drawn from.
 
@@ -232,7 +234,7 @@ class NumpyRng(Rng, classmap_entry="numpy"):
 
 
 @config.dynamic(attr_name="strategy", auto_classmap=True)
-class RngSettings(_Seeded):
+class RngSettings(SeededNode):
     """
     Randomness handed *out* to a subsystem that seeds itself.
 
@@ -355,6 +357,7 @@ __all__ = [
     "Rng",
     "RngRootNode",
     "RngSettings",
+    "SeededNode",
 ]
 
 __api__ = [

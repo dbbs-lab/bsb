@@ -127,7 +127,7 @@ into, and a simulation names the one it uses:
     }
 
 How many numbers a subsystem wants is its own business. One kernel seed is one
-:meth:`derive <bsb:bsb.rng.RngSettings.derive>` with no key; a backend that seeds per
+:meth:`derive <bsb:bsb.rng.SeededNode.derive>` with no key; a backend that seeds per
 object calls it once per key and gets as many distinct numbers as it has objects.
 
 Streams are derived from the data, not the rank

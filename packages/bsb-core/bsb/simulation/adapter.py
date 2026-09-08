@@ -92,15 +92,12 @@ class SimulatorAdapter(abc.ABC):
         self._duration = None
         self.current_checkpoint = 0
 
-    def simulate(self, *simulations, post_prepare=None, filename=None):
+    def simulate(self, *simulations, filename=None):
         """
         Simulate the given simulations.
 
         :param simulations: One or a list of simulation configurations to simulate.
         :type simulations: ~bsb.simulation.simulation.Simulation
-        :param post_prepare: Optional callable to run after every simulation has been
-          prepared, for a caller driving the adapter from Python. Configured hooks go
-          in a simulation's :guilabel:`after_prepare` block instead.
         :return: List of simulation results for each simulation run.
         :rtype: list[~bsb.simulation.results.SimulationResult]
         """
@@ -118,8 +115,6 @@ class SimulatorAdapter(abc.ABC):
                 data = self.prepare(simulation, filename)
                 alldata.append(data)
                 self.run_after_prepare(simulation, data)
-            if post_prepare:
-                post_prepare(self, simulations, alldata)
             results = self.collect(self.run(*simulations))
         # The hooks run outside of the read-only storage context, so that they may
         # write their findings back to the network.

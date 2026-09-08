@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 from bsb_test import RandomStorageFixture
 
-from bsb import Scaffold
+from bsb import CfgReferenceError, Scaffold
 from bsb.config import Configuration
 
 
@@ -183,6 +183,64 @@ class TestHandingSeedsOut(
         per_gid = {node.derive(("poisson", gid)) for gid in range(50)}
         self.assertEqual(50, len(per_gid), "each object gets its own seed")
         self.assertNotIn(999, per_gid, "and none of them is the node's own seed")
+
+
+class TestWhatAComponentDrawsFrom(
+    RandomStorageFixture, unittest.TestCase, engine_name="hdf5"
+):
+    """
+    A component names its generator, or says nothing and draws from the block.
+
+    A reference is only consulted when there is a name to resolve, so what an unset
+    one falls back to is the component's own business, not the reference's.
+    """
+
+    def net(self, rng, strat_rng=None):
+        placement = {
+            "strategy": "bsb.placement.RandomPlacement",
+            "cell_types": ["test_cell"],
+            "partitions": ["test_part"],
+        }
+        if strat_rng is not None:
+            placement["rng"] = strat_rng
+        return Scaffold(
+            Configuration.default(
+                rng=rng,
+                cell_types={"test_cell": {"spatial": {"radius": 1, "count": 4}}},
+                partitions={"test_part": {"thickness": 10}},
+                placement={"p": placement},
+            ),
+            self.storage,
+        )
+
+    def test_saying_nothing_draws_from_the_block(self):
+        net = self.net({"seed": 42})
+        strategy = net.placement.p
+        self.assertIsNone(strategy.rng, "nothing was named")
+        self.assertIs(strategy.random_generator, net.configuration.rng)
+        self.assertEqual(
+            strategy.get_rng(key=("x",)).random(),
+            net.configuration.rng.rng(key=("x",)).random(),
+            "and it draws the stream the block would give",
+        )
+
+    def test_a_named_generator_is_the_one_drawn_from(self):
+        net = self.net(
+            {"seed": 42, "generators": {"structure": {"seed": 7}}}, "structure"
+        )
+        strategy = net.placement.p
+        self.assertIs(strategy.rng, net.configuration.rng.generators["structure"])
+        self.assertNotEqual(
+            strategy.get_rng(key=("x",)).random(),
+            net.configuration.rng.rng(key=("x",)).random(),
+            "a named generator is not the block",
+        )
+
+    def test_a_name_that_does_not_exist_is_caught(self):
+        # The point of a reference over a string: an unknown name stops the boot
+        # rather than quietly drawing a different stream.
+        with self.assertRaises(CfgReferenceError):
+            self.net({"seed": 42}, "nope")
 
 
 class TestKeyEncoding(unittest.TestCase):

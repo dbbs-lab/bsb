@@ -3,8 +3,8 @@ Randomness
 ===========
 
 A model that draws randomly has two demands on it that pull in opposite directions.
-Running it repeatedly has to give **technical replicates** -- runs that differ only in
-their randomness -- or an average over them is an average over one sample. And any one
+Running it repeatedly has to give **technical replicates**, runs that differ only in
+their randomness, or an average over them is an average over one sample. And any one
 of those runs has to be **reproducible** afterwards, or a result cannot be checked.
 
 The :guilabel:`rng` block gives both, by making an unset seed mean *draw one and write
@@ -28,7 +28,7 @@ runs draw the same numbers.
 
 **Each run records the seed it used.** The resolved seed is written into the
 configuration stored with that run's output, so the configuration you get back out of a
-result is not the one you wrote -- it is the one that ran.
+result is not the one you wrote; it is the one that ran.
 
 **Feed a recorded configuration back and it reproduces.** The difference between the
 configuration you wrote and the one a run recorded is nothing but seed values, so
@@ -37,6 +37,45 @@ pasting the recorded seed back reproduces that run exactly:
 .. code-block:: json
 
     "rng": { "seed": 2866720059 }
+
+.. warning::
+
+    **Never aggregate over runs that share a seed.** Repeating a run with the same seed
+    does not give a sample of size *n*. It gives one run, copied *n* times. Every
+    repetition draws the same numbers, so it carries the same artifacts of the same
+    draws, and a mean over the set is the mean of a single observation while its spread
+    collapses towards zero for reasons that have nothing to do with the model.
+
+    Five runs drawing three numbers each, from a distribution whose true mean is 20:
+
+    .. code-block:: text
+
+        fixed seed                    seed left unset
+
+        37 25 27   mean 29.7           5  5 31   mean 13.7
+        37 25 27   mean 29.7          24 10 38   mean 24.0
+        37 25 27   mean 29.7          35 34 32   mean 33.7
+        37 25 27   mean 29.7           6 33 26   mean 21.7
+        37 25 27   mean 29.7          37 27 28   mean 30.7
+
+        29.67 ± 0.00  (n=5)           24.73 ± 7.03  (n=5)
+
+    The left column looks like the better measurement and is the worse one. It reports
+    zero uncertainty about a value that is ten away from the truth, because its five
+    runs are one run counted five times. Adding a sixth changes neither number.
+
+    The right column is honest about how little five runs tell you, and it is the only
+    one of the two that moves towards 20 as runs are added. A mean over independent
+    replicates approximates the parameter; a mean over repetitions of one seed
+    approximates nothing.
+
+    A test run on the left-hand set reports power the data does not have. Random samples
+    have to be **independent** of one another, and repetitions of a fixed seed are not
+    independent; they are identical.
+
+    Leave :guilabel:`seed` unset when you need a set of runs to average over, and every
+    run is an independent replicate. Set a seed only to reproduce one particular run, or
+    to hold one named part of a model fixed while the rest of it varies.
 
 The block is the generator
 ==========================
@@ -102,7 +141,7 @@ Streams are derived from the data, not the rank
     rng = self.get_rng(key=(chunk, cell_type.name))
     positions = rng.random((n, 3))
 
-The key is not a count of anything -- it is the identity of the stream. A generator with
+The key is not a count of anything; it is the identity of the stream. A generator with
 a one-element key hands out as many numbers as one with six.
 
 The key never includes the MPI rank. That is deliberate, and it is what makes a run
@@ -111,7 +150,7 @@ sequentially from one generator, each rank would consume a different amount of i
 changing the rank count would change every result.
 
 Two calls with the same key give the same stream, so a component does not have to hold
-on to a generator to stay reproducible -- it can ask for the one belonging to whatever
+on to a generator to stay reproducible; it can ask for the one belonging to whatever
 it is about to draw for.
 
 .. note::

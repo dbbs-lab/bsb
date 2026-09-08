@@ -9,9 +9,9 @@ and running it again must **reproduce** that run exactly. The two configurations
 differ in nothing but seed values, because an unset seed is drawn and written down.
 
 Separately, a run must not depend on how its work was divided. Draws are therefore
-seeded from *what is being drawn for* -- a chunk, a cell type, a device -- and never
-from the MPI rank, so the same configuration gives the same result whatever the rank
-count.
+seeded from *what is being drawn for*, such as a chunk, a cell type or a device,
+and never from the MPI rank, so the same configuration gives the same result
+whatever the rank count.
 
 The :guilabel:`rng` block is itself the generator everything draws from unless it says
 otherwise, and it registers two kinds of named node beside it: :guilabel:`generators`,
@@ -176,7 +176,7 @@ class NumpyRng(Rng, classmap_entry="numpy"):
         """
         A generator for one particular set of draws.
 
-        ``key`` is what the draws are *for* -- a chunk, a cell type, a device, a
+        ``key`` is what the draws are *for*: a chunk, a cell type, a device, a
         connection tag. Two calls with the same key give the same stream, and a key
         never includes the MPI rank, so which rank happens to do the work cannot
         change the result.
@@ -213,7 +213,7 @@ class RngRootNode(NumpyRng, classmap_entry=None):
     The :guilabel:`rng` block: the root seed, and the generator used by default.
 
     Leave :attr:`seed` unset and every run is a replicate, each output carrying the
-    seed it used. Set it -- or paste back the one a run recorded -- and that run
+    seed it used. Set it, or paste back the one a run recorded, and that run
     reproduces exactly. Name a generator on a component to hold one part of a model
     fixed while the rest varies.
     """

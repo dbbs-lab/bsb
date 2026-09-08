@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 from bsb_test import RandomStorageFixture
 
-from bsb import CfgReferenceError, NumpyRng, Scaffold
+from bsb import CastError, CfgReferenceError, NumpyRng, Scaffold
 from bsb.config import Configuration
 
 
@@ -78,6 +78,14 @@ class TestTheBlockIsTheDefaultGenerator(
         self.assertEqual(
             "PCG64", type(rng.rng(key=("x",)).bit_generator).__name__, "not honoured"
         )
+
+    def test_a_name_that_is_not_a_bit_generator_is_caught(self):
+        # `numpy.random` carries plenty of names that are not bit generators, and a
+        # typo reads the same in a configuration file. Both have to fail here rather
+        # than at the first draw somewhere else entirely.
+        for name in ("PCG46", "Generator", "SeedSequence", "seed"):
+            with self.subTest(bit_generator=name), self.assertRaises(CastError):
+                self.network({"seed": 42, "bit_generator": name})
 
     def test_another_bit_generator_gives_another_stream(self):
         same_seed = {"seed": 42, "bit_generator": "Philox"}

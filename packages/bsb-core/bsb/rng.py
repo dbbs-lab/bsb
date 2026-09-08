@@ -101,6 +101,37 @@ def _stable_ints(key) -> list[int]:
     return [len(parts), *parts]
 
 
+def _bit_generators() -> dict[str, type]:
+    """Every bit generator :mod:`numpy` offers, by name."""
+    return {
+        name: attr
+        for name in dir(np.random)
+        if isinstance(attr := getattr(np.random, name, None), type)
+        and issubclass(attr, np.random.BitGenerator)
+        and attr is not np.random.BitGenerator
+    }
+
+
+def _bit_generator(value):
+    """
+    Resolve a bit generator by name, at configuration time.
+
+    :mod:`numpy` carries plenty of names that are not bit generators, and a name that
+    is not one at all reads the same in a configuration file, so both are caught here
+    rather than at the first draw somewhere else entirely.
+    """
+    known = _bit_generators()
+    if value in known:
+        return value
+    raise TypeError(
+        f"'{value}' is not a numpy bit generator, pick one of: "
+        f"{', '.join(sorted(known))}."
+    )
+
+
+_bit_generator.__name__ = "a numpy bit generator"
+
+
 def _derive(seed: int, key) -> int:
     """One reproducible 32 bit integer for ``key``, out of ``seed``."""
     sequence = np.random.SeedSequence([seed, *_stable_ints(key)])
@@ -182,7 +213,7 @@ class NumpyRng(Rng, classmap_entry="numpy"):
     Draws from :mod:`numpy`'s generators.
     """
 
-    bit_generator: str = config.attr(type=types.str(), default="PCG64")
+    bit_generator: str = config.attr(type=_bit_generator, default="PCG64")
     """
     Name of the :mod:`numpy` bit generator backing the draws. Named here rather than
     left to :func:`numpy.random.default_rng`, whose choice may change between releases
@@ -197,7 +228,7 @@ class NumpyRng(Rng, classmap_entry="numpy"):
         :returns: A seeded generator.
         """
         sequence = np.random.SeedSequence([self.resolve(), *_stable_ints(key)])
-        return np.random.Generator(getattr(np.random, self.bit_generator)(sequence))
+        return np.random.Generator(_bit_generators()[self.bit_generator](sequence))
 
 
 @config.dynamic(attr_name="strategy", auto_classmap=True)
@@ -232,9 +263,10 @@ class RngRootNode(NumpyRng, classmap_entry=None):
 
     scaffold: "Scaffold"
 
-    name: str = config.attr(type=types.str(), default="rng")
+    name = config.unset()
     """
-    Names the block for derivation. It is the root, so nothing derives from its name.
+    A generator in :guilabel:`generators` is named by the key it is under. The block is
+    reached as :guilabel:`rng` and derives from nothing, so it carries no name.
     """
 
     seed: int = config.attr(type=types.int(), required=False)

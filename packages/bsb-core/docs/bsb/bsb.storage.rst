@@ -14,6 +14,23 @@ bsb.storage.interfaces module
    :members:
    :undoc-members:
    :show-inheritance:
+   :private-members: _bump_state
+
+bsb.storage.fs module
+^^^^^^^^^^^^^^^^^^^^^
+
+.. automodule:: bsb.storage.fs
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+bsb.storage.provenance module
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. automodule:: bsb.storage.provenance
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 Module contents
 ---------------

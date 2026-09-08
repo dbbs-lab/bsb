@@ -110,6 +110,7 @@ class PlacementSet(
         if path in handle:
             raise DatasetExistsError(f"PlacementSet '{tag}' already exists.")
         handle.create_group(path)
+        _init_ps_attrs(handle, path, cell_type.name)
         return cls(engine, cell_type)
 
     @staticmethod
@@ -348,7 +349,8 @@ class PlacementSet(
         """
         self.append_data(chunk, count=count, additional=additional)
 
-    def append_additional(self, name, chunk, data):
+    @handles_handles("a")
+    def append_additional(self, name, chunk, data, handle=HANDLED):
         self._additional_chunks.append(chunk, name, data)
 
     @handles_handles("a")
@@ -588,3 +590,45 @@ def encode_labels(data, ds):
     serialized = json.dumps(EncodedLabels.none(1).labels, default=list)
     labels = json.loads(ps_group.attrs.get("labelsets", serialized))
     return EncodedLabels(shape=data.shape, buffer=data, labels=labels)
+
+
+def _init_ps_attrs(handle, ps_path, cell_type_name):
+    """Stamp the provenance attrs that every PlacementSet should have."""
+    from bsb.storage.provenance import iso_now
+
+    grp = handle[ps_path]
+    grp.attrs["cell_type"] = cell_type_name
+    grp.attrs["revision"] = 0
+    grp.attrs["created_at"] = iso_now()
+
+
+def _bump_ps_revision(handle, ps_path):
+    """
+    Move a placement set's ``revision`` and refresh its ``morphology_hashes``.
+
+    The hashes are refreshed here rather than on every write: appending positions
+    to a chunk cannot change a morphology's hash, and re-reading the whole
+    morphology metadata per chunk cost a quarter of the placement write path on a
+    network with a thousand morphologies.
+    """
+    grp = handle[ps_path]
+    current = grp.attrs.get("revision", 0)
+    if hasattr(current, "item"):
+        current = current.item()
+    grp.attrs["revision"] = int(current) + 1
+    loaders = grp.attrs.get("morphology_loaders")
+    if loaders is not None and len(loaders):
+        all_meta = _read_morphology_meta_from_handle(handle)
+        names = loaders.tolist() if hasattr(loaders, "tolist") else list(loaders)
+        hashes = [(all_meta.get(name) or {}).get("hash") for name in names]
+        grp.attrs["morphology_hashes"] = json.dumps(hashes)
+
+
+def _read_morphology_meta_from_handle(handle):
+    """Read morphology_meta directly from an open handle without re-locking."""
+    if "morphology_meta" not in handle:
+        return {}
+    try:
+        return json.loads(handle["morphology_meta"][()])
+    except (TypeError, json.JSONDecodeError):
+        return {}

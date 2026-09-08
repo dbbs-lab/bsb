@@ -129,6 +129,7 @@ if typing.TYPE_CHECKING:  # pragma: nocover
   import bsb.storage._files
   import bsb.storage.decorators
   import bsb.storage.interfaces
+  import bsb.storage.provenance
   import bsb.topology
   import bsb.topology.partition
   import bsb.topology.region
@@ -155,6 +156,7 @@ BranchLocTargetting: type["bsb.simulation.targetting.BranchLocTargetting"]
 BsbCommand: type["bsb.cli.commands.BsbCommand"]
 BsbOption: type["bsb.option.BsbOption"]
 BsbParser: type["bsb.morphologies.parsers.parser.BsbParser"]
+BsbProvenanceUpgradeWarning: type["bsb.exceptions.BsbProvenanceUpgradeWarning"]
 BuildContext: type["bsb.config.BuildContext"]
 ByIdTargetting: type["bsb.simulation.targetting.ByIdTargetting"]
 ByLabelTargetting: type["bsb.simulation.targetting.ByLabelTargetting"]
@@ -426,6 +428,7 @@ get_option_descriptor: "bsb.options.get_option_descriptor"
 get_option_descriptors: "bsb.options.get_option_descriptors"
 get_partitions: "bsb.topology.get_partitions"
 get_project_option: "bsb.options.get_project_option"
+get_provenance_version: "bsb.storage.provenance.get_provenance_version"
 get_root_regions: "bsb.topology.get_root_regions"
 get_simulation_adapter: "bsb.simulation.get_simulation_adapter"
 handle_cli: "bsb.cli.handle_cli"

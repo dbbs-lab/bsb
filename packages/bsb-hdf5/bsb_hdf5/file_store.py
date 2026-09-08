@@ -9,7 +9,7 @@ import numpy as np
 from bsb import FileStore as IFileStore
 from bsb import MissingActiveConfigError
 
-from .resource import Resource
+from .resource import HANDLED, Resource, handles_handles
 
 _root = "files"
 
@@ -34,41 +34,37 @@ class FileStore(Resource, IFileStore):
                 data = data.decode(encoding)
             return data, json.loads(ds.attrs.get("meta", "{}"))
 
-    def remove(self, id):
-        with self._engine._write(), self._engine._handle("a") as root:
-            del root[f"{self._path}/{id}"]
-            from . import _bump_state_attrs
+    @handles_handles("a")
+    def remove(self, id, handle=HANDLED):
+        del handle[f"{self._path}/{id}"]
 
-            _bump_state_attrs(root)
-
-    def store(self, content, meta=None, id=None, encoding=None, overwrite=False):
+    @handles_handles("a")
+    def store(
+        self, content, meta=None, id=None, encoding=None, overwrite=False, handle=HANDLED
+    ):
         if id is None:
             id = str(uuid4())
         if meta is None:
             meta = {}
         meta["mtime"] = int(time.time())
-        with self._engine._write(), self._engine._handle("a") as root:
-            store = root[self._path]
-            if isinstance(content, str):
-                if encoding is None:
-                    encoding = "utf-8"
-                content = content.encode(encoding)
-            meta.setdefault("content_sha256", hashlib.sha256(content).hexdigest())
-            content = np.array(content)
-            if overwrite:
-                with contextlib.suppress(KeyError):
-                    del store[id]
-            try:
-                ds = store.create_dataset(id, data=content)
-            except ValueError:
-                raise Exception(f"File `{id}` already exists in store.") from None
-            if encoding:
-                ds.attrs["encoding"] = encoding
-            ds.attrs["meta"] = json.dumps(meta)
-            ds.attrs["mtime"] = meta["mtime"]
-            from . import _bump_state_attrs
-
-            _bump_state_attrs(root)
+        store = handle[self._path]
+        if isinstance(content, str):
+            if encoding is None:
+                encoding = "utf-8"
+            content = content.encode(encoding)
+        meta.setdefault("content_sha256", hashlib.sha256(content).hexdigest())
+        content = np.array(content)
+        if overwrite:
+            with contextlib.suppress(KeyError):
+                del store[id]
+        try:
+            ds = store.create_dataset(id, data=content)
+        except ValueError:
+            raise Exception(f"File `{id}` already exists in store.") from None
+        if encoding:
+            ds.attrs["encoding"] = encoding
+        ds.attrs["meta"] = json.dumps(meta)
+        ds.attrs["mtime"] = meta["mtime"]
         return id
 
     def load_active_config(self):

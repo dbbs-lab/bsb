@@ -155,7 +155,6 @@ class ConnectivitySet(Resource, IConnectivitySet):
         g.create_group("out")
         g.attrs["len"] = 0
         g.attrs["chunks"] = "{}"
-        _bump_cs_state(handle, self._path)
 
     @handles_handles("a")
     def connect(self, pre_set, post_set, src_locs, dest_locs, handle=HANDLED):
@@ -329,7 +328,6 @@ class ConnectivitySet(Resource, IConnectivitySet):
             conn_stats.setdefault(id, {"inc": 0, "out": 0})[tag] += count
             group.attrs["chunks"] = json.dumps(conn_stats)
         self._engine._write_chunk_stats(handle, global_stats)
-        _bump_cs_state(handle, self._path)
 
     @handles_handles("r")
     def get_chunk_stats(self, handle=HANDLED):
@@ -552,7 +550,8 @@ def _init_cs_attrs(handle, cs_path, tag):
     grp.attrs["created_at"] = iso_now()
 
 
-def _bump_cs_state(handle, cs_path):
+def _bump_cs_revision(handle, cs_path):
+    """Move a connectivity set's ``revision``, once its write handle closes."""
     grp = handle[cs_path]
     current = grp.attrs.get("revision", 0)
     if hasattr(current, "item"):

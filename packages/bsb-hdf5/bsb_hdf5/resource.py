@@ -251,14 +251,18 @@ def mark_dirty(path: str | None = None) -> bool:
 def _settle_scope_state(handle, state) -> None:
     """Move the provenance counters once, for everything the scope changed."""
     from . import _bump_state_attrs
+    from .connectivity_set import _bump_cs_revision
+    from .connectivity_set import _root as _cs_root
     from .placement_set import _bump_ps_revision
-    from .placement_set import _root as _placement_root
+    from .placement_set import _root as _ps_root
 
     for path in sorted(state.dirty_sets):
-        # Every resource written through the decorator names itself; only a
-        # placement set carries a revision of its own.
-        if path.startswith(_placement_root):
+        # Every resource written through the decorator names itself, but only the
+        # sets carry a revision of their own.
+        if path.startswith(_ps_root):
             _bump_ps_revision(handle, path)
+        elif path.startswith(_cs_root):
+            _bump_cs_revision(handle, path)
     _bump_state_attrs(handle)
 
 

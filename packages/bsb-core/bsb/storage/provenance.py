@@ -33,16 +33,22 @@ def get_provenance_version() -> int:
     return _SCHEMA_VERSION
 
 
-# Plugin categories enumerated for the manifest. Keep in sync with the categories
-# discovered by ``bsb.plugins.discover``.
-_PLUGIN_CATEGORIES = (
-    "storage.engines",
-    "config.parsers",
-    "config.templates",
-    "simulation_backends",
-    "commands",
-    "options",
-)
+def _plugin_categories() -> tuple[str, ...]:
+    """
+    Every ``bsb.`` entry point group installed here, named the way
+    :func:`bsb.plugins.discover` takes them.
+
+    Discovered rather than listed: a manifest records what was installed, so a
+    category core gains later, or one a third-party package advertises, belongs in it
+    without this module having been taught about it.
+    """
+    return tuple(
+        sorted(
+            group.removeprefix("bsb.")
+            for group in importlib.metadata.entry_points().groups
+            if group.startswith("bsb.")
+        )
+    )
 
 
 def new_storage_id() -> str:
@@ -76,7 +82,7 @@ def collect_plugin_manifest() -> dict:
 @functools.lru_cache(maxsize=1)
 def _discover_plugin_manifest() -> dict:
     manifest: dict[str, dict[str, dict[str, str | None]]] = {}
-    for category in _PLUGIN_CATEGORIES:
+    for category in _plugin_categories():
         try:
             entries = plugins.discover(category)
         except Exception:

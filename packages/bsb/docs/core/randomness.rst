@@ -160,6 +160,42 @@ it is about to draw for.
     element with its kind and leads with its own length, so ``None`` is not the integer
     ``0``, and a key ending in a zero is not the key without it.
 
+Writing a generator of your own
+===============================
+
+:guilabel:`generators` takes any kind registered into its class map, so a plugin can
+ship one the way it ships a placement strategy. What the block asks of a kind is one
+method: hand back something a component can draw from.
+
+.. code-block:: python
+
+    from bsb import Rng, config
+
+    @config.node
+    class MyRng(Rng, classmap_entry="mine"):
+        def rng(self, key=()):
+            ...  # returns a numpy.random.Generator
+
+Register it through the ``bsb.components`` entry point like any other component, and a
+model names it with ``"strategy": "mine"``.
+
+Almost every kind you would write differs in *how it seeds*, not in the arithmetic
+underneath. Those need nothing from :mod:`numpy` beyond what is already there: pick one
+of its bit generators and seed it your way, which is all
+:class:`NumpyRng <bsb:bsb.rng.NumpyRng>` itself does.
+
+.. note::
+
+    A genuinely new algorithm is a bigger undertaking than it looks. :mod:`numpy` only
+    accepts a bit generator that implements its C-level ``bitgen_t`` struct, so it has
+    to be written in Cython, C or Numba rather than Python. `Extending NumPy's random
+    number generation
+    <https://numpy.org/doc/stable/reference/random/extending.html>`_ walks through it.
+
+    Returning a :class:`numpy.random.Generator` is deliberate rather than incidental:
+    every component that draws calls ``random``, ``integers`` or ``choice`` on what it
+    is handed, so a kind that answered with something else would break all of them.
+
 .. warning::
 
     Not every component draws through this service yet. Those that do not still use an

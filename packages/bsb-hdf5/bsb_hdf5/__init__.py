@@ -2,7 +2,6 @@
 HDF5 storage engine for the BSB framework.
 """
 
-import contextlib
 import importlib.metadata
 import json
 import os
@@ -22,7 +21,11 @@ from bsb import (
     warn,
 )
 from bsb import StorageNode as IStorageNode
-from bsb.storage.provenance import build_root_metadata
+from bsb.storage.provenance import (
+    build_root_metadata,
+    decode_annotation,
+    encode_annotation,
+)
 
 from ._telemetry import _hdf5_tracer
 from .connectivity_set import ConnectivitySet
@@ -386,17 +389,20 @@ class HDF5Engine(Engine):
 
 
 def _write_root_metadata(handle, bundle: dict) -> None:
-    """Write the provenance bundle to ``handle.attrs`` as a single JSON document."""
-    handle.attrs[_PROVENANCE_ATTR] = json.dumps(bundle)
+    """
+    Write the provenance bundle to ``handle.attrs`` as a single JSON document.
+
+    Through the annotation codec, so a value HDF5 cannot hold still survives, and a
+    bundle that cannot be encoded costs its metadata rather than the run.
+    """
+    handle.attrs[_PROVENANCE_ATTR] = encode_annotation(bundle, "provenance bundle")
 
 
 def _read_root_metadata(handle) -> dict:
     """Read the provenance bundle back out of ``handle.attrs``."""
-    raw = handle.attrs.get(_PROVENANCE_ATTR)
-    if raw is not None:
-        with contextlib.suppress(TypeError, json.JSONDecodeError):
-            return json.loads(raw)
-    return {}
+    bundle = decode_annotation(handle.attrs.get(_PROVENANCE_ATTR), {})
+    # Anything the codec could not read back is not a bundle.
+    return bundle if isinstance(bundle, dict) else {}
 
 
 def _bump_state_attrs(handle) -> None:

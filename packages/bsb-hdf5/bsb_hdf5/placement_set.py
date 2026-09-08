@@ -111,7 +111,6 @@ class PlacementSet(
             raise DatasetExistsError(f"PlacementSet '{tag}' already exists.")
         handle.create_group(path)
         _init_ps_attrs(handle, path, cell_type.name)
-        _bump_root_state(handle)
         return cls(engine, cell_type)
 
     @staticmethod
@@ -335,7 +334,6 @@ class PlacementSet(
         self._additional_chunks.append(chunk, name, data)
         with self._engine._write(), self._engine._handle("a") as handle:
             _bump_ps_state(handle, self._path)
-            _bump_root_state(handle)
 
     @handles_handles("a")
     def clear(self, chunks=None, handle=HANDLED):
@@ -348,7 +346,6 @@ class PlacementSet(
                 del g[chunk]
         self._engine._write_chunk_stats(handle, stats)
         _bump_ps_state(handle, self._path)
-        _bump_root_state(handle)
 
     @handles_handles("a")
     def label_by_mask(self, labels, mask, handle=HANDLED):
@@ -429,7 +426,6 @@ class PlacementSet(
                 updated_labels, default=list
             )
         _bump_ps_state(handle, self._path)
-        _bump_root_state(handle)
 
     def set_morphology_label_filter(self, morphology_labels):
         """
@@ -486,7 +482,6 @@ class PlacementSet(
         chunk_stats[str(chunk.id)] = chunk_stats.get(str(chunk.id), 0) + int(count)
         handle[self._path].attrs["chunks"] = json.dumps(chunk_stats)
         _bump_ps_state(handle, self._path)
-        _bump_root_state(handle)
 
     @handles_handles("r")
     def get_chunk_stats(self, handle=HANDLED):
@@ -584,18 +579,16 @@ def _init_ps_attrs(handle, ps_path, cell_type_name):
 
 def _bump_ps_state(handle, ps_path):
     """
-    Record that a placement set changed.
+    Record which placement set a write changed.
 
-    Inside a write scope the scope accounts for it on close, because the scope is
-    the atomic change and its revision should move once rather than once per write
-    within it. Outside one, the revision moves here; the root ``state_id`` is the
-    caller's to bump either way.
+    The open write handle settles the counters when it closes; this only names the
+    set, which the handle cannot tell apart from any other resource it writes.
     """
     from .resource import mark_dirty
 
-    if mark_dirty(ps_path):
-        return
-    _bump_ps_revision(handle, ps_path)
+    if not mark_dirty(ps_path):
+        # No handle took responsibility, so this write is its own atom.
+        _bump_ps_revision(handle, ps_path)
 
 
 def _bump_ps_revision(handle, ps_path):
@@ -628,10 +621,3 @@ def _read_morphology_meta_from_handle(handle):
         return json.loads(handle["morphology_meta"][()])
     except (TypeError, json.JSONDecodeError):
         return {}
-
-
-def _bump_root_state(handle):
-    """Forward to the engine module so we don't reach into HDF5Engine directly."""
-    from . import _bump_state_attrs
-
-    _bump_state_attrs(handle)

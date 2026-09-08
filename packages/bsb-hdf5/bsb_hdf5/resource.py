@@ -141,9 +141,7 @@ def handles_handles(handle_type, handler=lambda args: args[0]._engine):
             )
 
         @functools.wraps(f)
-        def handle_indirection(
-            *args, handle=None, promote_from_read=False, **kwargs
-        ):
+        def handle_indirection(*args, handle=None, promote_from_read=False, **kwargs):
             engine = handler(args)
 
             # 1. Explicit `handle=` wins. Otherwise look up the ambient scope.
@@ -208,9 +206,21 @@ def handles_handles(handle_type, handler=lambda args: args[0]._engine):
                     tok = _engine_handle.set(
                         {**current, id(engine): (handle_type, new_handle)}
                     )
+                    # The handle is the atomic change: nested writes reuse it and
+                    # settle with it, so the counters move once when it closes,
+                    # whether it was opened here or by an enclosing write scope.
+                    state = None
+                    scope_tok = None
+                    if handle_type == "a":
+                        state = _WriteScopeState()
+                        scope_tok = _write_scope_state.set(state)
                     try:
                         return f(*bound.args, **bound.kwargs)
                     finally:
+                        if state is not None and state.dirty:
+                            _settle_scope_state(new_handle, state)
+                        if scope_tok is not None:
+                            _write_scope_state.reset(scope_tok)
                         _engine_handle.reset(tok)
 
         return handle_indirection

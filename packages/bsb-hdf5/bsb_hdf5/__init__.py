@@ -31,21 +31,10 @@ from .morphology_repository import MorphologyRepository
 from .placement_set import PlacementSet
 from .resource import _push_scope
 
-# Names of root attrs that are JSON-encoded because h5py attrs can't hold nested dicts.
-_JSON_ROOT_KEYS = ("plugins", "host")
-# Names of root attrs that make up the provenance bundle.
-_ROOT_PROVENANCE_KEYS = (
-    "storage_id",
-    "state_id",
-    "bsb_schema_version",
-    "created_at",
-    "bsb_core_version",
-    "engine_name",
-    "engine_version",
-    "plugins",
-    "host",
-    "mpi_size",
-)
+# The provenance bundle is stored as one JSON attribute. Its shape belongs to
+# `bsb.storage.provenance`, so the engine round-trips whatever it is handed instead of
+# enumerating keys it would have to keep in step with.
+_PROVENANCE_ATTR = "bsb_provenance"
 
 __all__ = [
     "ConnectivitySet",
@@ -207,7 +196,7 @@ class HDF5Engine(Engine):
     def _upgrade_collective(self):
         try:
             with self._handle("r") as handle:
-                if "storage_id" in handle.attrs:
+                if _PROVENANCE_ATTR in handle.attrs:
                     return
         except Exception:
             return
@@ -397,41 +386,24 @@ class HDF5Engine(Engine):
 
 
 def _write_root_metadata(handle, bundle: dict) -> None:
-    """Write the provenance bundle to ``handle.attrs``, JSON-encoding nested keys."""
-    for key in _ROOT_PROVENANCE_KEYS:
-        if key not in bundle:
-            continue
-        value = bundle[key]
-        if key in _JSON_ROOT_KEYS:
-            handle.attrs[key] = json.dumps(value)
-        else:
-            handle.attrs[key] = value
+    """Write the provenance bundle to ``handle.attrs`` as a single JSON document."""
+    handle.attrs[_PROVENANCE_ATTR] = json.dumps(bundle)
 
 
 def _read_root_metadata(handle) -> dict:
-    """Read the provenance bundle from ``handle.attrs``, decoding JSON keys."""
-    out: dict = {}
-    for key in _ROOT_PROVENANCE_KEYS:
-        if key not in handle.attrs:
-            continue
-        value = handle.attrs[key]
-        if key in _JSON_ROOT_KEYS:
-            with contextlib.suppress(TypeError, json.JSONDecodeError):
-                value = json.loads(value)
-        else:
-            # h5py returns numpy scalars; normalise to plain Python.
-            if hasattr(value, "item"):
-                value = value.item()
-        out[key] = value
-    return out
+    """Read the provenance bundle back out of ``handle.attrs``."""
+    raw = handle.attrs.get(_PROVENANCE_ATTR)
+    if raw is not None:
+        with contextlib.suppress(TypeError, json.JSONDecodeError):
+            return json.loads(raw)
+    return {}
 
 
 def _bump_state_attrs(handle) -> None:
-    """Increment ``state_id`` on an open handle."""
-    current = handle.attrs.get("state_id", 0)
-    if hasattr(current, "item"):
-        current = current.item()
-    handle.attrs["state_id"] = int(current) + 1
+    """Increment ``state_id`` in the stored provenance bundle, on an open handle."""
+    bundle = _read_root_metadata(handle)
+    bundle["state_id"] = int(bundle.get("state_id", 0)) + 1
+    _write_root_metadata(handle, bundle)
 
 
 def _get_default_root():

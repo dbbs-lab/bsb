@@ -57,13 +57,11 @@ class NestAdapter(SimulatorAdapter):
         self.loaded_modules = set()
         self._prev_chkpoint = 0
 
-    def simulate(self, *simulations, post_prepare=None, filename=None):
+    def simulate(self, *simulations, filename=None):
         try:
             self.reset_kernel()
             self._set_resolution(simulations)
-            return super().simulate(
-                *simulations, post_prepare=post_prepare, filename=filename
-            )
+            return super().simulate(*simulations, filename=filename)
         finally:
             self.reset_kernel()
 

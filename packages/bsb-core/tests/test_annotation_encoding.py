@@ -4,8 +4,8 @@ import warnings
 import numpy as np
 from neo import Block
 
-from bsb import decode_annotation, encode_annotation
 from bsb.simulation.results import read_simulation_config
+from bsb.storage.provenance import decode_annotation, encode_annotation
 
 
 class TestAnnotationCodec(unittest.TestCase):

@@ -330,10 +330,9 @@ class PlacementSet(
         """
         self.append_data(chunk, count=count, additional=additional)
 
-    def append_additional(self, name, chunk, data):
+    @handles_handles("a")
+    def append_additional(self, name, chunk, data, handle=HANDLED):
         self._additional_chunks.append(chunk, name, data)
-        with self._engine._write(), self._engine._handle("a") as handle:
-            _bump_ps_state(handle, self._path)
 
     @handles_handles("a")
     def clear(self, chunks=None, handle=HANDLED):
@@ -345,7 +344,6 @@ class PlacementSet(
                 stats[chunk]["placed"] -= len(data["position"])
                 del g[chunk]
         self._engine._write_chunk_stats(handle, stats)
-        _bump_ps_state(handle, self._path)
 
     @handles_handles("a")
     def label_by_mask(self, labels, mask, handle=HANDLED):
@@ -425,7 +423,6 @@ class PlacementSet(
             handle[self._path].attrs["labelsets"] = json.dumps(
                 updated_labels, default=list
             )
-        _bump_ps_state(handle, self._path)
 
     def set_morphology_label_filter(self, morphology_labels):
         """
@@ -481,7 +478,6 @@ class PlacementSet(
         chunk_stats = json.loads(handle[self._path].attrs.get("chunks", "{}"))
         chunk_stats[str(chunk.id)] = chunk_stats.get(str(chunk.id), 0) + int(count)
         handle[self._path].attrs["chunks"] = json.dumps(chunk_stats)
-        _bump_ps_state(handle, self._path)
 
     @handles_handles("r")
     def get_chunk_stats(self, handle=HANDLED):
@@ -575,20 +571,6 @@ def _init_ps_attrs(handle, ps_path, cell_type_name):
     grp.attrs["cell_type"] = cell_type_name
     grp.attrs["revision"] = 0
     grp.attrs["created_at"] = iso_now()
-
-
-def _bump_ps_state(handle, ps_path):
-    """
-    Record which placement set a write changed.
-
-    The open write handle settles the counters when it closes; this only names the
-    set, which the handle cannot tell apart from any other resource it writes.
-    """
-    from .resource import mark_dirty
-
-    if not mark_dirty(ps_path):
-        # No handle took responsibility, so this write is its own atom.
-        _bump_ps_revision(handle, ps_path)
 
 
 def _bump_ps_revision(handle, ps_path):

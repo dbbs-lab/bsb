@@ -194,6 +194,8 @@ def handles_handles(handle_type, handler=lambda args: args[0]._engine):
                 # `bound.arguments`. Inject it before calling f.
                 if handle is not None:
                     bound.arguments["handle"] = handle
+                    if handle_type == "a":
+                        mark_dirty(_path)
                     return f(*bound.args, **bound.kwargs)
 
                 # 3. No handle to reuse: open one and register on the ContextVar
@@ -214,6 +216,7 @@ def handles_handles(handle_type, handler=lambda args: args[0]._engine):
                     if handle_type == "a":
                         state = _WriteScopeState()
                         scope_tok = _write_scope_state.set(state)
+                        mark_dirty(_path)
                     try:
                         return f(*bound.args, **bound.kwargs)
                     finally:
@@ -249,9 +252,13 @@ def _settle_scope_state(handle, state) -> None:
     """Move the provenance counters once, for everything the scope changed."""
     from . import _bump_state_attrs
     from .placement_set import _bump_ps_revision
+    from .placement_set import _root as _placement_root
 
     for path in sorted(state.dirty_sets):
-        _bump_ps_revision(handle, path)
+        # Every resource written through the decorator names itself; only a
+        # placement set carries a revision of its own.
+        if path.startswith(_placement_root):
+            _bump_ps_revision(handle, path)
     _bump_state_attrs(handle)
 
 

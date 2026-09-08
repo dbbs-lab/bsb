@@ -6,7 +6,14 @@ from unittest.mock import patch
 
 import nest
 import numpy as np
-from bsb import BootError, CastError, ConfigurationError, RequirementError
+from bsb import (
+    AfterPrepareHook,
+    BootError,
+    CastError,
+    ConfigurationError,
+    RequirementError,
+    config,
+)
 from bsb.config import Configuration, build_context
 from bsb.core import Scaffold
 from bsb.services import MPI
@@ -105,63 +112,62 @@ class TestNest(
         vm = None
         nspike = None
 
-        def probe(_, sim, data):
-            # Probe and steal some local refs to data that's otherwise encapsulated :)
-            nonlocal vm, simulation
-            simulation = sim
+        @config.node
+        class Probe(AfterPrepareHook):
+            # `inner`, not `self`: the body closes over the test case's `self`.
+            def postprocess(inner, _, sim, data):
+                # Probe and steal some local refs to data that's otherwise encapsulated :)
+                nonlocal vm, simulation
+                simulation = sim
 
-            # Get the important information out of the sim/data
-            cell_m = sim.cell_models.gif_pop_psc_exp
-            conn_m = sim.connection_models.gif_pop_psc_exp
-            pop = data.populations[cell_m]
-            syn = data.connections[conn_m]
+                # Get the important information out of the sim/data
+                cell_m = sim.cell_models.gif_pop_psc_exp
+                conn_m = sim.connection_models.gif_pop_psc_exp
+                pop = data.populations[cell_m]
+                syn = data.connections[conn_m]
 
-            # Add a voltmeter
-            vm = nest.Create(
-                "voltmeter",
-                params={"record_from": ["n_events"], "interval": sim.resolution},
-            )
-            nest.Connect(vm, pop)
+                # Add a voltmeter
+                vm = nest.Create(
+                    "voltmeter",
+                    params={"record_from": ["n_events"], "interval": sim.resolution},
+                )
+                nest.Connect(vm, pop)
 
-            # Add a spying recorder
-            def spy(_):
-                nonlocal nspike
+                # Add a spying recorder
+                def spy(_):
+                    nonlocal nspike
 
-                start_time = 1000
-                start_step = int(start_time / simulation.resolution)
-                nspike = vm.events["n_events"][start_step:]
+                    start_time = 1000
+                    start_step = int(start_time / simulation.resolution)
+                    nspike = vm.events["n_events"][start_step:]
 
-            data.result.create_recorder(spy)
+                data.result.create_recorder(spy)
 
-            # Test node parameter transfer
-            for param, value in {
-                "V_reset": 0.0,
-                "V_T_star": 10.0,
-                "E_L": 0.0,
-                "Delta_V": 2.0,
-                "C_m": 250.0,
-                "tau_m": 20.0,
-                "t_ref": 4.0,
-                "I_e": 500.0,
-                "lambda_0": 10.0,
-                "tau_syn_in": 2.0,
-                "tau_sfa": (500.0,),
-                "q_sfa": (1.0,),
-            }.items():
-                with self.subTest(param=param, value=value):
-                    self.assertEqual(value, pop.get(param))
+                # Test node parameter transfer
+                for param, value in {
+                    "V_reset": 0.0,
+                    "V_T_star": 10.0,
+                    "E_L": 0.0,
+                    "Delta_V": 2.0,
+                    "C_m": 250.0,
+                    "tau_m": 20.0,
+                    "t_ref": 4.0,
+                    "I_e": 500.0,
+                    "lambda_0": 10.0,
+                    "tau_syn_in": 2.0,
+                    "tau_sfa": (500.0,),
+                    "q_sfa": (1.0,),
+                }.items():
+                    with self.subTest(param=param, value=value):
+                        self.assertEqual(value, pop.get(param))
 
-            # Test synapse parameter transfer
-            for param, value in (("weight", -6.25), ("delay", 1)):
-                with self.subTest(param=param, value=value):
-                    self.assertEqual(value, syn.get(param))
+                # Test synapse parameter transfer
+                for param, value in (("weight", -6.25), ("delay", 1)):
+                    with self.subTest(param=param, value=value):
+                        self.assertEqual(value, syn.get(param))
 
-        # `after_prepare` takes configured hooks; a test closure over local state is
-        # what the adapter's `post_prepare` argument is for.
-        NestAdapter().simulate(
-            network.simulations.test_nest,
-            post_prepare=lambda adapter, sims, datas: probe(adapter, sims[0], datas[0]),
-        )
+        network.simulations.test_nest.after_prepare["probe"] = Probe()
+        NestAdapter().simulate(network.simulations.test_nest)
 
         mean_nspike = np.mean(nspike)
         mean_rate = mean_nspike / pop_size / simulation.resolution * 1000.0

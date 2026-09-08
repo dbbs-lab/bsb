@@ -20,7 +20,18 @@ from .. import plugins
 
 # Bump this when the layout of the provenance bundle written to storage roots
 # or to ``.nio`` files changes in an incompatible way.
-SCHEMA_VERSION = 1
+_SCHEMA_VERSION = 1
+
+
+def get_provenance_version() -> int:
+    """
+    Return the schema version this install stamps into the provenance bundle it writes.
+
+    Compare it against the ``bsb_schema_version`` an artefact carries to tell whether
+    this install understands the layout it was written with.
+    """
+    return _SCHEMA_VERSION
+
 
 # Plugin categories enumerated for the manifest. Keep in sync with the categories
 # discovered by ``bsb.plugins.discover``.
@@ -122,7 +133,7 @@ def build_root_metadata(
     return {
         "storage_id": new_storage_id(),
         "state_id": 0,
-        "bsb_schema_version": SCHEMA_VERSION,
+        "bsb_schema_version": _SCHEMA_VERSION,
         "created_at": iso_now(),
         "bsb_core_version": _safe_version("bsb-core"),
         "engine_name": engine_name,
@@ -134,10 +145,14 @@ def build_root_metadata(
 
 
 __all__ = [
-    "SCHEMA_VERSION",
     "build_root_metadata",
     "collect_host_info",
     "collect_plugin_manifest",
+    "get_provenance_version",
     "iso_now",
     "new_storage_id",
 ]
+
+# The rest are the plumbing storage engines call while writing an artefact; they are
+# reached through this module, not from the top-level namespace.
+__api__ = ["get_provenance_version"]

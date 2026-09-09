@@ -1,4 +1,3 @@
-import builtins
 import functools
 import sys
 
@@ -10,6 +9,7 @@ from bsb import (
     ConnectionParameter,
     compose_nodes,
     config,
+    expand_to,
     options,
     types,
 )
@@ -205,17 +205,17 @@ class NestConnection(compose_nodes(NestConnectionSettings, ConnectionModel)):
                     ssw = {**syn_spec}
                     # The weight of a collapsed pair is the sum of the connections it
                     # stands for, whether it came from a constant or was computed.
-                    weight = ssw["weight"]
-                    ssw["weight"] = (
-                        np.asarray(weight) * multiplicity
-                        if isinstance(weight, np.ndarray)
-                        else [weight * m for m in multiplicity]
-                    )
+                    ssw["weight"] = [
+                        w * m
+                        for w, m in zip(
+                            expand_to(len(cell_pairs), ssw["weight"]),
+                            multiplicity,
+                            strict=True,
+                        )
+                    ]
                     for name, value in ssw.items():
-                        if name not in ("weight", "synapse_model") and not isinstance(
-                            value, np.ndarray | builtins.list
-                        ):
-                            ssw[name] = [value] * len(cell_pairs)
+                        if name != "synapse_model":
+                            ssw[name] = expand_to(len(cell_pairs), value)
                     nest.Connect(
                         [prel[x] for x in cell_pairs[:, 0]],
                         [postl[x] for x in cell_pairs[:, 1]],
@@ -310,17 +310,20 @@ class NestConnection(compose_nodes(NestConnectionSettings, ConnectionModel)):
         for synapse in self.synapses:
             spec = {"synapse_model": synapse.model}
             for name, param in synapse.all_parameters.items():
-                if param.is_constant:
-                    spec[name] = param.compute()
-                elif per_connection:
+                if per_connection:
                     values = param.compute(self.simulation, cs, pre_locs, post_locs)
                     spec[name] = values if take is None else values[take]
-                else:
+                    continue
+                try:
+                    # A rule leaves the pairs to NEST, so there is nothing to compute
+                    # over. Whatever does not need them answers anyway.
+                    spec[name] = param.compute()
+                except TypeError as e:
                     raise AdapterError(
                         f"Parameter '{name}' of synapse '{synapse.model}' in "
                         f"{self.name} is computed per connection, which needs the "
                         "connections themselves. Remove the connection `rule` so BSB "
                         "connects cell by cell, or make the parameter constant."
-                    )
+                    ) from e
             specs.append(spec)
         return specs

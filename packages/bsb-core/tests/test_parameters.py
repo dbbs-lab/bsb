@@ -57,7 +57,6 @@ class TestParameterCasting(unittest.TestCase):
     def test_scalar_casts_to_constant_parameter(self):
         param = self.wide(250.0)
         self.assertIsInstance(param, Constant)
-        self.assertTrue(param.is_constant)
         self.assertEqual(250.0, param.compute())
 
     def test_list_and_string_cast_to_constant_parameter(self):
@@ -69,7 +68,6 @@ class TestParameterCasting(unittest.TestCase):
             {"strategy": "distance_delay", "axon_speed": 2.0}
         )
         self.assertIsInstance(param, DistanceDelayParameter)
-        self.assertFalse(param.is_constant)
 
     def test_an_existing_parameter_passes_through(self):
         param = self.wide(5)

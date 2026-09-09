@@ -6,7 +6,7 @@ import numpy as np
 
 from .. import config
 from ..config import types
-from ..config.types import TypeHandler
+from ..config.types import TypeHandler, WeakInverter
 from ..exceptions import ConfigurationError
 
 if typing.TYPE_CHECKING:  # pragma: nocover
@@ -33,7 +33,6 @@ class Parameter(abc.ABC):  # noqa: B024  (see `compute` note below)
     name: str = config.attr(key=True)
     """Name of the model parameter this computes, taken from its configuration key."""
 
-    is_constant: bool = False
     """
     Whether this yields a single value rather than one per element.
 
@@ -51,8 +50,6 @@ class Constant(Parameter):
     wherever a parameter of any arity is; it ignores the arguments it is handed.
     """
 
-    is_constant = True
-
     value = config.attr(type=types.or_(types.list_or_scalar(types.number()), str))
     """The value to assign."""
 
@@ -64,6 +61,31 @@ class Constant(Parameter):
 
     def compute(self, *args, **kwargs):
         return self.value
+
+
+def expand_to(n, value):
+    """
+    One value for each of ``n``, out of whatever a parameter computed.
+
+    A parameter that yields a single value stands for that value repeated, which is
+    all a constant is: the degenerate case of a parameter that does not vary. Anything
+    that already has a length has to have the right one.
+
+    :param n: How many values are needed.
+    :param value: What the parameter computed.
+    :returns: ``n`` values.
+    :raises ValueError: If ``value`` is neither one value nor ``n`` of them.
+    """
+    try:
+        length = len(value)
+    except TypeError:
+        # No length of its own, so it is the one value, standing for all of them.
+        return [value] * n
+    if length == n:
+        return value
+    if length == 1:
+        return [value[0]] * n
+    raise ValueError(f"Cannot make {n} values out of {length}.")
 
 
 @config.dynamic(attr_name="strategy", auto_classmap=True)
@@ -196,7 +218,7 @@ class DistanceDelayParameter(ConnectionParameter, classmap_entry="distance_delay
         return cell_type.get_placement_set().load_positions()
 
 
-class constant_parameter(TypeHandler):
+class constant_parameter(WeakInverter, TypeHandler):
     """
     Cast a configuration value to a :class:`.Constant`.
 
@@ -214,17 +236,24 @@ class constant_parameter(TypeHandler):
             )
         if isinstance(value, Parameter):
             return value
-        return Constant(value, _key=_key, _parent=_parent)
+        constant = Constant(value, _key=_key, _parent=_parent)
+        # A bare value inverts back to the bare value that was written, so the handler
+        # remembers it instead of the parameter carrying a flag about itself.
+        self.store_value(value, constant)
+        return constant
 
     @property
     def __name__(self):  # pragma: nocover
         return "a constant parameter"
 
     def __inv__(self, value):
-        return value.value if getattr(value, "is_constant", False) else value
+        try:
+            return self._map.get(value, value)
+        except TypeError:
+            return value
 
 
-class parameters_of_type(TypeHandler):
+class parameters_of_type(WeakInverter, TypeHandler):
     """
     Cast a configuration value to a :class:`.Parameter` of a given arity.
 
@@ -241,6 +270,7 @@ class parameters_of_type(TypeHandler):
     """
 
     def __init__(self, base=Parameter):
+        super().__init__()
         self._base = base
 
     def __call__(self, value, _key=None, _parent=None):
@@ -248,18 +278,23 @@ class parameters_of_type(TypeHandler):
             return value
         if isinstance(value, dict) and "strategy" in value:
             return self._base(**value, _key=_key, _parent=_parent)
-        return Constant(value, _key=_key, _parent=_parent)
+        constant = Constant(value, _key=_key, _parent=_parent)
+        # A bare value inverts back to the bare value that was written, so the handler
+        # remembers it instead of the parameter carrying a flag about itself.
+        self.store_value(value, constant)
+        return constant
 
     @property
     def __name__(self):  # pragma: nocover
         return f"{self._base.__name__.lower()}"
 
     def __inv__(self, value):
-        # Constants were written as bare values, so they invert back to bare values
-        # rather than to a node the user never wrote.
-        if getattr(value, "is_constant", False):
-            return value.value
-        return value
+        # Only what this handler cast is remembered; a tree that never went through it
+        # cannot be looked up, and is already the form it was written in.
+        try:
+            return self._map.get(value, value)
+        except TypeError:
+            return value
 
 
 __all__ = [
@@ -267,6 +302,7 @@ __all__ = [
     "ConnectionParameter",
     "Constant",
     "constant_parameter",
+    "expand_to",
     "DistanceDelayParameter",
     "Parameter",
     "PointParameter",

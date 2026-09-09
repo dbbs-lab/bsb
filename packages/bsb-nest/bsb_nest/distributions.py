@@ -27,11 +27,8 @@ class NestRandomDistribution(Parameter):
     A NEST random distribution, drawn per node by NEST itself.
 
     It yields the one :class:`nest.Parameter` object NEST expands across the nodes it
-    is assigned to, so it reports itself as constant: nothing on our side broadcasts
-    it.
+    is assigned to, so it stands for every value without our side making any.
     """
-
-    is_constant = True
 
     scaffold: "Scaffold"
     distribution: str = config.attr(

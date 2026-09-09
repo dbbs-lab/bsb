@@ -203,16 +203,19 @@ class NestConnection(compose_nodes(NestConnectionSettings, ConnectionModel)):
                 # so loop over the syn_specs
                 for syn_spec in self.get_syn_specs(cs, pre_locs, post_locs, take):
                     ssw = {**syn_spec}
-                    # The weight of a collapsed pair is the sum of the connections it
-                    # stands for, whether it came from a constant or was computed.
-                    ssw["weight"] = [
-                        w * m
-                        for w, m in zip(
-                            expand_to(len(cell_pairs), ssw["weight"]),
-                            multiplicity,
-                            strict=True,
-                        )
-                    ]
+                    if "weight" in ssw:
+                        # The weight of a collapsed pair is the sum of the connections
+                        # it stands for, whether it came from a constant or was
+                        # computed. A synapse model that takes no weight has none to
+                        # sum.
+                        ssw["weight"] = [
+                            w * m
+                            for w, m in zip(
+                                expand_to(len(cell_pairs), ssw["weight"]),
+                                multiplicity,
+                                strict=True,
+                            )
+                        ]
                     for name, value in ssw.items():
                         if name != "synapse_model":
                             ssw[name] = expand_to(len(cell_pairs), value)
@@ -300,19 +303,26 @@ class NestConnection(compose_nodes(NestConnectionSettings, ConnectionModel)):
         :attr:`~.connection.NestSynapseSettings.all_parameters`, so this only has to
         compute each parameter and add the model's identity.
 
-        Called without connection locations -- the ``rule`` path, where NEST decides
-        the pairs itself -- only parameters that yield a single value can be honoured.
+        Called without connection locations, the ``rule`` path where NEST decides the
+        pairs itself, only parameters that yield a single value can be honoured.
         ``take`` selects one value per unique cell pair from a per-connection result,
         since duplicate pairs are collapsed before connecting.
         """
         per_connection = cs is not None and pre_locs is not None and post_locs is not None
+        n_conn = len(pre_locs) if per_connection else 0
         specs = []
         for synapse in self.synapses:
             spec = {"synapse_model": synapse.model}
             for name, param in synapse.all_parameters.items():
                 if per_connection:
                     values = param.compute(self.simulation, cs, pre_locs, post_locs)
-                    spec[name] = values if take is None else values[take]
+                    if take is not None and np.ndim(values) and len(values) == n_conn:
+                        # One value per connection, and duplicate pairs are collapsed
+                        # into one, so the pair takes the value of the first of them.
+                        # Anything else is the one value standing for every connection
+                        # and so for every pair, which is nothing to select from.
+                        values = np.asarray(values)[take]
+                    spec[name] = values
                     continue
                 try:
                     # A rule leaves the pairs to NEST, so there is nothing to compute

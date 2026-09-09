@@ -1167,9 +1167,12 @@ class TestSegmentIntersection(
         self.network.compile()
         cs = self.network.get_connectivity_set("intersect")
         total = 0
-        for _pre_chunks, pre_locs, _post_chunks, _post_locs in (
-            cs.load_connections().chunk_iter()
-        ):
+        for (
+            _pre_chunks,
+            pre_locs,
+            _post_chunks,
+            _post_locs,
+        ) in cs.load_connections().chunk_iter():
             total += len(pre_locs)
         self.assertGreater(
             total, 0, "expected the overlapping A/B morphologies to connect"

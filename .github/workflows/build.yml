@@ -36,6 +36,22 @@ jobs:
           # `libgsl` and `libreadline` for NEST, `libboost` required by NEST >= 3.8
           sudo apt install -y openmpi-bin libopenmpi-dev libhdf5-dev libreadline-dev libgsl-dev libboost-dev
 
+      - name: Configure Open MPI for the runner
+        run: |
+          # The runners forbid the cross-process memory reads (CMA) that Open MPI's
+          # shared memory transport moves large messages with by default, and it
+          # faults on them instead of falling back, taking the suite down mid-run.
+          # `emulated` reaches the peer's memory by asking the peer for it, which
+          # costs a copy and needs nothing of the kernel. Not `none`, which drops
+          # one sided transfer altogether and takes MPI windows down with it.
+          #
+          # Written to Open MPI's own configuration file rather than passed as an
+          # `OMPI_MCA_` variable, because the framework reads any variable with
+          # `mpi` in its name as a sign that it is running under MPI, and would
+          # then hold every example to a parallel install it does not have.
+          mkdir -p ~/.openmpi
+          echo "btl_vader_single_copy_mechanism = emulated" >> ~/.openmpi/mca-params.conf
+
       - name: Install nodejs
         uses: actions/setup-node@v6
 

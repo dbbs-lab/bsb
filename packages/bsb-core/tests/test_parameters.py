@@ -11,7 +11,7 @@ from bsb import (
     Parameter,
     PointParameter,
     Scaffold,
-    constant,
+    constant_parameter,
     parameters_of_type,
 )
 from bsb.config import Configuration
@@ -52,15 +52,15 @@ class TestParameterCasting(unittest.TestCase):
 
     def setUp(self):
         self.wide = parameters_of_type(CellParameter)
-        self.narrow = constant()
+        self.narrow = constant_parameter()
 
-    def test_scalar_casts_to_constant(self):
+    def test_scalar_casts_to_constant_parameter(self):
         param = self.wide(250.0)
         self.assertIsInstance(param, Constant)
         self.assertTrue(param.is_constant)
         self.assertEqual(250.0, param.compute())
 
-    def test_list_and_string_cast_to_constant(self):
+    def test_list_and_string_cast_to_constant_parameter(self):
         self.assertEqual([1, 2, 3], self.wide([1, 2, 3]).compute())
         self.assertEqual("uniform", self.wide("uniform").compute())
 

@@ -6,7 +6,7 @@ from bsb import (
     Parameter,
     Scaffold,
     config,
-    constant,
+    constant_parameter,
     parameters_of_type,
     types,
 )
@@ -91,7 +91,7 @@ class nest_parameter(parameters_of_type):
         return super().__inv__(value)
 
 
-class nest_constant(constant):
+class nest_constant(constant_parameter):
     """
     Cast a value to a constant, adding NEST's own random distributions.
 

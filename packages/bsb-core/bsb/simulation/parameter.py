@@ -196,11 +196,11 @@ class DistanceDelayParameter(ConnectionParameter, classmap_entry="distance_delay
         return cell_type.get_placement_set().load_positions()
 
 
-class constant(TypeHandler):
+class constant_parameter(TypeHandler):
     """
     Cast a configuration value to a :class:`.Constant`.
 
-    The narrow counterpart of :class:`.parameter`, for notations documented as
+    The narrow counterpart of :class:`.parameters_of_type`, for notations documented as
     holding constants. It refuses a computed parameter rather than silently
     accepting one, so ``constants`` keeps meaning what it says and the wider
     ``parameters`` block is the one place a strategy belongs.
@@ -218,7 +218,7 @@ class constant(TypeHandler):
 
     @property
     def __name__(self):  # pragma: nocover
-        return "constant"
+        return "a constant parameter"
 
     def __inv__(self, value):
         return value.value if getattr(value, "is_constant", False) else value
@@ -266,7 +266,7 @@ __all__ = [
     "CellParameter",
     "ConnectionParameter",
     "Constant",
-    "constant",
+    "constant_parameter",
     "DistanceDelayParameter",
     "Parameter",
     "PointParameter",

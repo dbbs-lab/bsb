@@ -10,6 +10,11 @@ env:
   NEST_VERSION: 3.8
   NEST_FOLDER: ${{ github.workspace }}/.nx/installation/nest
   NX_DAEMON: false  # may prevent GHA to stall for some reason
+  # The runners forbid the cross-process memory reads (CMA) that Open MPI's
+  # shared memory transport uses by default, and it segfaults on them instead of
+  # falling back. Copying through a shared buffer costs a little bandwidth between
+  # the two ranks the suites use, and works.
+  OMPI_MCA_btl_vader_single_copy_mechanism: none
 
 jobs:
   build:

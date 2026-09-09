@@ -132,6 +132,11 @@ def _bit_generator(value):
 _bit_generator.__name__ = "a numpy bit generator"
 
 
+def _draw_seed() -> int:
+    """A fresh seed from the operating system."""
+    return int(np.random.SeedSequence().entropy % (2**32))
+
+
 def _derive(seed: int, key) -> int:
     """One reproducible 32 bit integer for ``key``, out of ``seed``."""
     sequence = np.random.SeedSequence([seed, *_stable_ints(key)])
@@ -290,7 +295,15 @@ class RngRootNode(NumpyRng, classmap_entry=None):
     """
 
     def __boot__(self):
-        self.resolve()
+        # A drawn seed belongs to the run, not to the rank that happened to draw it,
+        # so it is drawn once and handed to the others. Booting is where that can be
+        # done: every rank boots the same nodes in the same order, on the network's
+        # own communicator, which the node has by the time this runs. `resolve` is
+        # reached from a single rank asking for a stream, so it cannot draw
+        # collectively itself.
+        if self.seed is None:
+            self.seed = self.scaffold._comm.bcast(_draw_seed())
+            _mark_written(self, "seed")
         for node in (*self.generators.values(), *self.settings.values()):
             node.resolve()
         # The block itself has to be recorded as configured, or a drawn seed would
@@ -305,10 +318,15 @@ class RngRootNode(NumpyRng, classmap_entry=None):
         unseeded configuration is a fresh replicate every time, and written back so
         the stored configuration reproduces this run.
 
+        A configuration attached to a network has already had its seed drawn and
+        agreed between ranks when it booted. This draws for one on its own, which is
+        the only thing it can do: with no network there is no communicator to agree
+        over, and no run to agree about.
+
         :returns: The resolved root seed.
         """
         if self.seed is None:
-            self.seed = int(np.random.SeedSequence().entropy % (2**32))
+            self.seed = _draw_seed()
             _mark_written(self, "seed")
         return self.seed
 

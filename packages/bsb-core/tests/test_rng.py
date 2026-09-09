@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 from bsb_test import RandomStorageFixture
 
-from bsb import CastError, CfgReferenceError, NumpyRng, Scaffold
+from bsb import MPI, CastError, CfgReferenceError, NumpyRng, Scaffold
 from bsb.config import Configuration
 from bsb.rng import _stable_ints
 
@@ -316,3 +316,25 @@ class TestKeyEncoding(unittest.TestCase):
             self.stream(("chunk", 1)),
             "sign is part of the key",
         )
+
+
+class TestOneSeedForTheWholeRun(
+    _NetworkMixin, RandomStorageFixture, unittest.TestCase, engine_name="hdf5"
+):
+    """
+    A drawn seed belongs to the run, not to the rank that drew it.
+
+    Drawn per rank, every stream in the model differs between ranks, the
+    configuration each rank records describes a different run, and anything whose
+    course depends on a draw takes a different one on each of them, which is how two
+    ranks end up waiting on each other at a barrier they reached from different work.
+    """
+
+    def test_every_rank_gets_the_seed_the_network_drew(self):
+        seeds = MPI.allgather(self.network().configuration.rng.seed)
+        self.assertEqual(1, len(set(seeds)), f"ranks drew their own seeds: {seeds}")
+
+    def test_a_generator_derives_from_that_one_seed(self):
+        network = self.network({"generators": {"structure": {}}})
+        derived = MPI.allgather(network.configuration.rng.generators["structure"].seed)
+        self.assertEqual(1, len(set(derived)), f"generators disagree: {derived}")

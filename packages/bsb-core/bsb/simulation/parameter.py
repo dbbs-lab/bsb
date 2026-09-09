@@ -6,7 +6,7 @@ import numpy as np
 
 from .. import config
 from ..config import types
-from ..config.types import TypeHandler, WeakInverter
+from ..config.types import TypeHandler
 from ..exceptions import ConfigurationError
 
 if typing.TYPE_CHECKING:  # pragma: nocover
@@ -218,7 +218,7 @@ class DistanceDelayParameter(ConnectionParameter, classmap_entry="distance_delay
         return cell_type.get_placement_set().load_positions()
 
 
-class constant_parameter(WeakInverter, TypeHandler):
+class constant_parameter(TypeHandler):
     """
     Cast a configuration value to a :class:`.Constant`.
 
@@ -236,24 +236,17 @@ class constant_parameter(WeakInverter, TypeHandler):
             )
         if isinstance(value, Parameter):
             return value
-        constant = Constant(value, _key=_key, _parent=_parent)
-        # A bare value inverts back to the bare value that was written, so the handler
-        # remembers it instead of the parameter carrying a flag about itself.
-        self.store_value(value, constant)
-        return constant
+        return Constant(value, _key=_key, _parent=_parent)
 
     @property
     def __name__(self):  # pragma: nocover
         return "a constant parameter"
 
     def __inv__(self, value):
-        try:
-            return self._map.get(value, value)
-        except TypeError:
-            return value
+        return value.value if type(value) is Constant else value
 
 
-class parameters_of_type(WeakInverter, TypeHandler):
+class parameters_of_type(TypeHandler):
     """
     Cast a configuration value to a :class:`.Parameter` of a given arity.
 
@@ -270,7 +263,6 @@ class parameters_of_type(WeakInverter, TypeHandler):
     """
 
     def __init__(self, base=Parameter):
-        super().__init__()
         self._base = base
 
     def __call__(self, value, _key=None, _parent=None):
@@ -278,23 +270,17 @@ class parameters_of_type(WeakInverter, TypeHandler):
             return value
         if isinstance(value, dict) and "strategy" in value:
             return self._base(**value, _key=_key, _parent=_parent)
-        constant = Constant(value, _key=_key, _parent=_parent)
-        # A bare value inverts back to the bare value that was written, so the handler
-        # remembers it instead of the parameter carrying a flag about itself.
-        self.store_value(value, constant)
-        return constant
+        return Constant(value, _key=_key, _parent=_parent)
 
     @property
     def __name__(self):  # pragma: nocover
         return f"{self._base.__name__.lower()}"
 
     def __inv__(self, value):
-        # Only what this handler cast is remembered; a tree that never went through it
-        # cannot be looked up, and is already the form it was written in.
-        try:
-            return self._map.get(value, value)
-        except TypeError:
-            return value
+        # A bare value was written bare and comes back bare, whichever handler cast
+        # it. Asked of the shorthand this handler builds, not of the parameter, which
+        # only ever holds a value.
+        return value.value if type(value) is Constant else value
 
 
 __all__ = [

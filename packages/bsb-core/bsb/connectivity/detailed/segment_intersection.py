@@ -95,9 +95,7 @@ def _build_library(pre_ms, post_ms):
 
     def index_set(ms):
         remap = []
-        for name, morpho in zip(
-            ms.names, ms.iter_morphologies(unique=True), strict=True
-        ):
+        for name, morpho in zip(ms.names, ms.iter_morphologies(unique=True), strict=True):
             idx = name_to_idx.get(name)
             if idx is None:
                 idx = len(library)
@@ -137,9 +135,7 @@ def _flatten_library(library):
 
 def _rotation_matrices(pset):
     """Per-cell ``(N, 3, 3)`` rotation matrices for a placement set."""
-    mats = np.array(
-        [r.as_matrix() for r in pset.load_rotations().iter()], dtype=float
-    )
+    mats = np.array([r.as_matrix() for r in pset.load_rotations().iter()], dtype=float)
     if mats.ndim != 3:
         mats = mats.reshape(-1, 3, 3)
     return np.ascontiguousarray(mats)

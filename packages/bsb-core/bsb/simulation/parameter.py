@@ -22,7 +22,7 @@ class Parameter(abc.ABC):  # noqa: B024  (see `compute` note below)
 
     A parameter is configured like any other node and computes its values when the
     simulation is loaded. What it is computed *over* is what varies, so this base
-    declares no :meth:`compute` signature; each arity below declares its own, and a
+    declares no ``compute`` signature; each arity below declares its own, and a
     parameter is only accepted where its arity fits.
 
     It is an :class:`abc.ABC` without abstract methods on purpose: subclasses need
@@ -90,7 +90,7 @@ class CellParameter(Parameter):
     @abc.abstractmethod
     def compute(
         self, simulation: "Simulation", ps: "PlacementSet"
-    ) -> "np.ndarray":  # pragma: nocover
+    ) -> np.ndarray:  # pragma: nocover
         """
         Compute one value per cell in ``ps``, in placement set order.
 
@@ -118,7 +118,7 @@ class PointParameter(Parameter):
         ps: "PlacementSet",
         cell_id: int,
         morphology: "Morphology",
-    ) -> "np.ndarray":  # pragma: nocover
+    ) -> np.ndarray:  # pragma: nocover
         """
         Compute one value per point of ``morphology``, in flattened branch order.
 
@@ -142,9 +142,9 @@ class ConnectionParameter(Parameter):
         self,
         simulation: "Simulation",
         cs: "ConnectivitySet",
-        pre_locs: "np.ndarray",
-        post_locs: "np.ndarray",
-    ) -> "np.ndarray":  # pragma: nocover
+        pre_locs: np.ndarray,
+        post_locs: np.ndarray,
+    ) -> np.ndarray:  # pragma: nocover
         """
         Compute one value per connection, in the order the locations are given.
 

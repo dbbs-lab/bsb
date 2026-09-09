@@ -83,6 +83,15 @@ class TestParameterCasting(unittest.TestCase):
         # must be that bare value and not a node the user never wrote.
         self.assertEqual(250.0, self.wide.__inv__(self.wide(250.0)))
 
+    def test_the_example_shown_is_the_shorthand(self):
+        # The config reference builds its examples by asking a handler what a value of
+        # its type looks like. Without an answer it casts a stand-in instead and shows
+        # a parameter node, which is both the wrong notation to teach and unwritable
+        # to json.
+        for handler in (self.wide, self.narrow):
+            with self.subTest(handler=type(handler).__name__):
+                self.assertEqual(1.0, handler.__hint__())
+
 
 class TestDistanceDelay(
     FixedPosConfigFixture,

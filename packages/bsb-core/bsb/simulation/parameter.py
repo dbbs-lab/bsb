@@ -33,13 +33,6 @@ class Parameter(abc.ABC):  # noqa: B024  (see `compute` note below)
     name: str = config.attr(key=True)
     """Name of the model parameter this computes, taken from its configuration key."""
 
-    """
-    Whether this yields a single value rather than one per element.
-
-    Consumers use it to decide whether to broadcast, or to hand the value straight to
-    a simulator that broadcasts on their behalf.
-    """
-
 
 @config.node
 class Constant(Parameter):
@@ -245,6 +238,9 @@ class constant_parameter(TypeHandler):
     def __inv__(self, value):
         return value.value if type(value) is Constant else value
 
+    def __hint__(self):
+        return 1.0
+
 
 class parameters_of_type(TypeHandler):
     """
@@ -281,6 +277,9 @@ class parameters_of_type(TypeHandler):
         # it. Asked of the shorthand this handler builds, not of the parameter, which
         # only ever holds a value.
         return value.value if type(value) is Constant else value
+
+    def __hint__(self):
+        return 1.0
 
 
 __all__ = [

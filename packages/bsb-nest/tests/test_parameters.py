@@ -5,6 +5,7 @@ import numpy as np
 from bsb import ConfigurationError, Constant
 
 from bsb_nest._parameters import merged
+from bsb_nest.cell import NestCell
 from bsb_nest.connection import NestConnection
 
 
@@ -67,3 +68,31 @@ class TestSelectingPerPair(unittest.TestCase):
         conn = self._connection(weight=[1.0, 2.0, 3.0, 4.0], delay=1.0)
         spec = self._specs(conn, 4, np.array([0, 2]))[0]
         self.assertEqual([1.0, 3.0], list(spec["weight"]))
+
+
+class TestWritingParametersBackOut(unittest.TestCase):
+    """
+    A run records its own configuration, and has to be able to read it back.
+
+    NEST spells constants in both notations the framework offers, one per key and
+    one caught, so both have to hand a bare value back as a bare value.
+    """
+
+    def test_a_cell_model_writes_bare_values_back(self):
+        cell = NestCell(
+            name="top",
+            model="iaf_psc_alpha",
+            constants={"t_ref": 1.5},
+            parameters={"V_m": -62.0},
+        )
+        tree = cell.__tree__()
+        self.assertEqual({"t_ref": 1.5}, tree["constants"])
+        self.assertEqual({"V_m": -62.0}, tree["parameters"])
+
+    def test_a_synapse_writes_a_caught_constant_back(self):
+        conn = NestConnection(
+            name="a_to_b",
+            synapses=[{"model": "static_synapse", "weight": 3.0, "tau_psc": 2.0}],
+        )
+        # `tau_psc` is not a declared attribute, so the catch-all is what took it.
+        self.assertEqual(2.0, conn.__tree__()["synapses"][0]["tau_psc"])

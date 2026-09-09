@@ -11,6 +11,7 @@ from bsb import (
     Parameter,
     PointParameter,
     Scaffold,
+    config,
     constant_parameter,
     parameters_of_type,
 )
@@ -80,8 +81,18 @@ class TestParameterCasting(unittest.TestCase):
 
     def test_a_constant_inverts_back_to_a_bare_value(self):
         # A constant was written as a bare value, so the config it serialises back to
-        # must be that bare value and not a node the user never wrote.
-        self.assertEqual(250.0, self.wide.__inv__(self.wide(250.0)))
+        # must be that bare value and not a node the user never wrote. A node writes
+        # itself out before a handler is asked to invert it, so a handler is handed
+        # the tree rather than the parameter.
+        for handler in (self.wide, self.narrow):
+            with self.subTest(handler=type(handler).__name__):
+                self.assertEqual(250.0, handler.__inv__(self.wide(250.0).__tree__()))
+
+    def test_a_computed_parameter_keeps_its_node(self):
+        # Only the constant has a shorthand to go back to; a strategy has to survive
+        # the round trip whole, or a stored configuration stops describing its run.
+        node = {"strategy": "distance_delay", "axon_speed": 2.0}
+        self.assertEqual(node, self.wide.__inv__(node))
 
     def test_the_example_shown_is_the_shorthand(self):
         # The config reference builds its examples by asking a handler what a value of
@@ -91,6 +102,34 @@ class TestParameterCasting(unittest.TestCase):
         for handler in (self.wide, self.narrow):
             with self.subTest(handler=type(handler).__name__):
                 self.assertEqual(1.0, handler.__hint__())
+
+
+class TestWritingParametersBackOut(unittest.TestCase):
+    """
+    A stored configuration has to be the one that was written.
+
+    Both notations a parameter can be caught in have to hand a bare value back as a
+    bare value, or reading a run's own configuration back in fails on a node nobody
+    wrote.
+    """
+
+    def setUp(self):
+        @config.node
+        class Model:
+            named = config.dict(type=parameters_of_type(CellParameter))
+            caught = config.catch_all(type=constant_parameter())
+
+        # `t_ref` is not a declared attribute, so the catch-all is what takes it.
+        self.model = Model(named={"C_m": 250.0}, t_ref=1.5)
+
+    def test_both_notations_write_a_bare_value_back(self):
+        tree = self.model.__tree__()
+        self.assertEqual({"C_m": 250.0}, tree["named"])
+        self.assertEqual(1.5, tree["t_ref"])
+
+    def test_what_is_written_reads_back_the_same(self):
+        tree = self.model.__tree__()
+        self.assertEqual(tree, type(self.model)(**tree).__tree__())
 
 
 class TestDistanceDelay(

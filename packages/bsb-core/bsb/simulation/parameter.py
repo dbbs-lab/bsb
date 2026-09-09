@@ -236,7 +236,15 @@ class constant_parameter(TypeHandler):
         return "a constant parameter"
 
     def __inv__(self, value):
-        return value.value if type(value) is Constant else value
+        # The tree of what was cast, since a node writes itself out before a handler
+        # is asked to invert it. A constant holds nothing but its value, so its tree
+        # is that one key, and a bare value has to come back bare: the configuration
+        # a run records is the one that was written.
+        try:
+            keys = set(value.keys())
+        except AttributeError:
+            return value
+        return value["value"] if keys == {"value"} else value
 
     def __hint__(self):
         return 1.0
@@ -273,10 +281,15 @@ class parameters_of_type(TypeHandler):
         return f"{self._base.__name__.lower()}"
 
     def __inv__(self, value):
-        # A bare value was written bare and comes back bare, whichever handler cast
-        # it. Asked of the shorthand this handler builds, not of the parameter, which
-        # only ever holds a value.
-        return value.value if type(value) is Constant else value
+        # The tree of what was cast, since a node writes itself out before a handler
+        # is asked to invert it. A constant holds nothing but its value, so its tree
+        # is that one key, and a bare value has to come back bare: the configuration
+        # a run records is the one that was written.
+        try:
+            keys = set(value.keys())
+        except AttributeError:
+            return value
+        return value["value"] if keys == {"value"} else value
 
     def __hint__(self):
         return 1.0

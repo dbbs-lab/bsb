@@ -5,6 +5,7 @@ from bsb_test import RandomStorageFixture
 
 from bsb import CastError, CfgReferenceError, NumpyRng, Scaffold
 from bsb.config import Configuration
+from bsb.rng import _stable_ints
 
 
 class _NetworkMixin:
@@ -123,22 +124,15 @@ class TestDerivation(
         }
         self.assertEqual(4, len(draws), "each thing drawn for gets its own stream")
 
-    def test_a_string_key_is_stable_across_processes(self):
-        # Python's own `hash` is salted per process; a salted key would reseed on
-        # every invocation and silently destroy reproducibility.
-        import subprocess
-        import sys
-
-        script = (
-            "from bsb.rng import _stable_ints; print(_stable_ints(('place', 'cell_a')))"
+    def test_a_string_key_encodes_to_a_fixed_value(self):
+        # Python's own `hash` is salted per process, and a salted key would reseed on
+        # every invocation and silently destroy reproducibility. Pinned to a literal
+        # rather than compared against itself, because the encoding also has to hold
+        # across releases: every seed anyone has recorded reproduces a different run
+        # the day it changes.
+        self.assertEqual(
+            [4, 3, 1948079053, 3, 1507544768], _stable_ints(("place", "cell_a"))
         )
-        runs = {
-            subprocess.run(
-                [sys.executable, "-c", script], capture_output=True, text=True
-            ).stdout.strip()
-            for _ in range(2)
-        }
-        self.assertEqual(1, len(runs), f"key hashing is not stable: {runs}")
 
     def test_generators_derive_from_the_root_seed(self):
         rng = self.network({"seed": 7, "generators": {"structure": {}}}).configuration.rng
@@ -297,8 +291,6 @@ class TestKeyEncoding(unittest.TestCase):
     """
 
     def stream(self, key):
-        from bsb.rng import _stable_ints
-
         seq = np.random.SeedSequence([1234, *_stable_ints(key)])
         return tuple(seq.generate_state(4).tolist())
 

@@ -1365,7 +1365,4 @@ class ConfigurationAttributeCatcher(ConfigurationAttribute):
         # When building the config tree the values that were caught can't be found in the
         # attrs and the tree builder will check all catch-attr's `contains` methods and
         # calls the right tree_callback to fetch the value.
-        value = _getattr(instance, self.attr_name)[key]
-        if hasattr(value, "__tree__"):
-            value = value.__tree__()
-        return value
+        return self.tree_of(_getattr(instance, self.attr_name)[key])

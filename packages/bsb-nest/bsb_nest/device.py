@@ -4,7 +4,7 @@ import warnings
 import nest
 from bsb import DeviceModel, Targetting, config, refs, types
 
-from .distributions import nest_parameter
+from .distributions import nest_constant
 
 
 @config.node
@@ -140,12 +140,19 @@ class ExtNestDevice(NestDevice, classmap_entry="external"):
 
     nest_model = config.attr(type=str, required=True)
     """Importable reference to the NEST model describing the device type."""
-    constants = config.dict(type=nest_parameter())
-    """Dictionary of the constants values to assign to the device model."""
+    constants = config.dict(type=nest_constant())
+    """
+    Constant values to assign to the device model.
+
+    A bare value, or a ``distribution`` node NEST draws itself. A device's own
+    settings do not vary over cells or connections, so there is no computed
+    counterpart here.
+    """
 
     def implement(self, adapter, simulation, simdata):
         simdata.devices[self] = device = nest.Create(
-            self.nest_model, params=self.constants
+            self.nest_model,
+            params={name: p.compute() for name, p in self.constants.items()},
         )
         nodes = self.get_target_nodes(adapter, simulation, simdata)
         self.connect_to_nodes(device, nodes)

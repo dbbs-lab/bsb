@@ -25,6 +25,13 @@ class PoissonGenerator(ArborDevice, classmap_entry="poisson_generator"):
         gen = arbor.event_generator(
             target,
             self.weight,
-            arbor.poisson_schedule(tstart=0 * U.ms, freq=self.rate * U.Hz, seed=gid),
+            arbor.poisson_schedule(
+                tstart=0 * U.ms,
+                freq=self.rate * U.Hz,
+                # Arbor seeds each generator itself, so it is handed one number per
+                # cell out of the network's randomness. Seeded with the gid alone,
+                # every run of every network drew the same spike train.
+                seed=self.random_generator.derive(("poisson", self.name, gid)),
+            ),
         )
         return [gen]

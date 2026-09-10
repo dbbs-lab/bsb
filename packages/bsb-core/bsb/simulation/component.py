@@ -1,9 +1,10 @@
 from .. import config
 from .._util import obj_str_insert
+from ..rng import RngConsumer
 
 
 @config.node
-class SimulationComponent:
+class SimulationComponent(RngConsumer):
     name: str = config.attr(key=True)
 
     @property

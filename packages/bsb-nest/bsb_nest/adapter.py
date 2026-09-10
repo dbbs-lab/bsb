@@ -22,6 +22,7 @@ from .exceptions import (
     NestModelError,
     NestModuleError,
 )
+from .rng import kernel_seed
 
 if typing.TYPE_CHECKING:  # pragma: nocover
     from .simulation import NestSimulation
@@ -76,6 +77,20 @@ class NestAdapter(SimulatorAdapter):
             )
         if resolutions:
             nest.resolution = resolutions.pop()
+
+    def master_seed(self, simulation) -> int:
+        """
+        The number NEST's kernel is seeded from.
+
+        A simulation that names an :guilabel:`rng.settings` entry is handed what that
+        entry says, which the configuration records. One that names none is seeded
+        from the root seed, keyed on the simulation, so two simulations of one
+        network do not share NEST's streams.
+
+        :param simulation: The simulation being prepared.
+        :returns: A seed NEST accepts.
+        """
+        return kernel_seed(simulation, ("nest", simulation.name))
 
     def prepare(self, simulation, filename=None):
         """
@@ -217,5 +232,7 @@ class NestAdapter(SimulatorAdapter):
         # the NESTAdapter has been prepared.
         if "mpi4py" in sys.modules:
             nest.set_communicator.__func__(self.comm._comm)
-        if simulation.seed is not None:
-            nest.rng_seed = simulation.seed
+        # Always set: NEST's own default is a fixed constant, so leaving it alone
+        # gives every run of every simulation the same streams, which is the opposite
+        # of a replicate.
+        nest.rng_seed = self.master_seed(simulation)

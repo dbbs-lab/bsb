@@ -62,8 +62,12 @@ class TestNeuronMinimal(
         sim2 = scaffold_copy.simulations.test
         adapter = get_simulation_adapter(sim.simulator)
 
-        tmpdir = tempfile.mkdtemp()
-        self.addCleanup(shutil.rmtree, tmpdir, ignore_errors=True)
+        # One directory for the whole run. The ranks write parts of one file and
+        # rank 0 merges them, so a directory drawn per rank would leave every other
+        # rank looking for a file that was assembled somewhere else.
+        tmpdir = MPI.bcast(tempfile.mkdtemp() if not MPI.get_rank() else None)
+        if not MPI.get_rank():
+            self.addCleanup(shutil.rmtree, tmpdir, ignore_errors=True)
         nio_file = os.path.join(tmpdir, "composed.nio")
 
         adapter.simulate(sim, sim2, filename=nio_file)

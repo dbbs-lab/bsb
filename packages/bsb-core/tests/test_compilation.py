@@ -162,11 +162,13 @@ class TestRedoCompilation(
             "redoing a conn strat should not duplicate the connections",
         )
         new_connections = np.array(new_connections.load_connections().all())
-        # It is very unlikely in this configuration that
-        # two random alltoall connectivity will generate the same result
-        self.assertTrue(
-            new_connections.size != connections.size
-            or np.any(new_connections != connections)
+        # A redo repeats the draws it made the first time, so redoing a connection
+        # strategy on an unchanged network connects the same cells again.
+        self.assertClose(
+            connections,
+            new_connections,
+            "a redo has to reproduce its connections",
+            atol=1e-5,
         )
 
     def test_redo_placement(self):
@@ -211,11 +213,12 @@ class TestRedoCompilation(
         new_connections = np.array(
             self.network.get_connectivity_set("cell_to_cell").load_connections().all()
         )
-        # It is very unlikely in this configuration that
-        # two random alltoall connectivity will generate the same result
+        # The root seed moved above, so the cells fell elsewhere and what an affinity
+        # of 0.5 draws over them moved with them.
         self.assertTrue(
             new_connections.size != connections.size
-            or np.any(new_connections != connections)
+            or np.any(new_connections != connections),
+            "connectivity has to follow the placement it is drawn over",
         )
 
     def test_redo_skip_error(self):

@@ -63,5 +63,9 @@ Here is how you do it (theoretically):
 #. Refer to the class from the configuration by its importable module name, or use a
    :ref:`Class map <classmap>`.
 
+If your component draws randomly, take its generator from the configuration rather than
+from a global one, so a model stays reproducible and its runs stay independent. See
+:doc:`/core/randomness`.
+
 Share your code with the whole world and become an author of a :ref:`plugin <plugins>`!
 |:heart_eyes:|

@@ -169,6 +169,28 @@ class SimCellModelReference(Reference):
         return CellModel
 
 
+class RngReference(Reference):
+    def __call__(self, root, here):
+        return root.rng.generators
+
+    @property
+    def type(self):
+        from ..rng import Rng
+
+        return Rng
+
+
+class RngSettingsReference(Reference):
+    def __call__(self, root, here):
+        return root.rng.settings
+
+    @property
+    def type(self):
+        from ..rng import RngSettings
+
+        return RngSettings
+
+
 file_ref = FileReference()
 vox_dset_ref = VoxelDatasetReference()
 cell_type_ref = CellTypeReference()
@@ -178,6 +200,8 @@ connectivity_ref = ConnectivityReference()
 regional_ref = RegionalReference()
 region_ref = RegionReference()
 sim_cell_model_ref = SimCellModelReference()
+rng_ref = RngReference()
+rng_settings_ref = RngSettingsReference()
 
 __all__ = [
     "Reference",
@@ -190,5 +214,7 @@ __all__ = [
     "regional_ref",
     "region_ref",
     "sim_cell_model_ref",
+    "rng_ref",
+    "rng_settings_ref",
 ]
 __api__ = ["Reference"]

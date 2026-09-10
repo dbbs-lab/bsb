@@ -40,8 +40,10 @@ install the :ref:`pre-commit hooks <dev-install>` and run the following tests be
   ./nx run-many -t docs  # check if documentations are building without warnings
   ./nx run bsb-core:check-api  # check bsb-core python API
 
-The BSB repository implements Github Actions to perform these tests directly on Github. Failing these tests will prevent
-the integration of your contribution. Do not hesitate to ask for help on these |:wink:|
+The BSB repository implements Github Actions to perform these tests directly on Github, triggered when you
+open a pull request rather than on every push to your branch. Run the commands above locally beforehand to
+catch issues early. Failing these tests will prevent the integration of your contribution. Do not hesitate to
+ask for help on these |:wink:|
 
 When you believe your changes are ready to be integrated in the main repository, you can create a Pull Request (PR)
 adding in the description what your contribution changed and which issue it is related to.

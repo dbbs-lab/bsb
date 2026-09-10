@@ -32,18 +32,28 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v7
 
+      # Sets NX_BASE/NX_HEAD env vars for the rest of the job. For pull_request
+      # events it resolves NX_BASE to merge-base(origin/<PR base ref>, HEAD) -
+      # only used below when github.event_name == 'pull_request'.
+      - name: Derive base/head SHAs for nx affected
+        if: github.event_name == 'pull_request'
+        uses: nrwl/nx-set-shas@v5
+
       - run: |
           # There is flake on `npx cross-env`, pre-install it a couple times to prevent that.
           npx -y cross-env echo "" > /dev/null
           npx -y cross-env echo "" > /dev/null
           npx -y cross-env echo "" > /dev/null
           npm install rimraf
-          # Manually set the NX BASE and HEAD variables.
-          # see https://github.com/dbbs-lab/bsb/issues/152
-          NX_BASE=origin/main
           if [ "${{ github.ref }}" == "refs/heads/main" ]; then
-            NX_BASE="${NX_BASE}~1"
+            # The commit that just landed on main is the change to document.
+            # Manually set the NX BASE and HEAD variables.
+            # see https://github.com/dbbs-lab/bsb/issues/152
+            ./nx affected -t docs --base=origin/main~1 --head=HEAD
+          elif [ "${{ github.event_name }}" == "pull_request" ]; then
+            # NX_BASE/NX_HEAD were derived by nrwl/nx-set-shas above.
+            echo "Using nx-set-shas base sha $NX_BASE as nx affected base"
+            ./nx affected -t docs --base="$NX_BASE" --head="$NX_HEAD"
           fi
-          ./nx affected -t docs --base=$NX_BASE --head=HEAD
         env:
           UV_PYTHON: 3.14

@@ -193,19 +193,20 @@ class TestRedoCompilation(
             atol=1e-5,
         )
         new_positions = self.network.cell_types.cell2.get_placement_set().load_positions()
-        self.assertAll(positions2 != new_positions)
-        positions2 = np.copy(positions)
-        # test redo layer_placement should affect everything else
-        # since second_placement is also on cell1, third_placement depends on
-        # second_placement and cell_to_cell is affected by cell1 placement
+        # A redo repeats the draws it made the first time, so redoing a placement on
+        # an unchanged configuration puts the cells back where they were.
+        self.assertClose(
+            positions2, new_positions, "a redo has to reproduce its placement", atol=1e-5
+        )
+
+        # Moving the root seed is the only thing that makes a placement fall
+        # differently now, so it is also what shows that a redo re-drew at all.
+        self.network.configuration.rng.seed = 7
         self.network.compile(redo=True, only=["layer_placement"])
         self.assertAll(
             positions[:-2]
-            != self.network.cell_types.cell.get_placement_set().load_positions()[:-2]
-        )
-        self.assertAll(
-            positions2
-            != self.network.cell_types.cell2.get_placement_set().load_positions()
+            != self.network.cell_types.cell.get_placement_set().load_positions()[:-2],
+            "redoing a placement has to re-place the cell type it is on",
         )
         new_connections = np.array(
             self.network.get_connectivity_set("cell_to_cell").load_connections().all()

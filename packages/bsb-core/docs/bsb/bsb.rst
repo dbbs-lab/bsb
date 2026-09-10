@@ -90,6 +90,14 @@ bsb.profiling module
    :undoc-members:
    :show-inheritance:
 
+bsb.rng module
+^^^^^^^^^^^^^^
+
+.. automodule:: bsb.rng
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 bsb.reporting module
 ^^^^^^^^^^^^^^^^^^^^
 

@@ -3,7 +3,6 @@ import math
 import typing
 
 import numpy as np
-from numpy.random import default_rng
 
 from .. import config
 from ..config import refs, types
@@ -12,6 +11,17 @@ from ..rng import RngConsumer
 if typing.TYPE_CHECKING:  # pragma: nocover
     from ..cell_types import CellType
     from .cell import CellModel
+
+
+def _target_name(targetting) -> str:
+    """Name a targetting node by the device it belongs to, for seed derivation."""
+    device = getattr(targetting, "_config_parent", None)
+    return getattr(device, "name", None) or type(targetting).__name__
+
+
+def _model_name(model) -> str:
+    """Name whatever a target group is keyed by: a model, a cell type, or a string."""
+    return getattr(model, "name", None) or str(model)
 
 
 @config.dynamic(attr_name="strategy", default="all", auto_classmap=True)
@@ -83,9 +93,9 @@ class FractionFilter:
     )
 
     def satisfy_fractions(self, targets):
-        return {model: self._frac(data) for model, data in targets.items()}
+        return {model: self._frac(model, data) for model, data in targets.items()}
 
-    def _frac(self, data):
+    def _frac(self, model, data):
         take = None
         if self.count is not None:
             take = self.count
@@ -94,10 +104,14 @@ class FractionFilter:
         if take is None:
             return data
         else:
+            # Keyed on the device and the population it targets, so every rank draws
+            # the same subset. Drawn unseeded, each rank picked its own, and a device
+            # ended up connected to different cells on different ranks.
+            rng = self.get_rng(key=("targetting", _target_name(self), _model_name(model)))
             # Select `take` elements from data with a boolean mask (otherwise a sorted
             # integer mask would be required)
             idx = np.zeros(len(data), dtype=bool)
-            idx[np.random.choice(len(data), take, replace=False)] = True
+            idx[rng.choice(len(data), take, replace=False)] = True
             return data[idx]
 
     @staticmethod
@@ -139,7 +153,9 @@ class RepresentativesTargetting(
     @FractionFilter.filter
     def get_targets(self, adapter, simulation, simdata):
         return {
-            model: default_rng().choice(len(pop), size=self.n, replace=False)
+            model: self.get_rng(
+                key=("representatives", _target_name(self), _model_name(model))
+            ).choice(len(pop), size=self.n, replace=False)
             for model, pop in super().get_targets(adapter, simulation, simdata)
         }
 

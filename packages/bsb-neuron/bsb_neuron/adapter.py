@@ -79,7 +79,12 @@ class NeuronAdapter(SimulatorAdapter):
 
         self.simdata[simulation] = NeuronSimulationData(
             simulation,
-            result=NeuronResult(simulation, filename=filename),
+            result=NeuronResult(
+                simulation,
+                filename=filename,
+                comm=self.comm,
+                simulation_id=self.new_run_id(),
+            ),
         )
         try:
             report("Preparing simulation", level=2)

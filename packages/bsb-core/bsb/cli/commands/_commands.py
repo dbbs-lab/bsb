@@ -229,7 +229,11 @@ class BsbSimulate(BaseCommand, name="simulate"):
                 level=0,
             )
         try:
-            network.run_simulation(sim_name, output_filename=root / f"{uuid4()}.nio")
+            # One name for the run, agreed by every rank, or an N rank run leaves N
+            # unrelated files behind. Every rank runs this command and reaches here
+            # together, which is what the directory check above already relies on.
+            run_name = MPI.bcast(str(uuid4()))
+            network.run_simulation(sim_name, output_filename=root / f"{run_name}.nio")
         except NodeNotFoundError as e:
             append = ", " if len(network.simulations) else ""
             append += ", ".join(f"'{name}'" for name in extra_simulations)

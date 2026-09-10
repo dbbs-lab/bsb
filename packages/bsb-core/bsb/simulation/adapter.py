@@ -2,6 +2,7 @@ import abc
 import os
 import sys
 import typing
+import uuid
 from contextlib import ExitStack
 from time import time
 
@@ -66,7 +67,14 @@ class FixedStepProgressController:
 
 
 class SimulationData:
-    def __init__(self, simulation: "Simulation", result=None, filename=None):
+    def __init__(
+        self,
+        simulation: "Simulation",
+        result=None,
+        filename=None,
+        comm=None,
+        simulation_id=None,
+    ):
         self.chunks = None
         self.populations = dict()
         self.placement: dict[CellModel, PlacementSet] = {
@@ -75,7 +83,9 @@ class SimulationData:
         self.connections = dict()
         self.devices = dict()
         if result is None:
-            result = SimulationResult(simulation, filename=filename)
+            result = SimulationResult(
+                simulation, filename=filename, comm=comm, simulation_id=simulation_id
+            )
         self.result: SimulationResult = result
 
 
@@ -91,6 +101,20 @@ class SimulatorAdapter(abc.ABC):
         self._controllers = []
         self._duration = None
         self.current_checkpoint = 0
+
+    def new_run_id(self) -> str:
+        """
+        One identity for a run, agreed by every rank taking part in it.
+
+        :guilabel:`collective` Every rank of ``comm`` has to call this, which is
+        why it belongs in ``prepare``: preparing a simulation reads the network
+        and builds it in the simulator, so every rank is there already. A result is
+        handed the answer rather than agreeing one itself, since constructing a
+        result is not collective and must not become so.
+
+        :returns: An identity every rank of this adapter agrees on.
+        """
+        return self.comm.bcast(str(uuid.uuid4()))
 
     def simulate(self, *simulations, filename=None):
         """
@@ -116,6 +140,11 @@ class SimulatorAdapter(abc.ABC):
                 alldata.append(data)
                 self.run_after_prepare(simulation, data)
             results = self.collect(self.run(*simulations))
+        # Under MPI each rank has written its own part; they become the one file the
+        # run was asked for here, before any hook is handed a result, so a hook never
+        # sees one rank's share of a run.
+        for result in results:
+            result.finalize()
         # The hooks run outside of the read-only storage context, so that they may
         # write their findings back to the network.
         self.run_after_simulation(simulations, results)

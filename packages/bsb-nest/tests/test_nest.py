@@ -34,6 +34,10 @@ from bsb_nest.exceptions import NestKernelError
 def _conf_single_cell():
     return Configuration(
         {
+            "rng": {
+                "seed": 1234,
+                "settings": {"kernel": {"strategy": "nest", "seed": 1234}},
+            },
             "name": "test",
             "storage": {"engine": "hdf5"},
             "network": {"x": 100, "y": 100, "z": 100},
@@ -57,6 +61,10 @@ def _conf_single_cell():
 def _conf_two_cells():
     return Configuration(
         {
+            "rng": {
+                "seed": 1234,
+                "settings": {"kernel": {"strategy": "nest", "seed": 1234}},
+            },
             "name": "test",
             "storage": {"engine": "hdf5"},
             "network": {"x": 1, "y": 1, "z": 1},
@@ -428,7 +436,6 @@ class TestNest(
                 "simulator": "nest",
                 "duration": 1000,
                 "resolution": 0.1,
-                "seed": 1234,
                 "cell_models": {
                     "A": {
                         "model": "gif_cond_exp",
@@ -456,6 +463,9 @@ class TestNest(
             }
         }
         cfg = Configuration(conf)
+        # Compared against a NEST run seeded by hand, so the kernel has to be
+        # that number rather than one derived from the root seed.
+        cfg.simulations.test.rng = "kernel"
         netw = Scaffold(cfg, self.storage)
         netw.compile()
         results = netw.run_simulation("test")
@@ -522,7 +532,6 @@ class TestNest(
                 "simulator": "nest",
                 "duration": duration,
                 "resolution": resolution,
-                "seed": 1234,
                 "cell_models": {
                     "A": {
                         "model": "aeif_cond_alpha_multisynapse",
@@ -633,7 +642,6 @@ class TestNest(
                 "simulator": "nest",
                 "duration": duration,
                 "resolution": resolution,
-                "seed": 1234,
                 "cell_models": {
                     "A": {
                         "model": "iaf_cond_alpha",
@@ -646,6 +654,9 @@ class TestNest(
                 "devices": {},
             }
         }
+        # Compared against a NEST run seeded by hand, so the kernel has to be
+        # that number rather than one derived from the root seed.
+        cfg.simulations.test.rng = "kernel"
         dict_spike_gen = {
             "device": "sinusoidal_poisson_generator",
             "delay": resolution,
@@ -708,7 +719,6 @@ class TestNest(
                 "simulator": "nest",
                 "duration": duration,
                 "resolution": resolution,
-                "seed": 1234,
                 "cell_models": {
                     "A": {
                         "model": "iaf_cond_alpha",
@@ -767,7 +777,6 @@ class TestNest(
                 "simulator": "nest",
                 "duration": duration,
                 "resolution": resolution,
-                "seed": 1234,
                 "cell_models": {
                     "A": {
                         "model": "iaf_cond_alpha",
@@ -858,7 +867,6 @@ class TestNest(
                     "duration": duration,
                     "resolution": resolution,
                     "modules": ["bla"],
-                    "seed": 1234,
                     "cell_models": {
                         "A": {"model": "iaf_cond_alpha"},
                         "C": {"model": "parrot_neuron"},
@@ -888,7 +896,6 @@ class TestNest(
                     "simulator": "nest",
                     "duration": duration,
                     "resolution": resolution,
-                    "seed": 1234,
                     "cell_models": {
                         "A": {"model": "iaf_cond_alpha"},
                         "C": {"model": "parrot_neuron"},
@@ -918,7 +925,6 @@ class TestNest(
                     "simulator": "nest",
                     "duration": duration,
                     "resolution": resolution,
-                    "seed": 1234,
                     "cell_models": {
                         "A": {"model": "bla_bla"},
                         "C": {"model": "parrot_neuron"},
@@ -943,7 +949,6 @@ class TestNest(
                 "simulator": "nest",
                 "duration": duration,
                 "resolution": resolution,
-                "seed": 1234,
                 "cell_models": {
                     "A": {"model": "hh_psc_alpha_gap"},
                     "C": {"model": "hh_psc_alpha_gap"},
@@ -976,7 +981,6 @@ class TestNest(
                     "simulator": "nest",
                     "duration": duration,
                     "resolution": resolution,
-                    "seed": 1234,
                     "cell_models": {
                         "A": {"model": "hh_psc_alpha_gap"},
                         "C": {"model": "hh_psc_alpha_gap"},
@@ -1016,7 +1020,6 @@ class TestNest(
                 "simulator": "nest",
                 "duration": 100,
                 "resolution": 0.1,
-                "seed": 1234,
                 "cell_models": {
                     "A": {
                         "model": "iaf_cond_alpha",

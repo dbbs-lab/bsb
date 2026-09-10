@@ -331,6 +331,21 @@ class RngRootNode(NumpyRng, classmap_entry=None):
         return self.seed
 
 
+def _rng_root_of(node) -> "RngRootNode":
+    """
+    The block a node falls back to when it names nothing.
+
+    A function rather than a shared base, so neither mixin drags a private class
+    into the documented bases of everything that uses it.
+    """
+    scaffold = getattr(node, "scaffold", None)
+    if scaffold is None:
+        raise ConfigurationError(
+            f"Cannot draw randomness from {node!r}: it is not attached to a network."
+        )
+    return scaffold.configuration.rng
+
+
 class RngConsumer:
     """
     Mixin for a component that draws.
@@ -350,14 +365,7 @@ class RngConsumer:
     def random_generator(self) -> Rng:
         """The generator this component draws from, named or inherited."""
         named = getattr(self, "rng", None)
-        if named is not None:
-            return named
-        scaffold = getattr(self, "scaffold", None)
-        if scaffold is None:
-            raise ConfigurationError(
-                f"Cannot draw randomness from {self!r}: it is not attached to a network."
-            )
-        return scaffold.configuration.rng
+        return named if named is not None else _rng_root_of(self)
 
     def get_rng(self, key=()) -> np.random.Generator:
         """
@@ -369,9 +377,47 @@ class RngConsumer:
         return self.random_generator.rng(key)
 
 
+class RngSettingsConsumer:
+    """
+    Mixin for a subsystem that seeds itself rather than being drawn from.
+
+    The counterpart of :class:`RngConsumer` for the other half of the block: its
+    :guilabel:`rng` attribute names a :guilabel:`settings` entry instead of a
+    generator, and it hands back a number rather than something to draw from.
+    """
+
+    rng: RngSettings = config.ref(refs.rng_settings_ref, required=False)
+    """
+    Name of the :guilabel:`settings` entry this is seeded from. Unset, the seed is
+    derived from the root seed, so there is nothing to write for the common case.
+    """
+
+    @property
+    def random_settings(self) -> SeededNode:
+        """The node this is seeded from, named or inherited."""
+        named = getattr(self, "rng", None)
+        return named if named is not None else _rng_root_of(self)
+
+    def derive_seed(self, key=()) -> int:
+        """
+        The seed to hand the subsystem.
+
+        A named entry answers with the number written on it, whatever the key: a
+        seed pinned in the configuration is the seed that is used, or pinning it
+        would not pin anything. With nothing named there is no such number, so the
+        key is what separates one subsystem from another.
+
+        :param key: What the seed is for, used only when nothing is named.
+        :returns: The seed.
+        """
+        named = getattr(self, "rng", None)
+        return named.derive() if named is not None else _rng_root_of(self).derive(key)
+
+
 __all__ = [
     "NumpyRng",
     "RngConsumer",
+    "RngSettingsConsumer",
     "Rng",
     "RngRootNode",
     "RngSettings",
@@ -381,6 +427,7 @@ __all__ = [
 __api__ = [
     "NumpyRng",
     "RngConsumer",
+    "RngSettingsConsumer",
     "Rng",
     "RngRootNode",
     "RngSettings",

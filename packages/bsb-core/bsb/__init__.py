@@ -112,6 +112,7 @@ if typing.TYPE_CHECKING:  # pragma: nocover
   import bsb.postprocessing
   import bsb.profiling
   import bsb.reporting
+  import bsb.rng
   import bsb.services
   import bsb.simulation
   import bsb.simulation.adapter
@@ -305,6 +306,7 @@ NotParallel: type["bsb.mixins.NotParallel"]
 NotSupported: type["bsb.storage.NotSupported"]
 NrrdDependencyNode: type["bsb.storage._files.NrrdDependencyNode"]
 NrrdVoxels: type["bsb.topology.partition.NrrdVoxels"]
+NumpyRng: type["bsb.rng.NumpyRng"]
 Operation: type["bsb.storage._files.Operation"]
 OptionDescriptor: type["bsb.option.OptionDescriptor"]
 OptionError: type["bsb.exceptions.OptionError"]
@@ -349,6 +351,10 @@ ReportListener: type["bsb.core.ReportListener"]
 RepresentativesTargetting: type["bsb.simulation.targetting.RepresentativesTargetting"]
 RequirementError: type["bsb.exceptions.RequirementError"]
 Rhomboid: type["bsb.topology.partition.Rhomboid"]
+Rng: type["bsb.rng.Rng"]
+RngConsumer: type["bsb.rng.RngConsumer"]
+RngRootNode: type["bsb.rng.RngRootNode"]
+RngSettings: type["bsb.rng.RngSettings"]
 RootCommand: type["bsb.cli.commands.RootCommand"]
 RotationDistributor: type["bsb.placement.distributor.RotationDistributor"]
 RotationSet: type["bsb.morphologies.RotationSet"]

@@ -216,7 +216,15 @@ def compile_isc(node_cls, dynamic_config):
     def __init_subclass__(cls, classmap_entry=MISSING, **kwargs):
         super(node_cls, cls).__init_subclass__(**kwargs)
         if classmap_entry is MISSING:
+            # `compile_class` rebuilds a node class from a copy of its own namespace,
+            # and class keywords are not repeated then. The entry the class was
+            # defined with rides along in that namespace, so a class that named its
+            # entry keeps that name, and one that opted out with `None` stays out
+            # instead of being registered under its own name after all.
+            classmap_entry = cls.__dict__.get("_config_classmap_entry", MISSING)
+        if classmap_entry is MISSING:
             classmap_entry = _snake_case(cls.__name__)
+        cls._config_classmap_entry = classmap_entry
         if classmap_entry is not None:
             node_cls._config_dynamic_classmap[classmap_entry] = cls
         f(**kwargs)

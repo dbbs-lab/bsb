@@ -14,6 +14,7 @@ from ..config import refs, types
 from ..exceptions import ConnectivityError
 from ..mixins import HasDependencies
 from ..reporting import warn
+from ..rng import RngConsumer
 from ..storage._chunks import Chunk
 
 if typing.TYPE_CHECKING:  # pragma: nocover
@@ -126,7 +127,7 @@ class HemitypeCollection:
 
 
 @config.dynamic(attr_name="strategy", required=True, auto_classmap=True)
-class ConnectionStrategy(abc.ABC, HasDependencies):
+class ConnectionStrategy(abc.ABC, HasDependencies, RngConsumer):
     scaffold: Scaffold
     name: str = config.attr(key=True)
     """

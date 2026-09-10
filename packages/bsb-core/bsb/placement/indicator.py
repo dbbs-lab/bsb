@@ -51,6 +51,10 @@ class PlacementIndicator:
     def cell_type(self):
         return self._cell_type
 
+    @property
+    def strategy(self):
+        return self._strat
+
     def get_radius(self):
         return self.assert_indication("radius")
 
@@ -213,11 +217,37 @@ class PlacementIndicator:
             ) from None
         if not np.allclose(estimate, estimate // 1):
             # 1.2 cells == 0.8 probability for 1, 0.2 probability for 2
+            rng = self._strat.get_rng(
+                key=(
+                    "guess",
+                    self._strat.name,
+                    self._cell_type.name,
+                    self._guess_key(chunk, voxels),
+                ),
+            )
             return (
-                np.floor(estimate) + (np.random.rand(estimate.size) < estimate % 1)
+                np.floor(estimate) + (rng.random(estimate.size) < estimate % 1)
             ).astype(int)
         else:
             return np.round(estimate).astype(int)
+
+    @staticmethod
+    def _guess_key(chunk, voxels):
+        """
+        A stable fingerprint of what this ``guess`` call is estimating for, to key its
+        probabilistic rounding draw.
+
+        Prefers the chunk's id, stable across ranks and runs. Falls back to a
+        fingerprint of the voxel set's geometry when no chunk is given, so two
+        partitions or voxel sets don't share a stream.
+        """
+        chunk_id = getattr(chunk, "id", None)
+        if chunk_id is not None:
+            return int(chunk_id)
+        if voxels is not None:
+            raw = voxels.get_raw(copy=False)
+            return (len(voxels), tuple(np.round(raw.sum(axis=0), 6)))
+        return None
 
     def _density_to_estim(self, density, chunk=None):
         return sum(p.volume(chunk) * density for p in self._strat.partitions)

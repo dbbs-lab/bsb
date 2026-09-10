@@ -30,6 +30,7 @@
 -e ./packages/bsb-json
 -e ./packages/bsb-yaml
 -e ./packages/bsb-arbor
+-e ./packages/bsb-native
 -e ./packages/bsb-nest
 -e ./packages/bsb-neuron
 -e ./packages/bsb-test

@@ -72,6 +72,13 @@ jobs:
       - name: Install NEST
         run: uv run --project packages/bsb-core ./nx run bsb-nest:install-nest
 
+      # Sets NX_BASE/NX_HEAD env vars for the rest of the job. For pull_request
+      # events it resolves NX_BASE to merge-base(origin/<PR base ref>, HEAD) -
+      # only used below when github.event_name == 'pull_request'.
+      - name: Derive base/head SHAs for nx affected
+        if: github.event_name == 'pull_request'
+        uses: nrwl/nx-set-shas@v5
+
       - name: Run unittests
         timeout-minutes: 60
         env:
@@ -87,8 +94,10 @@ jobs:
           export PYTHONPATH="${{ github.workspace }}/.nx/installation/nest/install/lib/python${{ matrix.python-version }}/site-packages${PYTHONPATH:+:$PYTHONPATH}"
           if [ "${{ github.ref }}" == "refs/heads/main" ]; then
             uv run --project packages/bsb-core opentelemetry-instrument ./nx run-many -t test ;
-          else
-            uv run --project packages/bsb-core opentelemetry-instrument ./nx affected -t test --base=origin/main --head=HEAD;
+          elif [ "${{ github.event_name }}" == "pull_request" ]; then
+            # NX_BASE/NX_HEAD were derived by nrwl/nx-set-shas above.
+            echo "Using nx-set-shas base sha $NX_BASE as nx affected base"
+            uv run --project packages/bsb-core opentelemetry-instrument ./nx affected -t test --base="$NX_BASE" --head="$NX_HEAD";
           fi
       - name: Verify bsb-otel no-SDK contract
         # Run this step after main unit tests and combine coverage.

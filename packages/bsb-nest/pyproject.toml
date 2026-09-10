@@ -30,6 +30,11 @@ dependencies = [ "bsb-core~=7.0" ]
 [project.entry-points."bsb.simulation_backends"]
 nest = "bsb_nest"
 
+# Loaded before a configuration is parsed, so `rng.settings` knows the `nest` kind
+# without the simulation having been reached yet.
+[project.entry-points."bsb.components"]
+nest = "bsb_nest.rng"
+
 [dependency-groups]
 test = [
   "bsb-core[parallel]",

@@ -697,7 +697,8 @@ class TestAdapterControllers(
         If PLOT_GRAPH is set to True, it will also plot the graph of memory
         after every flush.
         """
-        import os
+        import pathlib
+        import shutil
         import tracemalloc
 
         from neo import AnalogSignal
@@ -742,7 +743,12 @@ class TestAdapterControllers(
             plt.grid(True)
             plt.show()
         self.assertLess(mem_peak / MB, total_threshold)
-        os.remove("out" + str(rank) + ".nio")
+        # Under MPI a result writes a part rather than the file it was asked for, and
+        # this one is a rank's own and never merged, so clean up what it wrote.
+        written = pathlib.Path(my_result.part_filename)
+        written.unlink(missing_ok=True)
+        if written.parent != pathlib.Path("."):
+            shutil.rmtree(written.parent, ignore_errors=True)
 
 
 class TestAfterSimulationHook(

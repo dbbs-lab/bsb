@@ -1,22 +1,43 @@
+import os
+import shutil
+import tempfile
 import unittest
 from unittest.mock import patch
 
 import nest
 import numpy as np
-from bsb import BootError, CastError, ConfigurationError, RequirementError
+from bsb import (
+    AfterPrepareHook,
+    BootError,
+    CastError,
+    ConfigurationError,
+    RequirementError,
+    config,
+)
 from bsb.config import Configuration, build_context
 from bsb.core import Scaffold
 from bsb.services import MPI
 from bsb_test import NumpyTestCase, RandomStorageFixture, get_test_config
-from nest.lib.hl_api_exceptions import NESTErrors
+from neo import io
+from packaging.version import Version
+
+if Version(nest.__version__) >= Version("3.10"):
+    from nest import NESTErrors
+else:
+    from nest.lib.hl_api_exceptions import NESTErrors
 from scipy.optimize import curve_fit
 
 from bsb_nest import NestAdapter
+from bsb_nest.exceptions import NestKernelError
 
 
 def _conf_single_cell():
     return Configuration(
         {
+            "rng": {
+                "seed": 1234,
+                "settings": {"kernel": {"strategy": "nest", "seed": 1234}},
+            },
             "name": "test",
             "storage": {"engine": "hdf5"},
             "network": {"x": 100, "y": 100, "z": 100},
@@ -40,6 +61,10 @@ def _conf_single_cell():
 def _conf_two_cells():
     return Configuration(
         {
+            "rng": {
+                "seed": 1234,
+                "settings": {"kernel": {"strategy": "nest", "seed": 1234}},
+            },
             "name": "test",
             "storage": {"engine": "hdf5"},
             "network": {"x": 1, "y": 1, "z": 1},
@@ -95,59 +120,62 @@ class TestNest(
         vm = None
         nspike = None
 
-        def probe(_, sim, data):
-            # Probe and steal some local refs to data that's otherwise encapsulated :)
-            nonlocal vm, simulation
-            simulation = sim
+        @config.node
+        class Probe(AfterPrepareHook):
+            # `inner`, not `self`: the body closes over the test case's `self`.
+            def postprocess(inner, _, sim, data):
+                # Probe and steal some local refs to data that's otherwise encapsulated :)
+                nonlocal vm, simulation
+                simulation = sim
 
-            # Get the important information out of the sim/data
-            cell_m = sim.cell_models.gif_pop_psc_exp
-            conn_m = sim.connection_models.gif_pop_psc_exp
-            pop = data.populations[cell_m]
-            syn = data.connections[conn_m]
+                # Get the important information out of the sim/data
+                cell_m = sim.cell_models.gif_pop_psc_exp
+                conn_m = sim.connection_models.gif_pop_psc_exp
+                pop = data.populations[cell_m]
+                syn = data.connections[conn_m]
 
-            # Add a voltmeter
-            vm = nest.Create(
-                "voltmeter",
-                params={"record_from": ["n_events"], "interval": sim.resolution},
-            )
-            nest.Connect(vm, pop)
+                # Add a voltmeter
+                vm = nest.Create(
+                    "voltmeter",
+                    params={"record_from": ["n_events"], "interval": sim.resolution},
+                )
+                nest.Connect(vm, pop)
 
-            # Add a spying recorder
-            def spy(_):
-                nonlocal nspike
+                # Add a spying recorder
+                def spy(_):
+                    nonlocal nspike
 
-                start_time = 1000
-                start_step = int(start_time / simulation.resolution)
-                nspike = vm.events["n_events"][start_step:]
+                    start_time = 1000
+                    start_step = int(start_time / simulation.resolution)
+                    nspike = vm.events["n_events"][start_step:]
 
-            data.result.create_recorder(spy)
+                data.result.create_recorder(spy)
 
-            # Test node parameter transfer
-            for param, value in {
-                "V_reset": 0.0,
-                "V_T_star": 10.0,
-                "E_L": 0.0,
-                "Delta_V": 2.0,
-                "C_m": 250.0,
-                "tau_m": 20.0,
-                "t_ref": 4.0,
-                "I_e": 500.0,
-                "lambda_0": 10.0,
-                "tau_syn_in": 2.0,
-                "tau_sfa": (500.0,),
-                "q_sfa": (1.0,),
-            }.items():
-                with self.subTest(param=param, value=value):
-                    self.assertEqual(value, pop.get(param))
+                # Test node parameter transfer
+                for param, value in {
+                    "V_reset": 0.0,
+                    "V_T_star": 10.0,
+                    "E_L": 0.0,
+                    "Delta_V": 2.0,
+                    "C_m": 250.0,
+                    "tau_m": 20.0,
+                    "t_ref": 4.0,
+                    "I_e": 500.0,
+                    "lambda_0": 10.0,
+                    "tau_syn_in": 2.0,
+                    "tau_sfa": (500.0,),
+                    "q_sfa": (1.0,),
+                }.items():
+                    with self.subTest(param=param, value=value):
+                        self.assertEqual(value, pop.get(param))
 
-            # Test synapse parameter transfer
-            for param, value in (("weight", -6.25), ("delay", 1)):
-                with self.subTest(param=param, value=value):
-                    self.assertEqual(value, syn.get(param))
+                # Test synapse parameter transfer
+                for param, value in (("weight", -6.25), ("delay", 1)):
+                    with self.subTest(param=param, value=value):
+                        self.assertEqual(value, syn.get(param))
 
-        network.simulations.test_nest.post_prepare.append(probe)
-        network.run_simulation("test_nest")
+        network.simulations.test_nest.after_prepare["probe"] = Probe()
+        NestAdapter().simulate(network.simulations.test_nest)
 
         mean_nspike = np.mean(nspike)
         mean_rate = mean_nspike / pop_size / simulation.resolution * 1000.0
@@ -280,9 +308,9 @@ class TestNest(
         netw = Scaffold(cfg, self.storage)
         netw.compile()
         results = netw.run_simulation("test")
-        spike_times_bsb = results.spiketrains[0]
+        spike_times_bsb = results.block.segments[0].spiketrains[0]
         self.assertTrue(np.unique(spike_times_bsb.array_annotations["senders"]) == 1)
-        membrane_potentials = results.analogsignals[0]
+        membrane_potentials = results.block.segments[0].analogsignals[0]
         # last time point is not recorded because of recorder delay.
         self.assertTrue(len(membrane_potentials) == duration / resolution - 1)
         self.assertTrue(membrane_potentials.annotations["cell_id"] == 1)
@@ -379,7 +407,7 @@ class TestNest(
         netw = Scaffold(cfg, self.storage)
         netw.compile()
         results = netw.run_simulation("test")
-        v_ms = np.array(results.analogsignals[0])[:, 0]
+        v_ms = np.array(results.block.segments[0].analogsignals[0])[:, 0]
         self.assertAll(v_ms[: int(50 / resolution) + 1] == -70)
         self.assertAll(
             v_ms[int(50 / resolution) + 1 : int(60 / resolution) + 1] > -70,
@@ -408,7 +436,6 @@ class TestNest(
                 "simulator": "nest",
                 "duration": 1000,
                 "resolution": 0.1,
-                "seed": 1234,
                 "cell_models": {
                     "A": {
                         "model": "gif_cond_exp",
@@ -436,10 +463,13 @@ class TestNest(
             }
         }
         cfg = Configuration(conf)
+        # Compared against a NEST run seeded by hand, so the kernel has to be
+        # that number rather than one derived from the root seed.
+        cfg.simulations.test.rng = "kernel"
         netw = Scaffold(cfg, self.storage)
         netw.compile()
         results = netw.run_simulation("test")
-        spike_times_bsb = results.spiketrains[0]
+        spike_times_bsb = results.block.segments[0].spiketrains[0]
         self.assertClose(np.array(spike_times_nest), np.array(spike_times_bsb))
         self.assertEqual(
             cfg.__tree__()["simulations"]["test"]["cell_models"]["A"]["constants"]["V_m"],
@@ -502,7 +532,6 @@ class TestNest(
                 "simulator": "nest",
                 "duration": duration,
                 "resolution": resolution,
-                "seed": 1234,
                 "cell_models": {
                     "A": {
                         "model": "aeif_cond_alpha_multisynapse",
@@ -558,7 +587,7 @@ class TestNest(
         netw = Scaffold(cfg, self.storage)
         netw.compile()
         results = netw.run_simulation("test")
-        v_ms = np.array(results.analogsignals[0])[:, 0]
+        v_ms = np.array(results.block.segments[0].analogsignals[0])[:, 0]
         self.assertAll(v_ms[: int(50 / resolution) + 1] + 70.6 < 1e-3)
         self.assertAll(
             v_ms[int(50 / resolution) + 1 : int(60 / resolution) + 1] >= -70.6,
@@ -613,7 +642,6 @@ class TestNest(
                 "simulator": "nest",
                 "duration": duration,
                 "resolution": resolution,
-                "seed": 1234,
                 "cell_models": {
                     "A": {
                         "model": "iaf_cond_alpha",
@@ -626,6 +654,9 @@ class TestNest(
                 "devices": {},
             }
         }
+        # Compared against a NEST run seeded by hand, so the kernel has to be
+        # that number rather than one derived from the root seed.
+        cfg.simulations.test.rng = "kernel"
         dict_spike_gen = {
             "device": "sinusoidal_poisson_generator",
             "delay": resolution,
@@ -646,7 +677,7 @@ class TestNest(
         netw.compile()
 
         results = netw.run_simulation("test")
-        spike_times = np.array(np.concatenate(results.spiketrains))
+        spike_times = np.array(np.concatenate(results.block.segments[0].spiketrains))
         self.assertAlmostEqual(
             100 * nb_gen,
             len(spike_times),
@@ -688,7 +719,6 @@ class TestNest(
                 "simulator": "nest",
                 "duration": duration,
                 "resolution": resolution,
-                "seed": 1234,
                 "cell_models": {
                     "A": {
                         "model": "iaf_cond_alpha",
@@ -747,7 +777,6 @@ class TestNest(
                 "simulator": "nest",
                 "duration": duration,
                 "resolution": resolution,
-                "seed": 1234,
                 "cell_models": {
                     "A": {
                         "model": "iaf_cond_alpha",
@@ -802,9 +831,9 @@ class TestNest(
         results = netw.run_simulation("test")
 
         # get spike time of first spike of C
-        spike_times_bsb = results.spiketrains[1]
+        spike_times_bsb = results.block.segments[0].spiketrains[1]
         self.assertEqual("record_C_spikes", spike_times_bsb.annotations["device"])
-        membrane_potentials = results.analogsignals[0].magnitude[:, 0]
+        membrane_potentials = results.block.segments[0].analogsignals[0].magnitude[:, 0]
         time_effect_first_syn = int((spike_times_bsb.magnitude[0] + 1) / resolution)
         time_effect_sec_syn = int((spike_times_bsb.magnitude[0] + 30) / resolution)
         self.assertClose(membrane_potentials[time_effect_first_syn - 1], -70.0, atol=1e-5)
@@ -838,7 +867,6 @@ class TestNest(
                     "duration": duration,
                     "resolution": resolution,
                     "modules": ["bla"],
-                    "seed": 1234,
                     "cell_models": {
                         "A": {"model": "iaf_cond_alpha"},
                         "C": {"model": "parrot_neuron"},
@@ -868,7 +896,6 @@ class TestNest(
                     "simulator": "nest",
                     "duration": duration,
                     "resolution": resolution,
-                    "seed": 1234,
                     "cell_models": {
                         "A": {"model": "iaf_cond_alpha"},
                         "C": {"model": "parrot_neuron"},
@@ -898,7 +925,6 @@ class TestNest(
                     "simulator": "nest",
                     "duration": duration,
                     "resolution": resolution,
-                    "seed": 1234,
                     "cell_models": {
                         "A": {"model": "bla_bla"},
                         "C": {"model": "parrot_neuron"},
@@ -923,7 +949,6 @@ class TestNest(
                 "simulator": "nest",
                 "duration": duration,
                 "resolution": resolution,
-                "seed": 1234,
                 "cell_models": {
                     "A": {"model": "hh_psc_alpha_gap"},
                     "C": {"model": "hh_psc_alpha_gap"},
@@ -956,7 +981,6 @@ class TestNest(
                     "simulator": "nest",
                     "duration": duration,
                     "resolution": resolution,
-                    "seed": 1234,
                     "cell_models": {
                         "A": {"model": "hh_psc_alpha_gap"},
                         "C": {"model": "hh_psc_alpha_gap"},
@@ -996,7 +1020,6 @@ class TestNest(
                 "simulator": "nest",
                 "duration": 100,
                 "resolution": 0.1,
-                "seed": 1234,
                 "cell_models": {
                     "A": {
                         "model": "iaf_cond_alpha",
@@ -1107,3 +1130,118 @@ class TestNest(
             )
             <= 1e-5
         )
+
+    @unittest.skipIf(MPI.get_size() > 1, "Skipped during parallel testing.")
+    def test_composition_writes_separate_blocks(self):
+        """Two NEST simulations sharing one resolution, composed in a single adapter and
+        streamed to one file, are written as separate blocks with distinct keys."""
+        dt = 0.1
+        spike_times = np.array([100, 150, 200])
+
+        def _sim(duration):
+            return {
+                "duration": duration,
+                "resolution": dt,
+                "simulator": "nest",
+                "cell_models": {"cell_A": {"model": "parrot_neuron"}},
+                "connection_models": {},
+                "devices": {
+                    "gen": {
+                        "delay": dt,
+                        "device": "external",
+                        "nest_model": "spike_generator",
+                        "constants": {"spike_times": spike_times},
+                        "targetting": {
+                            "cell_models": ["cell_A"],
+                            "strategy": "cell_model",
+                        },
+                        "weight": 1,
+                    },
+                    "rec": {
+                        "delay": dt,
+                        "device": "spike_recorder",
+                        "targetting": {
+                            "cell_models": ["cell_A"],
+                            "strategy": "cell_model",
+                        },
+                    },
+                },
+            }
+
+        cfg = Configuration.default(
+            **{
+                "network": {"chunk_size": 200},
+                "storage": {"engine": "hdf5"},
+                "partitions": {"my_layer": {"thickness": 40.0}},
+                "cell_types": {"cell_A": {"spatial": {"count": 1, "radius": 1.0}}},
+                "placement": {
+                    "cell_A_placement": {
+                        "cell_types": ["cell_A"],
+                        "partitions": ["my_layer"],
+                        "strategy": "bsb.placement.RandomPlacement",
+                    }
+                },
+                "simulations": {"sim_a": _sim(300), "sim_b": _sim(500)},
+            }
+        )
+        scaffold = Scaffold(cfg, storage=self.storage)
+        scaffold.compile(clear=True)
+
+        tmpdir = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, tmpdir, ignore_errors=True)
+        nio_file = os.path.join(tmpdir, "composed.nio")
+
+        NestAdapter().simulate(
+            scaffold.simulations["sim_a"],
+            scaffold.simulations["sim_b"],
+            filename=nio_file,
+        )
+
+        blocks = {b.name: b for b in io.NixIO(nio_file, "ro").read_all_blocks()}
+        self.assertEqual(
+            set(blocks), {"sim_a", "sim_b"}, "Expected one block per composed simulation"
+        )
+        self.assertEqual(
+            len({b.annotations["nix_name"] for b in blocks.values()}),
+            2,
+            "Composed simulations must get distinct storage keys",
+        )
+
+    @unittest.skipIf(MPI.get_size() > 1, "Skipped during parallel testing.")
+    def test_composition_differing_resolution_raises(self):
+        """NEST has a single kernel resolution, so composing simulations that ask for
+        different resolutions is rejected up front rather than failing in the kernel."""
+
+        def _sim(resolution):
+            return {
+                "duration": 100,
+                "resolution": resolution,
+                "simulator": "nest",
+                "cell_models": {"cell_A": {"model": "parrot_neuron"}},
+                "connection_models": {},
+                "devices": {},
+            }
+
+        cfg = Configuration.default(
+            **{
+                "network": {"chunk_size": 200},
+                "storage": {"engine": "hdf5"},
+                "partitions": {"my_layer": {"thickness": 40.0}},
+                "cell_types": {"cell_A": {"spatial": {"count": 1, "radius": 1.0}}},
+                "placement": {
+                    "cell_A_placement": {
+                        "cell_types": ["cell_A"],
+                        "partitions": ["my_layer"],
+                        "strategy": "bsb.placement.RandomPlacement",
+                    }
+                },
+                "simulations": {"sim_a": _sim(0.1), "sim_b": _sim(0.5)},
+            }
+        )
+        scaffold = Scaffold(cfg, storage=self.storage)
+        scaffold.compile(clear=True)
+
+        with self.assertRaises(NestKernelError):
+            NestAdapter().simulate(
+                scaffold.simulations["sim_a"], scaffold.simulations["sim_b"]
+            )

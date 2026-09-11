@@ -60,10 +60,9 @@ class TestNestExamples(
             ],
             dtype=int,
         )
-        # A cell that never fired writes no train, so this counts the cells that did,
-        # and which of them fired is drawn afresh on a run that pins no seed. What
-        # holds every run is that something fired and that every train names a cell
-        # of the population.
+        # A device records every cell it watched, so these are the watched cells and
+        # not only the ones that fired: how many there are no longer depends on what
+        # the run happened to draw.
         self.assertGreater(neuron_ids.size, 0)
         self.assertLess(neuron_ids.size, 1600 + 1)
         self.assertLessEqual(np.max(neuron_ids), 1600 + 1)

@@ -20,19 +20,21 @@ class SpikeRecorder(NestDevice, classmap_entry="spike_recorder"):
         def recorder(segment):
             senders = np.asarray(device.events["senders"])
             times = np.asarray(device.events["times"])
-            # One train per cell that spiked. A cell that stayed silent writes
-            # nothing: absence from the results is what silence looks like, and
-            # the device's targets say which cells could have been there.
-            for sender in np.unique(senders):
+            # One train per cell the device watched, empty ones included. Which
+            # cells those were is then the set of recordings itself, so nothing
+            # has to say it a second time, and a silent cell is told apart from
+            # one that was never watched by reading the results alone.
+            # `nodes` is a NEST collection; its `tolist` is the ids the recorder
+            # reports its senders by, which is what a train is keyed on.
+            for node in nodes.tolist():
                 segment.spiketrains.append(
                     SpikeTrain(
-                        times[senders == sender],
+                        times[senders == node],
                         units="ms",
                         t_stop=simulation.duration,
                         name=self.name,
-                        cell_id=int(sender),
-                        cell_type=inv_targets[sender],
-                        pop_size=len(nodes),
+                        cell_id=int(node),
+                        cell_type=inv_targets[node],
                     )
                 )
 

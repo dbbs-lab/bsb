@@ -20,11 +20,15 @@ type, and any per-cell annotation a device or a downstream tool wants to add.
 Neuroscience is numerous by design, and the tools downstream of Neo are built to
 handle many objects.
 
-Cells that produced nothing write nothing. A cell that never fired has no spike
-train, and its silence is legible as its absence: there is no empty placeholder to
-distinguish from a real, empty recording. The device's target count travels with
-the recordings, so a population rate is the recorded trains summed over that
-count, not over the number of trains.
+A device writes one recording per cell it watched, and a cell that produced
+nothing gets an empty one. Its recordings are therefore its cells, which is what
+makes a population answerable from the results alone: a cell with an empty train
+was watched and stayed quiet, a cell with no train at all was never watched.
+
+Nothing has to say which cells a device watched, because the recordings already
+do. A population rate is the spikes summed over the number of recordings, and a
+raster has a row for every cell whether or not it fired, rather than closing up
+around the ones that did.
 
 Annotations
 ===========
@@ -81,8 +85,7 @@ To count a population's spikes, sum the trains of its device:
 
     recordings = list(iter_recordings(block, device="spikes_exc"))
     n_spikes = sum(len(recording.signal) for recording in recordings)
-    pop_size = recordings[0].signal.annotations["pop_size"]
-    rate = n_spikes / duration * 1000.0 / pop_size
+    rate = n_spikes / duration * 1000.0 / len(recordings)
 
 Provenance
 ==========

@@ -19,6 +19,7 @@ from bsb import (
     SimulatorAdapter,
     config,
     get_simulation_adapter,
+    iter_recordings,
     options,
     read_simulation_config,
 )
@@ -185,17 +186,18 @@ class TestTargetting(
                 "max": 120,
             },
         }
+        # A device writes one train per cell it watched, so its trains are its
+        # targets: their count is the size it targeted and their ids are which.
+        watched = {}
         for spiketrain in spiketrains:
             recorder = spiketrain.annotations["device"]
-            self.assertEqual(
-                spiketrain.annotations["pop_size"], expected[recorder]["size"]
-            )
-            self.assertAll(
-                np.array(spiketrain.annotations["gids"]) < expected[recorder]["max"]
-            )
-            self.assertAll(
-                np.array(spiketrain.annotations["gids"]) >= expected[recorder]["min"]
-            )
+            watched.setdefault(recorder, []).append(spiketrain.annotations["cell_id"])
+        self.assertEqual(set(expected), set(watched), "every device has to record")
+        for recorder, ids in watched.items():
+            with self.subTest(device=recorder):
+                self.assertEqual(expected[recorder]["size"], len(ids))
+                self.assertAll(np.array(ids) < expected[recorder]["max"])
+                self.assertAll(np.array(ids) >= expected[recorder]["min"])
 
     def test_by_id(self):
         sim = self.network.simulations.test
@@ -208,7 +210,10 @@ class TestTargetting(
         )
         result = self.network.run_simulation("test")
         spiketrains = result.block.segments[0].spiketrains
-        self.assertEqual(sorted(spiketrains[0].annotations["gids"]), [0, 5, 7, 10])
+        # Its trains are the cells it targeted, whether or not they fired.
+        self.assertEqual(
+            [0, 5, 7, 10], sorted(train.annotations["cell_id"] for train in spiketrains)
+        )
 
     def test_sphere(self):
         """Testing SphericalTargetting and SphericalTargettingCellTypes together"""
@@ -236,12 +241,19 @@ class TestTargetting(
         positions = ps.load_positions()
         expected_ids = np.where(positions[:, 0] <= 40)
 
-        spiketrains = result.block.segments[0].spiketrains
-        for spiketrain in spiketrains:
-            sorted_ids = np.sort(spiketrain.annotations["gids"])
-            only_h_cells = sorted_ids[sorted_ids < 20]
-            self.assertAll(only_h_cells == expected_ids)
-            self.assertEqual(len(only_h_cells), 12)
+        # Both devices target the same sphere and each writes one train per cell it
+        # targeted, so each has to have found the same twelve h_cells.
+        for device in ("sphere_recorder", "sphere_ct_recorder"):
+            with self.subTest(device=device):
+                sorted_ids = np.sort(
+                    [
+                        recording.cell_id
+                        for recording in iter_recordings(result.block, device=device)
+                    ]
+                )
+                only_h_cells = sorted_ids[sorted_ids < 20]
+                self.assertAll(only_h_cells == expected_ids)
+                self.assertEqual(len(only_h_cells), 12)
 
     def test_cylinder(self):
         sim = self.network.simulations.test
@@ -266,7 +278,7 @@ class TestTargetting(
         expected_ids = np.where(filtered_by_cylinder)
 
         spiketrains = result.block.segments[0].spiketrains
-        sorted_ids = np.sort(spiketrains[0].annotations["gids"])
+        sorted_ids = np.sort([t.annotations["cell_id"] for t in spiketrains])
         only_h_cells = sorted_ids[sorted_ids < 20]
         self.assertAll(only_h_cells == expected_ids)
         self.assertEqual(len(only_h_cells), 6)
@@ -290,7 +302,7 @@ class TestTargetting(
         result = self.network.run_simulation("test")
         spiketrains = result.block.segments[0].spiketrains
 
-        sorted_ids = np.sort(spiketrains[0].annotations["gids"])
+        sorted_ids = np.sort([t.annotations["cell_id"] for t in spiketrains])
         self.assertAll(sorted_ids == sub_pop_h_cell)
         self.assertEqual(len(sorted_ids), 4)
 

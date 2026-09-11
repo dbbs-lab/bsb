@@ -17,8 +17,8 @@ def _population_rate(block, device, duration):
     recordings = list(iter_recordings(block, device=device))
     assert recordings, f"no recordings for device {device!r}"
     n_spikes = sum(len(recording.signal) for recording in recordings)
-    pop_size = recordings[0].signal.annotations["pop_size"]
-    return n_spikes / duration * 1000.0 / pop_size
+    # Every cell the device watched has a train, so the trains are the population.
+    return n_spikes / duration * 1000.0 / len(recordings)
 
 
 @unittest.skipIf(MPI.get_size() > 1, "Skipped during parallel testing.")

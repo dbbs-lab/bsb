@@ -34,9 +34,9 @@ class PoissonGenerator(NestDevice, classmap_entry="poisson_generator"):
                     units="ms",
                     array_annotations={"senders": sr.events["senders"]},
                     t_stop=simulation.duration,
-                    device=self.name,
+                    name=self.name,
                     pop_size=len(nodes),
                 )
             )
 
-        simdata.result.create_recorder(recorder)
+        simdata.result.create_recorder(recorder, device=self)

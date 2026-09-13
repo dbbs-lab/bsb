@@ -234,10 +234,9 @@ device that recorded it and the cell it belongs to. This information is stored i
       device_name = spiketrain.annotations["device"]
       cell_id = spiketrain.annotations["cell_id"]
       end_time_of_the_simulation = spiketrain.annotations["t_stop"]
-      population_size = spiketrain.annotations["pop_size"]
 
-A cell that never fired writes no spike train at all, so a device's trains are the cells of that
-device that spiked. To walk them without going through the Neo containers yourself, use
+A device writes one train per cell it watched, so its trains are its cells and a cell that
+never fired has an empty one. To walk them without going through the Neo containers yourself, use
 :func:`~bsb.simulation.results.iter_recordings`, which is described in :doc:`/simulation/results`:
 
 .. code-block:: python

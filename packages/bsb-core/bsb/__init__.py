@@ -340,6 +340,7 @@ RandomPlacement: type["bsb.placement.random.RandomPlacement"]
 RandomRotations: type["bsb.placement.distributor.RandomRotations"]
 ReadOnlyManager: type["bsb.storage.interfaces.ReadOnlyManager"]
 ReadOnlyOptionError: type["bsb.exceptions.ReadOnlyOptionError"]
+Recording: type["bsb.simulation.results.Recording"]
 RedoError: type["bsb.exceptions.RedoError"]
 Reference: type["bsb.config.refs.Reference"]
 ReferenceLambdaError: type["bsb.exceptions.ReferenceLambdaError"]
@@ -450,6 +451,7 @@ inside_mbox: "bsb.connectivity.geometric.geometric_shapes.inside_mbox"
 is_module_option_set: "bsb.options.is_module_option_set"
 is_partition: "bsb.topology.is_partition"
 is_region: "bsb.topology.is_region"
+iter_recordings: "bsb.simulation.results.iter_recordings"
 load_root_command: "bsb.cli.commands.load_root_command"
 make_configuration_diagram: "bsb.config.make_configuration_diagram"
 merge_rank_results: "bsb.simulation.results.merge_rank_results"

@@ -222,9 +222,9 @@ Spike Trains
 ------------
 
 Within a segment, you can access all the :class:`SpikeTrain <neo.core.SpikeTrain>` objects recorded during
-that particular timeframe. A ``SpikeTrain`` represents the collection of spikes emitted by the target population,
-and it includes metadata about the device name, the size of the cell population, and the IDs of the spiking cells.
-This information is stored in the :guilabel:`annotations` attribute:
+that particular timeframe. A ``SpikeTrain`` holds the spikes of a single cell, and is annotated with the
+device that recorded it and the cell it belongs to. This information is stored in the
+:guilabel:`annotations` attribute:
 
 .. code-block:: python
 
@@ -232,14 +232,20 @@ This information is stored in the :guilabel:`annotations` attribute:
       spiketrain_array = spiketrain.magnitude
       unit_of_measure = spiketrain.units
       device_name = spiketrain.annotations["device"]
-      list_of_spiking_cell_ids = spiketrain.annotations["senders"]
+      cell_id = spiketrain.annotations["cell_id"]
       end_time_of_the_simulation = spiketrain.annotations["t_stop"]
       population_size = spiketrain.annotations["pop_size"]
 
-.. note::
+A cell that never fired writes no spike train at all, so a device's trains are the cells of that
+device that spiked. To walk them without going through the Neo containers yourself, use
+:func:`~bsb.simulation.results.iter_recordings`, which is described in :doc:`/simulation/results`:
 
-  To retrieve the spike train for a specific cell, the spike time at index i in the ``spiketrain_array[i]``
-  corresponds to the cell with ID ``list_of_spiking_cell_ids[i]``.
+.. code-block:: python
+
+  from bsb.simulation.results import iter_recordings
+
+  for recording in iter_recordings(block, device="my_spike_recorder"):
+      print(recording.cell_id, recording.signal.magnitude)
 
 Analog Signals
 --------------

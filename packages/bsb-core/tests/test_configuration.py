@@ -1337,6 +1337,34 @@ class TestTypes(unittest.TestCase):
             # Check that unknown distributions throw a CastError
             a = Test({"c": {"distribution": "alphaa"}})
 
+    def test_distribution_draw_uses_the_given_rng(self):
+        """`Distribution.draw` must draw through a passed rng, not scipy's own
+        unseeded default, or a distribution config value can never be reproduced."""
+
+        @config.root
+        class Test:
+            c = config.attr(type=types.distribution())
+
+        a = Test({"c": {"distribution": "norm"}})
+
+        first = a.c.draw(5, np.random.default_rng(1234))
+        again = a.c.draw(5, np.random.default_rng(1234))
+        self.assertTrue(np.array_equal(first, again), "same rng must draw the same")
+
+        other = a.c.draw(5, np.random.default_rng(4321))
+        self.assertFalse(
+            np.array_equal(first, other), "different rngs must not draw the same"
+        )
+
+        # Left unset, still falls back to scipy's own default rather than raising.
+        self.assertEqual(5, len(a.c.draw(5)))
+
+        # A constant distribution ignores whatever rng it is handed.
+        b = Test({"c": 7})
+        self.assertTrue(
+            np.array_equal(np.full(3, 7), b.c.draw(3, np.random.default_rng()))
+        )
+
     def test_evaluation(self):
         @config.root
         class Test:

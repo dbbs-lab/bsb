@@ -330,7 +330,7 @@ class DistributionPlacement(PlacementStrategy):
     """Tail probability used to clip the distribution to a finite interval. This 
     value corresponds to probability for a sampled value to be out of the interval."""
 
-    def draw_interval(self, n, lower, upper):
+    def draw_interval(self, n, lower, upper, rng: np.random.Generator | None = None):
         """
         This method draws n random values and returns the ones which fall in
         the provided interval boundaries.
@@ -338,6 +338,8 @@ class DistributionPlacement(PlacementStrategy):
         :param int n: Number of points to draw
         :param float lower: Lower bound of the interval within [0, 1]
         :param float upper: Upper bound of the interval within [0, 1]
+        :param rng: Generator to draw from. Left unset, the underlying
+            distribution falls back to its own unseeded default.
         :return: random values that fell within the interval boundaries.
         :rtype: numpy.ndarray
         """
@@ -350,7 +352,7 @@ class DistributionPlacement(PlacementStrategy):
         # Draw values until they land all in the defined interval.
         accepted_values = []
         while len(accepted_values) < n:
-            random_values = self.distribution.draw(n - len(accepted_values))
+            random_values = self.distribution.draw(n - len(accepted_values), rng)
             selected = (random_values > distrib_interval[0]) * (
                 random_values <= distrib_interval[1]
             )
@@ -395,7 +397,7 @@ class DistributionPlacement(PlacementStrategy):
                 # Draw according to the distribution the random number of cells to
                 # place in the Chunk
                 random_values = self.draw_interval(
-                    num_to_place, lower=bounds[0], upper=bounds[1]
+                    num_to_place, lower=bounds[0], upper=bounds[1], rng=rng
                 )
                 num_selected = random_values.size
                 # ratio of area occupied by the chunk along the two other dimensions

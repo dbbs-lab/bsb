@@ -49,11 +49,18 @@ class Distribution:
                 prepend=f"Can't cast to '{self.distribution}': ",
             )
 
-    def draw(self, n):
+    def draw(self, n, rng: np.random.Generator | None = None):
         """
         Draw n random samples from the distribution.
+
+        :param n: Number of samples to draw.
+        :param rng: Generator to draw from. A caller that draws as part of a
+            reconstruction should pass its own, e.g. from
+            :meth:`RngConsumer.get_rng <bsb.rng.RngConsumer.get_rng>`, so the draw
+            comes from the configured, reproducible randomness rather than whichever
+            unseeded generator :mod:`scipy` falls back to when none is given.
         """
-        return self._distr.rvs(size=n)
+        return self._distr.rvs(size=n, random_state=rng)
 
     def definition_interval(self, epsilon=0):
         """
@@ -92,5 +99,5 @@ class _ConstantDistribution:
     def __init__(self, const):
         self.const = const
 
-    def rvs(self, size):
+    def rvs(self, size, random_state=None):
         return np.full(size, self.const, dtype=type(self.const))

@@ -8,7 +8,7 @@ and the [repeated simulation example](https://bsb.readthedocs.io/en/latest/examp
 
 ## Installation 
 
-This example is supported on Python 3.10 and above. 
+This example is supported on Python 3.11 and above. 
 You would need to install the NEST simulator, following 
 [these instructions](https://nest-simulator.readthedocs.io/en/stable/installation/index.html). 
 

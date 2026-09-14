@@ -36,7 +36,7 @@ Comprehensive documentation is available at:
 
 ### Pip installation
 
-The BSB supports Python 3.10 and above. To install the BSB suite along with the core framework and default plugins:
+The BSB supports Python 3.11 and above. To install the BSB suite along with the core framework and default plugins:
 
 ```bash
 pip install bsb

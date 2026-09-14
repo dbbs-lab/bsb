@@ -6,7 +6,7 @@ requires = [ "setuptools" ]
 name = "bsb"
 version = "7.6.0"
 readme = "README.md"
-requires-python = ">=3.10,<4"
+requires-python = ">=3.11,<4"
 description = "Black-box component framework for multiscale neural modeling"
 classifiers = [
   "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"

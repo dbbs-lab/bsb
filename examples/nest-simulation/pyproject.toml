@@ -3,7 +3,7 @@ name = "nest-simulation"
 version = "1.0.0"
 description = "BSB NEST simulation examples"
 readme = "README.md"
-requires-python = ">=3.10,<4"
+requires-python = ">=3.11,<4"
 dependencies = [
     "bsb~=7.0",
     "bsb-nest~=7.0",

@@ -18,7 +18,8 @@ parameters and outputs. You will find these at the following pages:
 * :doc:`Morphologies </morphologies/intro>` ,
 * :doc:`Placement </placement/intro>`,
 * :doc:`Connectivity </connectivity/defining>`,
-* :doc:`Simulations </simulation/intro>`
+* :doc:`Simulations </simulation/intro>`,
+* :doc:`Post processing hooks </postprocess/postprocessing>`
 
 If some aspects of the documentation are not sufficiently clear or missing, do not hesitate
 to reach out for us.

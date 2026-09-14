@@ -1,3 +1,4 @@
+from bsb.simulation.results import iter_recordings
 from neo import io
 
 # Read simulation data
@@ -5,27 +6,27 @@ my_file_name = "simulation-results/neuronsimulation.nio"  # adapt the name of th
 sim = io.NixIO(my_file_name, mode="ro")
 block = sim.read_all_blocks()[0]
 segment = block.segments[0]
-my_signals = segment.analogsignals
+# Recordings are per cell and carry the same annotations everywhere, so both the
+# voltage and the synapse current are read the same way.
+recordings = list(iter_recordings(segment))
 
 import matplotlib.pylab as plt  # you might have to pip install matplotlib
 
 has_plotted_neuron = False  # We will only plot one neuron recording here
 has_plotted_synapse = False  # We will only plot one synapse recording here
-for signal in my_signals:
-    name_device = signal.name  # Retrieve the name of the device
-    cell_id = signal.annotations["cell_id"]  # Retrieve the cell ID
+for recording in recordings:
     # If the signal comes from a synapse recorder,
     # and if we did not plot a synapse recording yet
-    if name_device == "synapses_rec" and not has_plotted_synapse:
-        synapse_type = signal.annotations["synapse_type"]
+    if recording.device == "synapses_rec" and not has_plotted_synapse:
+        synapse_type = recording.signal.annotations["synapse_type"]
         out_filename = (
-            f"simulation-results/synapses_rec_{str(cell_id)}_{synapse_type}.png"
+            f"simulation-results/synapses_rec_{recording.cell_id}_{synapse_type}.png"
         )
         has_plotted_synapse = True
     # If the signal comes from a voltage recorder,
     # and if we did not plot a neuron recording yet
-    elif name_device == "vrecorder" and not has_plotted_neuron:
-        out_filename = f"simulation-results/vrecorder_{str(cell_id)}.png"
+    elif recording.device == "vrecorder" and not has_plotted_neuron:
+        out_filename = f"simulation-results/vrecorder_{recording.cell_id}.png"
         has_plotted_neuron = True
     # If we plotted both types of recording, we exit the loop
     elif has_plotted_neuron and has_plotted_synapse:
@@ -34,6 +35,7 @@ for signal in my_signals:
     else:
         continue
 
+    signal = recording.signal
     sim_time = signal.times  # Time points of simulation recording
 
     # Plot and save figure to file in images folder

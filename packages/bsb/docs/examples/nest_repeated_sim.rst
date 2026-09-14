@@ -15,7 +15,7 @@ Instead, you can load your simulation configuration from your Scaffold object an
 
 .. code-block:: python
 
-    from bsb import from storage
+    from bsb import from_storage
 
     scaffold = from_storage("network.hdf5")
     config_sim = scaffold.config.simulations["basal_activity"]
@@ -50,6 +50,10 @@ To run a simulation directly with its adapter, you need to run this following me
   This method run the actual simulation on the simulator and returns its results
 - :meth:`adapter.collect(results) <bsb:bsb.simulation.adapter.SimulatorAdapter.collect>`
   This method will flush the results from completed simulations.
+- :meth:`result.finalize() <bsb:bsb.simulation.results.SimulationResult.finalize>`
+  ``simulate()`` calls this for you once every rank's part of a run has been
+  collected; driving the adapter yourself means merging those parts into the
+  one file a run produces is on you too.
 
 NEST additionally need you to reset its kernel in between simulations so you should run also the
 :meth:`adapter.reset_kernel()<bsb_nest:bsb_nest.adapter.NestAdapter.reset_kernel>` before ``prepare``.

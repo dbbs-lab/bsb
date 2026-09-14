@@ -197,78 +197,12 @@ The following attributes can be added to the configuration to define the filteri
 Simulation results
 ==================
 
-The results of a simulation are stored in ``.nio`` files.
-These files are read and written using the :doc:`Neo Python package <neo:index>`, which is specifically
-designed for managing electrophysiology data. The files utilize the HDF5 (Hierarchical Data Format version 5)
-structure, which organizes data in a hierarchical manner, similar to a dictionary.
-The data is organized into blocks, where each block represents a recording session (i.e., a simulation block).
-Each block is further subdivided into segments, with each segment representing a specific timeframe within the session.
-To retrieve the blocks from a ``.nio`` file:
-
-.. code-block:: python
-
-  from neo import io
-
-  neo_obj = io.NixIO("NAME_OF_YOUR_NEO_FILE.nio", mode="ro")
-  blocks = neo_obj.read_all_blocks()
-
-  for block in blocks:
-    list_of_segments = blocks.segments
-
-
-For more information, please refer to the :doc:`Neo documentation <neo:read_and_analyze>`.
-
-Spike Trains
-------------
-
-Within a segment, you can access all the :class:`SpikeTrain <neo.core.SpikeTrain>` objects recorded during
-that particular timeframe. A ``SpikeTrain`` holds the spikes of a single cell, and is annotated with the
-device that recorded it and the cell it belongs to. This information is stored in the
-:guilabel:`annotations` attribute:
-
-.. code-block:: python
-
-  for spiketrain in segment.spiketrains:
-      spiketrain_array = spiketrain.magnitude
-      unit_of_measure = spiketrain.units
-      device_name = spiketrain.annotations["device"]
-      cell_id = spiketrain.annotations["cell_id"]
-      end_time_of_the_simulation = spiketrain.annotations["t_stop"]
-
-A device writes one train per cell it watched, so its trains are its cells and a cell that
-never fired has an empty one. To walk them without going through the Neo containers yourself, use
-:func:`~bsb.simulation.results.iter_recordings`, which is described in :doc:`/simulation/results`:
-
-.. code-block:: python
-
-  from bsb.simulation.results import iter_recordings
-
-  for recording in iter_recordings(block, device="my_spike_recorder"):
-      print(recording.cell_id, recording.signal.magnitude)
-
-Analog Signals
---------------
-
-Each segment also contains an :guilabel:`analogsignals` attribute, which holds a list of Neo :class:`AnalogSignal <neo.core.AnalogSignal>` objects.
-These objects contain the trace of the recorded property, along with the associated time points.
-They are also annotated with information such as the device name, the type of cell recorded, and the cell ID,
-which can be accessed through the :guilabel:`annotations` attribute:
-
-.. code-block:: python
-
-  for signal in segment.analogsignals:
-    trace_of_the_signal = signal.magnitude
-    unit_of_measure = signal.units
-    time_signature = signal.times
-    time_unit = signal.times.units
-    device_name = signal.annotations['name']
-    cell_type = signal.annotations['cell_type']
-    cell_id = signal.annotations['cell_id']
-
-.. note::
-
-  Unlike the spike train case, the :guilabel:`analogsignals` attribute contains a separate ``AnalogSignal``
-  object for each target of the device.
+A run's results are stored in one ``.nio`` file, read and written through the
+:doc:`Neo Python package <neo:index>`. Every recording -- a spike train or an analog
+signal alike -- belongs to a single cell and is annotated with the device that made
+it and the cell it belongs to, whichever backend produced it. See
+:doc:`/simulation/results` for the full shape of a results file, its annotations, and
+how to read it with :func:`~bsb.simulation.results.iter_recordings`.
 
 Advanced Features
 =================

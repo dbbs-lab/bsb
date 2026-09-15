@@ -181,31 +181,31 @@ class Population:
 
     def _subpop_np(self, arr):
         """
-        Create a subpopulation from a numpy array of indices.
+        Create a subpopulation from an array of the actual GIDs to keep.
 
-        This method handles array-based indexing, including boolean masks,
-        integer arrays, and slices.
+        ``__getitem__`` has already turned whatever it was given (a mask, an
+        integer array, a slice) into the GIDs at those positions, via
+        ``np.array(self)[item]``; every element of ``arr`` is therefore an
+        absolute GID already, not an offset into :attr:`_ranges`.
 
-        :param arr: A numpy array of indices to include in the subpopulation
+        :param arr: The GIDs to include in the subpopulation, ascending.
         :return: A new Population instance containing only the selected cells
         """
         pop = self.copy()
-        if not len(pop):
+        if not len(pop) or len(arr) == 0:
+            pop._ranges = []
             return pop
         ranges = []
-        prev = None
-        start, stop = self._ranges[0]
-        for i in arr:
-            if prev is None:
-                start += i
-                stop = start + 1
-            elif i == prev + 1:
+        start = stop = int(arr[0])
+        stop += 1
+        for i in arr[1:]:
+            i = int(i)
+            if i == stop:
                 stop += 1
             else:
                 ranges.append((start, stop))
                 start = i
                 stop = i + 1
-            prev = i
         ranges.append((start, stop))
         pop._ranges = ranges
 

@@ -52,27 +52,44 @@ class TestArborPopulation(
         adapter = get_simulation_adapter(sim.simulator)
         simdata = adapter.prepare(sim)
 
-        pop = simdata.populations[sim.cell_models["A"]]
-        ids = np.array([cell for cell in simdata.populations[sim.cell_models["A"]]])
-        all_tests = np.array([])
-        # test int list and np.int64 array
-        list_test = [0, 1, 3]
-        np.append(all_tests, [ele for ele in pop[list_test]] == ids[list_test])
-        int64_test = np.array(list_test, dtype=np.int64)
-        np.append(all_tests, [ele for ele in pop[int64_test]] == ids[int64_test])
-        int8_test = np.array(list_test, dtype=np.int8)
-        np.append(all_tests, [ele for ele in pop[int8_test]] == ids[int8_test])
-        uint_test = np.array(list_test, dtype=np.uint)
-        np.append(all_tests, [ele for ele in pop[uint_test]] == ids[uint_test])
-        # test bool
-        bool_test = [True for ele in pop]
-        np.append(all_tests, [ele for ele in pop[bool_test]] == ids[bool_test])
-        npbool_test = np.array(bool_test, dtype=np.bool_)
-        np.append(all_tests, [ele for ele in pop[npbool_test]] == ids[npbool_test])
+        # "A" is not necessarily first in GID order (populations are ordered by
+        # size, ties broken by cell_models order), so also cover a population
+        # whose GIDs don't start at 0 -- offset arithmetic bugs hide behind "A".
+        for cell_model_name in ("A", "C"):
+            with self.subTest(cell_model=cell_model_name):
+                pop = simdata.populations[sim.cell_models[cell_model_name]]
+                ids = np.array([cell for cell in pop])
+                all_tests = []
+                # test int list and np.int64 array
+                list_test = [0, 1, 3]
+                all_tests.append(
+                    np.array_equal([ele for ele in pop[list_test]], ids[list_test])
+                )
+                int64_test = np.array(list_test, dtype=np.int64)
+                all_tests.append(
+                    np.array_equal([ele for ele in pop[int64_test]], ids[int64_test])
+                )
+                int8_test = np.array(list_test, dtype=np.int8)
+                all_tests.append(
+                    np.array_equal([ele for ele in pop[int8_test]], ids[int8_test])
+                )
+                uint_test = np.array(list_test, dtype=np.uint)
+                all_tests.append(
+                    np.array_equal([ele for ele in pop[uint_test]], ids[uint_test])
+                )
+                # test bool
+                bool_test = [True for ele in pop]
+                all_tests.append(
+                    np.array_equal([ele for ele in pop[bool_test]], ids[bool_test])
+                )
+                npbool_test = np.array(bool_test, dtype=np.bool_)
+                all_tests.append(
+                    np.array_equal([ele for ele in pop[npbool_test]], ids[npbool_test])
+                )
 
-        self.assertAll(all_tests)
+                self.assertAll(np.array(all_tests))
 
-        # test float
-        float_test = np.array(list_test, dtype=np.float32)
-        with self.assertRaises(ValueError):
-            pop[float_test]
+                # test float
+                float_test = np.array(list_test, dtype=np.float32)
+                with self.assertRaises(ValueError):
+                    pop[float_test]

@@ -30,9 +30,40 @@ class Targetting(RngConsumer):
         type=types.in_(["cell", "connection"]), default="cell"
     )
 
+    def get_placement_targets(self, simulation) -> dict:
+        """
+        The cells this targets, as local ids into each targeted cell model's
+        placement set, sorted ascending.
+
+        Backend agnostic: computed from the scaffold and the simulation's own
+        configuration alone, so it needs no live run and no backend population to
+        slice. That lets it be replayed after the fact, from a stored
+        configuration, to work out which placed cell a recording belongs to — and
+        it is sorted because at least one backend (NEST) refuses an unsorted index
+        into a population, a requirement every override here has to satisfy too.
+
+        :param simulation: The simulation this targetting belongs to.
+        :type simulation: bsb.simulation.simulation.Simulation
+        :returns: Local placement ids per targeted cell model, each sorted
+            ascending.
+        :rtype: dict[bsb.simulation.cell.CellModel, numpy.ndarray[int]]
+        """
+        if self.type != "cell":
+            raise NotImplementedError(
+                f"'{type(self).__name__}' targets connections, not cells; there is "
+                "no placement id to resolve."
+            )
+        return {
+            model: model.get_placement_set().load_ids()
+            for model in simulation.cell_models.values()
+        }
+
     def get_targets(self, adapter, simulation, simdata):
         if self.type == "cell":
-            return simdata.populations
+            return {
+                model: simdata.populations[model][ids]
+                for model, ids in self.get_placement_targets(simulation).items()
+            }
         elif self.type == "connection":
             return simdata.connections
 
@@ -42,9 +73,6 @@ class CellTargetting(Targetting, classmap_entry="all"):
     @config.property
     def type(self):
         return "cell"
-
-    def get_targets(self, adapter, simulation, simdata):
-        return simdata.populations
 
 
 @config.node
@@ -62,10 +90,10 @@ class CellModelFilter:
         refs.sim_cell_model_ref, required=False
     )
 
-    def get_targets(self, adapter, simulation, simdata):
+    def get_placement_targets(self, simulation):
         return {
-            model: pop
-            for model, pop in simdata.populations.items()
+            model: model.get_placement_set().load_ids()
+            for model in simulation.cell_models.values()
             if not self.cell_models or model in self.cell_models
         }
 
@@ -74,13 +102,22 @@ class CellTypeFilter:
     cell_types: list["CellType"] = config.reflist(refs.cell_type_ref, required=False)
     only_local: bool = config.attr(type=bool, default=True)
 
-    def get_targets(self, adapter, simulation, simdata):
-        chunks = simdata.chunks if self.only_local else None
+    def _filtered_placement_sets(self, simulation, chunks=None):
         return {
             cell_name: cell_type.get_placement_set(chunks=chunks)
             for cell_name, cell_type in simulation.scaffold.cell_types.items()
             if not self.cell_types or cell_type in self.cell_types
         }
+
+    def get_placement_targets(self, simulation):
+        return {
+            cell_name: ps.load_ids()
+            for cell_name, ps in self._filtered_placement_sets(simulation).items()
+        }
+
+    def get_targets(self, adapter, simulation, simdata):
+        chunks = simdata.chunks if self.only_local else None
+        return self._filtered_placement_sets(simulation, chunks=chunks)
 
 
 class FractionFilter:
@@ -136,8 +173,8 @@ class CellModelTargetting(
     )
 
     @FractionFilter.filter
-    def get_targets(self, adapter, simulation, simdata):
-        return super().get_targets(adapter, simulation, simdata)
+    def get_placement_targets(self, simulation):
+        return super().get_placement_targets(simulation)
 
 
 @config.node
@@ -151,12 +188,16 @@ class RepresentativesTargetting(
     n: int = config.attr(type=int, default=1)
 
     @FractionFilter.filter
-    def get_targets(self, adapter, simulation, simdata):
+    def get_placement_targets(self, simulation):
         return {
-            model: self.get_rng(
-                key=("representatives", _target_name(self), _model_name(model))
-            ).choice(len(pop), size=self.n, replace=False)
-            for model, pop in super().get_targets(adapter, simulation, simdata)
+            model: np.sort(
+                ids[
+                    self.get_rng(
+                        key=("representatives", _target_name(self), _model_name(model))
+                    ).choice(len(ids), size=self.n, replace=False)
+                ]
+            )
+            for model, ids in super().get_placement_targets(simulation).items()
         }
 
 
@@ -171,19 +212,18 @@ class ByIdTargetting(FractionFilter, CellTargetting, classmap_entry="by_id"):
     )
 
     @FractionFilter.filter
-    def get_targets(self, adapter, simulation, simdata):
+    def get_placement_targets(self, simulation):
         by_name = {
             model.name: model
-            for model, pop in simdata.populations.items()
-            if len(pop) > 0
+            for model in simulation.cell_models.values()
+            if len(model.get_placement_set())
         }
 
         dict_target = {}
         for model_name, ids in self.ids.items():
             if (model := by_name.get(model_name)) is not None:
-                pop = simdata.populations[model]
-                my_ids = simdata.placement[model].convert_to_local(ids)
-                dict_target[model] = pop[my_ids]
+                local_ids = model.get_placement_set().convert_to_local(ids)
+                dict_target[model] = np.sort(np.asarray(local_ids))
         return dict_target
 
 
@@ -198,12 +238,10 @@ class ByLabelTargetting(
     labels: list[str] = config.attr(type=types.list(type=str), required=True)
 
     @FractionFilter.filter
-    def get_targets(self, adapter, simulation, simdata):
+    def get_placement_targets(self, simulation):
         return {
-            model: simdata.populations[model][
-                simdata.placement[model].get_label_mask(self.labels)
-            ]
-            for model in super().get_targets(adapter, simulation, simdata)
+            model: ids[model.get_placement_set().get_label_mask(self.labels)]
+            for model, ids in super().get_placement_targets(simulation).items()
         }
 
 
@@ -231,7 +269,7 @@ class CylindricalTargetting(
     """
 
     @FractionFilter.filter
-    def get_targets(self, adapter, simulation, simdata):
+    def get_placement_targets(self, simulation):
         """
         Target all or certain cells within a cylinder of specified radius.
         """
@@ -242,15 +280,15 @@ class CylindricalTargetting(
         else:
             axes = [0, 1]
         return {
-            model: simdata.populations[model][
+            model: ids[
                 np.sum(
-                    (simdata.placement[model].load_positions()[:, axes] - self.origin)
+                    (model.get_placement_set().load_positions()[:, axes] - self.origin)
                     ** 2,
                     axis=1,
                 )
                 < self.radius**2
             ]
-            for model in super().get_targets(adapter, simulation, simdata)
+            for model, ids in super().get_placement_targets(simulation).items()
         }
 
 
@@ -265,22 +303,38 @@ class SphericalTargettingCellTypes(
     origin: list[float] = config.attr(type=types.list(type=float, size=3), required=True)
     radius: float = config.attr(type=float, required=True)
 
+    def _sphere_ids(self, ps):
+        """
+        The local ids of ``ps`` whose position falls within this targetting's sphere.
+        """
+        return ps.load_ids()[
+            np.sum((ps.load_positions() - self.origin) ** 2, axis=1) < self.radius**2
+        ]
+
     @FractionFilter.filter
-    def get_targets(self, adapter, simulation, simdata):
+    def get_placement_targets(self, simulation):
         """
         Target all or certain cells within a sphere of specified radius.
         """
         return {
-            model: ps.load_ids()[
-                (
-                    np.sum(
-                        (ps.load_positions() - self.origin) ** 2,
-                        axis=1,
-                    )
-                    < self.radius**2
-                )
-            ]
-            for model, ps in super().get_targets(adapter, simulation, simdata).items()
+            cell_name: self._sphere_ids(ps)
+            for cell_name, ps in self._filtered_placement_sets(simulation).items()
+        }
+
+    @FractionFilter.filter
+    def get_targets(self, adapter, simulation, simdata):
+        """
+        Target all or certain cells within a sphere of specified radius.
+
+        Unlike the other targetting kinds, this one was never backed by a live
+        population — its targets are placement ids, chunk-restricted the same way
+        :class:`CellTypeFilter`'s are — so it keeps its own path here rather than
+        going through :meth:`Targetting.get_targets`, which slices a backend
+        population :attr:`get_placement_targets` never needed.
+        """
+        return {
+            cell_name: self._sphere_ids(ps)
+            for cell_name, ps in super().get_targets(adapter, simulation, simdata).items()
         }
 
 
@@ -296,21 +350,21 @@ class SphericalTargetting(
     radius: float = config.attr(type=float, required=True)
 
     @FractionFilter.filter
-    def get_targets(self, adapter, simulation, simdata):
+    def get_placement_targets(self, simulation):
         """
         Target all or certain cells within a sphere of specified radius.
         """
         return {
-            model: simdata.populations[model][
+            model: ids[
                 (
                     np.sum(
-                        (simdata.placement[model].load_positions() - self.origin) ** 2,
+                        (model.get_placement_set().load_positions() - self.origin) ** 2,
                         axis=1,
                     )
                     < self.radius**2
                 )
             ]
-            for model in super().get_targets(adapter, simulation, simdata)
+            for model, ids in super().get_placement_targets(simulation).items()
         }
 
 

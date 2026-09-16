@@ -626,6 +626,7 @@ class TestRecordingsNameTheirCells(
                 },
                 "by_id": {
                     "device": "voltage_recorder",
+                    "locations": {"strategy": "everywhere"},
                     "targetting": {"strategy": "by_id", "ids": {"B": [3, 7, 11]}},
                 },
                 "sphere": {
@@ -654,22 +655,23 @@ class TestRecordingsNameTheirCells(
         results = read_results(self.network, filename)
 
         by_id = list(results.recordings("by_id"))
-        self.assertEqual([3, 7, 11], sorted(r.target.cell.id for r in by_id))
+        self.assertEqual([3, 7, 11], sorted({r.target.cell.id for r in by_id}))
+        self.assertGreater(len(by_id), 3, "every location of every cell is recorded")
         for recording in by_id:
             cell = recording.target.cell
             with self.subTest(device="by_id", cell=cell.id):
                 self.assertEqual(
                     ("point", "record"), (recording.kind, recording.direction)
                 )
-                self.assertEqual(
-                    (0, 0), (recording.target.branch, recording.target.point)
-                )
                 self.assertEqual("B", cell.model)
                 self.assertEqual("B", cell.cell_type.name)
                 self.assertClose(self.positions[cell.id], cell.position)
-                # The soma recording is where the cell's morphology starts.
+                # A voltage recorder records at the start of its location, so the arc
+                # it wrote lands exactly on the point it names.
+                target = recording.target
                 self.assertClose(
-                    cell.morphology.branches[0].points[0], recording.target.position
+                    cell.morphology.branches[target.branch].points[target.point],
+                    target.position,
                 )
 
         in_sphere = np.flatnonzero(

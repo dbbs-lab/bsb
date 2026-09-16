@@ -291,18 +291,24 @@ class Storage:
         would change nothing but the storage's state, and every network stores its
         configuration each time it is opened.
 
+        :guilabel:`collective` Every rank has to call this.
+
         :returns: The id of the active configuration.
         """
         files = self._engine.files
-        # Every rank reads the same stored configuration and so skips or stores alike,
-        # which keeps the collective write of an engine's `store_active_config`
-        # reached by all of them or by none.
-        active = files.find_meta("active_config", True)
-        if active is not None:
-            tree = json.loads(json.dumps(config.__tree__()))
+        # The main rank decides and every rank follows. Each rank reading the file for
+        # itself could catch it before and after a write in progress, and a rank that
+        # skipped would leave the others in the engine's collective write.
+        unchanged_id = None
+        if self.is_main_process():
             with contextlib.suppress(Exception):
-                if json.loads(active.load()[0]) == tree:
-                    return active.id
+                active = files.find_meta("active_config", True)
+                tree = json.loads(json.dumps(config.__tree__()))
+                if active is not None and json.loads(active.load()[0]) == tree:
+                    unchanged_id = active.id
+        unchanged_id = self._comm.bcast(unchanged_id, root=self._main)
+        if unchanged_id is not None:
+            return unchanged_id
         return files.store_active_config(config)
 
     def supports(self, feature):

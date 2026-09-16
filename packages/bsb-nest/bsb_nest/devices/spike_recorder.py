@@ -16,6 +16,10 @@ class SpikeRecorder(NestDevice, classmap_entry="spike_recorder"):
         cells = self._cells_of_nodes(simdata, targets_dict)
         device = self.register_device(simdata, nest.Create("spike_recorder"))
         self.connect_to_nodes(device, nodes)
+        # Each rank writes the trains of the targets it hosts, and the ranks' results
+        # are concatenated: a rank writing every target would repeat each cell once
+        # per rank.
+        local_nodes = nest.GetLocalNodeCollection(nodes).tolist() if len(nodes) else []
 
         def recorder(segment):
             senders = np.asarray(device.events["senders"])
@@ -24,10 +28,9 @@ class SpikeRecorder(NestDevice, classmap_entry="spike_recorder"):
             # cells those were is then the set of recordings itself, so nothing
             # has to say it a second time, and a silent cell is told apart from
             # one that was never watched by reading the results alone.
-            # `nodes` is a NEST collection; its `tolist` is the ids the recorder
-            # reports its senders by, which is what a train is keyed on. The train
-            # itself names the cell, never the node.
-            for node in nodes.tolist():
+            # Trains are keyed on node ids, which is what the recorder reports its
+            # senders by. The train itself names the cell, never the node.
+            for node in local_nodes:
                 cell_model, cell_id = cells[node]
                 segment.spiketrains.append(
                     SpikeTrain(

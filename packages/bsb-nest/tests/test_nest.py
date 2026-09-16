@@ -13,6 +13,7 @@ from bsb import (
     ConfigurationError,
     RequirementError,
     config,
+    read_results,
 )
 from bsb.config import Configuration, build_context
 from bsb.core import Scaffold
@@ -1240,3 +1241,119 @@ class TestNest(
             NestAdapter().simulate(
                 scaffold.simulations["sim_a"], scaffold.simulations["sim_b"]
             )
+
+
+def _placement_order(positions, chunk_size):
+    """
+    Positions in the order a placement set holds them: grouped by chunk in order of
+    chunk id, and in the order they were placed within a chunk.
+    """
+    chunks = np.floor_divide(positions, chunk_size).astype(np.int64)
+    chunk_ids = chunks[:, 0] + chunks[:, 1] * 2**16 + chunks[:, 2] * 2**32
+    return positions[np.argsort(chunk_ids, kind="stable")]
+
+
+class TestRecordingsNameTheirCells(
+    RandomStorageFixture, NumpyTestCase, unittest.TestCase, engine_name="hdf5"
+):
+    """
+    A recording names its cell by cell model and placement set id, whatever node id
+    NEST gave it, so reading the results with the network gives back the recorded
+    cells.
+    """
+
+    def setUp(self):
+        super().setUp()
+        nest.ResetKernel()
+        cfg = get_test_config("chunked")
+        cfg.connectivity = {}
+        # Placed out of chunk order, so the placement set's order is not the order
+        # given, and every model but the first starts at a node id offset.
+        given = np.array(cfg.placement.across_chunks.positions)[::-1]
+        cfg.placement.across_chunks.positions = given.tolist()
+        self.positions = _placement_order(given, cfg.network.chunk_size)
+        cfg.simulations.add(
+            "test",
+            simulator="nest",
+            duration=100,
+            resolution=0.1,
+            cell_models={name: {"model": "iaf_psc_alpha"} for name in ("A", "B", "C")},
+            connection_models={},
+            devices={
+                "noise": {
+                    "device": "poisson_generator",
+                    "rate": 1000,
+                    "weight": 100,
+                    "delay": 0.1,
+                    "targetting": {"strategy": "cell_model", "cell_models": ["B"]},
+                },
+                "by_id": {
+                    "device": "spike_recorder",
+                    "delay": 0.1,
+                    "targetting": {"strategy": "by_id", "ids": {"B": [3, 7, 11]}},
+                },
+                "sphere": {
+                    "device": "spike_recorder",
+                    "delay": 0.1,
+                    "targetting": {
+                        "strategy": "sphere",
+                        "origin": [45, 10, 10],
+                        "radius": 20,
+                    },
+                },
+                "voltmeter": {
+                    "device": "multimeter",
+                    "delay": 0.1,
+                    "properties": ["V_m"],
+                    "units": ["mV"],
+                    "targetting": {"strategy": "by_id", "ids": {"C": [2, 9]}},
+                },
+            },
+        )
+        self.network = Scaffold(cfg, self.storage)
+        self.network.compile()
+
+    def _results_file(self):
+        tmpdir = MPI.bcast(tempfile.mkdtemp() if not MPI.get_rank() else None)
+        if not MPI.get_rank():
+            self.addCleanup(shutil.rmtree, tmpdir, ignore_errors=True)
+        return os.path.join(tmpdir, "traced.nio")
+
+    def test_recordings_trace_back_to_their_cells(self):
+        filename = self._results_file()
+        self.network.run_simulation("test", output_filename=filename)
+        if MPI.get_rank():
+            return
+        results = read_results(self.network, filename)
+
+        by_id = list(results.recordings("by_id"))
+        self.assertEqual([3, 7, 11], sorted(r.cell.id for r in by_id))
+        self.assertTrue(any(len(r.signal) for r in by_id), "the noise has to spike")
+        for recording in by_id:
+            with self.subTest(device="by_id", cell=recording.cell.id):
+                self.assertEqual("B", recording.cell.model)
+                self.assertEqual("B", recording.cell.cell_type.name)
+                self.assertClose(
+                    self.positions[recording.cell.id], recording.cell.position
+                )
+
+        in_sphere = np.flatnonzero(
+            np.sum((self.positions - [45, 10, 10]) ** 2, axis=1) < 20**2
+        )
+        self.assertEqual(2, len(in_sphere), "the sphere has to span two chunks")
+        sphere = list(results.recordings("sphere"))
+        for model in ("A", "B", "C"):
+            with self.subTest(device="sphere", model=model):
+                cells = [r.cell for r in sphere if r.cell.model == model]
+                self.assertEqual(sorted(in_sphere), sorted(c.id for c in cells))
+                for cell in cells:
+                    self.assertClose(self.positions[cell.id], cell.position)
+
+        voltmeter = list(results.recordings("voltmeter"))
+        self.assertEqual([2, 9], sorted(r.cell.id for r in voltmeter))
+        for recording in voltmeter:
+            self.assertEqual("C", recording.cell.model)
+            self.assertClose(self.positions[recording.cell.id], recording.cell.position)
+
+        (noise,) = results.recordings("noise")
+        self.assertIsNone(noise.cell, "a generator's own spikes belong to no cell")

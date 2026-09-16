@@ -28,7 +28,7 @@ class SynapseRecorder(NeuronDevice, classmap_entry="synapse_recorder"):
                                 synapse,
                                 device=self,
                                 name=self.name,
-                                cell_type=target.cell_model.name,
+                                cell_model=target.cell_model.name,
                                 cell_id=target.id,
                                 synapse_type=synapse.synapse_name,
                             )

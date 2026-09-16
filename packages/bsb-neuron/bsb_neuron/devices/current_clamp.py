@@ -29,7 +29,7 @@ class CurrentClamp(NeuronDevice, classmap_entry="current_clamp"):
                         location,
                         device=self,
                         name=self.name,
-                        cell_type=target.cell_model.name,
+                        cell_model=target.cell_model.name,
                         cell_id=target.id,
                     )
                     clamped = True

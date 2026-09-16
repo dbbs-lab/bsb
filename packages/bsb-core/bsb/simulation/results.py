@@ -4,8 +4,15 @@ import shutil
 import traceback
 import typing
 import uuid
+import warnings
 from datetime import datetime
 
+from ..exceptions import (
+    DatasetNotFoundError,
+    ResultsError,
+    ResultsMismatchError,
+    ResultsWarning,
+)
 from ..reporting import warn
 from ..services import MPI
 from ..storage.provenance import (
@@ -18,7 +25,15 @@ from ..storage.provenance import (
 )
 
 if typing.TYPE_CHECKING:  # pragma: nocover
+    import os
+
     import neo
+    import numpy
+
+    from ..cell_types import CellType
+    from ..core import Scaffold
+    from ..storage.interfaces import PlacementSet
+    from .simulation import Simulation
 
 
 def read_simulation_config(block: "neo.core.Block") -> dict | None:
@@ -175,15 +190,22 @@ class Recording:
     Recordings are written one per cell, so this is the unit a reader iterates:
     it says which device produced the signal and which cell it belongs to,
     whatever backend ran the simulation and whichever Neo container it landed in.
+
+    A cell is named by its cell model and its id in that model's placement set, never
+    by a simulator's own id, so the pair addresses one row of the network:
+    ``simulation.cell_models[cell_model].cell_type.get_placement_set()``, row
+    ``cell_id``.
     """
 
     #: Name of the device that produced the recording.
     device: str | None
-    #: The cell the recording belongs to, or ``None`` for a device-level record
-    #: such as a generator's own spikes.
+    #: Id of the cell in the placement set of its cell model, or ``None`` for a
+    #: device level record such as a generator's own spikes. Only unique within
+    #: :attr:`cell_model`.
     cell_id: int | None
-    #: Name of the cell model, when the backend knows it.
-    cell_type: str | None
+    #: Name of the simulation's cell model the cell belongs to, or ``None`` for a
+    #: device level record.
+    cell_model: str | None
     #: The Neo object itself, a ``SpikeTrain`` or an ``AnalogSignal``.
     signal: typing.Any
 
@@ -193,7 +215,10 @@ class Recording:
 
 
 def iter_recordings(
-    source, device: str | None = None, cell_id: int | None = None
+    source,
+    device: str | None = None,
+    cell_id: int | None = None,
+    cell_model: str | None = None,
 ) -> "typing.Iterator[Recording]":
     """
     Iterate the recordings of a block, a segment, or a list of either.
@@ -201,7 +226,10 @@ def iter_recordings(
     :param source: What to read: a :class:`neo.core.Block`, a
         :class:`neo.core.Segment`, or an iterable of either.
     :param device: Only yield recordings made by this device.
-    :param cell_id: Only yield recordings of this cell.
+    :param cell_id: Only yield recordings of cells with this id. A cell id is only
+        unique within its cell model, so pass ``cell_model`` along to single out one
+        cell.
+    :param cell_model: Only yield recordings of cells of this cell model.
     :returns: The recordings, in the order they were written.
     :rtype: typing.Iterator[Recording]
     """
@@ -212,10 +240,12 @@ def iter_recordings(
                 recording = Recording(
                     device=annotations.get("device"),
                     cell_id=annotations.get("cell_id"),
-                    cell_type=annotations.get("cell_type"),
+                    cell_model=annotations.get("cell_model"),
                     signal=signal,
                 )
                 if device is not None and recording.device != device:
+                    continue
+                if cell_model is not None and recording.cell_model != cell_model:
                     continue
                 if cell_id is not None and recording.cell_id != cell_id:
                     continue
@@ -467,13 +497,343 @@ class SimulationRecorder:
         raise NotImplementedError("Recorders need to implement the `flush` function.")
 
 
+@dataclasses.dataclass(frozen=True, eq=False)
+class RecordedCell:
+    """
+    A cell of the network that a recording belongs to.
+    """
+
+    #: Id of the cell in the placement set of its cell model.
+    id: int
+    #: Name of the cell model the cell was simulated with.
+    model: str
+    #: The network's cell type that the cell model simulates.
+    cell_type: "CellType"
+    #: The placement set of that cell type.
+    placement_set: "PlacementSet"
+    #: Position of the cell, or ``None`` when its placement set stores no positions.
+    position: "numpy.ndarray | None"
+
+
+@dataclasses.dataclass(frozen=True)
+class NetworkRecording(Recording):
+    """
+    A recording traced back to the network it was simulated on.
+    """
+
+    #: The cell the recording belongs to, or ``None`` for a device level record.
+    cell: RecordedCell | None = None
+    #: The run that made the recording.
+    run: "SimulationRun | None" = None
+
+
+class SimulationRun:
+    """
+    One run of a simulation in a results file, read with the network it ran on.
+
+    Everything a run needs to trace its recordings back to the network is in its own
+    block: the configuration it ran with names the cell type of each cell model.
+    """
+
+    def __init__(self, reader: "ResultsReader", block: "neo.core.Block"):
+        self._reader = reader
+        #: The Neo block holding the results of the run.
+        self.block = block
+        #: The configuration tree of the simulation, as it ran.
+        self.configuration = read_simulation_config(block)
+        #: The provenance of the run: its seed, duration, resolution, ranks, ...
+        self.provenance = read_provenance(block)
+        #: Names of the devices that recorded, in the order they were first written.
+        self.devices = list(
+            dict.fromkeys(
+                recording.device
+                for recording in iter_recordings(block)
+                if recording.device is not None
+            )
+        )
+
+    @property
+    def name(self) -> str:
+        """Name of the simulation that ran."""
+        return self.block.name
+
+    @property
+    def run_index(self) -> int | None:
+        """Which run of this simulation in the file it is, counting from ``0``."""
+        return self.block.annotations.get("run_index")
+
+    @property
+    def simulation(self) -> "Simulation | None":
+        """
+        The network's simulation of this name, or ``None`` if the network has none.
+
+        The network's configuration may have been changed since the run; the
+        configuration the simulation ran with is :attr:`configuration`.
+        """
+        return self._reader.network.simulations.get(self.name)
+
+    def recordings(
+        self, device: str | None = None
+    ) -> "typing.Iterator[NetworkRecording]":
+        """
+        Iterate the recordings of the run, each with the network's cell it belongs to.
+
+        A device records every cell it targeted, so its recordings are all of its
+        targets, including the cells that stayed silent.
+
+        :param device: Only yield recordings made by this device.
+        :returns: The recordings, in the order they were written.
+        :rtype: typing.Iterator[NetworkRecording]
+        """
+        for recording in iter_recordings(self.block, device=device):
+            yield NetworkRecording(
+                device=recording.device,
+                cell_id=recording.cell_id,
+                cell_model=recording.cell_model,
+                signal=recording.signal,
+                cell=self._cell_of(recording),
+                run=self,
+            )
+
+    def _cell_of(self, recording: Recording) -> RecordedCell | None:
+        if recording.cell_id is None:
+            return None
+        if recording.cell_model is None:
+            raise ResultsError(
+                f"A recording of device '{recording.device}' names cell "
+                f"{recording.cell_id} but not its cell model, so it cannot be traced "
+                "back to the network. It was written before recordings named their "
+                "cell model; read it with `iter_recordings` instead."
+            )
+        return self._reader._cell(
+            self._cell_type_name(recording.cell_model),
+            recording.cell_model,
+            int(recording.cell_id),
+            recording.device,
+        )
+
+    def _cell_type_name(self, model: str) -> str:
+        """The name of the cell type a cell model simulated, as the run configured it."""
+        tree = self.configuration if isinstance(self.configuration, dict) else {}
+        models = tree.get("cell_models") or {}
+        if model in models:
+            # A cell model that does not name its cell type simulates the one of the
+            # same name.
+            return models[model].get("cell_type") or model
+        simulation = self.simulation
+        if simulation is not None and model in simulation.cell_models:
+            return simulation.cell_models[model].cell_type.name
+        raise ResultsError(
+            f"Recordings name cell model '{model}', which simulation '{self.name}' "
+            "does not have."
+        )
+
+    def __repr__(self):
+        return f"<{type(self).__name__} '{self.name}' run {self.run_index}>"
+
+
+class ResultsReader:
+    """
+    The results in a file, read together with the network they were simulated on.
+
+    Made by :func:`read_results`, which verifies every run in the file against the
+    network before handing one out.
+    """
+
+    def __init__(self, network: "Scaffold", blocks: "list[neo.core.Block]"):
+        #: The network the simulations ran on.
+        self.network = network
+        #: The runs in the file, in the order they were written.
+        self.runs = [SimulationRun(self, block) for block in blocks]
+        # Loaded once per cell type and indexed into by every recording of it: a
+        # device on a large population yields many thousands of recordings.
+        self._placement = {}
+        self._cells = {}
+
+    @property
+    def devices(self) -> list[str]:
+        """Names of the devices that recorded, across the runs."""
+        return list(dict.fromkeys(d for run in self.runs for d in run.devices))
+
+    @property
+    def simulation(self) -> "Simulation | None":
+        """The network's simulation that ran, when the file holds a single run."""
+        return self._only_run("simulation").simulation
+
+    @property
+    def configuration(self) -> dict | None:
+        """The configuration of the simulation, when the file holds a single run."""
+        return self._only_run("configuration").configuration
+
+    @property
+    def provenance(self) -> dict | None:
+        """The provenance of the run, when the file holds a single run."""
+        return self._only_run("provenance").provenance
+
+    def _only_run(self, attr) -> SimulationRun:
+        if len(self.runs) != 1:
+            raise ResultsError(
+                f"The file holds {len(self.runs)} runs, each with its own `{attr}`: "
+                f"{', '.join(map(repr, self.runs))}. Read it from `runs`."
+            )
+        return self.runs[0]
+
+    def recordings(
+        self, device: str | None = None
+    ) -> "typing.Iterator[NetworkRecording]":
+        """
+        Iterate the recordings of every run, each with the network's cell it belongs
+        to, and the run that made it.
+
+        :param device: Only yield recordings made by this device.
+        :returns: The recordings, run by run, in the order they were written.
+        :rtype: typing.Iterator[NetworkRecording]
+        """
+        for run in self.runs:
+            yield from run.recordings(device)
+
+    def _cell(self, type_name, model, cell_id, device) -> RecordedCell:
+        key = (model, type_name, cell_id)
+        try:
+            return self._cells[key]
+        except KeyError:
+            pass
+        cell_type, ps, positions, size = self._placement_of(type_name, model)
+        if not 0 <= cell_id < size:
+            raise ResultsError(
+                f"A recording of device '{device}' names cell {cell_id} of cell model "
+                f"'{model}', but the network holds {size} '{type_name}' cells. The "
+                "placement changed after the run."
+            )
+        cell = self._cells[key] = RecordedCell(
+            id=cell_id,
+            model=model,
+            cell_type=cell_type,
+            placement_set=ps,
+            position=None if positions is None else positions[cell_id],
+        )
+        return cell
+
+    def _placement_of(self, type_name, model):
+        try:
+            return self._placement[type_name]
+        except KeyError:
+            pass
+        try:
+            cell_type = self.network.cell_types[type_name]
+        except KeyError:
+            raise ResultsError(
+                f"Cell model '{model}' simulated cell type '{type_name}', which the "
+                "network does not have."
+            ) from None
+        ps = cell_type.get_placement_set()
+        try:
+            positions = ps.load_positions()
+        except DatasetNotFoundError:
+            positions = None
+            size = len(ps)
+        else:
+            size = len(positions)
+        placement = self._placement[type_name] = (cell_type, ps, positions, size)
+        return placement
+
+
+def read_results(
+    network: "str | os.PathLike | Scaffold", results: "str | os.PathLike"
+) -> ResultsReader:
+    """
+    Read a results file together with the network it was simulated on.
+
+    Every run in the file is verified before anything is returned. A run of another
+    network raises a :class:`~bsb.exceptions.ResultsMismatchError`: analysed against
+    the wrong network it would give plausible nonsense. A network that was written to
+    after a run warns, because its positions or labels may have moved since, and a
+    run that recorded no network identity warns that it cannot be verified.
+
+    :param network: Path of the network file, or an opened network. A path is opened
+        like :func:`~bsb.core.from_storage` opens it, which every rank of an MPI run
+        takes part in: under MPI, read on every rank or pass an opened network.
+    :param results: Path of the results file.
+    :returns: A reader of the results, whose recordings name the network's cells.
+    :raises ~bsb.exceptions.ResultsMismatchError: A run was not produced by this
+        network.
+    :raises ~bsb.exceptions.ResultsError: The file holds no results.
+    """
+    from neo import io
+
+    from ..core import Scaffold
+    from ..storage import open_storage
+
+    with io.NixIO(str(results), mode="ro") as reader:
+        blocks = reader.read_all_blocks()
+    if not blocks:
+        raise ResultsError(f"'{results}' holds no simulation results.")
+    if isinstance(network, Scaffold):
+        state_id = network.state_id
+    else:
+        storage = open_storage(str(network))
+        # Loading a network stores its active configuration, which moves its state.
+        # The state the results are verified against is the one it was found in.
+        state_id = storage._engine.state_id
+        network = storage.load()
+    _verify_pairing(network, state_id, blocks, results)
+    return ResultsReader(network, blocks)
+
+
+def _verify_pairing(network, network_state_id, blocks, results):
+    # Warned directly rather than through `bsb.reporting.warn`, which verbosity can
+    # silence: a pairing that could not be verified is not diagnostic chatter. Each
+    # concern warns once, however many runs share it.
+    concerns = {}
+    for block in blocks:
+        recorded = ((read_provenance(block) or {}).get("scaffold")) or {}
+        storage_id = recorded.get("storage_id")
+        state_id = recorded.get("state_id")
+        if storage_id is None or network.storage_id is None:
+            concern = (
+                "the run or the network carries no storage id, so they cannot be "
+                "verified against each other"
+            )
+        elif storage_id != network.storage_id:
+            raise ResultsMismatchError(
+                f"Results of '{block.name}' in '{results}' were produced by network "
+                f"'{storage_id}', not by network '{network.storage_id}'."
+            )
+        elif state_id is None or network_state_id is None:
+            concern = (
+                "the run or the network carries no state id, so the state of the "
+                "network cannot be verified"
+            )
+        elif state_id != network_state_id:
+            concern = (
+                f"the network was written to after the run (state {state_id} then, "
+                f"{network_state_id} now), so positions or labels may have changed "
+                "since"
+            )
+        else:
+            continue
+        concerns.setdefault(concern, []).append(block.name)
+    for concern, names in concerns.items():
+        runs = ", ".join(f"'{name}'" for name in dict.fromkeys(names))
+        warnings.warn(
+            f"Results of {runs} in '{results}': {concern}.",
+            ResultsWarning,
+            stacklevel=3,
+        )
+
+
 __all__ = [
+    "NetworkRecording",
+    "RecordedCell",
     "Recording",
+    "ResultsReader",
+    "SimulationRun",
     "SimulationRecorder",
     "SimulationResult",
     "iter_recordings",
     "merge_rank_results",
     "rank_part_path",
     "read_provenance",
+    "read_results",
     "read_simulation_config",
 ]

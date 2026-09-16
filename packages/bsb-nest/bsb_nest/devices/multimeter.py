@@ -26,7 +26,7 @@ class Multimeter(NestDevice, classmap_entry="multimeter"):
     def implement(self, adapter, simulation, simdata):
         targets_dict = self.get_dict_targets(adapter, simulation, simdata)
         nodes = self._flatten_nodes_ids(targets_dict)
-        inv_targets = self._invert_targets_dict(targets_dict)
+        cells = self._cells_of_nodes(simdata, targets_dict)
         device = self.register_device(
             simdata,
             nest.Create(
@@ -43,6 +43,7 @@ class Multimeter(NestDevice, classmap_entry="multimeter"):
             senders = device.events["senders"]
             for sender in np.unique(senders):
                 sender_filter = senders == sender
+                cell_model, cell_id = cells[int(sender)]
                 for prop, unit in zip(self.properties, self.units, strict=False):
                     segment.analogsignals.append(
                         AnalogSignal(
@@ -50,8 +51,8 @@ class Multimeter(NestDevice, classmap_entry="multimeter"):
                             units=pq.units.__dict__[unit],
                             sampling_period=self.simulation.resolution * pq.ms,
                             name=self.name,
-                            cell_type=inv_targets[sender],
-                            cell_id=sender,
+                            cell_model=cell_model,
+                            cell_id=cell_id,
                             prop_recorded=prop,
                         )
                     )

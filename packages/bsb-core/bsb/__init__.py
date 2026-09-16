@@ -297,6 +297,7 @@ MorphologyToShapeIntersection: type["bsb.connectivity.geometric.morphology_shape
 MorphologyWarning: type["bsb.exceptions.MorphologyWarning"]
 NameSelector: type["bsb.morphologies.selector.NameSelector"]
 NetworkDescription: type["bsb.storage.interfaces.NetworkDescription"]
+NetworkRecording: type["bsb.simulation.results.NetworkRecording"]
 NeuroMorphoScheme: type["bsb.storage._files.NeuroMorphoScheme"]
 NeuroMorphoSelector: type["bsb.morphologies.selector.NeuroMorphoSelector"]
 NodeNotFoundError: type["bsb.exceptions.NodeNotFoundError"]
@@ -340,6 +341,7 @@ RandomPlacement: type["bsb.placement.random.RandomPlacement"]
 RandomRotations: type["bsb.placement.distributor.RandomRotations"]
 ReadOnlyManager: type["bsb.storage.interfaces.ReadOnlyManager"]
 ReadOnlyOptionError: type["bsb.exceptions.ReadOnlyOptionError"]
+RecordedCell: type["bsb.simulation.results.RecordedCell"]
 Recording: type["bsb.simulation.results.Recording"]
 RedoError: type["bsb.exceptions.RedoError"]
 Reference: type["bsb.config.refs.Reference"]
@@ -351,6 +353,10 @@ Relay: type["bsb.postprocessing.Relay"]
 ReportListener: type["bsb.core.ReportListener"]
 RepresentativesTargetting: type["bsb.simulation.targetting.RepresentativesTargetting"]
 RequirementError: type["bsb.exceptions.RequirementError"]
+ResultsError: type["bsb.exceptions.ResultsError"]
+ResultsMismatchError: type["bsb.exceptions.ResultsMismatchError"]
+ResultsReader: type["bsb.simulation.results.ResultsReader"]
+ResultsWarning: type["bsb.exceptions.ResultsWarning"]
 Rhomboid: type["bsb.topology.partition.Rhomboid"]
 Rng: type["bsb.rng.Rng"]
 RngConsumer: type["bsb.rng.RngConsumer"]
@@ -378,6 +384,7 @@ SimulationData: type["bsb.simulation.adapter.SimulationData"]
 SimulationError: type["bsb.exceptions.SimulationError"]
 SimulationRecorder: type["bsb.simulation.results.SimulationRecorder"]
 SimulationResult: type["bsb.simulation.results.SimulationResult"]
+SimulationRun: type["bsb.simulation.results.SimulationRun"]
 SimulatorAdapter: type["bsb.simulation.adapter.SimulatorAdapter"]
 SomaTargetting: type["bsb.simulation.targetting.SomaTargetting"]
 SourceQualityError: type["bsb.exceptions.SourceQualityError"]
@@ -468,6 +475,7 @@ pool_cache: "bsb.services.pool_cache"
 rank_part_path: "bsb.simulation.results.rank_part_path"
 read_option: "bsb.options.read_option"
 read_provenance: "bsb.simulation.results.read_provenance"
+read_results: "bsb.simulation.results.read_results"
 read_simulation_config: "bsb.simulation.results.read_simulation_config"
 refs: "bsb.config.refs"
 register_option: "bsb.options.register_option"

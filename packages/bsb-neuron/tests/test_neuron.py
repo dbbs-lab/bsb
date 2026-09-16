@@ -1,12 +1,17 @@
 import itertools
+import os
+import shutil
+import tempfile
 import unittest
 from copy import copy
 
-from bsb import MPI, Scaffold, get_simulation_adapter
+import numpy as np
+from bsb import MPI, Scaffold, get_simulation_adapter, read_results
 from bsb_test import (
     ConfigFixture,
     MorphologiesFixture,
     NetworkFixture,
+    NumpyTestCase,
     RandomStorageFixture,
 )
 from patch import p
@@ -555,3 +560,109 @@ class TestNeuronMultiBranchLoop(
             ],
             receiving_cells,
         )
+
+
+def _placement_order(positions, chunk_size):
+    """
+    Positions in the order a placement set holds them: grouped by chunk in order of
+    chunk id, and in the order they were placed within a chunk.
+    """
+    chunks = np.floor_divide(positions, chunk_size).astype(np.int64)
+    chunk_ids = chunks[:, 0] + chunks[:, 1] * 2**16 + chunks[:, 2] * 2**32
+    return positions[np.argsort(chunk_ids, kind="stable")]
+
+
+class TestRecordingsNameTheirCells(
+    RandomStorageFixture,
+    ConfigFixture,
+    NetworkFixture,
+    MorphologiesFixture,
+    NumpyTestCase,
+    unittest.TestCase,
+    config="chunked",
+    morpho_filters=["2comp"],
+    engine_name="hdf5",
+):
+    """
+    A recording names its cell by cell model and placement set id, so reading the
+    results with the network gives back the recorded cells.
+    """
+
+    def setUp(self):
+        super().setUp()
+        p.parallel.gid_clear()
+        # Placed out of chunk order, so the placement set's order is not the order
+        # given.
+        placement = self.network.placement.across_chunks
+        given = np.array(placement.positions)[::-1]
+        placement.positions = given.tolist()
+        self.positions = _placement_order(given, self.network.network.chunk_size)
+        for ct in self.network.cell_types.values():
+            ct.spatial.morphologies = ["2comp"]
+        hh_soma = {
+            "cable_types": {
+                "soma": {
+                    "cable": {"Ra": 10, "cm": 1},
+                    "mechanisms": {"pas": {}, "hh": {}},
+                }
+            },
+        }
+        self.network.simulations.add(
+            "test",
+            simulator="neuron",
+            duration=5,
+            resolution=0.1,
+            temperature=32,
+            cell_models={name: ArborizedModel(model=hh_soma) for name in "ABC"},
+            connection_models={},
+            devices={
+                "by_id": {
+                    "device": "voltage_recorder",
+                    "targetting": {"strategy": "by_id", "ids": {"B": [3, 7, 11]}},
+                },
+                "sphere": {
+                    "device": "voltage_recorder",
+                    "targetting": {
+                        "strategy": "sphere",
+                        "origin": [45, 10, 10],
+                        "radius": 20,
+                    },
+                },
+            },
+        )
+        self.network.compile()
+
+    def _results_file(self):
+        tmpdir = MPI.bcast(tempfile.mkdtemp() if not MPI.get_rank() else None)
+        if not MPI.get_rank():
+            self.addCleanup(shutil.rmtree, tmpdir, ignore_errors=True)
+        return os.path.join(tmpdir, "traced.nio")
+
+    def test_recordings_trace_back_to_their_cells(self):
+        filename = self._results_file()
+        self.network.run_simulation("test", output_filename=filename)
+        if MPI.get_rank():
+            return
+        results = read_results(self.network, filename)
+
+        by_id = list(results.recordings("by_id"))
+        self.assertEqual([3, 7, 11], sorted(r.cell.id for r in by_id))
+        for recording in by_id:
+            with self.subTest(device="by_id", cell=recording.cell.id):
+                self.assertEqual("B", recording.cell.model)
+                self.assertEqual("B", recording.cell.cell_type.name)
+                self.assertClose(
+                    self.positions[recording.cell.id], recording.cell.position
+                )
+
+        in_sphere = np.flatnonzero(
+            np.sum((self.positions - [45, 10, 10]) ** 2, axis=1) < 20**2
+        )
+        self.assertEqual(2, len(in_sphere), "the sphere has to span two chunks")
+        sphere = list(results.recordings("sphere"))
+        for model in ("A", "B", "C"):
+            with self.subTest(device="sphere", model=model):
+                cells = [r.cell for r in sphere if r.cell.model == model]
+                self.assertEqual(sorted(in_sphere), sorted(c.id for c in cells))
+                for cell in cells:
+                    self.assertClose(self.positions[cell.id], cell.position)

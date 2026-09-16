@@ -3,6 +3,7 @@ import os
 import shutil
 import tempfile
 import unittest
+import warnings
 
 import numpy as np
 from bsb_arbor import ArborSimulation, SpikeRecorder
@@ -14,6 +15,9 @@ from bsb import (
     AfterPrepareHook,
     AfterSimulationHook,
     AttributeMissingError,
+    ResultsError,
+    ResultsMismatchError,
+    ResultsWarning,
     Scaffold,
     SimulationResult,
     SimulatorAdapter,
@@ -21,6 +25,7 @@ from bsb import (
     get_simulation_adapter,
     iter_recordings,
     options,
+    read_results,
     read_simulation_config,
 )
 
@@ -169,35 +174,28 @@ class TestTargetting(
         )
         result = self.network.run_simulation("test")
         spiketrains = result.block.segments[0].spiketrains
+        # Cell ids are placement set ids, so each model's run from 0 to its size.
         expected = {
-            "count_recorder": {
-                "size": 7,
-                "min": 0,
-                "max": 20,
-            },
-            "fraction_recorder": {
-                "size": 10,
-                "min": 0,
-                "max": 20,
-            },
-            "new_recorder": {
-                "size": 100,
-                "min": 20,
-                "max": 120,
-            },
+            "count_recorder": {"model": "h_cell", "size": 7, "max": 20},
+            "fraction_recorder": {"model": "h_cell", "size": 10, "max": 20},
+            "new_recorder": {"model": "test_cell", "size": 100, "max": 100},
         }
         # A device writes one train per cell it watched, so its trains are its
         # targets: their count is the size it targeted and their ids are which.
         watched = {}
         for spiketrain in spiketrains:
             recorder = spiketrain.annotations["device"]
-            watched.setdefault(recorder, []).append(spiketrain.annotations["cell_id"])
+            watched.setdefault(recorder, []).append(
+                (spiketrain.annotations["cell_model"], spiketrain.annotations["cell_id"])
+            )
         self.assertEqual(set(expected), set(watched), "every device has to record")
-        for recorder, ids in watched.items():
+        for recorder, cells in watched.items():
             with self.subTest(device=recorder):
-                self.assertEqual(expected[recorder]["size"], len(ids))
+                models, ids = zip(*cells, strict=True)
+                self.assertEqual({expected[recorder]["model"]}, set(models))
+                self.assertEqual(expected[recorder]["size"], len(set(ids)))
                 self.assertAll(np.array(ids) < expected[recorder]["max"])
-                self.assertAll(np.array(ids) >= expected[recorder]["min"])
+                self.assertAll(np.array(ids) >= 0)
 
     def test_by_id(self):
         sim = self.network.simulations.test
@@ -213,6 +211,9 @@ class TestTargetting(
         # Its trains are the cells it targeted, whether or not they fired.
         self.assertEqual(
             [0, 5, 7, 10], sorted(train.annotations["cell_id"] for train in spiketrains)
+        )
+        self.assertEqual(
+            {"h_cell"}, {train.annotations["cell_model"] for train in spiketrains}
         )
 
     def test_sphere(self):
@@ -245,13 +246,14 @@ class TestTargetting(
         # targeted, so each has to have found the same twelve h_cells.
         for device in ("sphere_recorder", "sphere_ct_recorder"):
             with self.subTest(device=device):
-                sorted_ids = np.sort(
+                only_h_cells = np.sort(
                     [
                         recording.cell_id
-                        for recording in iter_recordings(result.block, device=device)
+                        for recording in iter_recordings(
+                            result.block, device=device, cell_model="h_cell"
+                        )
                     ]
                 )
-                only_h_cells = sorted_ids[sorted_ids < 20]
                 self.assertAll(only_h_cells == expected_ids)
                 self.assertEqual(len(only_h_cells), 12)
 
@@ -277,9 +279,12 @@ class TestTargetting(
         )
         expected_ids = np.where(filtered_by_cylinder)
 
-        spiketrains = result.block.segments[0].spiketrains
-        sorted_ids = np.sort([t.annotations["cell_id"] for t in spiketrains])
-        only_h_cells = sorted_ids[sorted_ids < 20]
+        only_h_cells = np.sort(
+            [
+                recording.cell_id
+                for recording in iter_recordings(result.block, cell_model="h_cell")
+            ]
+        )
         self.assertAll(only_h_cells == expected_ids)
         self.assertEqual(len(only_h_cells), 6)
 
@@ -305,6 +310,133 @@ class TestTargetting(
         sorted_ids = np.sort([t.annotations["cell_id"] for t in spiketrains])
         self.assertAll(sorted_ids == sub_pop_h_cell)
         self.assertEqual(len(sorted_ids), 4)
+
+
+@unittest.skipIf(MPI.get_size() > 1, "Skipped during parallel testing.")
+class TestReadResults(
+    FixedPosConfigFixture,
+    RandomStorageFixture,
+    NumpyTestCase,
+    unittest.TestCase,
+    engine_name="hdf5",
+):
+    """Results are read together with their network, and only with their network."""
+
+    def setUp(self):
+        super().setUp()
+        lif = {"model_strategy": "lif", "constants": {"C_m": 250, "V_th": 20}}
+        self.cfg.simulations.add(
+            "test",
+            simulator="arbor",
+            duration=10,
+            resolution=0.5,
+            cell_models={"test_cell": lif},
+            connection_models={},
+            devices={
+                "spikes": {
+                    "device": "spike_recorder",
+                    "targetting": {"strategy": "all"},
+                }
+            },
+        )
+        self.network = Scaffold(self.cfg, self.storage)
+        self.network.compile()
+
+    def _tmp_nio(self):
+        tmpdir = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, tmpdir, ignore_errors=True)
+        return os.path.join(tmpdir, "results.nio")
+
+    def _run(self, *names):
+        filename = self._tmp_nio()
+        for name in names or ("test",):
+            self.network.run_simulation(name, output_filename=filename)
+        return filename
+
+    def test_recordings_name_the_network_cells(self):
+        filename = self._run()
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", ResultsWarning)
+            results = read_results(self.storage.root, filename)
+
+        self.assertEqual(self.network.storage_id, results.network.storage_id)
+        self.assertEqual("test", results.simulation.name)
+        self.assertEqual("arbor", results.configuration["simulator"])
+        self.assertEqual(10, results.provenance["duration_ms"])
+        self.assertEqual(["spikes"], results.devices)
+        recordings = list(results.recordings("spikes"))
+        self.assertEqual(list(range(100)), sorted(r.cell.id for r in recordings))
+        positions = self.network.get_placement_set("test_cell").load_positions()
+        for recording in recordings:
+            self.assertEqual("test_cell", recording.cell.model)
+            self.assertEqual(recording.cell_id, recording.cell.id)
+            self.assertClose(positions[recording.cell.id], recording.cell.position)
+
+    def test_results_of_another_network_raise(self):
+        filename = self._run()
+        other = Scaffold(copy.deepcopy(self.cfg), self.random_storage())
+        other.compile()
+
+        with self.assertRaises(ResultsMismatchError) as caught:
+            read_results(other, filename)
+        self.assertIn(self.network.storage_id, str(caught.exception))
+        self.assertIn(other.storage_id, str(caught.exception))
+
+    def test_a_network_written_to_after_the_run_warns(self):
+        filename = self._run()
+        self.network.get_placement_set("test_cell").label(["moved"], [0])
+
+        with self.assertWarns(ResultsWarning):
+            results = read_results(self.network, filename)
+        self.assertEqual(100, len(list(results.recordings())))
+
+    def test_several_simulations_are_read_together(self):
+        # Each run carries its own configuration and provenance, so every run in the
+        # file is traced back to the network without being picked out first.
+        self.network.simulations["other"] = copy.deepcopy(
+            self.network.simulations.test.__tree__()
+        )
+        filename = self._run("test", "other")
+
+        results = read_results(self.network, filename)
+
+        self.assertEqual(["test", "other"], [run.name for run in results.runs])
+        positions = self.network.get_placement_set("test_cell").load_positions()
+        for run in results.runs:
+            with self.subTest(run=run.name):
+                recordings = list(run.recordings("spikes"))
+                self.assertEqual(list(range(100)), sorted(r.cell.id for r in recordings))
+                for recording in recordings:
+                    self.assertIs(run, recording.run)
+                    self.assertClose(
+                        positions[recording.cell.id], recording.cell.position
+                    )
+        self.assertEqual(200, len(list(results.recordings("spikes"))))
+        with self.assertRaises(ResultsError, msg="which run's provenance?"):
+            _ = results.provenance
+
+    def test_several_runs_of_a_simulation_are_read_together(self):
+        filename = self._run("test", "test")
+
+        results = read_results(self.network, filename)
+
+        self.assertEqual([0, 1], [run.run_index for run in results.runs])
+        self.assertNotEqual(
+            results.runs[0].provenance["simulation_id"],
+            results.runs[1].provenance["simulation_id"],
+        )
+
+    def test_a_run_without_provenance_cannot_be_verified(self):
+        from neo import Block
+
+        filename = self._tmp_nio()
+        with io.NixIO(filename, mode="ow") as out:
+            out.write_block(Block(name="test"))
+
+        with self.assertWarns(ResultsWarning):
+            results = read_results(self.network, filename)
+        self.assertEqual([], results.devices)
 
 
 @config.node

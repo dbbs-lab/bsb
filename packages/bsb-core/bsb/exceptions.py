@@ -90,7 +90,10 @@ _t(
             ParameterError=_e(
                 "parameter",
                 ReificationError=_e(),
-            )
+            ),
+            ResultsError=_e(
+                ResultsMismatchError=_e(),
+            ),
         ),
         SelectorError=_e(),
         TreeError=_e(),
@@ -146,6 +149,12 @@ class ConnectivityWarning(ScaffoldWarning):
 
 
 class PackageRequirementWarning(ScaffoldWarning):
+    pass
+
+
+class ResultsWarning(ScaffoldWarning):
+    """Emitted when a results file cannot be fully verified against its network."""
+
     pass
 
 
@@ -236,6 +245,9 @@ __all__ = [
     "ReferenceLambdaError",
     "ReificationError",
     "RequirementError",
+    "ResultsError",
+    "ResultsMismatchError",
+    "ResultsWarning",
     "ScaffoldError",
     "ScaffoldWarning",
     "SelectorError",

@@ -4,7 +4,6 @@ import unittest
 from os.path import abspath, dirname, isdir, isfile, join
 from sys import path
 
-import numpy as np
 from bsb import Scaffold, from_storage, parse_configuration_file
 from bsb_test import RandomStorageFixture
 from neo import io
@@ -50,22 +49,21 @@ class TestNestExamples(
             self.assertEqual(signal.t_stop, 5000)
         self.assertEqual(len(devices), 3)
 
-        # Recordings of a cell carry its id; a device level record, such as a
-        # generator's own spikes, has no cell to name and so carries none.
-        neuron_ids = np.array(
-            [
-                signal.annotations["cell_id"]
-                for signal in spiketrains
-                if "cell_id" in signal.annotations
-            ],
-            dtype=int,
+        # Recordings of a cell name its cell model and its id in that model's
+        # placement set; a device level record, such as a generator's own spikes,
+        # has no cell to name and so carries neither.
+        cells = {}
+        for signal in spiketrains:
+            if "cell_id" in signal.annotations:
+                cells.setdefault(signal.annotations["cell_model"], []).append(
+                    signal.annotations["cell_id"]
+                )
+        # A device records every cell it watched, so these are all of the watched
+        # cells and not only the ones that fired.
+        self.assertEqual(
+            {"base_type": list(range(1560)), "top_type": list(range(40))},
+            {model: sorted(ids) for model, ids in cells.items()},
         )
-        # A device records every cell it watched, so these are the watched cells and
-        # not only the ones that fired: how many there are no longer depends on what
-        # the run happened to draw.
-        self.assertGreater(neuron_ids.size, 0)
-        self.assertLess(neuron_ids.size, 1600 + 1)
-        self.assertLessEqual(np.max(neuron_ids), 1600 + 1)
 
     def test_json_example(self):
         self.cfg = parse_configuration_file(

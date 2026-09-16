@@ -8,6 +8,7 @@ from neo import io as neo_io
 from quantities import ms
 
 from bsb.simulation.results import (
+    iter_recordings,
     merge_rank_results,
     rank_part_path,
     read_provenance,
@@ -102,6 +103,28 @@ class TestRankParts(unittest.TestCase):
             train.annotations["mpi_rank"] for train in block.segments[0].spiketrains
         )
         self.assertEqual([0, 1], ranks)
+
+
+class TestIterRecordings(unittest.TestCase):
+    def test_a_cell_is_singled_out_by_model_and_id(self):
+        # A cell id is only unique within its cell model.
+        segment = Segment()
+        for model in ("a", "b"):
+            for cell_id in range(2):
+                segment.spiketrains.append(
+                    SpikeTrain(
+                        [] * ms,
+                        t_stop=10 * ms,
+                        device="rec",
+                        cell_model=model,
+                        cell_id=cell_id,
+                    )
+                )
+
+        self.assertEqual(2, len(list(iter_recordings(segment, cell_id=1))))
+        (recording,) = iter_recordings(segment, cell_id=1, cell_model="b")
+        self.assertEqual(("b", 1), (recording.cell_model, recording.cell_id))
+        self.assertEqual(2, len(list(iter_recordings(segment, cell_model="a"))))
 
 
 class TestProvenanceReading(unittest.TestCase):

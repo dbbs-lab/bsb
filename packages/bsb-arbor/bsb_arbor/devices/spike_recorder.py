@@ -17,6 +17,7 @@ class SpikeRecorder(ArborDevice, classmap_entry="spike_recorder"):
         # so rank 0 holds the whole run's results and is by convention the rank
         # that writes them.
         if not adapter.comm.get_rank():
+            cells = {gid: _cell_of_gid(simdata, gid) for gid in self._gids}
 
             def record_device_spikes(segment):
                 times = collections.defaultdict(list)
@@ -28,13 +29,15 @@ class SpikeRecorder(ArborDevice, classmap_entry="spike_recorder"):
                 # has to say it a second time, and a silent cell is told apart from
                 # one that was never watched by reading the results alone.
                 for gid in sorted(self._gids):
+                    cell_model, cell_id = cells[gid]
                     segment.spiketrains.append(
                         neo.SpikeTrain(
                             times[gid],
                             units="ms",
                             t_stop=self.simulation.duration,
                             name=self.name,
-                            cell_id=gid,
+                            cell_model=cell_model,
+                            cell_id=cell_id,
                         )
                     )
 
@@ -46,3 +49,15 @@ class SpikeRecorder(ArborDevice, classmap_entry="spike_recorder"):
 
     def implement_generators(self, simdata, gid):
         return []
+
+
+def _cell_of_gid(simdata, gid):
+    """
+    The cell model name and cell id that an arbor gid simulates.
+
+    Each model's gids start at its offset and follow its placement set row by row,
+    so the cell id is the gid counted from there.
+    """
+    manager = simdata.gid_manager
+    model = manager.lookup_model(gid)
+    return model.name, gid - manager.lookup_offset(gid)

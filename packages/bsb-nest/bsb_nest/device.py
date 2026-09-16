@@ -2,6 +2,7 @@ import abc
 import warnings
 
 import nest
+import numpy as np
 from bsb import DeviceModel, Targetting, config, refs, types
 
 from .distributions import nest_constant
@@ -67,8 +68,33 @@ class NestDevice(DeviceModel):
         return sum(dict_targets.values(), start=nest.NodeCollection())
 
     @staticmethod
-    def _invert_targets_dict(dict_targets):
-        return {elem: k.name for k, v in dict_targets.items() for elem in v.tolist()}
+    def _cells_of_nodes(simdata, dict_targets):
+        """
+        Map each targeted NEST node to the cell it simulates.
+
+        A model's population holds one node per row of its placement set, in
+        placement set order, so a node's cell id is its position in the whole
+        population. Its position among the targets is not: a targetting strategy may
+        select any subset of the population.
+
+        :param bsb.simulation.adapter.SimulationData simdata: Simulation data instance
+        :param dict dict_targets: Targeted NEST collection per cell model, as given by
+          :meth:`get_dict_targets`.
+        :return: Mapping of node id to a tuple of cell model name and cell id.
+        :rtype: dict[int, tuple[str, int]]
+        """
+        cells = {}
+        for model, targets in dict_targets.items():
+            nodes = targets.tolist()
+            if not nodes:
+                continue
+            # NEST keeps node collections sorted, so a node's position in its
+            # population can be searched for rather than looked up one by one.
+            population = np.asarray(simdata.populations[model].tolist())
+            cell_ids = np.searchsorted(population, nodes)
+            for node, cell_id in zip(nodes, cell_ids, strict=True):
+                cells[int(node)] = (model.name, int(cell_id))
+        return cells
 
     def get_target_nodes(
         self,

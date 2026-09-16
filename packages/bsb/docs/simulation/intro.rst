@@ -232,27 +232,34 @@ device that recorded it and the cell it belongs to. This information is stored i
       spiketrain_array = spiketrain.magnitude
       unit_of_measure = spiketrain.units
       device_name = spiketrain.annotations["device"]
+      cell_model = spiketrain.annotations["cell_model"]
       cell_id = spiketrain.annotations["cell_id"]
-      end_time_of_the_simulation = spiketrain.annotations["t_stop"]
+      end_time_of_the_simulation = spiketrain.t_stop
+
+A cell is named by the name of its cell model and its id in the placement set of that cell
+model's cell type, whichever simulator ran it. The same ``cell_id`` can occur in several cell
+models, so it is the pair that identifies a cell.
 
 A device writes one train per cell it watched, so its trains are its cells and a cell that
-never fired has an empty one. To walk them without going through the Neo containers yourself, use
-:func:`~bsb.simulation.results.iter_recordings`, which is described in :doc:`/simulation/results`:
+never fired has an empty one. To walk them together with the cells of the network they
+belong to, use :func:`~bsb.simulation.results.read_results`, which is described in
+:doc:`/simulation/results`:
 
 .. code-block:: python
 
-  from bsb.simulation.results import iter_recordings
+  from bsb import read_results
 
-  for recording in iter_recordings(block, device="my_spike_recorder"):
-      print(recording.cell_id, recording.signal.magnitude)
+  results = read_results("network.hdf5", "simulation-results/run.nio")
+  for recording in results.recordings("my_spike_recorder"):
+      print(recording.cell.id, recording.cell.position, len(recording.signal))
 
 Analog Signals
 --------------
 
 Each segment also contains an :guilabel:`analogsignals` attribute, which holds a list of Neo :class:`AnalogSignal <neo.core.AnalogSignal>` objects.
 These objects contain the trace of the recorded property, along with the associated time points.
-They are also annotated with information such as the device name, the type of cell recorded, and the cell ID,
-which can be accessed through the :guilabel:`annotations` attribute:
+They are annotated the same way as spike trains, with the device name, the cell model and
+the cell ID, which can be accessed through the :guilabel:`annotations` attribute:
 
 .. code-block:: python
 
@@ -261,14 +268,12 @@ which can be accessed through the :guilabel:`annotations` attribute:
     unit_of_measure = signal.units
     time_signature = signal.times
     time_unit = signal.times.units
-    device_name = signal.annotations['name']
-    cell_type = signal.annotations['cell_type']
-    cell_id = signal.annotations['cell_id']
+    device_name = signal.annotations["device"]
+    cell_model = signal.annotations["cell_model"]
+    cell_id = signal.annotations["cell_id"]
 
-.. note::
-
-  Unlike the spike train case, the :guilabel:`analogsignals` attribute contains a separate ``AnalogSignal``
-  object for each target of the device.
+As with spike trains, the :guilabel:`analogsignals` attribute contains a separate ``AnalogSignal``
+object for each cell the device recorded, and for each property when a device samples several.
 
 Advanced Features
 =================

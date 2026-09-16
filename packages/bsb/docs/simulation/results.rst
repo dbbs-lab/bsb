@@ -194,9 +194,9 @@ changes nothing in the network. The ``position`` of a point or a synapse is wher
 is on that morphology. Morphologies and rotations are loaded from the network once per
 placement set, and only when a recording asks for them.
 
-A recording of a kind this BSB does not know, such as one in a file written by a newer
-BSB, still reads, with ``target`` set to
-``None``; its annotations stay available as ``recording.annotations``.
+A recording of a kind this version of the BSB does not know, such as one in a file
+written by a newer version, still reads, with ``target`` set to ``None``; its
+annotations stay available as ``recording.annotations``.
 ``results.recordings(kind="synapse")`` selects recordings by kind.
 
 The reader also offers:

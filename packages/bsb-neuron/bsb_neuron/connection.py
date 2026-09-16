@@ -61,10 +61,12 @@ class SynapseSpec:
             self._synapse = synapse_name
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass(frozen=True, slots=True)
 class Receiver:
     """
     A synapse a connection makes on a cell, and the connection it belongs to.
+
+    Every synapse a connection model creates keeps its receiver as ``receiver``.
     """
 
     #: The transmitter gid the synapse receives from.
@@ -139,15 +141,14 @@ class TransceiverModel(NeuronConnection, classmap_entry="transceiver"):
                 weight=receiver.spec.weight,
                 delay=receiver.spec.delay,
             )
+            # The receiver's synapse is the one it just appended to its section.
+            location = receiver.cell.get_location(receiver.location)
+            location.section.synapses[-1].receiver = receiver
 
     def iter_receivers(self, simdata, cs):
         """
         Iterate the synapses the connectivity set makes on the cells of this rank, in
         the order :meth:`create_receivers` inserts them.
-
-        Nothing about a synapse's connection is kept on the synapse. A device that
-        needs it walks the receivers again, so that it only costs anything for the
-        synapses that are recorded.
 
         :type simdata: bsb_neuron.simulation.NeuronSimulationData
         :type cs: bsb.storage.interfaces.ConnectivitySet

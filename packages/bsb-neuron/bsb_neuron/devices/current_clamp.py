@@ -37,9 +37,9 @@ class CurrentClamp(NeuronDevice, classmap_entry="current_clamp"):
         simdata.result.record(
             clamp._ref_i,
             device=self,
-            name="i",
-            units="nA",
-            **point_annotations(
+            target=point_annotations(
                 target.cell_model, target.id, *location._loc, sx, "stimulate"
             ),
+            name="i",
+            units="nA",
         )

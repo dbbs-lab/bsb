@@ -36,7 +36,7 @@ class SynapseRecorder(NeuronDevice, classmap_entry="synapse_recorder"):
             device=self,
             name="i",
             units="nA",
-            **synapse_annotations(
+            target=synapse_annotations(
                 target.cell_model,
                 target.id,
                 branch,

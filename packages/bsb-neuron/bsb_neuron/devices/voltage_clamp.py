@@ -55,9 +55,9 @@ class VoltageClamp(NeuronDevice, classmap_entry="vclamp"):
         results.record(
             clamp._ref_i,
             device=self,
-            name="i",
-            units="nA",
-            **point_annotations(
+            target=point_annotations(
                 target.cell_model, target.id, *location._loc, sx, "stimulate"
             ),
+            name="i",
+            units="nA",
         )

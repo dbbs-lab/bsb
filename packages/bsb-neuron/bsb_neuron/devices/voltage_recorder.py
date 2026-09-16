@@ -26,8 +26,9 @@ class VoltageRecorder(NeuronDevice, classmap_entry="voltage_recorder"):
         results.record(
             section(x)._ref_v,
             device=self,
-            name="v",
-            **point_annotations(
+            target=point_annotations(
                 target.cell_model, target.id, *location._loc, x, "record"
             ),
+            name="v",
+            units="mV",
         )

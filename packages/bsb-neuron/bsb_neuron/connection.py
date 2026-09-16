@@ -1,3 +1,6 @@
+import dataclasses
+import typing
+
 import numpy as np
 from bsb import AdapterError, ConnectionModel, config, types
 
@@ -58,6 +61,28 @@ class SynapseSpec:
             self._synapse = synapse_name
 
 
+@dataclasses.dataclass(frozen=True)
+class Receiver:
+    """
+    A synapse a connection makes on a cell, and the connection it belongs to.
+    """
+
+    #: The transmitter gid the synapse receives from.
+    gid: int
+    #: The postsynaptic cell.
+    cell: typing.Any
+    #: Branch and point of the synapse on the postsynaptic cell.
+    location: tuple[int, int]
+    #: The synapse specification.
+    spec: SynapseSpec
+    #: The cell model of the presynaptic cell.
+    pre_model: typing.Any
+    #: Cell id, branch and point where the connection starts on the presynaptic cell.
+    pre: tuple[int, int, int]
+    #: Name of the connectivity set the connection is in.
+    connectivity_set: str
+
+
 @config.node
 class TransceiverModel(NeuronConnection, classmap_entry="transceiver"):
     synapses = config.list(
@@ -105,8 +130,32 @@ class TransceiverModel(NeuronConnection, classmap_entry="transceiver"):
         :type simdata: bsb_neuron.simulation.NeuronSimulationData
         :type cs: bsb.storage.interfaces.ConnectivitySet
         """
-        for post_cm, post_pop in simdata.populations.items():  # noqa: B007
-            if post_cm.cell_type == cs.post_type:
+        for receiver in self.iter_receivers(simdata, cs):
+            receiver.cell.insert_receiver(
+                receiver.gid,
+                receiver.spec.synapse,
+                receiver.location,
+                source=self.source,
+                weight=receiver.spec.weight,
+                delay=receiver.spec.delay,
+            )
+
+    def iter_receivers(self, simdata, cs):
+        """
+        Iterate the synapses the connectivity set makes on the cells of this rank, in
+        the order :meth:`create_receivers` inserts them.
+
+        Nothing about a synapse's connection is kept on the synapse. A device that
+        needs it walks the receivers again, so that it only costs anything for the
+        synapses that are recorded.
+
+        :type simdata: bsb_neuron.simulation.NeuronSimulationData
+        :type cs: bsb.storage.interfaces.ConnectivitySet
+        :returns: The receivers, one per synapse.
+        :rtype: typing.Iterator[Receiver]
+        """
+        for post_model, post_pop in simdata.populations.items():  # noqa: B007
+            if post_model.cell_type == cs.post_type:
                 break
         else:
             raise AdapterError(f"No pop found for {cs.pre_type.name}")
@@ -117,27 +166,21 @@ class TransceiverModel(NeuronConnection, classmap_entry="transceiver"):
         pre, post = query.all()
         # The same connections with the presynaptic cells as placement set ids, which
         # is how a synapse names the cell it receives from.
-        pre_ids = query.as_globals().all()[0][:, 0]
+        pre_globals = query.as_globals().all()[0]
         transmitters = simdata.transmap[self]["receivers"]
-        for pre_loc, pre_id, post_loc in zip(pre[:, :2], pre_ids, post, strict=True):
-            gid = transmitters[tuple(pre_loc)]
+        for pre_loc, pre_global, post_loc in zip(pre, pre_globals, post, strict=True):
+            gid = transmitters[tuple(pre_loc[:2])]
             cell = post_pop[post_loc[0]]
-            location = cell.get_location(post_loc[1:])
             for spec in self.synapses:
-                cell.insert_receiver(
-                    gid,
-                    spec.synapse,
-                    post_loc[1:],
-                    source=self.source,
-                    weight=spec.weight,
-                    delay=spec.delay,
+                yield Receiver(
+                    gid=gid,
+                    cell=cell,
+                    location=tuple(int(i) for i in post_loc[1:]),
+                    spec=spec,
+                    pre_model=pre_model,
+                    pre=tuple(int(i) for i in pre_global),
+                    connectivity_set=cs.tag,
                 )
-                # The receiver's synapse is the one it just appended to its section.
-                synapse = location.section.synapses[-1]
-                synapse.bsb_location = tuple(int(i) for i in post_loc[1:])
-                synapse.bsb_arc = location.arc(0.5)
-                if pre_model is not None:
-                    synapse.bsb_presynaptic = (pre_model, int(pre_id))
 
     def __lt__(self, other):
         try:

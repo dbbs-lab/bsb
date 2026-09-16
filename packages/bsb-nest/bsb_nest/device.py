@@ -2,8 +2,7 @@ import abc
 import warnings
 
 import nest
-import numpy as np
-from bsb import DeviceModel, Targetting, config, refs, types
+from bsb import AdapterError, DeviceModel, Targetting, config, refs, types
 
 from .distributions import nest_constant
 
@@ -68,33 +67,42 @@ class NestDevice(DeviceModel):
         return sum(dict_targets.values(), start=nest.NodeCollection())
 
     @staticmethod
-    def _cells_of_nodes(simdata, dict_targets):
+    def _node_ranges(simdata, dict_targets):
         """
-        Map each targeted NEST node to the cell it simulates.
+        The node id range of the population of each targeted cell model.
 
-        A model's population holds one node per row of its placement set, in
-        placement set order, so a node's cell id is its position in the whole
-        population. Its position among the targets is not: a targetting strategy may
-        select any subset of the population.
+        A population is created in one call to NEST, which gives its nodes consecutive
+        ids in placement set order, so a node's cell id is its distance from the first
+        node. Only where each range starts and ends is kept, not an entry per node.
 
         :param bsb.simulation.adapter.SimulationData simdata: Simulation data instance
         :param dict dict_targets: Targeted NEST collection per cell model, as given by
           :meth:`get_dict_targets`.
-        :return: Mapping of node id to a tuple of cell model and cell id.
-        :rtype: dict[int, tuple[bsb_nest.cell.NestCell, int]]
+        :return: First node id, last node id and cell model of each population.
+        :rtype: list[tuple[int, int, bsb_nest.cell.NestCell]]
         """
-        cells = {}
-        for model, targets in dict_targets.items():
-            nodes = targets.tolist()
-            if not nodes:
+        ranges = []
+        for model in dict_targets:
+            population = simdata.populations[model]
+            if not len(population):
                 continue
-            # NEST keeps node collections sorted, so a node's position in its
-            # population can be searched for rather than looked up one by one.
-            population = np.asarray(simdata.populations[model].tolist())
-            cell_ids = np.searchsorted(population, nodes)
-            for node, cell_id in zip(nodes, cell_ids, strict=True):
-                cells[int(node)] = (model, int(cell_id))
-        return cells
+            first = population[0].global_id
+            last = population[-1].global_id
+            if last - first + 1 != len(population):
+                raise AdapterError(
+                    f"The nodes of cell model '{model.name}' are not consecutive, so "
+                    "they cannot be traced back to its placement set."
+                )
+            ranges.append((first, last, model))
+        return ranges
+
+    @staticmethod
+    def _cell_of_node(ranges, node):
+        """The cell model and cell id of a node, from :meth:`_node_ranges`."""
+        for first, last, model in ranges:
+            if first <= node <= last:
+                return model, node - first
+        raise AdapterError(f"Node {node} is not in any targeted population.")
 
     def get_target_nodes(
         self,

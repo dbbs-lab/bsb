@@ -96,10 +96,14 @@ are never written: they mean nothing outside the run that assigned them.
      - A location on a cell's morphology: the branch, the point on the branch, and
        where along the branch, as a fraction of its length.
    * - ``synapse``
-     - The ``point`` annotations, and ``bsb_synapse_type``; ``bsb_pre_ps_name``,
-       ``bsb_pre_cell_model`` and ``bsb_pre_cell_id`` when the synapse belongs to a
-       connection
-     - A synapse on a cell, and the presynaptic cell it receives from.
+     - ``bsb_synapse_type``; ``bsb_post_ps_name``, ``bsb_post_cell_model``,
+       ``bsb_post_cell_id``, ``bsb_post_branch``, ``bsb_post_point``,
+       ``bsb_post_arc``; and when the synapse belongs to a connection,
+       ``bsb_pre_ps_name``, ``bsb_pre_cell_model``, ``bsb_pre_cell_id``,
+       ``bsb_pre_branch``, ``bsb_pre_point`` and ``bsb_connectivity_set``
+     - A synapse between two cells: where it is on its postsynaptic cell, where its
+       connection starts on its presynaptic cell, and the connectivity set the
+       connection is in.
    * - ``device``
      - None
      - Nothing in the network: a signal the device computes itself, rather than one
@@ -182,8 +186,10 @@ in the network. The target depends on the kind:
        ``position`` in the network.
    * - ``synapse``
      - :class:`~bsb.simulation.results.RecordedSynapse`
-     - The ``cell`` it is on, ``branch``, ``point``, ``arc``, its ``position`` in
-       the network, ``synapse_type``, and the ``presynaptic`` cell, if any.
+     - ``post``, where it is on its postsynaptic cell, and ``pre``, where its
+       connection starts on its presynaptic cell, if any, both as a
+       :class:`~bsb.simulation.results.RecordedPoint`; its ``position`` in the
+       network, ``synapse_type`` and ``connectivity_set``.
    * - ``device``
      - :class:`~bsb.simulation.results.RecordedDevice`
      - The device's ``name``, its ``kind``, and its ``configuration`` as the

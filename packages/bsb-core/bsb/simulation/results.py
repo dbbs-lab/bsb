@@ -295,45 +295,48 @@ def point_annotations(
 
 
 def synapse_annotations(
-    cell_model,
-    cell_id: int,
-    branch: int,
-    point: int,
-    arc: float,
-    synapse_type: str,
-    direction: str,
-    presynaptic=None,
+    post, synapse_type: str, direction: str, pre=None, connectivity_set=None
 ) -> dict:
     """
-    Annotations of a recording of a synapse on a cell.
+    Annotations of a recording of a synapse, between the cell it is on and the cell of
+    the connection it belongs to.
 
-    :param cell_model: The cell model of the cell the synapse is on.
-    :type cell_model: ~bsb.simulation.cell.CellModel
-    :param cell_id: Id of the cell the synapse is on.
-    :param branch: Index of the branch the synapse is on.
-    :param point: Index of the point on that branch.
-    :param arc: Where the synapse is, as a fraction of the branch's length.
+    :param post: Where the synapse is: the cell model, cell id, branch, point, and arc
+      of the location on the postsynaptic cell.
+    :type post: tuple[~bsb.simulation.cell.CellModel, int, int, int, float]
     :param synapse_type: Name of the synapse type.
     :param direction: ``"record"`` when the device observes what it records, or
       ``"stimulate"`` when it injects it.
-    :param presynaptic: The cell model and cell id of the presynaptic cell, when the
-      synapse belongs to a connection.
-    :type presynaptic: tuple[~bsb.simulation.cell.CellModel, int] | None
+    :param pre: Where the connection starts: the cell model, cell id, branch and point
+      of the location on the presynaptic cell. ``None`` for a synapse that belongs to
+      no connection.
+    :type pre: tuple[~bsb.simulation.cell.CellModel, int, int, int] | None
+    :param connectivity_set: Name of the connectivity set of the connection.
     :returns: The annotations to pass to the Neo object.
     """
+    post_model, post_id, post_branch, post_point, post_arc = post
     annotations = {
-        **point_annotations(cell_model, cell_id, branch, point, arc, direction),
         "bsb_recording_kind": "synapse",
+        "bsb_direction": direction,
         "bsb_synapse_type": synapse_type,
+        **_hemitype("post", post_model, post_id, post_branch, post_point),
+        "bsb_post_arc": float(post_arc),
     }
-    if presynaptic is not None:
-        pre_model, pre_id = presynaptic
-        annotations.update(
-            bsb_pre_ps_name=pre_model.cell_type.name,
-            bsb_pre_cell_model=pre_model.name,
-            bsb_pre_cell_id=int(pre_id),
-        )
+    if pre is not None:
+        annotations.update(_hemitype("pre", *pre))
+    if connectivity_set is not None:
+        annotations["bsb_connectivity_set"] = connectivity_set
     return annotations
+
+
+def _hemitype(side, cell_model, cell_id, branch, point):
+    return {
+        f"bsb_{side}_ps_name": cell_model.cell_type.name,
+        f"bsb_{side}_cell_model": cell_model.name,
+        f"bsb_{side}_cell_id": int(cell_id),
+        f"bsb_{side}_branch": int(branch),
+        f"bsb_{side}_point": int(point),
+    }
 
 
 @dataclasses.dataclass(frozen=True)
@@ -380,7 +383,8 @@ def iter_recordings(
         :class:`neo.core.Segment`, or an iterable of either.
     :param device: Only yield recordings made by this device.
     :param kind: Only yield recordings of this kind.
-    :param cell_model: Only yield recordings on cells of this cell model.
+    :param cell_model: Only yield recordings on cells of this cell model. A
+        synapse is on its postsynaptic cell.
     :param cell_id: Only yield recordings on cells with this id. A cell id is only
         unique within its cell model, so pass ``cell_model`` along to single out one
         cell.
@@ -397,10 +401,10 @@ def iter_recordings(
                     continue
                 if (
                     cell_model is not None
-                    and annotations.get("bsb_cell_model") != cell_model
+                    and _on_cell(annotations, "cell_model") != cell_model
                 ):
                     continue
-                if cell_id is not None and annotations.get("bsb_cell_id") != cell_id:
+                if cell_id is not None and _on_cell(annotations, "cell_id") != cell_id:
                     continue
                 yield Recording(
                     device=annotations.get("bsb_device_name"),
@@ -408,6 +412,15 @@ def iter_recordings(
                     direction=annotations.get("bsb_direction"),
                     signal=signal,
                 )
+
+
+def _on_cell(annotations, key):
+    """
+    An annotation of the cell a recording is on: the recorded cell, or the cell a
+    recorded synapse is on.
+    """
+    value = annotations.get(f"bsb_{key}")
+    return annotations.get(f"bsb_post_{key}") if value is None else value
 
 
 def _iter_segments(source):
@@ -772,7 +785,9 @@ class RecordedCell:
         rotations = self._placement.rotations
         return None if rotations is None else rotations[self.id]
 
-    def _position_on(self, branch: int, arc: float) -> "numpy.ndarray | None":
+    def _position_on(
+        self, branch: int, point: int, arc: float | None
+    ) -> "numpy.ndarray | None":
         """Where a location on the morphology is, in the network."""
         morphologies = self._placement.morphologies
         position = self.position
@@ -789,12 +804,24 @@ class RecordedCell:
                 f"Cell {self.id} of '{self.cell_type.name}' is recorded on branch "
                 f"{branch}, but its morphology has {len(morphology.branches)} branches."
             ) from None
-        lengths = np.concatenate(
-            ([0.0], np.cumsum(np.linalg.norm(np.diff(points, axis=0), axis=1)))
-        )
-        local = np.array(
-            [np.interp(arc * lengths[-1], lengths, points[:, axis]) for axis in range(3)]
-        )
+        if arc is None:
+            try:
+                local = points[point]
+            except IndexError:
+                raise ResultsError(
+                    f"Cell {self.id} of '{self.cell_type.name}' is recorded on point "
+                    f"{point} of branch {branch}, which has {len(points)} points."
+                ) from None
+        else:
+            lengths = np.concatenate(
+                ([0.0], np.cumsum(np.linalg.norm(np.diff(points, axis=0), axis=1)))
+            )
+            local = np.array(
+                [
+                    np.interp(arc * lengths[-1], lengths, points[:, axis])
+                    for axis in range(3)
+                ]
+            )
         rotation = self.rotation
         if rotation is not None:
             local = rotation.apply(local)
@@ -813,46 +840,40 @@ class RecordedPoint:
     branch: int
     #: Index of the point on that branch.
     point: int
-    #: Where on the branch the recording is, as a fraction of the branch's length.
-    arc: float
+    #: Where on the branch, as a fraction of the branch's length, or ``None`` when the
+    #: location is the point itself.
+    arc: float | None = None
 
     @property
     def position(self) -> "numpy.ndarray | None":
         """
-        Where the recording is in the network: the cell's morphology, rotated and
-        placed as the cell is. ``None`` when the network stores no morphologies or
-        positions for the cell.
+        Where the location is in the network, on the cell's morphology as the cell is
+        placed. ``None`` when the network stores no morphologies or positions for the
+        cell.
         """
-        return self.cell._position_on(self.branch, self.arc)
+        return self.cell._position_on(self.branch, self.point, self.arc)
 
 
 @dataclasses.dataclass(frozen=True, eq=False)
 class RecordedSynapse:
     """
-    A synapse on a cell of the network, as a recording addresses it.
+    A synapse between two cells of the network, as a recording addresses it.
     """
 
-    #: The cell the synapse is on.
-    cell: RecordedCell
-    #: Index of the branch the synapse is on.
-    branch: int
-    #: Index of the point on that branch.
-    point: int
-    #: Where on the branch the synapse is, as a fraction of the branch's length.
-    arc: float
+    #: Where the synapse is on its postsynaptic cell.
+    post: RecordedPoint
+    #: Where the connection the synapse belongs to starts on its presynaptic cell, or
+    #: ``None`` for a synapse that belongs to no connection.
+    pre: RecordedPoint | None
     #: Name of the synapse type.
     synapse_type: str
-    #: The presynaptic cell of the connection the synapse belongs to, if any.
-    presynaptic: RecordedCell | None
+    #: Name of the connectivity set of the connection, if any.
+    connectivity_set: str | None
 
     @property
     def position(self) -> "numpy.ndarray | None":
-        """
-        Where the synapse is in the network: the cell's morphology, rotated and placed
-        as the cell is. ``None`` when the network stores no morphologies or positions
-        for the cell.
-        """
-        return self.cell._position_on(self.branch, self.arc)
+        """Where the synapse is in the network: its location on the postsynaptic cell."""
+        return self.post.position
 
 
 @dataclasses.dataclass(frozen=True, eq=False)
@@ -1041,16 +1062,23 @@ class ResultsReader:
             )
         if kind == "synapse":
             return RecordedSynapse(
-                cell=self._cell(recording, ""),
-                branch=int(self._field(recording, "bsb_branch")),
-                point=int(self._field(recording, "bsb_point")),
-                arc=float(self._field(recording, "bsb_arc")),
-                synapse_type=self._field(recording, "bsb_synapse_type"),
-                presynaptic=(
-                    self._cell(recording, "pre_")
+                post=RecordedPoint(
+                    cell=self._cell(recording, "post_"),
+                    branch=int(self._field(recording, "bsb_post_branch")),
+                    point=int(self._field(recording, "bsb_post_point")),
+                    arc=float(self._field(recording, "bsb_post_arc")),
+                ),
+                pre=(
+                    RecordedPoint(
+                        cell=self._cell(recording, "pre_"),
+                        branch=int(self._field(recording, "bsb_pre_branch")),
+                        point=int(self._field(recording, "bsb_pre_point")),
+                    )
                     if "bsb_pre_cell_id" in annotations
                     else None
                 ),
+                synapse_type=self._field(recording, "bsb_synapse_type"),
+                connectivity_set=annotations.get("bsb_connectivity_set"),
             )
         if (recording.device, kind) not in self._untraceable:
             self._untraceable.add((recording.device, kind))

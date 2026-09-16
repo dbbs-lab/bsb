@@ -690,14 +690,23 @@ class TestRecordingsNameTheirCells(
         synapses = list(results.recordings("synapses"))
         self.assertEqual(
             [(0, 0), (0, 1), (8, 3)],
-            sorted((r.target.cell.id, r.target.presynaptic.id) for r in synapses),
+            sorted((r.target.post.cell.id, r.target.pre.cell.id) for r in synapses),
         )
         for recording in synapses:
-            with self.subTest(device="synapses", cell=recording.target.cell.id):
+            synapse = recording.target
+            with self.subTest(device="synapses", cell=synapse.post.cell.id):
                 self.assertEqual("synapse", recording.kind)
-                self.assertEqual("ExpSyn", recording.target.synapse_type)
-                self.assertEqual("A", recording.target.presynaptic.model)
+                self.assertEqual("ExpSyn", synapse.synapse_type)
+                self.assertEqual("A_to_B", synapse.connectivity_set)
+                self.assertEqual(
+                    ("A", "B"), (synapse.pre.cell.model, synapse.post.cell.model)
+                )
                 self.assertClose(
-                    self.positions[recording.target.presynaptic.id],
-                    recording.target.presynaptic.position,
+                    self.positions[synapse.pre.cell.id], synapse.pre.cell.position
+                )
+                # Every connection starts at point 0 of branch 0 of its presynaptic cell.
+                self.assertEqual((0, 0), (synapse.pre.branch, synapse.pre.point))
+                self.assertClose(
+                    synapse.pre.cell.morphology.branches[0].points[0],
+                    synapse.pre.position,
                 )

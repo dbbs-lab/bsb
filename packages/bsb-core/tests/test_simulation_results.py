@@ -221,8 +221,13 @@ class TestRecordedLocations(
         )
         self._write(
             point_annotations(model, 0, 0, 0, 0.5, "record"),
+            # From point 1 of branch 0 of the first cell, onto branch 1 of the second.
             synapse_annotations(
-                model, 1, 1, 1, 0.75, "ExpSyn", "record", presynaptic=(model, 0)
+                (model, 1, 1, 1, 0.75),
+                "ExpSyn",
+                "record",
+                pre=(model, 0, 0, 1),
+                connectivity_set="line_to_line",
             ),
             device_annotations("record"),
         )
@@ -241,11 +246,15 @@ class TestRecordedLocations(
         self.assertClose([[100, 0, 0], [100, 10, 0]], placed.branches[0].points)
         self.assertClose(
             [[0, 50, 0], [0, 50, 4], [0, 50, 8]],
-            synapse.cell.morphology.branches[1].points,
+            synapse.post.cell.morphology.branches[1].points,
         )
         self.assertClose([0, 0, 90], point.cell.rotation.as_euler("xyz", degrees=True))
-        self.assertEqual(0, synapse.presynaptic.id)
-        self.assertClose([100, 0, 0], synapse.presynaptic.position)
+        # Point 1 of branch 0 is 10 along x, turned onto y, at the first cell.
+        self.assertEqual(
+            (0, 0, 1), (synapse.pre.cell.id, synapse.pre.branch, synapse.pre.point)
+        )
+        self.assertClose([100, 10, 0], synapse.pre.position)
+        self.assertEqual("line_to_line", synapse.connectivity_set)
 
 
 class _Simulation:

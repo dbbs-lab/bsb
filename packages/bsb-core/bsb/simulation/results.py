@@ -19,6 +19,7 @@ from ..storage.provenance import (
 
 if typing.TYPE_CHECKING:  # pragma: nocover
     import neo
+    import nixio
 
 
 def read_simulation_config(block: "neo.core.Block") -> dict | None:
@@ -88,6 +89,67 @@ def rank_part_path(filename, rank: int) -> pathlib.Path:
     return final.with_suffix(final.suffix + ".ranks") / f"rank{rank}.nio"
 
 
+def _block_section(file, block) -> "nixio.Section | None":
+    """
+    A block's own metadata section, reached from the file so it resolves.
+
+    ``nixio`` only fills in a section's parent pointer -- which a later
+    :func:`_graft` needs -- when the section is reached by walking down from
+    the file, not through the block's ``.metadata`` shortcut. Every section
+    this module touches is therefore looked up by walking the tree rather
+    than read off ``.metadata`` directly.
+    """
+    if block.metadata is None:
+        return None
+    return file.sections[block.metadata.name]
+
+
+def _entity_section(top_section, entity) -> "nixio.Section | None":
+    """A group's or recording's own metadata section, found under the block's."""
+    if top_section is None or entity.metadata is None:
+        return None
+    return _find_section(top_section, entity.metadata.id)
+
+
+def _find_section(section, target_id):
+    if section.id == target_id:
+        return section
+    for child in section.sections:
+        found = _find_section(child, target_id)
+        if found is not None:
+            return found
+    return None
+
+
+def _prop(section, name):
+    """A metadata property's value, or ``None`` if the section carries none."""
+    if section is None:
+        return None
+    for prop in section.props:
+        if prop.name == name:
+            return prop.values[0]
+    return None
+
+
+def _graft(dest_top_section, source_section):
+    """
+    Copy a nested metadata section under ``dest_top_section``, once.
+
+    ``nixio``'s own ``copy_section`` only knows it is copying a *nested*
+    section, rather than a top-level one, once the section's parent is
+    cached -- which happens by reading its public ``.parent`` property, not
+    by the tree walk :func:`_find_section` used to find it in the first
+    place.
+    """
+    if dest_top_section is None or source_section is None:
+        return None
+    existing = _find_section(dest_top_section, source_section.id)
+    if existing is not None:
+        return existing
+    source_section.parent  # noqa: B018 - the property read is the point
+    return dest_top_section.copy_section(source_section, children=True, keep_id=True)
+
+
 def merge_rank_results(parts, filename) -> None:
     """
     Concatenate per-rank results into one file.
@@ -97,48 +159,82 @@ def merge_rank_results(parts, filename) -> None:
     ``checkpoint_index``, which is what makes them line up across parts: a
     checkpoint is one segment holding every rank's share of it.
 
-    That matching is why this holds a simulation's merged recordings in memory
-    before writing them: a segment cannot be written until every part that has a
-    share of it has been read. Peak memory is therefore one simulation's results,
-    not the whole file, and each part is closed as soon as it has been merged.
+    This copies entities -- ``DataArray``s, ``MultiTag``s and the metadata
+    sections they point to -- at the ``nixio`` level, never through ``neo``'s
+    object model. A run large enough to be worth splitting across ranks is
+    exactly the one where reconstructing every recording as a full ``neo``
+    object, only to serialise it straight back out again, dominates the cost;
+    a structural copy of the underlying HDF5 entities pays none of that
+    per-object overhead. Peak memory is therefore the open file handles, not
+    a simulation's recordings, and each part is closed as soon as it is read.
 
     :param parts: The per-rank files, in rank order.
     :param filename: The file to write.
     """
-    from neo import io
+    import nixio
+    from neo.io.nixio import neover
 
-    merged = {}
+    merged_blocks = {}
+    dest_sections = {}
+    checkpoints = {}
     order = []
-    for part in parts:
-        with io.NixIO(str(part), "ro") as reader:
-            blocks = reader.read_all_blocks()
-        for block in blocks:
-            key = block.annotations.get("bsb_simulation_id") or block.name
-            if key not in merged:
-                merged[key] = block
-                order.append(key)
-                continue
-            into = merged[key]
-            by_checkpoint = {
-                segment.annotations.get("checkpoint_index", index): segment
-                for index, segment in enumerate(into.segments)
-            }
-            for index, segment in enumerate(block.segments):
-                checkpoint = segment.annotations.get("checkpoint_index", index)
-                target = by_checkpoint.get(checkpoint)
-                if target is None:
-                    into.segments.append(segment)
-                    by_checkpoint[checkpoint] = segment
-                    continue
-                target.spiketrains.extend(segment.spiketrains)
-                target.analogsignals.extend(segment.analogsignals)
-                target.events.extend(segment.events)
 
-    with io.NixIO(str(filename), mode="ow") as out:
-        for key in order:
-            # Dropped as it is written, so a file of several simulations never has
-            # more than the one being written on top of the ones already out.
-            out.write_block(merged.pop(key))
+    out = nixio.File.open(str(filename), nixio.FileMode.Overwrite)
+    try:
+        # Matches the section neo's own writer stamps on a fresh file, so a
+        # reader sees the same format version whichever of the two wrote it.
+        out.create_section("neo", "neo.metadata")["version"] = neover
+        for part in parts:
+            src = nixio.File.open(str(part), nixio.FileMode.ReadOnly)
+            try:
+                for sblock in src.blocks:
+                    stop_section = _block_section(src, sblock)
+                    key = _prop(stop_section, "bsb_simulation_id") or sblock.name
+
+                    if key not in merged_blocks:
+                        oblock = out.create_block(sblock.name, sblock.type)
+                        dsection = None
+                        if stop_section is not None:
+                            dsection = out.copy_section(
+                                stop_section, children=True, keep_id=True
+                            )
+                        oblock.metadata = dsection
+                        merged_blocks[key] = oblock
+                        dest_sections[key] = dsection
+                        checkpoints[key] = {}
+                        order.append(key)
+                    oblock = merged_blocks[key]
+                    dsection = dest_sections[key]
+                    cp_map = checkpoints[key]
+
+                    for index, sgroup in enumerate(sblock.groups):
+                        ssection = _entity_section(stop_section, sgroup)
+                        cp_index = _prop(ssection, "checkpoint_index")
+                        if cp_index is None:
+                            cp_index = index
+
+                        ogroup = cp_map.get(cp_index)
+                        if ogroup is None:
+                            ogroup = oblock.create_group(sgroup.name, sgroup.type)
+                            ogroup.metadata = _graft(dsection, ssection)
+                            cp_map[cp_index] = ogroup
+
+                        for smt in sgroup.multi_tags:
+                            _graft(dsection, _entity_section(stop_section, smt))
+                            oblock.create_data_array(
+                                name=smt.positions.name, copy_from=smt.positions
+                            )
+                            omt = oblock.create_multi_tag(name=smt.name, copy_from=smt)
+                            ogroup.multi_tags.append(omt)
+
+                        for sda in sgroup.data_arrays:
+                            _graft(dsection, _entity_section(stop_section, sda))
+                            oda = oblock.create_data_array(name=sda.name, copy_from=sda)
+                            ogroup.data_arrays.append(oda)
+            finally:
+                src.close()
+    finally:
+        out.close()
 
 
 #: The Neo containers a recording can land in, in the order a reader sees them.

@@ -55,8 +55,8 @@ whichever Neo container it lands in:
    * - ``bsb_segment_id``
      - Identity of the segment the recording belongs to.
    * - ``bsb_recording_kind``
-     - What kind of target was recorded: ``cell``, ``point`` or ``synapse``. It
-       decides which annotations below address the target.
+     - What kind of target was recorded: ``cell``, ``point``, ``synapse`` or
+       ``device``. It decides which annotations below address the target.
    * - ``bsb_direction``
      - ``record`` when the device observed the target, ``stimulate`` when the
        recording is what the device injected into it.
@@ -64,6 +64,12 @@ whichever Neo container it lands in:
 The first four are stamped by the :class:`~bsb.simulation.results.SimulationResult`
 rather than by each device, so a new backend cannot forget to say where a signal
 came from. A device that sets one of them itself keeps its own answer.
+
+The result enforces the rest. A recorder has to belong to a device, and at every
+checkpoint anything a recorder recorded without one of the recording kinds, or
+without a direction of ``record`` or ``stimulate``, is not written: it is dropped
+with a :class:`~bsb.exceptions.ResultsWarning` that names the device. The kinds are
+a closed set, so every recording in a file can be traced back to what it recorded.
 
 Per kind of target
 ------------------
@@ -93,6 +99,10 @@ are never written: they mean nothing outside the run that assigned them.
        ``bsb_pre_cell_model`` and ``bsb_pre_cell_id`` when the synapse belongs to a
        connection
      - A synapse on a cell, and the presynaptic cell it receives from.
+   * - ``device``
+     - None
+     - Nothing in the network: a signal the device computes itself, rather than one
+       it takes from a cell.
 
 The devices that come with the BSB write:
 
@@ -118,8 +128,9 @@ The devices that come with the BSB write:
 
 A device author builds these annotations with
 :func:`~bsb.simulation.results.cell_annotations`,
-:func:`~bsb.simulation.results.point_annotations` and
-:func:`~bsb.simulation.results.synapse_annotations`, and passes them to the Neo
+:func:`~bsb.simulation.results.point_annotations`,
+:func:`~bsb.simulation.results.synapse_annotations` and
+:func:`~bsb.simulation.results.device_annotations`, and passes them to the Neo
 object:
 
 .. code-block:: python
@@ -172,6 +183,10 @@ in the network. The target depends on the kind:
      - :class:`~bsb.simulation.results.RecordedSynapse`
      - The ``cell`` it is on, ``branch``, ``point``, ``arc``, its ``position`` in
        the network, ``synapse_type``, and the ``presynaptic`` cell, if any.
+   * - ``device``
+     - :class:`~bsb.simulation.results.RecordedDevice`
+     - The device's ``name``, its ``kind``, and its ``configuration`` as the
+       simulation ran with it.
 
 A cell's ``morphology`` is that cell's morphology as it is in the network: rotated
 by the cell's ``rotation`` and moved to its ``position``. It is a copy, so changing it
@@ -179,7 +194,8 @@ changes nothing in the network. The ``position`` of a point or a synapse is wher
 is on that morphology. Morphologies and rotations are loaded from the network once per
 placement set, and only when a recording asks for them.
 
-A recording of a kind this BSB does not know still reads, with ``target`` set to
+A recording of a kind this BSB does not know, such as one in a file written by a newer
+BSB, still reads, with ``target`` set to
 ``None``; its annotations stay available as ``recording.annotations``.
 ``results.recordings(kind="synapse")`` selects recordings by kind.
 

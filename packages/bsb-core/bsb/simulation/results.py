@@ -170,6 +170,9 @@ def _recording_counts(segment) -> dict:
     return {name: len(getattr(segment, name)) for name in _RECORDING_LISTS}
 
 
+#: The kinds of target a recording can have. The set is closed: a recording of any
+#: other kind cannot be traced back to anything, so it is not written.
+_KINDS = ("cell", "point", "synapse", "device")
 #: The directions a recording can have.
 _DIRECTIONS = ("record", "stimulate")
 
@@ -178,8 +181,8 @@ def _drop_unlabelled(segment, before: dict, recorder) -> None:
     """
     Remove what a recorder just appended without saying what it recorded.
 
-    Every recording has to carry a recording kind and a direction, or it cannot be
-    told apart from any other signal once it is in a file. It is dropped with a
+    Every recording has to carry one of the recording kinds and a direction, or it
+    cannot be told apart from any other signal once it is in a file. It is dropped with a
     warning rather than raised on: recorders flush during a run, on every rank on
     its own, and a rank that raised there would leave the others waiting.
     """
@@ -192,7 +195,10 @@ def _drop_unlabelled(segment, before: dict, recorder) -> None:
             missing = [
                 key
                 for key, valid in (
-                    ("bsb_recording_kind", bool(annotations.get("bsb_recording_kind"))),
+                    (
+                        "bsb_recording_kind",
+                        annotations.get("bsb_recording_kind") in _KINDS,
+                    ),
                     ("bsb_direction", annotations.get("bsb_direction") in _DIRECTIONS),
                 )
                 if not valid
@@ -201,8 +207,8 @@ def _drop_unlabelled(segment, before: dict, recorder) -> None:
                 warnings.warn(
                     f"Device '{recorder.device_name}' recorded a signal without a valid "
                     f"{' or '.join(f'`{key}`' for key in missing)}; it is not written. "
-                    "Annotate recordings with `cell_annotations`, `point_annotations` "
-                    "or `synapse_annotations`.",
+                    "Annotate recordings with `cell_annotations`, `point_annotations`, "
+                    "`synapse_annotations` or `device_annotations`.",
                     ResultsWarning,
                     stacklevel=2,
                 )
@@ -233,6 +239,18 @@ def _stamp_baseline(segment, before: dict, recorder, simulation_id, segment_id) 
         for recording in recordings[before[name] :]:
             for key, value in baseline.items():
                 recording.annotations.setdefault(key, value)
+
+
+def device_annotations(direction: str) -> dict:
+    """
+    Annotations of a recording of the device itself, which addresses nothing in the
+    network: a signal the device computes, rather than one it takes from a cell.
+
+    :param direction: ``"record"`` when the device observes what it records, or
+      ``"stimulate"`` when it injects it.
+    :returns: The annotations to pass to the Neo object.
+    """
+    return {"bsb_recording_kind": "device", "bsb_direction": direction}
 
 
 def cell_annotations(cell_model, cell_id: int, direction: str) -> dict:
@@ -336,7 +354,7 @@ class Recording:
 
     #: Name of the device that produced the recording.
     device: str | None
-    #: What kind of thing was recorded: ``cell``, ``point``, ``synapse``, ...
+    #: What kind of thing was recorded: ``cell``, ``point``, ``synapse`` or ``device``.
     kind: str | None
     #: ``"record"`` when the device observed it, or ``"stimulate"`` when it injected it.
     direction: str | None
@@ -842,17 +860,33 @@ class RecordedSynapse:
         return self.cell._position_on(self.branch, self.arc)
 
 
+@dataclasses.dataclass(frozen=True, eq=False)
+class RecordedDevice:
+    """
+    The device a recording of the device itself belongs to.
+    """
+
+    #: Name of the device.
+    name: str
+    #: The kind of device, as configured.
+    kind: str | None
+    #: The configuration of the device, as the simulation ran with it, or ``None`` if
+    #: the run recorded no configuration.
+    configuration: dict | None
+
+
 @dataclasses.dataclass(frozen=True)
 class NetworkRecording(Recording):
     """
     A recording traced back to the network it was simulated on.
     """
 
-    #: What was recorded, in the network: a :class:`RecordedCell`,
-    #: :class:`RecordedPoint` or :class:`RecordedSynapse`, depending on the
-    #: recording's :attr:`~Recording.kind`. ``None`` for a kind that addresses nothing
-    #: in the network, or that this BSB does not know.
-    target: "RecordedCell | RecordedPoint | RecordedSynapse | None" = None
+    #: What was recorded: a :class:`RecordedCell`, :class:`RecordedPoint`,
+    #: :class:`RecordedSynapse` or :class:`RecordedDevice`, depending on the
+    #: recording's :attr:`~Recording.kind`. ``None`` for a kind this BSB does not know.
+    target: "RecordedCell | RecordedPoint | RecordedSynapse | RecordedDevice | None" = (
+        None
+    )
     #: The run that made the recording.
     run: "SimulationRun | None" = None
 
@@ -916,7 +950,7 @@ class SimulationRun:
                 kind=recording.kind,
                 direction=recording.direction,
                 signal=recording.signal,
-                target=self._reader._target(recording),
+                target=self._reader._target(recording, self),
                 run=self,
             )
 
@@ -985,9 +1019,19 @@ class ResultsReader:
         for run in self.runs:
             yield from run.recordings(device, kind)
 
-    def _target(self, recording: Recording):
+    def _target(self, recording: Recording, run: SimulationRun):
         annotations = recording.annotations
         kind = recording.kind
+        if kind == "device":
+            configuration = run.configuration
+            devices = (
+                configuration.get("devices") if isinstance(configuration, dict) else None
+            )
+            return RecordedDevice(
+                name=recording.device,
+                kind=annotations.get("bsb_device_kind"),
+                configuration=(devices or {}).get(recording.device),
+            )
         if kind == "cell":
             return self._cell(recording, "")
         if kind == "point":
@@ -1137,6 +1181,7 @@ __all__ = [
     "NetworkRecording",
     "RecordedCell",
     "RecordedPoint",
+    "RecordedDevice",
     "RecordedSynapse",
     "Recording",
     "ResultsReader",
@@ -1144,6 +1189,7 @@ __all__ = [
     "SimulationRecorder",
     "SimulationResult",
     "cell_annotations",
+    "device_annotations",
     "iter_recordings",
     "merge_rank_results",
     "point_annotations",

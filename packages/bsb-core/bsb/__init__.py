@@ -342,6 +342,7 @@ RandomRotations: type["bsb.placement.distributor.RandomRotations"]
 ReadOnlyManager: type["bsb.storage.interfaces.ReadOnlyManager"]
 ReadOnlyOptionError: type["bsb.exceptions.ReadOnlyOptionError"]
 RecordedCell: type["bsb.simulation.results.RecordedCell"]
+RecordedDevice: type["bsb.simulation.results.RecordedDevice"]
 RecordedPoint: type["bsb.simulation.results.RecordedPoint"]
 RecordedSynapse: type["bsb.simulation.results.RecordedSynapse"]
 Recording: type["bsb.simulation.results.Recording"]
@@ -432,6 +433,7 @@ constant_parameter: "bsb.simulation.parameter.constant_parameter"
 copy_configuration_template: "bsb.config.copy_configuration_template"
 create_engine: "bsb.storage.create_engine"
 create_topology: "bsb.topology.create_topology"
+device_annotations: "bsb.simulation.results.device_annotations"
 discover: "bsb.plugins.discover"
 discover_engines: "bsb.storage.discover_engines"
 expand_to: "bsb.simulation.parameter.expand_to"

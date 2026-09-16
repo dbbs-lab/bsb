@@ -24,6 +24,7 @@ from bsb import (
 )
 from bsb.simulation.results import (
     cell_annotations,
+    device_annotations,
     iter_recordings,
     merge_rank_results,
     point_annotations,
@@ -222,10 +223,12 @@ class TestRecordedLocations(
             synapse_annotations(
                 model, 1, 1, 1, 0.75, "ExpSyn", "record", presynaptic=(model, 0)
             ),
+            device_annotations("record"),
         )
 
         results = read_results(self.network, self.filename)
-        point, synapse = (recording.target for recording in results.recordings())
+        point, synapse, device = (recording.target for recording in results.recordings())
+        self.assertEqual("rec", device.name)
 
         # Halfway along branch 0 is 5 along x, turned onto y, at the first cell.
         self.assertClose([100, 5, 0], point.position)
@@ -282,13 +285,19 @@ class TestRecordingsSayWhatTheyRecord(unittest.TestCase):
             segment.spiketrains.append(
                 self._train(**cell_annotations(self.model, 4, "sideways"))
             )
+            segment.spiketrains.append(
+                self._train(bsb_recording_kind="electrode", bsb_direction="record")
+            )
+            segment.spiketrains.append(self._train(**device_annotations("stimulate")))
 
         self.result.create_recorder(flush, self.device)
 
         with self.assertWarns(ResultsWarning) as caught:
             self.result.flush()
 
-        (kept,) = self.result.block.segments[0].spiketrains
+        # Kinds are a closed set: an unknown kind is dropped like no kind at all.
+        kept, device = self.result.block.segments[0].spiketrains
+        self.assertEqual("device", device.annotations["bsb_recording_kind"])
         self.assertEqual(3, kept.annotations["bsb_cell_id"])
         self.assertEqual("rec", kept.annotations["bsb_device_name"])
         self.assertEqual("test_recorder", kept.annotations["bsb_device_kind"])

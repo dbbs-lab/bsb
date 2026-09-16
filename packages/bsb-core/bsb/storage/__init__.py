@@ -12,7 +12,9 @@ consumers and can be used independent of the underlying storage engine, which is
 goal of this module.
 """
 
+import contextlib
 import functools
+import json
 import typing
 from inspect import isclass
 
@@ -284,8 +286,24 @@ class Storage:
     def store_active_config(self, config):
         """
         Store a configuration object in the storage.
+
+        A configuration identical to the active one is not stored again: storing it
+        would change nothing but the storage's state, and every network stores its
+        configuration each time it is opened.
+
+        :returns: The id of the active configuration.
         """
-        return self._engine.files.store_active_config(config)
+        files = self._engine.files
+        # Every rank reads the same stored configuration and so skips or stores alike,
+        # which keeps the collective write of an engine's `store_active_config`
+        # reached by all of them or by none.
+        active = files.find_meta("active_config", True)
+        if active is not None:
+            tree = json.loads(json.dumps(config.__tree__()))
+            with contextlib.suppress(Exception):
+                if json.loads(active.load()[0]) == tree:
+                    return active.id
+        return files.store_active_config(config)
 
     def supports(self, feature):
         return feature in self._features

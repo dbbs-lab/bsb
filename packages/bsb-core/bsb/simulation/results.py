@@ -761,26 +761,19 @@ def read_results(
     """
     from neo import io
 
-    from ..core import Scaffold
-    from ..storage import open_storage
+    from ..core import Scaffold, from_storage
 
     with io.NixIO(str(results), mode="ro") as reader:
         blocks = reader.read_all_blocks()
     if not blocks:
         raise ResultsError(f"'{results}' holds no simulation results.")
-    if isinstance(network, Scaffold):
-        state_id = network.state_id
-    else:
-        storage = open_storage(str(network))
-        # Loading a network stores its active configuration, which moves its state.
-        # The state the results are verified against is the one it was found in.
-        state_id = storage._engine.state_id
-        network = storage.load()
-    _verify_pairing(network, state_id, blocks, results)
+    if not isinstance(network, Scaffold):
+        network = from_storage(str(network))
+    _verify_pairing(network, blocks, results)
     return ResultsReader(network, blocks)
 
 
-def _verify_pairing(network, network_state_id, blocks, results):
+def _verify_pairing(network, blocks, results):
     # Warned directly rather than through `bsb.reporting.warn`, which verbosity can
     # silence: a pairing that could not be verified is not diagnostic chatter. Each
     # concern warns once, however many runs share it.
@@ -799,15 +792,15 @@ def _verify_pairing(network, network_state_id, blocks, results):
                 f"Results of '{block.name}' in '{results}' were produced by network "
                 f"'{storage_id}', not by network '{network.storage_id}'."
             )
-        elif state_id is None or network_state_id is None:
+        elif state_id is None or network.state_id is None:
             concern = (
                 "the run or the network carries no state id, so the state of the "
                 "network cannot be verified"
             )
-        elif state_id != network_state_id:
+        elif state_id != network.state_id:
             concern = (
                 f"the network was written to after the run (state {state_id} then, "
-                f"{network_state_id} now), so positions or labels may have changed "
+                f"{network.state_id} now), so positions or labels may have changed "
                 "since"
             )
         else:

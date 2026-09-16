@@ -65,11 +65,12 @@ The first four are stamped by the :class:`~bsb.simulation.results.SimulationResu
 rather than by each device, so a new backend cannot forget to say where a signal
 came from. A device that sets one of them itself keeps its own answer.
 
-The result enforces the rest. A recorder has to belong to a device, and at every
+The result checks the rest. A recorder has to belong to a device, and at every
 checkpoint anything a recorder recorded without one of the recording kinds, or
-without a direction of ``record`` or ``stimulate``, is not written: it is dropped
-with a :class:`~bsb.exceptions.ResultsWarning` that names the device. The kinds are
-a closed set, so every recording in a file can be traced back to what it recorded.
+without a direction of ``record`` or ``stimulate``, emits a
+:class:`~bsb.exceptions.ResultsWarning` that names the device. The recording is
+still written, so no data is lost, but it cannot be traced back to what it
+recorded. The kinds are a closed set.
 
 Per kind of target
 ------------------
@@ -195,8 +196,9 @@ is on that morphology. Morphologies and rotations are loaded from the network on
 placement set, and only when a recording asks for them.
 
 A recording of a kind this version of the BSB does not know, such as one in a file
-written by a newer version, still reads, with ``target`` set to ``None``; its
-annotations stay available as ``recording.annotations``.
+written by a newer version, or of no kind at all, still reads, with ``target`` set
+to ``None`` and a :class:`~bsb.exceptions.ResultsWarning` once per device and kind;
+its annotations stay available as ``recording.annotations``.
 ``results.recordings(kind="synapse")`` selects recordings by kind.
 
 The reader also offers:

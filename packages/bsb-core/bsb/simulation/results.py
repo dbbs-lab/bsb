@@ -171,26 +171,24 @@ def _recording_counts(segment) -> dict:
 
 
 #: The kinds of target a recording can have. The set is closed: a recording of any
-#: other kind cannot be traced back to anything, so it is not written.
+#: other kind cannot be traced back to anything, which is warned about.
 _KINDS = ("cell", "point", "synapse", "device")
 #: The directions a recording can have.
 _DIRECTIONS = ("record", "stimulate")
 
 
-def _drop_unlabelled(segment, before: dict, recorder) -> None:
+def _warn_unlabelled(segment, before: dict, recorder) -> None:
     """
-    Remove what a recorder just appended without saying what it recorded.
+    Warn about what a recorder just appended without saying what it recorded.
 
-    Every recording has to carry one of the recording kinds and a direction, or it
-    cannot be told apart from any other signal once it is in a file. It is dropped with a
-    warning rather than raised on: recorders flush during a run, on every rank on
-    its own, and a rank that raised there would leave the others waiting.
+    Every recording should carry one of the recording kinds and a direction, or it
+    cannot be traced back to what it recorded once it is in a file. It is still
+    written, so no data is lost, and it is warned about rather than raised on:
+    recorders flush during a run, on every rank on its own, and a rank that raised
+    there would leave the others waiting.
     """
     for name in _RECORDING_LISTS:
-        recordings = getattr(segment, name)
-        new = recordings[before[name] :]
-        kept = []
-        for recording in new:
+        for recording in getattr(segment, name)[before[name] :]:
             annotations = recording.annotations
             missing = [
                 key
@@ -206,16 +204,13 @@ def _drop_unlabelled(segment, before: dict, recorder) -> None:
             if missing:
                 warnings.warn(
                     f"Device '{recorder.device_name}' recorded a signal without a valid "
-                    f"{' or '.join(f'`{key}`' for key in missing)}; it is not written. "
+                    f"{' or '.join(f'`{key}`' for key in missing)}, so it cannot be "
+                    "traced back to what it recorded. "
                     "Annotate recordings with `cell_annotations`, `point_annotations`, "
                     "`synapse_annotations` or `device_annotations`.",
                     ResultsWarning,
                     stacklevel=2,
                 )
-            else:
-                kept.append(recording)
-        if len(kept) != len(new):
-            recordings[before[name] :] = kept
 
 
 def _stamp_baseline(segment, before: dict, recorder, simulation_id, segment_id) -> None:
@@ -597,7 +592,7 @@ class SimulationResult:
             finally:
                 # A recorder that raised part way through still appended what it
                 # got to, and unlabelled signals are worse than missing ones.
-                _drop_unlabelled(segment, before, recorder)
+                _warn_unlabelled(segment, before, recorder)
                 _stamp_baseline(segment, before, recorder, self.simulation_id, segment_id)
         self.checkpoint_index += 1
         self._t_cursor = t_stop
@@ -975,6 +970,9 @@ class ResultsReader:
         # device on a large population yields many thousands of recordings.
         self._placement = {}
         self._cells = {}
+        # Recordings that cannot be traced are warned about once per device and kind,
+        # not once per recording.
+        self._untraceable = set()
 
     @property
     def devices(self) -> list[str]:
@@ -1053,6 +1051,18 @@ class ResultsReader:
                     if "bsb_pre_cell_id" in annotations
                     else None
                 ),
+            )
+        if (recording.device, kind) not in self._untraceable:
+            self._untraceable.add((recording.device, kind))
+            described = (
+                "no recording kind" if kind is None else f"recording kind '{kind}'"
+            )
+            warnings.warn(
+                f"Recordings of device '{recording.device}' in run '{run.name}' have "
+                f"{described}, which this version of the BSB cannot trace back to "
+                "what they recorded; their `target` is `None`.",
+                ResultsWarning,
+                stacklevel=4,
             )
         return None
 

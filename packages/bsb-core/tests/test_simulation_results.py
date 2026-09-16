@@ -16,6 +16,7 @@ from bsb import (
     Morphology,
     MorphologySet,
     ResultsError,
+    ResultsReader,
     ResultsWarning,
     RotationSet,
     Scaffold,
@@ -276,7 +277,7 @@ class TestRecordingsSayWhatTheyRecord(unittest.TestCase):
         with self.assertRaises(ResultsError):
             self.result.create_recorder(lambda segment: None, None)
 
-    def test_a_recording_that_says_nothing_is_not_written(self):
+    def test_a_recording_that_says_nothing_is_written_with_a_warning(self):
         def flush(segment):
             segment.spiketrains.append(self._train())
             segment.spiketrains.append(
@@ -295,13 +296,36 @@ class TestRecordingsSayWhatTheyRecord(unittest.TestCase):
         with self.assertWarns(ResultsWarning) as caught:
             self.result.flush()
 
-        # Kinds are a closed set: an unknown kind is dropped like no kind at all.
-        kept, device = self.result.block.segments[0].spiketrains
-        self.assertEqual("device", device.annotations["bsb_recording_kind"])
-        self.assertEqual(3, kept.annotations["bsb_cell_id"])
-        self.assertEqual("rec", kept.annotations["bsb_device_name"])
-        self.assertEqual("test_recorder", kept.annotations["bsb_device_kind"])
+        # Nothing is lost: unlabelled recordings and recordings of an unknown kind or
+        # direction are written, and warned about.
+        trains = self.result.block.segments[0].spiketrains
+        self.assertEqual(5, len(trains))
+        self.assertEqual(3, len(caught.warnings))
         self.assertIn("rec", str(caught.warning))
+        for train in trains:
+            self.assertEqual("rec", train.annotations["bsb_device_name"])
+            self.assertEqual("test_recorder", train.annotations["bsb_device_kind"])
+
+    def test_an_untraceable_recording_reads_with_a_warning(self):
+        segment = Segment()
+        for _ in range(3):
+            segment.spiketrains.append(
+                self._train(
+                    bsb_device_name="rec",
+                    bsb_recording_kind="electrode",
+                    bsb_direction="record",
+                )
+            )
+        block = Block(name="sim")
+        block.segments.append(segment)
+        reader = ResultsReader(types.SimpleNamespace(simulations={}), [block])
+
+        with self.assertWarns(ResultsWarning) as caught:
+            recordings = list(reader.recordings())
+
+        self.assertEqual([None] * 3, [recording.target for recording in recordings])
+        self.assertEqual(1, len(caught.warnings), "once per device and kind")
+        self.assertIn("electrode", str(caught.warning))
 
 
 class TestProvenanceReading(unittest.TestCase):

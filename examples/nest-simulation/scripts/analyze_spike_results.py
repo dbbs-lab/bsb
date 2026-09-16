@@ -7,12 +7,10 @@ results = read_results(
     "simulation-results/basal_activity.nio",  # adapt the name of the file here
 )
 
-# Generators record their own spikes too, but those belong to no cell of the network,
-# so only the devices that recorded cells get a raster.
+# Gather the recordings of each spike recorder, to draw a raster per device
 recorders = {}
-for recording in results.recordings():
-    if recording.cell is not None:
-        recorders.setdefault(recording.device, []).append(recording)
+for recording in results.recordings(kind="cell"):
+    recorders.setdefault(recording.device, []).append(recording)
 
 import matplotlib.pylab as plt  # you might have to pip install matplotlib
 
@@ -25,7 +23,7 @@ for i, (name, recordings) in enumerate(recorders.items()):
         spike_times = recording.signal.magnitude  # Retrieve the spike times
         # One row per cell, at the height of the cell's id in its placement set
         axis.scatter(
-            spike_times, np.full(len(spike_times), recording.cell.id), c=f"C{i}", s=1
+            spike_times, np.full(len(spike_times), recording.target.id), c=f"C{i}", s=1
         )
     units = recordings[0].signal.times.units.dimensionality.string
     axis.set_xlabel(f"Time ({units})")
@@ -33,6 +31,6 @@ for i, (name, recordings) in enumerate(recorders.items()):
     axis.set_title(f"Spikes from {name}")
     # Every cell the device recorded has a recording, silent ones included, and each
     # one knows its placement set, so the rows span the whole population.
-    axis.set_ylim(-0.5, len(recordings[0].cell.placement_set) - 0.5)
+    axis.set_ylim(-0.5, len(recordings[0].target.placement_set) - 0.5)
 plt.tight_layout()
 plt.savefig("simulation-results/raster_plot.png", dpi=200)

@@ -7,75 +7,139 @@ stored in a NixIO file. One run produces one file, whatever it took to make it:
 under MPI each rank writes its own part and rank 0 merges them, but that is an
 implementation detail of the run, not something a reader has to know about.
 
-Recordings are per cell
-=======================
+Recordings are per target
+=========================
 
-Every recording belongs to a single cell. A device that watches a thousand cells
-writes a thousand recordings, not one recording holding a thousand cells' data.
+Every recording belongs to a single target: one cell, one point on a cell, one
+synapse. A device that watches a thousand cells writes a thousand recordings, not
+one recording holding a thousand cells' data.
 
 This costs nothing that matters and buys the thing that does: a recording can be
-annotated with the cell it came from. A spike train of the whole population can
-only say which cells are in it; a spike train per cell can also carry that cell's
-model, and any per-cell annotation a device or a downstream tool wants to add.
-Neuroscience is numerous by design, and the tools downstream of Neo are built to
-handle many objects.
+annotated with exactly what it recorded. A spike train of the whole population can
+only say which cells are in it; a spike train per cell can also say which cell, of
+which cell model, and carry any annotation a device or a downstream tool wants to
+add. Neuroscience is numerous by design, and the tools downstream of Neo are built
+to handle many objects.
 
-A device writes one recording per cell it watched, and a cell that produced
-nothing gets an empty one. Its recordings are therefore its cells, which is what
+A device writes one recording per target it watched, and a target that produced
+nothing gets an empty one. Its recordings are therefore its targets, which is what
 makes a population answerable from the results alone: a cell with an empty train
 was watched and stayed quiet, a cell with no train at all was never watched.
-
-Nothing has to say which cells a device watched, because the recordings already
-do. A population rate is the spikes summed over the number of recordings, and a
-raster has a row for every cell whether or not it fired, rather than closing up
-around the ones that did.
 
 Annotations
 ===========
 
-Every recording carries the same annotations, whichever backend produced it and
+All annotations the BSB writes are prefixed with ``bsb_``, so they never collide
+with the annotations of Neo or of other tools. What a signal measures is described
+by Neo itself, through the signal's ``name`` (such as ``spikes``, ``v`` or ``i``) and
+its units.
+
+Every recording
+---------------
+
+Every recording carries these annotations, whichever backend produced it and
 whichever Neo container it lands in:
 
 .. list-table::
    :header-rows: 1
-   :widths: 20 80
+   :widths: 30 70
 
    * - Annotation
      - Meaning
-   * - ``device``
+   * - ``bsb_device_name``
      - Name of the device that made the recording.
-   * - ``cell_model``
-     - Name of the simulation's cell model that the cell belongs to. Absent for a
-       device level record, such as a generator's own spikes.
-   * - ``cell_id``
-     - Id of the cell in the placement set of that cell model's cell type. Absent
-       for a device level record.
+   * - ``bsb_device_kind``
+     - The kind of device, as configured, such as ``spike_recorder``.
+   * - ``bsb_simulation_id``
+     - Identity of the run, the same as in the block's provenance.
+   * - ``bsb_segment_id``
+     - Identity of the segment the recording belongs to.
+   * - ``bsb_recording_kind``
+     - What kind of target was recorded: ``cell``, ``point`` or ``synapse``. It
+       decides which annotations below address the target.
+   * - ``bsb_direction``
+     - ``record`` when the device observed the target, ``stimulate`` when the
+       recording is what the device injected into it.
 
-Together, ``cell_model`` and ``cell_id`` address one row of the network, on every
-backend:
+The first four are stamped by the :class:`~bsb.simulation.results.SimulationResult`
+rather than by each device, so a new backend cannot forget to say where a signal
+came from. A device that sets one of them itself keeps its own answer.
+
+Per kind of target
+------------------
+
+A target is addressed in the network's own terms: a cell by its placement set and
+its id in it, a location by the branch and point of the cell's morphology. A
+simulator's own identifiers, such as NEST node ids, arbor gids or NEURON sections,
+are never written: they mean nothing outside the run that assigned them.
+
+.. list-table::
+   :header-rows: 1
+   :widths: 15 40 45
+
+   * - Kind
+     - Annotations
+     - Addresses
+   * - ``cell``
+     - ``bsb_ps_name``, ``bsb_cell_model``, ``bsb_cell_id``
+     - A whole cell: the placement set it is in, the cell model it was simulated
+       with, and its id in the placement set.
+   * - ``point``
+     - The ``cell`` annotations, and ``bsb_branch``, ``bsb_point``, ``bsb_arc``
+     - A location on a cell's morphology: the branch, the point on the branch, and
+       where along the branch, as a fraction of its length.
+   * - ``synapse``
+     - The ``point`` annotations, and ``bsb_synapse_type``; ``bsb_pre_ps_name``,
+       ``bsb_pre_cell_model`` and ``bsb_pre_cell_id`` when the synapse belongs to a
+       connection
+     - A synapse on a cell, and the presynaptic cell it receives from.
+
+The devices that come with the BSB write:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 50 25 25
+
+   * - Device
+     - Kind
+     - Direction
+   * - NEST ``spike_recorder`` and ``multimeter``, arbor ``spike_recorder``
+     - ``cell``
+     - ``record``
+   * - NEURON ``voltage_recorder``
+     - ``point``
+     - ``record``
+   * - NEURON ``current_clamp`` and ``vclamp``
+     - ``point``
+     - ``stimulate``
+   * - NEURON ``synapse_recorder``
+     - ``synapse``
+     - ``record``
+
+A device author builds these annotations with
+:func:`~bsb.simulation.results.cell_annotations`,
+:func:`~bsb.simulation.results.point_annotations` and
+:func:`~bsb.simulation.results.synapse_annotations`, and passes them to the Neo
+object:
 
 .. code-block:: python
 
-    cell_type = simulation.cell_models[cell_model].cell_type
-    position = cell_type.get_placement_set().load_positions()[cell_id]
+    from bsb import cell_annotations
 
-A simulator's own identifiers, such as NEST node ids or arbor gids, are never
-written: they mean nothing outside the run that assigned them. A ``cell_id`` is only
-unique within its cell model, so it is the pair that names a cell.
-
-``device`` is stamped by the :class:`~bsb.simulation.results.SimulationResult`
-rather than by each recorder, so a new backend cannot forget to record where a
-signal came from. A recorder that annotates a device itself keeps its own answer.
-
-Devices add their own annotations on top. A multimeter recording several
-properties, for instance, marks each signal with the property it sampled.
+    SpikeTrain(
+        times,
+        units="ms",
+        t_stop=duration,
+        name="spikes",
+        **cell_annotations(cell_model, cell_id, "record"),
+    )
 
 Reading results
 ===============
 
-A recording names its cell, but only the network can say where that cell is or
-what it is. :func:`~bsb.simulation.results.read_results` reads a results file
-together with the network it was simulated on:
+A recording names what it recorded, but only the network can say where that is or
+what it belongs to. :func:`~bsb.simulation.results.read_results` reads a results
+file together with the network it was simulated on:
 
 .. code-block:: python
 
@@ -83,13 +147,33 @@ together with the network it was simulated on:
 
     results = read_results("network.hdf5", "simulation-results/run.nio")
     for recording in results.recordings("my_spike_recorder"):
-        print(recording.cell.id, recording.cell.position, len(recording.signal))
+        print(recording.target.id, recording.target.position, len(recording.signal))
 
-Each recording carries a :class:`~bsb.simulation.results.RecordedCell` as
-``recording.cell``: its ``id``, the name of its cell ``model``, the network's
-``cell_type`` and ``placement_set``, and its ``position``. A device level record
-has no cell, and its ``cell`` is ``None``. A device's recordings are all of the cells
-it targeted, including the ones that stayed silent.
+Each recording has a ``kind``, a ``direction``, and a ``target``: what it recorded,
+in the network. The target depends on the kind:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 15 30 55
+
+   * - Kind
+     - Target
+     - Offers
+   * - ``cell``
+     - :class:`~bsb.simulation.results.RecordedCell`
+     - ``id``, the cell ``model``, the network's ``cell_type`` and
+       ``placement_set``, and the cell's ``position``.
+   * - ``point``
+     - :class:`~bsb.simulation.results.RecordedPoint`
+     - The ``cell`` it is on, and ``branch``, ``point`` and ``arc``.
+   * - ``synapse``
+     - :class:`~bsb.simulation.results.RecordedSynapse`
+     - The ``cell`` it is on, ``branch``, ``point``, ``arc``, ``synapse_type``, and
+       the ``presynaptic`` cell, if any.
+
+A recording of a kind this BSB does not know still reads, with ``target`` set to
+``None``; its annotations stay available as ``recording.annotations``.
+``results.recordings(kind="synapse")`` selects recordings by kind.
 
 The reader also offers:
 
@@ -132,7 +216,7 @@ provenance:
   they would give plausible nonsense.
 * A network that was written to after the run emits a
   :class:`~bsb.exceptions.ResultsWarning`: positions or labels may have changed
-  since.
+  since. Opening a network is not writing to it.
 * A run that recorded no network identity also warns, since the pair cannot be
   verified.
 
@@ -144,10 +228,10 @@ Reading a bare results file
 
 Without the network, :func:`~bsb.simulation.results.iter_recordings` walks the
 recordings of a block, a segment, or a list of either, and yields a
-:class:`~bsb.simulation.results.Recording` for each: the device, the cell model, the
-cell id, and the Neo object itself. It takes the containers Neo keeps separate
-(spike trains, analog signals) and presents them as one sequence, so reading does
-not depend on which kind of device made the data.
+:class:`~bsb.simulation.results.Recording` for each: the device, the kind, the
+direction, the Neo object, and its annotations. It takes the containers Neo keeps
+separate (spike trains, analog signals) and presents them as one sequence, so
+reading does not depend on which kind of device made the data.
 
 .. code-block:: python
 
@@ -155,11 +239,11 @@ not depend on which kind of device made the data.
 
     # every recording of one device
     for recording in iter_recordings(block, device="spikes_exc"):
-        print(recording.cell_model, recording.cell_id, len(recording.signal))
+        print(recording.annotations["bsb_cell_id"], len(recording.signal))
 
-    # everything recorded from one cell, across devices
+    # everything recorded on one cell, across devices
     for recording in iter_recordings(block, cell_model="granule_cell", cell_id=42):
-        print(recording.device, recording.signal)
+        print(recording.device, recording.kind, recording.signal)
 
 To count a population's spikes, sum the trains of its device:
 

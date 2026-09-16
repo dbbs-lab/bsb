@@ -110,11 +110,19 @@ class TransceiverModel(NeuronConnection, classmap_entry="transceiver"):
                 break
         else:
             raise AdapterError(f"No pop found for {cs.pre_type.name}")
-        pre, post = cs.load_connections().incoming().to(simdata.chunks).all()
+        pre_model = next(
+            (cm for cm in simdata.populations if cm.cell_type == cs.pre_type), None
+        )
+        query = cs.load_connections().incoming().to(simdata.chunks)
+        pre, post = query.all()
+        # The same connections with the presynaptic cells as placement set ids, which
+        # is how a synapse names the cell it receives from.
+        pre_ids = query.as_globals().all()[0][:, 0]
         transmitters = simdata.transmap[self]["receivers"]
-        for pre_loc, post_loc in zip(pre[:, :2], post, strict=False):
+        for pre_loc, pre_id, post_loc in zip(pre[:, :2], pre_ids, post, strict=True):
             gid = transmitters[tuple(pre_loc)]
             cell = post_pop[post_loc[0]]
+            location = cell.get_location(post_loc[1:])
             for spec in self.synapses:
                 cell.insert_receiver(
                     gid,
@@ -124,6 +132,12 @@ class TransceiverModel(NeuronConnection, classmap_entry="transceiver"):
                     weight=spec.weight,
                     delay=spec.delay,
                 )
+                # The receiver's synapse is the one it just appended to its section.
+                synapse = location.section.synapses[-1]
+                synapse.bsb_location = tuple(int(i) for i in post_loc[1:])
+                synapse.bsb_arc = location.arc(0.5)
+                if pre_model is not None:
+                    synapse.bsb_presynaptic = (pre_model, int(pre_id))
 
     def __lt__(self, other):
         try:

@@ -1,7 +1,7 @@
 import collections
 
 import neo
-from bsb import config
+from bsb import cell_annotations, config
 
 from ..device import ArborDevice
 
@@ -35,9 +35,8 @@ class SpikeRecorder(ArborDevice, classmap_entry="spike_recorder"):
                             times[gid],
                             units="ms",
                             t_stop=self.simulation.duration,
-                            name=self.name,
-                            cell_model=cell_model,
-                            cell_id=cell_id,
+                            name="spikes",
+                            **cell_annotations(cell_model, cell_id, "record"),
                         )
                     )
 
@@ -53,11 +52,11 @@ class SpikeRecorder(ArborDevice, classmap_entry="spike_recorder"):
 
 def _cell_of_gid(simdata, gid):
     """
-    The cell model name and cell id that an arbor gid simulates.
+    The cell model and cell id that an arbor gid simulates.
 
     Each model's gids start at its offset and follow its placement set row by row,
     so the cell id is the gid counted from there.
     """
     manager = simdata.gid_manager
     model = manager.lookup_model(gid)
-    return model.name, gid - manager.lookup_offset(gid)
+    return model, gid - manager.lookup_offset(gid)

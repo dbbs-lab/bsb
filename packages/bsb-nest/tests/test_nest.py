@@ -305,11 +305,11 @@ class TestNest(
         netw.compile()
         results = netw.run_simulation("test")
         spike_times_bsb = results.block.segments[0].spiketrains[0]
-        self.assertEqual(1, spike_times_bsb.annotations["cell_id"])
+        self.assertEqual(0, spike_times_bsb.annotations["bsb_cell_id"])
         membrane_potentials = results.block.segments[0].analogsignals[0]
         # last time point is not recorded because of recorder delay.
         self.assertTrue(len(membrane_potentials) == duration / resolution - 1)
-        self.assertTrue(membrane_potentials.annotations["cell_id"] == 1)
+        self.assertEqual(0, membrane_potentials.annotations["bsb_cell_id"])
         defaults = nest.GetDefaults("iaf_cond_alpha")
         # since current injected is positive, the V_m should be clamped between default
         # initial V_m = -70mV and spike threshold V_th = -55 mV
@@ -1327,14 +1327,14 @@ class TestRecordingsNameTheirCells(
         results = read_results(self.network, filename)
 
         by_id = list(results.recordings("by_id"))
-        self.assertEqual([3, 7, 11], sorted(r.cell.id for r in by_id))
+        self.assertEqual([3, 7, 11], sorted(r.target.id for r in by_id))
         self.assertTrue(any(len(r.signal) for r in by_id), "the noise has to spike")
         for recording in by_id:
-            with self.subTest(device="by_id", cell=recording.cell.id):
-                self.assertEqual("B", recording.cell.model)
-                self.assertEqual("B", recording.cell.cell_type.name)
+            with self.subTest(device="by_id", cell=recording.target.id):
+                self.assertEqual("B", recording.target.model)
+                self.assertEqual("B", recording.target.cell_type.name)
                 self.assertClose(
-                    self.positions[recording.cell.id], recording.cell.position
+                    self.positions[recording.target.id], recording.target.position
                 )
 
         in_sphere = np.flatnonzero(
@@ -1344,16 +1344,18 @@ class TestRecordingsNameTheirCells(
         sphere = list(results.recordings("sphere"))
         for model in ("A", "B", "C"):
             with self.subTest(device="sphere", model=model):
-                cells = [r.cell for r in sphere if r.cell.model == model]
+                cells = [r.target for r in sphere if r.target.model == model]
                 self.assertEqual(sorted(in_sphere), sorted(c.id for c in cells))
                 for cell in cells:
                     self.assertClose(self.positions[cell.id], cell.position)
 
         voltmeter = list(results.recordings("voltmeter"))
-        self.assertEqual([2, 9], sorted(r.cell.id for r in voltmeter))
+        self.assertEqual([2, 9], sorted(r.target.id for r in voltmeter))
         for recording in voltmeter:
-            self.assertEqual("C", recording.cell.model)
-            self.assertClose(self.positions[recording.cell.id], recording.cell.position)
+            self.assertEqual("V_m", recording.signal.name)
+            self.assertEqual("C", recording.target.model)
+            self.assertClose(
+                self.positions[recording.target.id], recording.target.position
+            )
 
-        (noise,) = results.recordings("noise")
-        self.assertIsNone(noise.cell, "a generator's own spikes belong to no cell")
+        self.assertNotIn("noise", results.devices, "a generator records nothing")

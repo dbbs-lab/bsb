@@ -606,6 +606,7 @@ class TestRecordingsNameTheirCells(
                     "mechanisms": {"pas": {}, "hh": {}},
                 }
             },
+            "synapse_types": {"ExpSyn": {}},
         }
         self.network.simulations.add(
             "test",
@@ -614,8 +615,15 @@ class TestRecordingsNameTheirCells(
             resolution=0.1,
             temperature=32,
             cell_models={name: ArborizedModel(model=hh_soma) for name in "ABC"},
-            connection_models={},
+            connection_models={
+                "A_to_B": TransceiverModel(synapses=[dict(synapse="ExpSyn")])
+            },
             devices={
+                "synapses": {
+                    "device": "synapse_recorder",
+                    "locations": {"strategy": "everywhere"},
+                    "targetting": {"strategy": "by_id", "ids": {"B": [0, 8]}},
+                },
                 "by_id": {
                     "device": "voltage_recorder",
                     "targetting": {"strategy": "by_id", "ids": {"B": [3, 7, 11]}},
@@ -646,14 +654,19 @@ class TestRecordingsNameTheirCells(
         results = read_results(self.network, filename)
 
         by_id = list(results.recordings("by_id"))
-        self.assertEqual([3, 7, 11], sorted(r.cell.id for r in by_id))
+        self.assertEqual([3, 7, 11], sorted(r.target.cell.id for r in by_id))
         for recording in by_id:
-            with self.subTest(device="by_id", cell=recording.cell.id):
-                self.assertEqual("B", recording.cell.model)
-                self.assertEqual("B", recording.cell.cell_type.name)
-                self.assertClose(
-                    self.positions[recording.cell.id], recording.cell.position
+            cell = recording.target.cell
+            with self.subTest(device="by_id", cell=cell.id):
+                self.assertEqual(
+                    ("point", "record"), (recording.kind, recording.direction)
                 )
+                self.assertEqual(
+                    (0, 0), (recording.target.branch, recording.target.point)
+                )
+                self.assertEqual("B", cell.model)
+                self.assertEqual("B", cell.cell_type.name)
+                self.assertClose(self.positions[cell.id], cell.position)
 
         in_sphere = np.flatnonzero(
             np.sum((self.positions - [45, 10, 10]) ** 2, axis=1) < 20**2
@@ -662,7 +675,23 @@ class TestRecordingsNameTheirCells(
         sphere = list(results.recordings("sphere"))
         for model in ("A", "B", "C"):
             with self.subTest(device="sphere", model=model):
-                cells = [r.cell for r in sphere if r.cell.model == model]
+                cells = [r.target.cell for r in sphere if r.target.cell.model == model]
                 self.assertEqual(sorted(in_sphere), sorted(c.id for c in cells))
                 for cell in cells:
                     self.assertClose(self.positions[cell.id], cell.position)
+
+        # The connectivity is fixed: A 0 and A 1 onto B 0, and A 3 onto B 8.
+        synapses = list(results.recordings("synapses"))
+        self.assertEqual(
+            [(0, 0), (0, 1), (8, 3)],
+            sorted((r.target.cell.id, r.target.presynaptic.id) for r in synapses),
+        )
+        for recording in synapses:
+            with self.subTest(device="synapses", cell=recording.target.cell.id):
+                self.assertEqual("synapse", recording.kind)
+                self.assertEqual("ExpSyn", recording.target.synapse_type)
+                self.assertEqual("A", recording.target.presynaptic.model)
+                self.assertClose(
+                    self.positions[recording.target.presynaptic.id],
+                    recording.target.presynaptic.position,
+                )

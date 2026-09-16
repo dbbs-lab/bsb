@@ -165,49 +165,141 @@ def _recording_counts(segment) -> dict:
     return {name: len(getattr(segment, name)) for name in _RECORDING_LISTS}
 
 
-def _stamp_device(segment, before: dict, device_name) -> None:
+def _stamp_baseline(segment, before: dict, recorder, simulation_id, segment_id) -> None:
     """
-    Annotate what a recorder just appended with the device it came from.
+    Annotate what a recorder just appended with the baseline every recording carries.
 
-    The device is stamped here rather than by each recorder so that every backend
-    answers "which device produced this?" the same way, without every device
-    author having to remember to say so. A recorder that already named a device
-    keeps its own answer.
+    The baseline is stamped here rather than by each recorder so that every backend
+    answers "which device and which run produced this?" the same way, without every
+    device author having to remember to say so. A recorder that already set one of
+    these keeps its own answer.
     """
-    if device_name is None:
-        return
+    baseline = {
+        "bsb_device_name": recorder.device_name,
+        "bsb_device_kind": recorder.device_kind,
+        "bsb_simulation_id": simulation_id,
+        "bsb_segment_id": segment_id,
+    }
+    baseline = {key: value for key, value in baseline.items() if value is not None}
     for name in _RECORDING_LISTS:
         recordings = getattr(segment, name)
         for recording in recordings[before[name] :]:
-            recording.annotations.setdefault("device", device_name)
+            for key, value in baseline.items():
+                recording.annotations.setdefault(key, value)
+
+
+def cell_annotations(cell_model, cell_id: int, direction: str) -> dict:
+    """
+    Annotations of a recording of a whole cell.
+
+    :param cell_model: The cell model the cell was simulated with.
+    :type cell_model: ~bsb.simulation.cell.CellModel
+    :param cell_id: Id of the cell in the placement set of the cell model's cell type.
+    :param direction: ``"record"`` when the device observes what it records, or
+      ``"stimulate"`` when it injects it.
+    :returns: The annotations to pass to the Neo object.
+    """
+    return {
+        "bsb_recording_kind": "cell",
+        "bsb_direction": direction,
+        "bsb_ps_name": cell_model.cell_type.name,
+        "bsb_cell_model": cell_model.name,
+        "bsb_cell_id": int(cell_id),
+    }
+
+
+def point_annotations(
+    cell_model, cell_id: int, branch: int, point: int, arc: float, direction: str
+) -> dict:
+    """
+    Annotations of a recording at a point on a cell's morphology.
+
+    :param cell_model: The cell model the cell was simulated with.
+    :type cell_model: ~bsb.simulation.cell.CellModel
+    :param cell_id: Id of the cell in the placement set of the cell model's cell type.
+    :param branch: Index of the branch in the cell's morphology.
+    :param point: Index of the point on that branch.
+    :param arc: Where on the stretch following that point the recording is, as a
+      fraction of the branch's length.
+    :param direction: ``"record"`` when the device observes what it records, or
+      ``"stimulate"`` when it injects it.
+    :returns: The annotations to pass to the Neo object.
+    """
+    return {
+        **cell_annotations(cell_model, cell_id, direction),
+        "bsb_recording_kind": "point",
+        "bsb_branch": int(branch),
+        "bsb_point": int(point),
+        "bsb_arc": float(arc),
+    }
+
+
+def synapse_annotations(
+    cell_model,
+    cell_id: int,
+    branch: int,
+    point: int,
+    arc: float,
+    synapse_type: str,
+    direction: str,
+    presynaptic=None,
+) -> dict:
+    """
+    Annotations of a recording of a synapse on a cell.
+
+    :param cell_model: The cell model of the cell the synapse is on.
+    :type cell_model: ~bsb.simulation.cell.CellModel
+    :param cell_id: Id of the cell the synapse is on.
+    :param branch: Index of the branch the synapse is on.
+    :param point: Index of the point on that branch.
+    :param arc: Where the synapse is, as a fraction of the branch's length.
+    :param synapse_type: Name of the synapse type.
+    :param direction: ``"record"`` when the device observes what it records, or
+      ``"stimulate"`` when it injects it.
+    :param presynaptic: The cell model and cell id of the presynaptic cell, when the
+      synapse belongs to a connection.
+    :type presynaptic: tuple[~bsb.simulation.cell.CellModel, int] | None
+    :returns: The annotations to pass to the Neo object.
+    """
+    annotations = {
+        **point_annotations(cell_model, cell_id, branch, point, arc, direction),
+        "bsb_recording_kind": "synapse",
+        "bsb_synapse_type": synapse_type,
+    }
+    if presynaptic is not None:
+        pre_model, pre_id = presynaptic
+        annotations.update(
+            bsb_pre_ps_name=pre_model.cell_type.name,
+            bsb_pre_cell_model=pre_model.name,
+            bsb_pre_cell_id=int(pre_id),
+        )
+    return annotations
 
 
 @dataclasses.dataclass(frozen=True)
 class Recording:
     """
-    One recording and the cell it came from.
+    One recorded Neo object and what it says about itself.
 
-    Recordings are written one per cell, so this is the unit a reader iterates:
-    it says which device produced the signal and which cell it belongs to,
-    whatever backend ran the simulation and whichever Neo container it landed in.
-
-    A cell is named by its cell model and its id in that model's placement set, never
-    by a simulator's own id, so the pair addresses one row of the network:
-    ``simulation.cell_models[cell_model].cell_type.get_placement_set()``, row
-    ``cell_id``.
+    Every recording names the device that made it, what kind of thing it recorded,
+    and whether the device observed it or injected it, whatever backend ran the
+    simulation and whichever Neo container it landed in. What it recorded is
+    addressed by the annotations of its kind, never by a simulator's own ids.
     """
 
     #: Name of the device that produced the recording.
     device: str | None
-    #: Id of the cell in the placement set of its cell model, or ``None`` for a
-    #: device level record such as a generator's own spikes. Only unique within
-    #: :attr:`cell_model`.
-    cell_id: int | None
-    #: Name of the simulation's cell model the cell belongs to, or ``None`` for a
-    #: device level record.
-    cell_model: str | None
+    #: What kind of thing was recorded: ``cell``, ``point``, ``synapse``, ...
+    kind: str | None
+    #: ``"record"`` when the device observed it, or ``"stimulate"`` when it injected it.
+    direction: str | None
     #: The Neo object itself, a ``SpikeTrain`` or an ``AnalogSignal``.
     signal: typing.Any
+
+    @property
+    def annotations(self) -> dict:
+        """All annotations of the Neo object, including those of its kind."""
+        return self.signal.annotations
 
     @property
     def is_spike_train(self) -> bool:
@@ -217,8 +309,9 @@ class Recording:
 def iter_recordings(
     source,
     device: str | None = None,
-    cell_id: int | None = None,
+    kind: str | None = None,
     cell_model: str | None = None,
+    cell_id: int | None = None,
 ) -> "typing.Iterator[Recording]":
     """
     Iterate the recordings of a block, a segment, or a list of either.
@@ -226,10 +319,11 @@ def iter_recordings(
     :param source: What to read: a :class:`neo.core.Block`, a
         :class:`neo.core.Segment`, or an iterable of either.
     :param device: Only yield recordings made by this device.
-    :param cell_id: Only yield recordings of cells with this id. A cell id is only
+    :param kind: Only yield recordings of this kind.
+    :param cell_model: Only yield recordings on cells of this cell model.
+    :param cell_id: Only yield recordings on cells with this id. A cell id is only
         unique within its cell model, so pass ``cell_model`` along to single out one
         cell.
-    :param cell_model: Only yield recordings of cells of this cell model.
     :returns: The recordings, in the order they were written.
     :rtype: typing.Iterator[Recording]
     """
@@ -237,19 +331,23 @@ def iter_recordings(
         for name in _RECORDING_LISTS:
             for signal in getattr(segment, name, ()):
                 annotations = signal.annotations
-                recording = Recording(
-                    device=annotations.get("device"),
-                    cell_id=annotations.get("cell_id"),
-                    cell_model=annotations.get("cell_model"),
+                if device is not None and annotations.get("bsb_device_name") != device:
+                    continue
+                if kind is not None and annotations.get("bsb_recording_kind") != kind:
+                    continue
+                if (
+                    cell_model is not None
+                    and annotations.get("bsb_cell_model") != cell_model
+                ):
+                    continue
+                if cell_id is not None and annotations.get("bsb_cell_id") != cell_id:
+                    continue
+                yield Recording(
+                    device=annotations.get("bsb_device_name"),
+                    kind=annotations.get("bsb_recording_kind"),
+                    direction=annotations.get("bsb_direction"),
                     signal=signal,
                 )
-                if device is not None and recording.device != device:
-                    continue
-                if cell_model is not None and recording.cell_model != cell_model:
-                    continue
-                if cell_id is not None and recording.cell_id != cell_id:
-                    continue
-                yield recording
 
 
 def _iter_segments(source):
@@ -395,10 +493,11 @@ class SimulationResult:
 
         segment = Segment()
         t_stop = float(getattr(self.simulation, "duration", 0.0) or 0.0)
+        # Segments of one run are matched across rank files by this, so it is derived
+        # rather than drawn: a per-rank id would never line up.
+        segment_id = f"{self.simulation_id}:{self.checkpoint_index}"
         segment.annotate(
-            # Segments of one run are matched across rank files by this, so it is
-            # derived rather than drawn: a per-rank id would never line up.
-            segment_id=f"{self.simulation_id}:{self.checkpoint_index}",
+            segment_id=segment_id,
             checkpoint_index=self.checkpoint_index,
             t_start_ms=self._t_cursor,
             t_stop_ms=t_stop,
@@ -414,7 +513,7 @@ class SimulationResult:
             finally:
                 # A recorder that raised part way through still appended what it
                 # got to, and unlabelled signals are worse than missing ones.
-                _stamp_device(segment, before, recorder.device_name)
+                _stamp_baseline(segment, before, recorder, self.simulation_id, segment_id)
         self.checkpoint_index += 1
         self._t_cursor = t_stop
 
@@ -493,6 +592,11 @@ class SimulationRecorder:
         """The device this recorder belongs to, when it was created by one."""
         return getattr(self.device, "name", None)
 
+    @property
+    def device_kind(self):
+        """The kind of device this recorder belongs to, as it is configured."""
+        return getattr(self.device, "device", None)
+
     def flush(self, segment: "neo.core.Segment"):
         raise NotImplementedError("Recorders need to implement the `flush` function.")
 
@@ -500,19 +604,55 @@ class SimulationRecorder:
 @dataclasses.dataclass(frozen=True, eq=False)
 class RecordedCell:
     """
-    A cell of the network that a recording belongs to.
+    A cell of the network, as a recording addresses it.
     """
 
-    #: Id of the cell in the placement set of its cell model.
+    #: Id of the cell in the placement set of its cell type.
     id: int
     #: Name of the cell model the cell was simulated with.
     model: str
-    #: The network's cell type that the cell model simulates.
+    #: The network's cell type of the cell.
     cell_type: "CellType"
     #: The placement set of that cell type.
     placement_set: "PlacementSet"
     #: Position of the cell, or ``None`` when its placement set stores no positions.
     position: "numpy.ndarray | None"
+
+
+@dataclasses.dataclass(frozen=True, eq=False)
+class RecordedPoint:
+    """
+    A point on the morphology of a cell of the network, as a recording addresses it.
+    """
+
+    #: The cell the point is on.
+    cell: RecordedCell
+    #: Index of the branch in the cell's morphology.
+    branch: int
+    #: Index of the point on that branch.
+    point: int
+    #: Where on the branch the recording is, as a fraction of the branch's length.
+    arc: float
+
+
+@dataclasses.dataclass(frozen=True, eq=False)
+class RecordedSynapse:
+    """
+    A synapse on a cell of the network, as a recording addresses it.
+    """
+
+    #: The cell the synapse is on.
+    cell: RecordedCell
+    #: Index of the branch the synapse is on.
+    branch: int
+    #: Index of the point on that branch.
+    point: int
+    #: Where on the branch the synapse is, as a fraction of the branch's length.
+    arc: float
+    #: Name of the synapse type.
+    synapse_type: str
+    #: The presynaptic cell of the connection the synapse belongs to, if any.
+    presynaptic: RecordedCell | None
 
 
 @dataclasses.dataclass(frozen=True)
@@ -521,8 +661,11 @@ class NetworkRecording(Recording):
     A recording traced back to the network it was simulated on.
     """
 
-    #: The cell the recording belongs to, or ``None`` for a device level record.
-    cell: RecordedCell | None = None
+    #: What was recorded, in the network: a :class:`RecordedCell`,
+    #: :class:`RecordedPoint` or :class:`RecordedSynapse`, depending on the
+    #: recording's :attr:`~Recording.kind`. ``None`` for a kind that addresses nothing
+    #: in the network, or that this BSB does not know.
+    target: "RecordedCell | RecordedPoint | RecordedSynapse | None" = None
     #: The run that made the recording.
     run: "SimulationRun | None" = None
 
@@ -530,9 +673,6 @@ class NetworkRecording(Recording):
 class SimulationRun:
     """
     One run of a simulation in a results file, read with the network it ran on.
-
-    Everything a run needs to trace its recordings back to the network is in its own
-    block: the configuration it ran with names the cell type of each cell model.
     """
 
     def __init__(self, reader: "ResultsReader", block: "neo.core.Block"):
@@ -573,60 +713,25 @@ class SimulationRun:
         return self._reader.network.simulations.get(self.name)
 
     def recordings(
-        self, device: str | None = None
+        self, device: str | None = None, kind: str | None = None
     ) -> "typing.Iterator[NetworkRecording]":
         """
-        Iterate the recordings of the run, each with the network's cell it belongs to.
-
-        A device records every cell it targeted, so its recordings are all of its
-        targets, including the cells that stayed silent.
+        Iterate the recordings of the run, each with what it recorded in the network.
 
         :param device: Only yield recordings made by this device.
+        :param kind: Only yield recordings of this kind.
         :returns: The recordings, in the order they were written.
         :rtype: typing.Iterator[NetworkRecording]
         """
-        for recording in iter_recordings(self.block, device=device):
+        for recording in iter_recordings(self.block, device=device, kind=kind):
             yield NetworkRecording(
                 device=recording.device,
-                cell_id=recording.cell_id,
-                cell_model=recording.cell_model,
+                kind=recording.kind,
+                direction=recording.direction,
                 signal=recording.signal,
-                cell=self._cell_of(recording),
+                target=self._reader._target(recording),
                 run=self,
             )
-
-    def _cell_of(self, recording: Recording) -> RecordedCell | None:
-        if recording.cell_id is None:
-            return None
-        if recording.cell_model is None:
-            raise ResultsError(
-                f"A recording of device '{recording.device}' names cell "
-                f"{recording.cell_id} but not its cell model, so it cannot be traced "
-                "back to the network. It was written before recordings named their "
-                "cell model; read it with `iter_recordings` instead."
-            )
-        return self._reader._cell(
-            self._cell_type_name(recording.cell_model),
-            recording.cell_model,
-            int(recording.cell_id),
-            recording.device,
-        )
-
-    def _cell_type_name(self, model: str) -> str:
-        """The name of the cell type a cell model simulated, as the run configured it."""
-        tree = self.configuration if isinstance(self.configuration, dict) else {}
-        models = tree.get("cell_models") or {}
-        if model in models:
-            # A cell model that does not name its cell type simulates the one of the
-            # same name.
-            return models[model].get("cell_type") or model
-        simulation = self.simulation
-        if simulation is not None and model in simulation.cell_models:
-            return simulation.cell_models[model].cell_type.name
-        raise ResultsError(
-            f"Recordings name cell model '{model}', which simulation '{self.name}' "
-            "does not have."
-        )
 
     def __repr__(self):
         return f"<{type(self).__name__} '{self.name}' run {self.run_index}>"
@@ -679,30 +784,71 @@ class ResultsReader:
         return self.runs[0]
 
     def recordings(
-        self, device: str | None = None
+        self, device: str | None = None, kind: str | None = None
     ) -> "typing.Iterator[NetworkRecording]":
         """
-        Iterate the recordings of every run, each with the network's cell it belongs
-        to, and the run that made it.
+        Iterate the recordings of every run, each with what it recorded in the
+        network, and the run that made it.
 
         :param device: Only yield recordings made by this device.
+        :param kind: Only yield recordings of this kind.
         :returns: The recordings, run by run, in the order they were written.
         :rtype: typing.Iterator[NetworkRecording]
         """
         for run in self.runs:
-            yield from run.recordings(device)
+            yield from run.recordings(device, kind)
 
-    def _cell(self, type_name, model, cell_id, device) -> RecordedCell:
-        key = (model, type_name, cell_id)
+    def _target(self, recording: Recording):
+        annotations = recording.annotations
+        kind = recording.kind
+        if kind == "cell":
+            return self._cell(recording, "")
+        if kind == "point":
+            return RecordedPoint(
+                cell=self._cell(recording, ""),
+                branch=int(self._field(recording, "bsb_branch")),
+                point=int(self._field(recording, "bsb_point")),
+                arc=float(self._field(recording, "bsb_arc")),
+            )
+        if kind == "synapse":
+            return RecordedSynapse(
+                cell=self._cell(recording, ""),
+                branch=int(self._field(recording, "bsb_branch")),
+                point=int(self._field(recording, "bsb_point")),
+                arc=float(self._field(recording, "bsb_arc")),
+                synapse_type=self._field(recording, "bsb_synapse_type"),
+                presynaptic=(
+                    self._cell(recording, "pre_")
+                    if "bsb_pre_cell_id" in annotations
+                    else None
+                ),
+            )
+        return None
+
+    @staticmethod
+    def _field(recording, key):
+        try:
+            return recording.annotations[key]
+        except KeyError:
+            raise ResultsError(
+                f"A '{recording.kind}' recording of device '{recording.device}' is "
+                f"missing its `{key}` annotation."
+            ) from None
+
+    def _cell(self, recording, prefix) -> RecordedCell:
+        ps_name = self._field(recording, f"bsb_{prefix}ps_name")
+        model = self._field(recording, f"bsb_{prefix}cell_model")
+        cell_id = int(self._field(recording, f"bsb_{prefix}cell_id"))
+        key = (ps_name, model, cell_id)
         try:
             return self._cells[key]
         except KeyError:
             pass
-        cell_type, ps, positions, size = self._placement_of(type_name, model)
+        cell_type, ps, positions, size = self._placement_of(ps_name)
         if not 0 <= cell_id < size:
             raise ResultsError(
-                f"A recording of device '{device}' names cell {cell_id} of cell model "
-                f"'{model}', but the network holds {size} '{type_name}' cells. The "
+                f"A recording of device '{recording.device}' names cell {cell_id} of "
+                f"'{ps_name}', but the network holds {size} '{ps_name}' cells. The "
                 "placement changed after the run."
             )
         cell = self._cells[key] = RecordedCell(
@@ -714,17 +860,16 @@ class ResultsReader:
         )
         return cell
 
-    def _placement_of(self, type_name, model):
+    def _placement_of(self, ps_name):
         try:
-            return self._placement[type_name]
+            return self._placement[ps_name]
         except KeyError:
             pass
         try:
-            cell_type = self.network.cell_types[type_name]
+            cell_type = self.network.cell_types[ps_name]
         except KeyError:
             raise ResultsError(
-                f"Cell model '{model}' simulated cell type '{type_name}', which the "
-                "network does not have."
+                f"Recordings name cells of '{ps_name}', which the network does not have."
             ) from None
         ps = cell_type.get_placement_set()
         try:
@@ -734,7 +879,7 @@ class ResultsReader:
             size = len(ps)
         else:
             size = len(positions)
-        placement = self._placement[type_name] = (cell_type, ps, positions, size)
+        placement = self._placement[ps_name] = (cell_type, ps, positions, size)
         return placement
 
 
@@ -818,15 +963,20 @@ def _verify_pairing(network, blocks, results):
 __all__ = [
     "NetworkRecording",
     "RecordedCell",
+    "RecordedPoint",
+    "RecordedSynapse",
     "Recording",
     "ResultsReader",
     "SimulationRun",
     "SimulationRecorder",
     "SimulationResult",
+    "cell_annotations",
     "iter_recordings",
     "merge_rank_results",
+    "point_annotations",
     "rank_part_path",
     "read_provenance",
     "read_results",
     "read_simulation_config",
+    "synapse_annotations",
 ]

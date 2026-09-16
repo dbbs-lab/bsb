@@ -80,8 +80,8 @@ class NestDevice(DeviceModel):
         :param bsb.simulation.adapter.SimulationData simdata: Simulation data instance
         :param dict dict_targets: Targeted NEST collection per cell model, as given by
           :meth:`get_dict_targets`.
-        :return: Mapping of node id to a tuple of cell model name and cell id.
-        :rtype: dict[int, tuple[str, int]]
+        :return: Mapping of node id to a tuple of cell model and cell id.
+        :rtype: dict[int, tuple[bsb_nest.cell.NestCell, int]]
         """
         cells = {}
         for model, targets in dict_targets.items():
@@ -93,7 +93,7 @@ class NestDevice(DeviceModel):
             population = np.asarray(simdata.populations[model].tolist())
             cell_ids = np.searchsorted(population, nodes)
             for node, cell_id in zip(nodes, cell_ids, strict=True):
-                cells[int(node)] = (model.name, int(cell_id))
+                cells[int(node)] = (model, int(cell_id))
         return cells
 
     def get_target_nodes(

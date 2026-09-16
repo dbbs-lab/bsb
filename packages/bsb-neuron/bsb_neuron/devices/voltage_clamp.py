@@ -1,6 +1,6 @@
 import warnings
 
-from bsb import LocationTargetting, config, types
+from bsb import LocationTargetting, config, point_annotations, types
 
 from .._util import ignore_arborize_proxy_warnings
 from ..device import NeuronDevice
@@ -25,25 +25,22 @@ class VoltageClamp(NeuronDevice, classmap_entry="vclamp"):
     """Voltage value in the `before` and `after` delays"""
 
     def implement(self, adapter, simulation, simdata):
-        for target in self.targetting.get_targets(adapter, simulation, simdata):
-            clamped = False
-            for location in self.locations.get_locations(target):
-                if clamped:
-                    warnings.warn(
-                        f"Multiple voltage clamps placed on {target}",
-                        stacklevel=2,
-                    )
-                self._add_clamp(
-                    simdata.results,
-                    location,
-                    name=self.name,
-                    cell_model=target.cell_model.name,
-                    cell_id=target.id,
-                )
-                clamped = True
+        for _model, pop in self.targetting.get_targets(
+            adapter, simulation, simdata
+        ).items():
+            for target in pop:
+                clamped = False
+                for location in self.locations.get_locations(target):
+                    if clamped:
+                        warnings.warn(
+                            f"Multiple voltage clamps placed on {target}",
+                            stacklevel=2,
+                        )
+                    self._add_clamp(simdata.result, target, location)
+                    clamped = True
 
     @ignore_arborize_proxy_warnings()
-    def _add_clamp(self, results, location, **annotations):
+    def _add_clamp(self, results, target, location):
         sx = location.arc(0.5)
         clamp = location.section.vclamp(
             voltage=self.voltage,
@@ -54,4 +51,13 @@ class VoltageClamp(NeuronDevice, classmap_entry="vclamp"):
                 if (v := getattr(self, k)) is not None
             },
         )
-        results.record(clamp, **annotations)
+        # The clamp records the current it injects to hold the voltage.
+        results.record(
+            clamp._ref_i,
+            device=self,
+            name="i",
+            units="nA",
+            **point_annotations(
+                target.cell_model, target.id, *location._loc, sx, "stimulate"
+            ),
+        )

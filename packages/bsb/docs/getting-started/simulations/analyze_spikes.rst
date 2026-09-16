@@ -28,17 +28,15 @@ together with the network they were simulated on. Load your
 
 :func:`~bsb.simulation.results.read_results` checks that the results were produced by this network
 before it returns anything. If you followed the previous simulation example, the results hold the
-spikes recorded by :guilabel:`base_layer_record` and :guilabel:`top_layer_record`, and the spikes
-of the :guilabel:`background_noise` generator itself.
+spikes recorded by :guilabel:`base_layer_record` and :guilabel:`top_layer_record`.
 
-Each recording holds the spikes of one cell, and ``recording.cell`` is that cell in the network:
+Each recording holds the spikes of one cell, and ``recording.target`` is that cell in the network:
 its ``id`` in its placement set, its ``position``, its ``cell_type``, and its ``placement_set``.
-A device records every cell it targeted, including the ones that never fired. The generator's own
-spikes belong to no cell, so their ``cell`` is ``None``:
+A device records every cell it targeted, including the ones that never fired:
 
 .. literalinclude:: /../../../examples/nest-simulation/scripts/analyze_spike_results.py
     :language: python
-    :lines: 10-38
+    :lines: 10-36
 
 This code should produce one figure with 2 subplots showing the raster plot of spiking activity
 for each spike recorder of the simulation. The resulting figure is saved in the

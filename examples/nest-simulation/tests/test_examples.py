@@ -44,20 +44,17 @@ class TestNestExamples(
         # the annotations rather than from the number of trains.
         devices = {}
         for signal in spiketrains:
-            devices.setdefault(signal.annotations["device"], []).append(signal)
+            devices.setdefault(signal.annotations["bsb_device_name"], []).append(signal)
             self.assertEqual(signal.t_start, 0)
             self.assertEqual(signal.t_stop, 5000)
-        self.assertEqual(len(devices), 3)
+        self.assertEqual({"base_layer_record", "top_layer_record"}, set(devices))
 
-        # Recordings of a cell name its cell model and its id in that model's
-        # placement set; a device level record, such as a generator's own spikes,
-        # has no cell to name and so carries neither.
+        # Recordings of a cell name its cell model and its id in its placement set.
         cells = {}
         for signal in spiketrains:
-            if "cell_id" in signal.annotations:
-                cells.setdefault(signal.annotations["cell_model"], []).append(
-                    signal.annotations["cell_id"]
-                )
+            cells.setdefault(signal.annotations["bsb_cell_model"], []).append(
+                signal.annotations["bsb_cell_id"]
+            )
         # A device records every cell it watched, so these are all of the watched
         # cells and not only the ones that fired.
         self.assertEqual(

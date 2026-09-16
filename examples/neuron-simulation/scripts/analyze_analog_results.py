@@ -12,12 +12,12 @@ import matplotlib.pylab as plt  # you might have to pip install matplotlib
 has_plotted_neuron = False  # We will only plot one neuron recording here
 has_plotted_synapse = False  # We will only plot one synapse recording here
 for signal in my_signals:
-    name_device = signal.name  # Retrieve the name of the device
-    cell_id = signal.annotations["cell_id"]  # Retrieve the cell ID
+    name_device = signal.annotations["bsb_device_name"]  # Name of the device
+    cell_id = signal.annotations["bsb_cell_id"]  # Retrieve the cell ID
     # If the signal comes from a synapse recorder,
     # and if we did not plot a synapse recording yet
     if name_device == "synapses_rec" and not has_plotted_synapse:
-        synapse_type = signal.annotations["synapse_type"]
+        synapse_type = signal.annotations["bsb_synapse_type"]
         out_filename = (
             f"simulation-results/synapses_rec_{str(cell_id)}_{synapse_type}.png"
         )

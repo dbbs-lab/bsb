@@ -1,7 +1,7 @@
 import nest
 import numpy as np
 import quantities as pq
-from bsb import ConfigurationError, _util, config, types
+from bsb import ConfigurationError, _util, cell_annotations, config, types
 from neo import AnalogSignal
 
 from ..device import NestDevice
@@ -50,10 +50,8 @@ class Multimeter(NestDevice, classmap_entry="multimeter"):
                             device.events[prop][sender_filter],
                             units=pq.units.__dict__[unit],
                             sampling_period=self.simulation.resolution * pq.ms,
-                            name=self.name,
-                            cell_model=cell_model,
-                            cell_id=cell_id,
-                            prop_recorded=prop,
+                            name=prop,
+                            **cell_annotations(cell_model, cell_id, "record"),
                         )
                     )
 

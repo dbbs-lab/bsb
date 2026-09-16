@@ -119,13 +119,13 @@ class TestRecordingsNameTheirCells(
         results = read_results(self.network, filename)
 
         by_id = list(results.recordings("by_id"))
-        self.assertEqual([3, 7, 11], sorted(r.cell.id for r in by_id))
+        self.assertEqual([3, 7, 11], sorted(r.target.id for r in by_id))
         for recording in by_id:
-            with self.subTest(device="by_id", cell=recording.cell.id):
-                self.assertEqual("B", recording.cell.model)
-                self.assertEqual("B", recording.cell.cell_type.name)
+            with self.subTest(device="by_id", cell=recording.target.id):
+                self.assertEqual("B", recording.target.model)
+                self.assertEqual("B", recording.target.cell_type.name)
                 self.assertClose(
-                    self.positions[recording.cell.id], recording.cell.position
+                    self.positions[recording.target.id], recording.target.position
                 )
 
         in_sphere = np.flatnonzero(
@@ -135,7 +135,7 @@ class TestRecordingsNameTheirCells(
         sphere = list(results.recordings("sphere"))
         for model in ("A", "B", "C"):
             with self.subTest(device="sphere", model=model):
-                cells = [r.cell for r in sphere if r.cell.model == model]
+                cells = [r.target for r in sphere if r.target.model == model]
                 self.assertEqual(sorted(in_sphere), sorted(c.id for c in cells))
                 for cell in cells:
                     self.assertClose(self.positions[cell.id], cell.position)

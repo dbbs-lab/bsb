@@ -115,15 +115,24 @@ class TestIterRecordings(unittest.TestCase):
                     SpikeTrain(
                         [] * ms,
                         t_stop=10 * ms,
-                        device="rec",
-                        cell_model=model,
-                        cell_id=cell_id,
+                        bsb_device_name="rec",
+                        bsb_recording_kind="cell",
+                        bsb_direction="record",
+                        bsb_ps_name=model,
+                        bsb_cell_model=model,
+                        bsb_cell_id=cell_id,
                     )
                 )
 
         self.assertEqual(2, len(list(iter_recordings(segment, cell_id=1))))
         (recording,) = iter_recordings(segment, cell_id=1, cell_model="b")
-        self.assertEqual(("b", 1), (recording.cell_model, recording.cell_id))
+        self.assertEqual(
+            ("rec", "cell", "record"),
+            (recording.device, recording.kind, recording.direction),
+        )
+        self.assertEqual("b", recording.annotations["bsb_cell_model"])
+        self.assertEqual(4, len(list(iter_recordings(segment, kind="cell"))))
+        self.assertEqual([], list(iter_recordings(segment, kind="synapse")))
         self.assertEqual(2, len(list(iter_recordings(segment, cell_model="a"))))
 
 

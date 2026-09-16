@@ -342,6 +342,8 @@ RandomRotations: type["bsb.placement.distributor.RandomRotations"]
 ReadOnlyManager: type["bsb.storage.interfaces.ReadOnlyManager"]
 ReadOnlyOptionError: type["bsb.exceptions.ReadOnlyOptionError"]
 RecordedCell: type["bsb.simulation.results.RecordedCell"]
+RecordedPoint: type["bsb.simulation.results.RecordedPoint"]
+RecordedSynapse: type["bsb.simulation.results.RecordedSynapse"]
 Recording: type["bsb.simulation.results.Recording"]
 RedoError: type["bsb.exceptions.RedoError"]
 Reference: type["bsb.config.refs.Reference"]
@@ -423,6 +425,7 @@ activate_session: "bsb.profiling.activate_session"
 box_layout: "bsb.topology.box_layout"
 branch_iter: "bsb.morphologies.branch_iter"
 build_context: "bsb.config.build_context"
+cell_annotations: "bsb.simulation.results.cell_annotations"
 chunklist: "bsb.storage._chunks.chunklist"
 compose_nodes: "bsb.config.compose_nodes"
 constant_parameter: "bsb.simulation.parameter.constant_parameter"
@@ -471,6 +474,7 @@ parse_configuration_content_to_dict: "bsb.config.parse_configuration_content_to_
 parse_configuration_file: "bsb.config.parse_configuration_file"
 parse_morphology_content: "bsb.morphologies.parsers.parse_morphology_content"
 parse_morphology_file: "bsb.morphologies.parsers.parse_morphology_file"
+point_annotations: "bsb.simulation.results.point_annotations"
 pool_cache: "bsb.services.pool_cache"
 rank_part_path: "bsb.simulation.results.rank_part_path"
 read_option: "bsb.options.read_option"
@@ -485,6 +489,7 @@ reset_module_option: "bsb.options.reset_module_option"
 set_config_build_context: "bsb.config.set_config_build_context"
 set_module_option: "bsb.options.set_module_option"
 store_option: "bsb.options.store_option"
+synapse_annotations: "bsb.simulation.results.synapse_annotations"
 types: "bsb.config.types"
 unregister_option: "bsb.options.unregister_option"
 view_profile: "bsb.profiling.view_profile"

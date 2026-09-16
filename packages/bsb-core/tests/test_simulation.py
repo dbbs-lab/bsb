@@ -184,9 +184,9 @@ class TestTargetting(
         # targets: their count is the size it targeted and their ids are which.
         watched = {}
         for spiketrain in spiketrains:
-            recorder = spiketrain.annotations["device"]
-            watched.setdefault(recorder, []).append(
-                (spiketrain.annotations["cell_model"], spiketrain.annotations["cell_id"])
+            annotations = spiketrain.annotations
+            watched.setdefault(annotations["bsb_device_name"], []).append(
+                (annotations["bsb_cell_model"], annotations["bsb_cell_id"])
             )
         self.assertEqual(set(expected), set(watched), "every device has to record")
         for recorder, cells in watched.items():
@@ -210,10 +210,11 @@ class TestTargetting(
         spiketrains = result.block.segments[0].spiketrains
         # Its trains are the cells it targeted, whether or not they fired.
         self.assertEqual(
-            [0, 5, 7, 10], sorted(train.annotations["cell_id"] for train in spiketrains)
+            [0, 5, 7, 10],
+            sorted(train.annotations["bsb_cell_id"] for train in spiketrains),
         )
         self.assertEqual(
-            {"h_cell"}, {train.annotations["cell_model"] for train in spiketrains}
+            {"h_cell"}, {train.annotations["bsb_cell_model"] for train in spiketrains}
         )
 
     def test_sphere(self):
@@ -248,7 +249,7 @@ class TestTargetting(
             with self.subTest(device=device):
                 only_h_cells = np.sort(
                     [
-                        recording.cell_id
+                        recording.annotations["bsb_cell_id"]
                         for recording in iter_recordings(
                             result.block, device=device, cell_model="h_cell"
                         )
@@ -281,7 +282,7 @@ class TestTargetting(
 
         only_h_cells = np.sort(
             [
-                recording.cell_id
+                recording.annotations["bsb_cell_id"]
                 for recording in iter_recordings(result.block, cell_model="h_cell")
             ]
         )
@@ -307,7 +308,7 @@ class TestTargetting(
         result = self.network.run_simulation("test")
         spiketrains = result.block.segments[0].spiketrains
 
-        sorted_ids = np.sort([t.annotations["cell_id"] for t in spiketrains])
+        sorted_ids = np.sort([t.annotations["bsb_cell_id"] for t in spiketrains])
         self.assertAll(sorted_ids == sub_pop_h_cell)
         self.assertEqual(len(sorted_ids), 4)
 
@@ -366,12 +367,13 @@ class TestReadResults(
         self.assertEqual(10, results.provenance["duration_ms"])
         self.assertEqual(["spikes"], results.devices)
         recordings = list(results.recordings("spikes"))
-        self.assertEqual(list(range(100)), sorted(r.cell.id for r in recordings))
+        self.assertEqual(list(range(100)), sorted(r.target.id for r in recordings))
         positions = self.network.get_placement_set("test_cell").load_positions()
         for recording in recordings:
-            self.assertEqual("test_cell", recording.cell.model)
-            self.assertEqual(recording.cell_id, recording.cell.id)
-            self.assertClose(positions[recording.cell.id], recording.cell.position)
+            self.assertEqual(("cell", "record"), (recording.kind, recording.direction))
+            self.assertEqual("test_cell", recording.target.model)
+            self.assertEqual(recording.annotations["bsb_cell_id"], recording.target.id)
+            self.assertClose(positions[recording.target.id], recording.target.position)
 
     def test_results_of_another_network_raise(self):
         filename = self._run()
@@ -406,11 +408,13 @@ class TestReadResults(
         for run in results.runs:
             with self.subTest(run=run.name):
                 recordings = list(run.recordings("spikes"))
-                self.assertEqual(list(range(100)), sorted(r.cell.id for r in recordings))
+                self.assertEqual(
+                    list(range(100)), sorted(r.target.id for r in recordings)
+                )
                 for recording in recordings:
                     self.assertIs(run, recording.run)
                     self.assertClose(
-                        positions[recording.cell.id], recording.cell.position
+                        positions[recording.target.id], recording.target.position
                     )
         self.assertEqual(200, len(list(results.recordings("spikes"))))
         with self.assertRaises(ResultsError, msg="which run's provenance?"):

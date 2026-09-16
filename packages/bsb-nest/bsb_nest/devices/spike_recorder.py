@@ -1,6 +1,6 @@
 import nest
 import numpy as np
-from bsb import config
+from bsb import cell_annotations, config
 from neo import SpikeTrain
 
 from ..device import NestDevice
@@ -34,9 +34,8 @@ class SpikeRecorder(NestDevice, classmap_entry="spike_recorder"):
                         times[senders == node],
                         units="ms",
                         t_stop=simulation.duration,
-                        name=self.name,
-                        cell_model=cell_model,
-                        cell_id=cell_id,
+                        name="spikes",
+                        **cell_annotations(cell_model, cell_id, "record"),
                     )
                 )
 

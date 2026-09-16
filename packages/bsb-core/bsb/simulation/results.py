@@ -671,11 +671,21 @@ class RecordedCell:
     @property
     def morphology(self) -> "Morphology | None":
         """
-        The morphology of the cell, in the cell's own frame: unrotated, with its origin
-        at the cell's position. ``None`` when its placement set stores no morphologies.
+        The morphology of the cell as it is in the network: rotated by the cell's
+        rotation and moved to its position. A copy, so changing it changes nothing in
+        the network. ``None`` when its placement set stores no morphologies.
         """
         morphologies = self._placement.morphologies
-        return None if morphologies is None else morphologies.get(self.id)
+        if morphologies is None:
+            return None
+        morphology = morphologies.get(self.id)
+        rotation = self.rotation
+        if rotation is not None:
+            morphology.rotate(rotation)
+        position = self.position
+        if position is not None:
+            morphology.translate(position)
+        return morphology
 
     @property
     def rotation(self) -> "Rotation | None":
@@ -692,8 +702,9 @@ class RecordedCell:
         position = self.position
         if morphologies is None or position is None:
             return None
-        # Shared with every other recording on a cell of this morphology, and only
-        # read here.
+        # The stored morphology, shared with every other recording on a cell of it and
+        # only read here, is placed one location at a time rather than copied and
+        # placed whole for every recording.
         morphology = morphologies.get(self.id, hard_cache=True)
         try:
             points = morphology.branches[branch].points

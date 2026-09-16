@@ -227,7 +227,14 @@ class TestRecordedLocations(
         self.assertClose([100, 5, 0], point.position)
         # Three quarters along branch 1 is 6 along z, at the unturned second cell.
         self.assertClose([0, 50, 6], synapse.position)
-        self.assertEqual(2, len(point.cell.morphology.branches))
+        # The morphology is the cell's, as it is in the network.
+        placed = point.cell.morphology
+        self.assertEqual(2, len(placed.branches))
+        self.assertClose([[100, 0, 0], [100, 10, 0]], placed.branches[0].points)
+        self.assertClose(
+            [[0, 50, 0], [0, 50, 4], [0, 50, 8]],
+            synapse.cell.morphology.branches[1].points,
+        )
         self.assertClose([0, 0, 90], point.cell.rotation.as_euler("xyz", degrees=True))
         self.assertEqual(0, synapse.presynaptic.id)
         self.assertClose([100, 0, 0], synapse.presynaptic.position)

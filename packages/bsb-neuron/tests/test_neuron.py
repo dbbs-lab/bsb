@@ -667,10 +667,9 @@ class TestRecordingsNameTheirCells(
                 self.assertEqual("B", cell.model)
                 self.assertEqual("B", cell.cell_type.name)
                 self.assertClose(self.positions[cell.id], cell.position)
-                # The soma recording is where the morphology starts, placed at the cell.
+                # The soma recording is where the cell's morphology starts.
                 self.assertClose(
-                    cell.position + cell.morphology.branches[0].points[0],
-                    recording.target.position,
+                    cell.morphology.branches[0].points[0], recording.target.position
                 )
 
         in_sphere = np.flatnonzero(

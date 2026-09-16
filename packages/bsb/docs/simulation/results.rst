@@ -173,11 +173,11 @@ in the network. The target depends on the kind:
      - The ``cell`` it is on, ``branch``, ``point``, ``arc``, its ``position`` in
        the network, ``synapse_type``, and the ``presynaptic`` cell, if any.
 
-A cell's ``morphology`` is in the cell's own frame, as it is stored. The
-``position`` of a point or a synapse is in the network: the location on the
-morphology, rotated by the cell's ``rotation`` and moved to the cell's ``position``.
-Morphologies and rotations are loaded from the network once per placement set, and
-only when a recording asks for them.
+A cell's ``morphology`` is that cell's morphology as it is in the network: rotated
+by the cell's ``rotation`` and moved to its ``position``. It is a copy, so changing it
+changes nothing in the network. The ``position`` of a point or a synapse is where it
+is on that morphology. Morphologies and rotations are loaded from the network once per
+placement set, and only when a recording asks for them.
 
 A recording of a kind this BSB does not know still reads, with ``target`` set to
 ``None``; its annotations stay available as ``recording.annotations``.

@@ -13,11 +13,12 @@ has_plotted_neuron = False  # We will only plot one neuron recording here
 has_plotted_synapse = False  # We will only plot one synapse recording here
 for signal in my_signals:
     name_device = signal.annotations["bsb_device_name"]  # Name of the device
-    cell_id = signal.annotations["bsb_cell_id"]  # Retrieve the cell ID
+    annotations = signal.annotations  # What the signal recorded, and where
     # If the signal comes from a synapse recorder,
     # and if we did not plot a synapse recording yet
     if name_device == "synapses_rec" and not has_plotted_synapse:
-        synapse_type = signal.annotations["bsb_synapse_type"]
+        cell_id = annotations["bsb_post_cell_id"]  # The cell the synapse is on
+        synapse_type = annotations["bsb_synapse_type"]
         out_filename = (
             f"simulation-results/synapses_rec_{str(cell_id)}_{synapse_type}.png"
         )
@@ -25,7 +26,7 @@ for signal in my_signals:
     # If the signal comes from a voltage recorder,
     # and if we did not plot a neuron recording yet
     elif name_device == "vrecorder" and not has_plotted_neuron:
-        out_filename = f"simulation-results/vrecorder_{str(cell_id)}.png"
+        out_filename = f"simulation-results/vrecorder_{annotations['bsb_cell_id']}.png"
         has_plotted_neuron = True
     # If we plotted both types of recording, we exit the loop
     elif has_plotted_neuron and has_plotted_synapse:

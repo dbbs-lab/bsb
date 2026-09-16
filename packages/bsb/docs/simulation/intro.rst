@@ -259,7 +259,9 @@ Analog Signals
 Each segment also contains an :guilabel:`analogsignals` attribute, which holds a list of Neo :class:`AnalogSignal <neo.core.AnalogSignal>` objects.
 These objects contain the trace of the recorded property, along with the associated time points.
 They are annotated the same way as spike trains. A signal recorded at a location on a cell, such
-as a membrane voltage in NEURON, also says where on the cell's morphology it was recorded:
+as a membrane voltage in NEURON, also says where on the cell's morphology it was recorded, and a
+signal recorded from a synapse names both of the cells it connects, as ``bsb_pre_*`` and
+``bsb_post_*``:
 
 .. code-block:: python
 
@@ -270,8 +272,12 @@ as a membrane voltage in NEURON, also says where on the cell's morphology it was
     time_unit = signal.times.units
     what_was_recorded = signal.name
     device_name = signal.annotations["bsb_device_name"]
-    cell_id = signal.annotations["bsb_cell_id"]
-    branch = signal.annotations.get("bsb_branch")
+    if signal.annotations["bsb_recording_kind"] == "synapse":
+      cell_id = signal.annotations["bsb_post_cell_id"]
+      presynaptic_cell_id = signal.annotations.get("bsb_pre_cell_id")
+    else:
+      cell_id = signal.annotations["bsb_cell_id"]
+      branch = signal.annotations.get("bsb_branch")
 
 As with spike trains, the :guilabel:`analogsignals` attribute contains a separate ``AnalogSignal``
 object for each cell the device recorded, and for each property when a device samples several.

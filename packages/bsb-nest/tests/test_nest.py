@@ -638,16 +638,17 @@ class TestNest(
                 "simulator": "nest",
                 "duration": duration,
                 "resolution": resolution,
-                "cell_models": {
-                    "A": {
-                        "model": "iaf_cond_alpha",
-                        "constants": {
-                            "V_reset": -70,  # V_m, E_L and V_reset are the same
-                        },
+                # A parrot repeats every spike it receives, so recording it records
+                # what the generators sent.
+                "cell_models": {"A": {"model": "parrot_neuron"}},
+                "connection_models": {},
+                "devices": {
+                    "received": {
+                        "device": "spike_recorder",
+                        "delay": resolution,
+                        "targetting": {"strategy": "cell_model", "cell_models": ["A"]},
                     }
                 },
-                "connection_models": {},
-                "devices": {},
             }
         }
         # Compared against a NEST run seeded by hand, so the kernel has to be
@@ -673,7 +674,8 @@ class TestNest(
         netw.compile()
 
         results = netw.run_simulation("test")
-        spike_times = np.array(np.concatenate(results.block.segments[0].spiketrains))
+        (received,) = iter_recordings(results.block, device="received")
+        spike_times = np.asarray(received.signal)
         self.assertAlmostEqual(
             100 * nb_gen,
             len(spike_times),
@@ -703,7 +705,9 @@ class TestNest(
 
         params = fit_sinus(bins[:-1] / 1e3, counts)
         self.assertAlmostEqual(20, params[0], delta=0.2)
-        self.assertAlmostEqual(nb_gen, params[1], delta=2)
+        # About 100 spikes per 1 ms bin, so each bin is off by about 10 and the fitted
+        # amplitude by about 1.4; this allows three times that.
+        self.assertAlmostEqual(nb_gen, params[1], delta=4)
         self.assertAlmostEqual(nb_gen, params[3], delta=1)
 
     def test_error_sinusoidal_poisson_generator(self):

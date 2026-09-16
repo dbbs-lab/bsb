@@ -62,6 +62,7 @@ def _placement_order(positions, chunk_size):
     return positions[np.argsort(chunk_ids, kind="stable")]
 
 
+@unittest.skipIf(MPI.get_size() > 1, "Skipped during parallel testing.")
 class TestRecordingsNameTheirCells(
     RandomStorageFixture, NumpyTestCase, unittest.TestCase, engine_name="hdf5"
 ):

@@ -8,6 +8,7 @@ import nest
 import numpy as np
 from bsb import (
     AfterPrepareHook,
+    AfterSimulationHook,
     BootError,
     CastError,
     ConfigurationError,
@@ -159,16 +160,6 @@ class TestNest(
                 )
                 nest.Connect(vm, pop)
 
-                # Add a spying recorder
-                def spy(_):
-                    nonlocal nspike
-
-                    start_time = 1000
-                    start_step = int(start_time / simulation.resolution)
-                    nspike = vm.events["n_events"][start_step:]
-
-                data.result.create_recorder(spy)
-
                 # Test node parameter transfer
                 for param, value in {
                     "V_reset": 0.0,
@@ -192,7 +183,16 @@ class TestNest(
                     with self.subTest(param=param, value=value):
                         self.assertEqual(value, syn.get(param))
 
+        @config.node
+        class Readout(AfterSimulationHook):
+            # The voltmeter is read while the kernel still holds what it recorded.
+            def postprocess(inner, adapter, sim, result):
+                nonlocal nspike
+                start_step = int(1000 / sim.resolution)
+                nspike = vm.events["n_events"][start_step:]
+
         network.simulations.test_nest.after_prepare["probe"] = Probe()
+        network.simulations.test_nest.after_simulation["readout"] = Readout()
         NestAdapter().simulate(network.simulations.test_nest)
 
         mean_nspike = np.mean(nspike)

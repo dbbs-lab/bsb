@@ -2,6 +2,7 @@ import copy
 import os
 import shutil
 import tempfile
+import types
 import unittest
 import warnings
 
@@ -21,6 +22,7 @@ from bsb import (
     Scaffold,
     SimulationResult,
     SimulatorAdapter,
+    cell_annotations,
     config,
     get_simulation_adapter,
     iter_recordings,
@@ -862,14 +864,24 @@ class TestAdapterControllers(
         nio_file = "out" + str(rank) + ".nio"
         my_result = SimulationResult(sim, nio_file)
 
+        cell_model = types.SimpleNamespace(
+            name="test_cell", cell_type=types.SimpleNamespace(name="test_cell")
+        )
+
         def my_flush(segment):
             # Creates a signal of 120 MB
             signal = np.ones(15 * MB)
             segment.analogsignals.append(
-                AnalogSignal(signal, sampling_period=0.1 * ms, units="mV")
+                AnalogSignal(
+                    signal,
+                    sampling_period=0.1 * ms,
+                    units="mV",
+                    **cell_annotations(cell_model, 0, "record"),
+                )
             )
 
-        my_result.create_recorder(my_flush)
+        device = types.SimpleNamespace(name="big_recorder", device="test")
+        my_result.create_recorder(my_flush, device)
         num_samples = 60
         mem_size = np.zeros(num_samples)
         for _sample in range(num_samples):

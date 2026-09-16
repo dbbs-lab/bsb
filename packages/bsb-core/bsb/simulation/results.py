@@ -32,7 +32,7 @@ if typing.TYPE_CHECKING:  # pragma: nocover
 
     import neo
     import numpy
-    from scipy.spatial.transform import Rotation
+    import scipy.spatial.transform
 
     from ..cell_types import CellType
     from ..core import Scaffold
@@ -168,6 +168,48 @@ _RECORDING_LISTS = ("spiketrains", "analogsignals")
 def _recording_counts(segment) -> dict:
     """How many recordings the segment holds per container, to spot new ones."""
     return {name: len(getattr(segment, name)) for name in _RECORDING_LISTS}
+
+
+#: The directions a recording can have.
+_DIRECTIONS = ("record", "stimulate")
+
+
+def _drop_unlabelled(segment, before: dict, recorder) -> None:
+    """
+    Remove what a recorder just appended without saying what it recorded.
+
+    Every recording has to carry a recording kind and a direction, or it cannot be
+    told apart from any other signal once it is in a file. It is dropped with a
+    warning rather than raised on: recorders flush during a run, on every rank on
+    its own, and a rank that raised there would leave the others waiting.
+    """
+    for name in _RECORDING_LISTS:
+        recordings = getattr(segment, name)
+        new = recordings[before[name] :]
+        kept = []
+        for recording in new:
+            annotations = recording.annotations
+            missing = [
+                key
+                for key, valid in (
+                    ("bsb_recording_kind", bool(annotations.get("bsb_recording_kind"))),
+                    ("bsb_direction", annotations.get("bsb_direction") in _DIRECTIONS),
+                )
+                if not valid
+            ]
+            if missing:
+                warnings.warn(
+                    f"Device '{recorder.device_name}' recorded a signal without a valid "
+                    f"{' or '.join(f'`{key}`' for key in missing)}; it is not written. "
+                    "Annotate recordings with `cell_annotations`, `point_annotations` "
+                    "or `synapse_annotations`.",
+                    ResultsWarning,
+                    stacklevel=2,
+                )
+            else:
+                kept.append(recording)
+        if len(kept) != len(new):
+            recordings[before[name] :] = kept
 
 
 def _stamp_baseline(segment, before: dict, recorder, simulation_id, segment_id) -> None:
@@ -483,11 +525,30 @@ class SimulationResult:
         return self._block
 
     def add(self, recorder):
+        """
+        Add a recorder, which every checkpoint asks to flush what it recorded.
+
+        :param recorder: The recorder. It has to belong to a device, which is what
+          every one of its recordings names as the device that made it.
+        :type recorder: SimulationRecorder
+        """
+        if getattr(recorder, "device", None) is None:
+            raise ResultsError(
+                f"Recorder {recorder!r} belongs to no device. Every recording names "
+                "the device that made it, so a recorder has to be created by one."
+            )
         self.recorders.append(recorder)
 
-    def create_recorder(
-        self, flush: typing.Callable[["neo.core.Segment"], None], device=None
-    ):
+    def create_recorder(self, flush: typing.Callable[["neo.core.Segment"], None], device):
+        """
+        Add a recorder that flushes with a function.
+
+        :param flush: Appends what was recorded since the last checkpoint to the
+          segment it is given, annotated with what it recorded.
+        :param device: The device the recordings belong to.
+        :returns: The recorder.
+        :rtype: SimulationRecorder
+        """
         recorder = SimulationRecorder(device=device)
         recorder.flush = flush
         self.add(recorder)
@@ -518,6 +579,7 @@ class SimulationResult:
             finally:
                 # A recorder that raised part way through still appended what it
                 # got to, and unlabelled signals are worse than missing ones.
+                _drop_unlabelled(segment, before, recorder)
                 _stamp_baseline(segment, before, recorder, self.simulation_id, segment_id)
         self.checkpoint_index += 1
         self._t_cursor = t_stop
@@ -589,12 +651,12 @@ class SimulationResult:
 
 
 class SimulationRecorder:
-    def __init__(self, device=None):
+    def __init__(self, device):
         self.device = device
 
     @property
     def device_name(self):
-        """The device this recorder belongs to, when it was created by one."""
+        """The name of the device this recorder belongs to."""
         return getattr(self.device, "name", None)
 
     @property
@@ -650,7 +712,8 @@ class RecordedCell:
     id: int
     #: Name of the cell model the cell was simulated with.
     model: str
-    _placement: _Placement = dataclasses.field(repr=False)
+    # What the reader loaded of the cell's placement set, shared by its cells.
+    _placement: typing.Any = dataclasses.field(repr=False)
 
     @property
     def cell_type(self) -> "CellType":
@@ -688,7 +751,7 @@ class RecordedCell:
         return morphology
 
     @property
-    def rotation(self) -> "Rotation | None":
+    def rotation(self) -> "scipy.spatial.transform.Rotation | None":
         """
         The rotation of the cell's morphology in the network, or ``None`` when its
         placement set stores no rotations.

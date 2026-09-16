@@ -15,11 +15,15 @@ from bsb import (
     Configuration,
     Morphology,
     MorphologySet,
+    ResultsError,
+    ResultsWarning,
     RotationSet,
     Scaffold,
+    SimulationResult,
     read_results,
 )
 from bsb.simulation.results import (
+    cell_annotations,
     iter_recordings,
     merge_rank_results,
     point_annotations,
@@ -238,6 +242,57 @@ class TestRecordedLocations(
         self.assertClose([0, 0, 90], point.cell.rotation.as_euler("xyz", degrees=True))
         self.assertEqual(0, synapse.presynaptic.id)
         self.assertClose([100, 0, 0], synapse.presynaptic.position)
+
+
+class _Simulation:
+    """The little of a simulation a result reads."""
+
+    name = "sim"
+    duration = 10
+
+    def __tree__(self):
+        return {}
+
+
+class TestRecordingsSayWhatTheyRecord(unittest.TestCase):
+    """A result only writes recordings of a device that say what they recorded."""
+
+    def setUp(self):
+        self.result = SimulationResult(_Simulation())
+        self.device = types.SimpleNamespace(name="rec", device="test_recorder")
+        self.model = types.SimpleNamespace(
+            name="model", cell_type=types.SimpleNamespace(name="cells")
+        )
+
+    def _train(self, **annotations):
+        return SpikeTrain([1.0] * ms, t_stop=10 * ms, name="spikes", **annotations)
+
+    def test_a_recorder_belongs_to_a_device(self):
+        with self.assertRaises(TypeError):
+            self.result.create_recorder(lambda segment: None)
+        with self.assertRaises(ResultsError):
+            self.result.create_recorder(lambda segment: None, None)
+
+    def test_a_recording_that_says_nothing_is_not_written(self):
+        def flush(segment):
+            segment.spiketrains.append(self._train())
+            segment.spiketrains.append(
+                self._train(**cell_annotations(self.model, 3, "record"))
+            )
+            segment.spiketrains.append(
+                self._train(**cell_annotations(self.model, 4, "sideways"))
+            )
+
+        self.result.create_recorder(flush, self.device)
+
+        with self.assertWarns(ResultsWarning) as caught:
+            self.result.flush()
+
+        (kept,) = self.result.block.segments[0].spiketrains
+        self.assertEqual(3, kept.annotations["bsb_cell_id"])
+        self.assertEqual("rec", kept.annotations["bsb_device_name"])
+        self.assertEqual("test_recorder", kept.annotations["bsb_device_kind"])
+        self.assertIn("rec", str(caught.warning))
 
 
 class TestProvenanceReading(unittest.TestCase):

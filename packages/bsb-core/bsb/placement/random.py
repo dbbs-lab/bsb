@@ -352,7 +352,7 @@ class DistributionPlacement(PlacementStrategy):
         # Draw values until they land all in the defined interval.
         accepted_values = []
         while len(accepted_values) < n:
-            random_values = self.distribution.draw(n - len(accepted_values), rng)
+            random_values = self.distribution.draw(n - len(accepted_values), rng=rng)
             selected = (random_values > distrib_interval[0]) * (
                 random_values <= distrib_interval[1]
             )

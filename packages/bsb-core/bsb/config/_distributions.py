@@ -49,18 +49,41 @@ class Distribution:
                 prepend=f"Can't cast to '{self.distribution}': ",
             )
 
-    def draw(self, n, rng: np.random.Generator | None = None):
+    def draw(self, n, rng: "np.random.Generator | None" = None):
         """
         Draw n random samples from the distribution.
 
+        Drawn through the distribution's own inverse CDF
+        (:meth:`~scipy.stats.rv_continuous.ppf`) rather than
+        :meth:`~scipy.stats.rv_continuous.rvs`, on uniform draws taken from `rng`
+        itself rather than handed to scipy as a ``random_state``. `rvs` would have
+        put scipy in charge of validating `rng`, and scipy accepts only a real
+        :class:`numpy.random.Generator` or :class:`~numpy.random.RandomState`,
+        checked by ``isinstance`` rather than by which methods it has -- which a
+        generator kind with nothing of numpy's behind it (one backed by
+        ``bsb_native``'s Rust, say) is not, and cannot be made to satisfy short of
+        wrapping a real numpy bit generator around it just to pass the check.
+        Drawing the uniforms ourselves needs only ``rng.random(n)``, which is what
+        every generator kind already has to answer -- unlike the rest of the
+        framework, which also reaches for ``.integers()`` and ``.choice()``, so
+        `rng` is typed here more strictly than it is actually required to be.
+
+        This is not free: inverse-CDF sampling is scipy's generic fallback, not the
+        specialised, faster and more precise sampler some distributions ship their
+        own version of (the normal distribution among them), so a draw here costs
+        more and, in the extreme tails, resolves less precisely than `rvs` would
+        have given the same generator. A discrete distribution's draw is also
+        `ppf`'s own return type, `float64`, not the `int` `rvs` gives -- cast it
+        where an integer is needed, as the built-in call sites already do.
+
         :param n: Number of samples to draw.
-        :param rng: Generator to draw from. A caller that draws as part of a
-            reconstruction should pass its own, e.g. from
-            :meth:`RngConsumer.get_rng <bsb.rng.RngConsumer.get_rng>`, so the draw
-            comes from the configured, reproducible randomness rather than whichever
-            unseeded generator :mod:`scipy` falls back to when none is given.
+        :param rng: Generator to draw from, keyed the way a caller drawing as part
+            of a reconstruction already has one, e.g. from
+            :meth:`RngConsumer.get_rng <bsb.rng.RngConsumer.get_rng>`. Left unset,
+            falls back to an unseeded draw.
         """
-        return self._distr.rvs(size=n, random_state=rng)
+        quantiles = rng.random(n) if rng is not None else np.random.random(n)
+        return self._distr.ppf(quantiles)
 
     def definition_interval(self, epsilon=0):
         """
@@ -99,5 +122,11 @@ class _ConstantDistribution:
     def __init__(self, const):
         self.const = const
 
-    def rvs(self, size, random_state=None):
+    def rvs(self, size):
         return np.full(size, self.const, dtype=type(self.const))
+
+    def ppf(self, q):
+        # A constant's inverse CDF is itself at every quantile, so `draw` -- and
+        # `definition_interval`, which was already calling this unconditionally --
+        # both work for a `constant` distribution without special-casing it.
+        return np.full(np.shape(q), self.const, dtype=type(self.const))

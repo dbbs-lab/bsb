@@ -193,8 +193,30 @@ of its bit generators and seed it your way, which is all
     <https://numpy.org/doc/stable/reference/random/extending.html>`_ walks through it.
 
     Returning a :class:`numpy.random.Generator` is deliberate rather than incidental:
-    every component that draws calls ``random``, ``integers`` or ``choice`` on what it
-    is handed, so a kind that answered with something else would break all of them.
+    almost every component that draws calls ``random``, ``integers`` or ``choice`` on
+    what it is handed, so a kind that answered with something else would break most
+    of them.
+
+.. note::
+
+    :class:`Distribution <bsb:bsb.config._distributions.Distribution>` is the one
+    exception, and asks for less. It draws by feeding uniform samples from
+    ``.random()`` through the distribution's own inverse CDF, rather than handing
+    `rng` to :mod:`scipy` as a ``random_state`` and letting it draw. Scipy checks
+    a ``random_state`` by
+    ``isinstance`` against :class:`numpy.random.Generator` or
+    :class:`~numpy.random.RandomState`, which a kind with nothing of numpy's behind
+    it -- one written against a Rust or C library, rather than a bit generator -- is
+    neither, and cannot be made either short of wrapping a real bit generator around
+    it purely to satisfy the check. Needing only ``.random()`` sidesteps that: it is
+    the one method every kind already has to answer, numpy-backed or not.
+
+    That trade is not free. Inverse-CDF sampling is scipy's generic fallback, not the
+    specialised sampler some distributions ship their own faster, more precise
+    version of -- the normal distribution among them -- so a draw costs more and,
+    at the extreme tails, resolves less precisely than the same generator's
+    ``rvs`` would have. A discrete distribution's draw is also ``ppf``'s own return
+    type, ``float64``, rather than the ``int`` ``rvs`` gives.
 
 .. warning::
 

@@ -1365,6 +1365,57 @@ class TestTypes(unittest.TestCase):
             np.array_equal(np.full(3, 7), b.c.draw(3, np.random.default_rng()))
         )
 
+    def test_distribution_draw_only_needs_random(self):
+        """`draw` draws through a distribution's inverse CDF on uniform samples
+        from `rng.random(n)`, rather than handing `rng` to scipy as a
+        `random_state` -- unlike the rest of the framework, which also reaches
+        for `.integers()`/`.choice()`, nothing else is asked of it. A kind with
+        nothing numpy-specific behind it -- one backed by `bsb_native`'s Rust,
+        say -- only has to answer that one method, not satisfy scipy's stricter,
+        `isinstance`-checked `random_state` contract.
+        """
+
+        @config.root
+        class Test:
+            c = config.attr(type=types.distribution())
+
+        a = Test({"c": {"distribution": "norm"}})
+
+        class OnlyRandom:
+            """No numpy machinery anywhere in it -- stands in for a generator
+            kind backed by something other than numpy, Rust or otherwise."""
+
+            def __init__(self, seed):
+                self._rng = np.random.default_rng(seed)
+
+            def random(self, size):
+                return self._rng.random(size)
+
+        first = a.c.draw(5, OnlyRandom(1234))
+        self.assertEqual(5, len(first))
+        self.assertTrue(
+            np.array_equal(first, a.c.draw(5, OnlyRandom(1234))),
+            "same seed must draw the same",
+        )
+        self.assertFalse(
+            np.array_equal(first, a.c.draw(5, OnlyRandom(4321))),
+            "different seeds must not draw the same",
+        )
+
+        class NoRandomAtAll:
+            """Satisfies the *other* call sites' contract, not this one."""
+
+            def integers(self, *args, **kwargs):
+                return 0
+
+            def choice(self, *args, **kwargs):
+                return 0
+
+        with self.assertRaises(
+            AttributeError, msg="missing .random() must fail, not draw unseeded"
+        ):
+            a.c.draw(5, NoRandomAtAll())
+
     def test_evaluation(self):
         @config.root
         class Test:

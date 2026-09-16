@@ -1,18 +1,32 @@
 import pathlib
+import shutil
 import tempfile
+import types
 import unittest
 
 import numpy as np
-from neo import Block, Segment, SpikeTrain
+from bsb_test import NumpyTestCase, RandomStorageFixture, skip_parallel
+from neo import AnalogSignal, Block, Segment, SpikeTrain
 from neo import io as neo_io
-from quantities import ms
+from quantities import ms, mV
 
+from bsb import (
+    Branch,
+    Configuration,
+    Morphology,
+    MorphologySet,
+    RotationSet,
+    Scaffold,
+    read_results,
+)
 from bsb.simulation.results import (
     iter_recordings,
     merge_rank_results,
+    point_annotations,
     rank_part_path,
     read_provenance,
     read_simulation_config,
+    synapse_annotations,
 )
 from bsb.storage.provenance import encode_annotation, get_provenance_version
 
@@ -134,6 +148,89 @@ class TestIterRecordings(unittest.TestCase):
         self.assertEqual(4, len(list(iter_recordings(segment, kind="cell"))))
         self.assertEqual([], list(iter_recordings(segment, kind="synapse")))
         self.assertEqual(2, len(list(iter_recordings(segment, cell_model="a"))))
+
+
+@skip_parallel
+class TestRecordedLocations(
+    RandomStorageFixture, NumpyTestCase, unittest.TestCase, engine_name="hdf5"
+):
+    """Locations on a morphology are placed in the network as their cell is."""
+
+    def setUp(self):
+        super().setUp()
+        cfg = Configuration.default(
+            cell_types=dict(line=dict(spatial=dict(radius=1, count=2)))
+        )
+        self.network = Scaffold(cfg, self.storage)
+        # Branch 0 runs 10 along x, branch 1 runs 8 along z in two steps.
+        morphology = Morphology(
+            [
+                Branch([[0, 0, 0], [10, 0, 0]], [1, 1]),
+                Branch([[0, 0, 0], [0, 0, 4], [0, 0, 8]], [1, 1, 1]),
+            ]
+        )
+        stored = self.network.morphologies.save("line", morphology)
+        self.network.place_cells(
+            self.network.cell_types.line,
+            [[100, 0, 0], [0, 50, 0]],
+            morphologies=MorphologySet([stored], [0, 0]),
+            # The first cell is turned a quarter around z, the second not at all.
+            rotations=RotationSet([[0, 0, 90], [0, 0, 0]]),
+        )
+        tmpdir = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, tmpdir, ignore_errors=True)
+        self.filename = pathlib.Path(tmpdir) / "locations.nio"
+
+    def _write(self, *annotations):
+        block = Block(name="sim")
+        block.annotate(
+            bsb_provenance=encode_annotation(
+                {
+                    "schema_version": get_provenance_version(),
+                    "scaffold": {
+                        "storage_id": self.network.storage_id,
+                        "state_id": self.network.state_id,
+                    },
+                }
+            )
+        )
+        segment = Segment()
+        for annotation in annotations:
+            segment.analogsignals.append(
+                AnalogSignal(
+                    [0.0, 0.0] * mV,
+                    sampling_period=1 * ms,
+                    name="v",
+                    bsb_device_name="rec",
+                    **annotation,
+                )
+            )
+        block.segments.append(segment)
+        with neo_io.NixIO(str(self.filename), mode="ow") as out:
+            out.write_block(block)
+
+    def test_positions_follow_the_morphology_rotation_and_position(self):
+        model = types.SimpleNamespace(
+            name="line_model", cell_type=types.SimpleNamespace(name="line")
+        )
+        self._write(
+            point_annotations(model, 0, 0, 0, 0.5, "record"),
+            synapse_annotations(
+                model, 1, 1, 1, 0.75, "ExpSyn", "record", presynaptic=(model, 0)
+            ),
+        )
+
+        results = read_results(self.network, self.filename)
+        point, synapse = (recording.target for recording in results.recordings())
+
+        # Halfway along branch 0 is 5 along x, turned onto y, at the first cell.
+        self.assertClose([100, 5, 0], point.position)
+        # Three quarters along branch 1 is 6 along z, at the unturned second cell.
+        self.assertClose([0, 50, 6], synapse.position)
+        self.assertEqual(2, len(point.cell.morphology.branches))
+        self.assertClose([0, 0, 90], point.cell.rotation.as_euler("xyz", degrees=True))
+        self.assertEqual(0, synapse.presynaptic.id)
+        self.assertClose([100, 0, 0], synapse.presynaptic.position)
 
 
 class TestProvenanceReading(unittest.TestCase):

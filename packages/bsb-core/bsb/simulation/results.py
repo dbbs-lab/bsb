@@ -1,4 +1,5 @@
 import dataclasses
+import functools
 import pathlib
 import shutil
 import traceback
@@ -6,6 +7,8 @@ import typing
 import uuid
 import warnings
 from datetime import datetime
+
+import numpy as np
 
 from ..exceptions import (
     DatasetNotFoundError,
@@ -29,9 +32,11 @@ if typing.TYPE_CHECKING:  # pragma: nocover
 
     import neo
     import numpy
+    from scipy.spatial.transform import Rotation
 
     from ..cell_types import CellType
     from ..core import Scaffold
+    from ..morphologies import Morphology
     from ..storage.interfaces import PlacementSet
     from .simulation import Simulation
 
@@ -601,6 +606,40 @@ class SimulationRecorder:
         raise NotImplementedError("Recorders need to implement the `flush` function.")
 
 
+class _Placement:
+    """
+    What a reader loads of one placement set, once, for every recording on its cells.
+
+    Positions are loaded up front, because every recorded cell has one. Morphologies
+    and rotations are only loaded once a recording asks for them.
+    """
+
+    def __init__(self, cell_type):
+        self.cell_type = cell_type
+        self.placement_set = cell_type.get_placement_set()
+        try:
+            self.positions = self.placement_set.load_positions()
+        except DatasetNotFoundError:
+            self.positions = None
+            self.size = len(self.placement_set)
+        else:
+            self.size = len(self.positions)
+
+    @functools.cached_property
+    def morphologies(self):
+        try:
+            return self.placement_set.load_morphologies()
+        except DatasetNotFoundError:
+            return None
+
+    @functools.cached_property
+    def rotations(self):
+        try:
+            return self.placement_set.load_rotations()
+        except DatasetNotFoundError:
+            return None
+
+
 @dataclasses.dataclass(frozen=True, eq=False)
 class RecordedCell:
     """
@@ -611,12 +650,68 @@ class RecordedCell:
     id: int
     #: Name of the cell model the cell was simulated with.
     model: str
-    #: The network's cell type of the cell.
-    cell_type: "CellType"
-    #: The placement set of that cell type.
-    placement_set: "PlacementSet"
-    #: Position of the cell, or ``None`` when its placement set stores no positions.
-    position: "numpy.ndarray | None"
+    _placement: _Placement = dataclasses.field(repr=False)
+
+    @property
+    def cell_type(self) -> "CellType":
+        """The network's cell type of the cell."""
+        return self._placement.cell_type
+
+    @property
+    def placement_set(self) -> "PlacementSet":
+        """The placement set of that cell type."""
+        return self._placement.placement_set
+
+    @property
+    def position(self) -> "numpy.ndarray | None":
+        """Position of the cell, or ``None`` when its placement set stores none."""
+        positions = self._placement.positions
+        return None if positions is None else positions[self.id]
+
+    @property
+    def morphology(self) -> "Morphology | None":
+        """
+        The morphology of the cell, in the cell's own frame: unrotated, with its origin
+        at the cell's position. ``None`` when its placement set stores no morphologies.
+        """
+        morphologies = self._placement.morphologies
+        return None if morphologies is None else morphologies.get(self.id)
+
+    @property
+    def rotation(self) -> "Rotation | None":
+        """
+        The rotation of the cell's morphology in the network, or ``None`` when its
+        placement set stores no rotations.
+        """
+        rotations = self._placement.rotations
+        return None if rotations is None else rotations[self.id]
+
+    def _position_on(self, branch: int, arc: float) -> "numpy.ndarray | None":
+        """Where a location on the morphology is, in the network."""
+        morphologies = self._placement.morphologies
+        position = self.position
+        if morphologies is None or position is None:
+            return None
+        # Shared with every other recording on a cell of this morphology, and only
+        # read here.
+        morphology = morphologies.get(self.id, hard_cache=True)
+        try:
+            points = morphology.branches[branch].points
+        except IndexError:
+            raise ResultsError(
+                f"Cell {self.id} of '{self.cell_type.name}' is recorded on branch "
+                f"{branch}, but its morphology has {len(morphology.branches)} branches."
+            ) from None
+        lengths = np.concatenate(
+            ([0.0], np.cumsum(np.linalg.norm(np.diff(points, axis=0), axis=1)))
+        )
+        local = np.array(
+            [np.interp(arc * lengths[-1], lengths, points[:, axis]) for axis in range(3)]
+        )
+        rotation = self.rotation
+        if rotation is not None:
+            local = rotation.apply(local)
+        return local + position
 
 
 @dataclasses.dataclass(frozen=True, eq=False)
@@ -633,6 +728,15 @@ class RecordedPoint:
     point: int
     #: Where on the branch the recording is, as a fraction of the branch's length.
     arc: float
+
+    @property
+    def position(self) -> "numpy.ndarray | None":
+        """
+        Where the recording is in the network: the cell's morphology, rotated and
+        placed as the cell is. ``None`` when the network stores no morphologies or
+        positions for the cell.
+        """
+        return self.cell._position_on(self.branch, self.arc)
 
 
 @dataclasses.dataclass(frozen=True, eq=False)
@@ -653,6 +757,15 @@ class RecordedSynapse:
     synapse_type: str
     #: The presynaptic cell of the connection the synapse belongs to, if any.
     presynaptic: RecordedCell | None
+
+    @property
+    def position(self) -> "numpy.ndarray | None":
+        """
+        Where the synapse is in the network: the cell's morphology, rotated and placed
+        as the cell is. ``None`` when the network stores no morphologies or positions
+        for the cell.
+        """
+        return self.cell._position_on(self.branch, self.arc)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -844,20 +957,14 @@ class ResultsReader:
             return self._cells[key]
         except KeyError:
             pass
-        cell_type, ps, positions, size = self._placement_of(ps_name)
-        if not 0 <= cell_id < size:
+        placement = self._placement_of(ps_name)
+        if not 0 <= cell_id < placement.size:
             raise ResultsError(
                 f"A recording of device '{recording.device}' names cell {cell_id} of "
-                f"'{ps_name}', but the network holds {size} '{ps_name}' cells. The "
-                "placement changed after the run."
+                f"'{ps_name}', but the network holds {placement.size} '{ps_name}' "
+                "cells. The placement changed after the run."
             )
-        cell = self._cells[key] = RecordedCell(
-            id=cell_id,
-            model=model,
-            cell_type=cell_type,
-            placement_set=ps,
-            position=None if positions is None else positions[cell_id],
-        )
+        cell = self._cells[key] = RecordedCell(cell_id, model, placement)
         return cell
 
     def _placement_of(self, ps_name):
@@ -871,15 +978,7 @@ class ResultsReader:
             raise ResultsError(
                 f"Recordings name cells of '{ps_name}', which the network does not have."
             ) from None
-        ps = cell_type.get_placement_set()
-        try:
-            positions = ps.load_positions()
-        except DatasetNotFoundError:
-            positions = None
-            size = len(ps)
-        else:
-            size = len(positions)
-        placement = self._placement[ps_name] = (cell_type, ps, positions, size)
+        placement = self._placement[ps_name] = _Placement(cell_type)
         return placement
 
 

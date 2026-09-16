@@ -162,14 +162,22 @@ in the network. The target depends on the kind:
    * - ``cell``
      - :class:`~bsb.simulation.results.RecordedCell`
      - ``id``, the cell ``model``, the network's ``cell_type`` and
-       ``placement_set``, and the cell's ``position``.
+       ``placement_set``, and the cell's ``position``, ``morphology`` and
+       ``rotation``.
    * - ``point``
      - :class:`~bsb.simulation.results.RecordedPoint`
-     - The ``cell`` it is on, and ``branch``, ``point`` and ``arc``.
+     - The ``cell`` it is on, ``branch``, ``point`` and ``arc``, and its
+       ``position`` in the network.
    * - ``synapse``
      - :class:`~bsb.simulation.results.RecordedSynapse`
-     - The ``cell`` it is on, ``branch``, ``point``, ``arc``, ``synapse_type``, and
-       the ``presynaptic`` cell, if any.
+     - The ``cell`` it is on, ``branch``, ``point``, ``arc``, its ``position`` in
+       the network, ``synapse_type``, and the ``presynaptic`` cell, if any.
+
+A cell's ``morphology`` is in the cell's own frame, as it is stored. The
+``position`` of a point or a synapse is in the network: the location on the
+morphology, rotated by the cell's ``rotation`` and moved to the cell's ``position``.
+Morphologies and rotations are loaded from the network once per placement set, and
+only when a recording asks for them.
 
 A recording of a kind this BSB does not know still reads, with ``target`` set to
 ``None``; its annotations stay available as ``recording.annotations``.

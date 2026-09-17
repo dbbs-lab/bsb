@@ -2,6 +2,7 @@ import abc
 import typing
 
 from .. import config
+from ..rng import RngConsumer
 
 if typing.TYPE_CHECKING:  # pragma: nocover
     from .adapter import SimulationData, SimulatorAdapter
@@ -10,7 +11,7 @@ if typing.TYPE_CHECKING:  # pragma: nocover
 
 
 @config.dynamic(attr_name="strategy", auto_classmap=True)
-class AfterPrepareHook(abc.ABC):
+class AfterPrepareHook(abc.ABC, RngConsumer):
     """
     Hook that runs once the simulation it is configured on has been prepared, before
     it is run.
@@ -48,7 +49,7 @@ class AfterPrepareHook(abc.ABC):
 
 
 @config.dynamic(attr_name="strategy", auto_classmap=True)
-class AfterSimulationHook(abc.ABC):
+class AfterSimulationHook(abc.ABC, RngConsumer):
     """
     Hook that runs after the simulation it is configured on has finished and its
     results have been collected.

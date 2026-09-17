@@ -681,8 +681,20 @@ class TestRecordingsNameTheirCells(
         sphere = list(results.recordings("sphere"))
         for model in ("A", "B", "C"):
             with self.subTest(device="sphere", model=model):
-                cells = [r.target.cell for r in sphere if r.target.cell.model == model]
-                self.assertEqual(sorted(in_sphere), sorted(c.id for c in cells))
+                targets = [r.target for r in sphere if r.target.cell.model == model]
+                cells = [t.cell for t in targets]
+                # A voltage recorder defaults to the soma, which is every point its
+                # morphology labels soma, so each cell is recorded once per soma point.
+                soma = [
+                    (b, p)
+                    for b, branch in enumerate(cells[0].morphology.branches)
+                    for p in np.flatnonzero(branch.get_label_mask(["soma"]))
+                ]
+                self.assertEqual(2, len(soma), "the morphology has to have 2 soma points")
+                self.assertEqual(
+                    sorted((int(c), b, int(p)) for c in in_sphere for b, p in soma),
+                    sorted((int(t.cell.id), t.branch, t.point) for t in targets),
+                )
                 for cell in cells:
                     self.assertClose(self.positions[cell.id], cell.position)
 

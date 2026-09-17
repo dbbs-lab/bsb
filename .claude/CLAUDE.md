@@ -4,7 +4,7 @@ Project guidance for AI agents working in this repository.
 
 ## Project
 
-Brain Scaffold Builder (BSB) — a component framework for multiscale bottom-up neural modeling. Python 3.10+, GPLv3.
+Brain Scaffold Builder (BSB) — a component framework for multiscale bottom-up neural modeling. Python 3.11+, GPLv3.
 
 Monorepo with Nx + uv. Published packages live in `packages/`, utility libraries in `libs/`, examples in `examples/`.
 

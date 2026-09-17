@@ -6,7 +6,7 @@ build-backend = "maturin"
 name = "bsb-native"
 version = "7.4.0"
 readme = "README.md"
-requires-python = ">=3.10,<4"
+requires-python = ">=3.11,<4"
 description = "Native (Rust) numerical kernels for the BSB: Poisson-disk placement sampling and segment-intersection connectivity."
 classifiers = [
   "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"

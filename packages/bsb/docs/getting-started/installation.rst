@@ -3,7 +3,7 @@
 ============
 Installation
 ============
-| The BSB framework is tested and documented for Python versions 3.10, 3.11 and 3.12.
+| The BSB framework is tested and documented for Python versions 3.11 and above.
 | Support and compatibility are not guaranteed for the other versions of Python.
 
 .. tip::

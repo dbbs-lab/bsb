@@ -10,7 +10,7 @@ dynamic = [ "description" ]
 classifiers = [
   "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"
 ]
-requires-python = ">=3.10,<4"
+requires-python = ">=3.11,<4"
 dependencies = [
   "nmodl-glia[neuron]~=7.0",
   "packaging>=24.0",

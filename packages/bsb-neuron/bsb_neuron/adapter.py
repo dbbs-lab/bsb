@@ -25,17 +25,36 @@ class NeuronSimulationData(SimulationData):
 
 
 class NeuronResult(SimulationResult):
-    def record(self, obj, device=None, **annotations):
+    def record(self, obj, *, device, target: dict, name: str, units: str):
+        """
+        Record a NEURON variable every time step, as a recording of a device.
+
+        :param obj: Reference to the NEURON variable to record, such as ``seg._ref_v``.
+        :param device: The device the recording belongs to.
+        :type device: bsb_neuron.device.NeuronDevice
+        :param target: What is recorded, as the annotations of
+          :func:`~bsb.simulation.results.cell_annotations`,
+          :func:`~bsb.simulation.results.point_annotations` or
+          :func:`~bsb.simulation.results.synapse_annotations` give them.
+        :param name: What the recorded variable measures, such as ``v`` or ``i``.
+        :param units: Units of the recorded variable.
+        """
         from patch import p
         from quantities import ms
 
+        if "bsb_recording_kind" not in target or "bsb_direction" not in target:
+            raise AdapterError(
+                f"Device '{device.name}' has to say what it records: pass the "
+                "annotations of `cell_annotations`, `point_annotations` or "
+                "`synapse_annotations` as `target`."
+            )
         v = p.record(obj)
 
         def flush(segment):
-            if "units" not in annotations:
-                annotations["units"] = "mV"
             segment.analogsignals.append(
-                AnalogSignal(list(v), sampling_period=p.dt * ms, **annotations)
+                AnalogSignal(
+                    list(v), sampling_period=p.dt * ms, name=name, units=units, **target
+                )
             )
             # Free the memory
             if v.size():

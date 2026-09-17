@@ -297,6 +297,7 @@ MorphologyToShapeIntersection: type["bsb.connectivity.geometric.morphology_shape
 MorphologyWarning: type["bsb.exceptions.MorphologyWarning"]
 NameSelector: type["bsb.morphologies.selector.NameSelector"]
 NetworkDescription: type["bsb.storage.interfaces.NetworkDescription"]
+NetworkRecording: type["bsb.simulation.results.NetworkRecording"]
 NeuroMorphoScheme: type["bsb.storage._files.NeuroMorphoScheme"]
 NeuroMorphoSelector: type["bsb.morphologies.selector.NeuroMorphoSelector"]
 NodeNotFoundError: type["bsb.exceptions.NodeNotFoundError"]
@@ -340,6 +341,10 @@ RandomPlacement: type["bsb.placement.random.RandomPlacement"]
 RandomRotations: type["bsb.placement.distributor.RandomRotations"]
 ReadOnlyManager: type["bsb.storage.interfaces.ReadOnlyManager"]
 ReadOnlyOptionError: type["bsb.exceptions.ReadOnlyOptionError"]
+RecordedCell: type["bsb.simulation.results.RecordedCell"]
+RecordedDevice: type["bsb.simulation.results.RecordedDevice"]
+RecordedPoint: type["bsb.simulation.results.RecordedPoint"]
+RecordedSynapse: type["bsb.simulation.results.RecordedSynapse"]
 Recording: type["bsb.simulation.results.Recording"]
 RedoError: type["bsb.exceptions.RedoError"]
 Reference: type["bsb.config.refs.Reference"]
@@ -351,6 +356,10 @@ Relay: type["bsb.postprocessing.Relay"]
 ReportListener: type["bsb.core.ReportListener"]
 RepresentativesTargetting: type["bsb.simulation.targetting.RepresentativesTargetting"]
 RequirementError: type["bsb.exceptions.RequirementError"]
+ResultsError: type["bsb.exceptions.ResultsError"]
+ResultsMismatchError: type["bsb.exceptions.ResultsMismatchError"]
+ResultsReader: type["bsb.simulation.results.ResultsReader"]
+ResultsWarning: type["bsb.exceptions.ResultsWarning"]
 Rhomboid: type["bsb.topology.partition.Rhomboid"]
 Rng: type["bsb.rng.Rng"]
 RngConsumer: type["bsb.rng.RngConsumer"]
@@ -378,6 +387,7 @@ SimulationData: type["bsb.simulation.adapter.SimulationData"]
 SimulationError: type["bsb.exceptions.SimulationError"]
 SimulationRecorder: type["bsb.simulation.results.SimulationRecorder"]
 SimulationResult: type["bsb.simulation.results.SimulationResult"]
+SimulationRun: type["bsb.simulation.results.SimulationRun"]
 SimulatorAdapter: type["bsb.simulation.adapter.SimulatorAdapter"]
 SomaTargetting: type["bsb.simulation.targetting.SomaTargetting"]
 SourceQualityError: type["bsb.exceptions.SourceQualityError"]
@@ -416,12 +426,14 @@ activate_session: "bsb.profiling.activate_session"
 box_layout: "bsb.topology.box_layout"
 branch_iter: "bsb.morphologies.branch_iter"
 build_context: "bsb.config.build_context"
+cell_annotations: "bsb.simulation.results.cell_annotations"
 chunklist: "bsb.storage._chunks.chunklist"
 compose_nodes: "bsb.config.compose_nodes"
 constant_parameter: "bsb.simulation.parameter.constant_parameter"
 copy_configuration_template: "bsb.config.copy_configuration_template"
 create_engine: "bsb.storage.create_engine"
 create_topology: "bsb.topology.create_topology"
+device_annotations: "bsb.simulation.results.device_annotations"
 discover: "bsb.plugins.discover"
 discover_engines: "bsb.storage.discover_engines"
 expand_to: "bsb.simulation.parameter.expand_to"
@@ -464,10 +476,12 @@ parse_configuration_content_to_dict: "bsb.config.parse_configuration_content_to_
 parse_configuration_file: "bsb.config.parse_configuration_file"
 parse_morphology_content: "bsb.morphologies.parsers.parse_morphology_content"
 parse_morphology_file: "bsb.morphologies.parsers.parse_morphology_file"
+point_annotations: "bsb.simulation.results.point_annotations"
 pool_cache: "bsb.services.pool_cache"
 rank_part_path: "bsb.simulation.results.rank_part_path"
 read_option: "bsb.options.read_option"
 read_provenance: "bsb.simulation.results.read_provenance"
+read_results: "bsb.simulation.results.read_results"
 read_simulation_config: "bsb.simulation.results.read_simulation_config"
 refs: "bsb.config.refs"
 register_option: "bsb.options.register_option"
@@ -477,6 +491,7 @@ reset_module_option: "bsb.options.reset_module_option"
 set_config_build_context: "bsb.config.set_config_build_context"
 set_module_option: "bsb.options.set_module_option"
 store_option: "bsb.options.store_option"
+synapse_annotations: "bsb.simulation.results.synapse_annotations"
 types: "bsb.config.types"
 unregister_option: "bsb.options.unregister_option"
 view_profile: "bsb.profiling.view_profile"

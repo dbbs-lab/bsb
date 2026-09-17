@@ -119,12 +119,18 @@ class PlacementSet(
         return "/placement/" + cell_type.name in handle
 
     @classmethod
-    @handles_class_handles("a")
-    def require(cls, engine, cell_type, handle=HANDLED):
-        tag = cell_type.name
-        path = _root + tag
-        handle.require_group(path)
+    def require(cls, engine, cell_type):
+        # Requiring a set that exists changes nothing, so it takes no write handle: a
+        # write handle counts as a change to the storage's state, and every network
+        # requires its sets each time it is opened.
+        if not cls.exists(engine, cell_type):
+            cls._require_group(engine, cell_type)
         return cls(engine, cell_type)
+
+    @staticmethod
+    @handles_static_handles("a")
+    def _require_group(engine, cell_type, handle=HANDLED):
+        handle.require_group(_root + cell_type.name)
 
     @handles_handles("r")
     def load_positions(self, handle=HANDLED):

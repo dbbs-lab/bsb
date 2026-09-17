@@ -1,7 +1,7 @@
 import nest
 import numpy as np
 import quantities as pq
-from bsb import ConfigurationError, _util, config, types
+from bsb import ConfigurationError, _util, cell_annotations, config, types
 from neo import AnalogSignal
 
 from ..device import NestDevice
@@ -26,7 +26,7 @@ class Multimeter(NestDevice, classmap_entry="multimeter"):
     def implement(self, adapter, simulation, simdata):
         targets_dict = self.get_dict_targets(adapter, simulation, simdata)
         nodes = self._flatten_nodes_ids(targets_dict)
-        inv_targets = self._invert_targets_dict(targets_dict)
+        ranges = self._node_ranges(simdata, targets_dict)
         device = self.register_device(
             simdata,
             nest.Create(
@@ -43,16 +43,15 @@ class Multimeter(NestDevice, classmap_entry="multimeter"):
             senders = device.events["senders"]
             for sender in np.unique(senders):
                 sender_filter = senders == sender
+                cell_model, cell_id = self._cell_of_node(ranges, int(sender))
                 for prop, unit in zip(self.properties, self.units, strict=False):
                     segment.analogsignals.append(
                         AnalogSignal(
                             device.events[prop][sender_filter],
                             units=pq.units.__dict__[unit],
                             sampling_period=self.simulation.resolution * pq.ms,
-                            name=self.name,
-                            cell_type=inv_targets[sender],
-                            cell_id=sender,
-                            prop_recorded=prop,
+                            name=prop,
+                            **cell_annotations(cell_model, cell_id, "record"),
                         )
                     )
 

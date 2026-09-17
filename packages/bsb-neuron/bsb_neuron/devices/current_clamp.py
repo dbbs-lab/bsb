@@ -1,4 +1,4 @@
-from bsb import LocationTargetting, config, warn
+from bsb import LocationTargetting, config, point_annotations, warn
 
 from .._util import ignore_arborize_proxy_warnings
 from ..device import NeuronDevice
@@ -24,20 +24,22 @@ class CurrentClamp(NeuronDevice, classmap_entry="current_clamp"):
                 for location in self.locations.get_locations(target):
                     if clamped:
                         warn(f"Multiple current clamps placed on {target}")
-                    self._add_clamp(
-                        simdata,
-                        location,
-                        device=self,
-                        name=self.name,
-                        cell_type=target.cell_model.name,
-                        cell_id=target.id,
-                    )
+                    self._add_clamp(simdata, target, location)
                     clamped = True
 
     @ignore_arborize_proxy_warnings()
-    def _add_clamp(self, simdata, location, device=None, **annotations):
+    def _add_clamp(self, simdata, target, location):
         sx = location.arc(0.5)
         clamp = location.section.iclamp(
             x=sx, delay=self.before, duration=self.duration, amplitude=self.amplitude
         )
-        simdata.result.record(clamp._ref_i, device=device, **annotations, units="nA")
+        # The clamp records the current it injects.
+        simdata.result.record(
+            clamp._ref_i,
+            device=self,
+            target=point_annotations(
+                target.cell_model, target.id, *location._loc, sx, "stimulate"
+            ),
+            name="i",
+            units="nA",
+        )

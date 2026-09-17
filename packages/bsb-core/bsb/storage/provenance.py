@@ -118,7 +118,7 @@ def new_storage_id() -> str:
 
 def iso_now() -> str:
     """Return the current UTC time as an ISO 8601 string with seconds resolution."""
-    return datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0).isoformat()
+    return datetime.datetime.now(datetime.UTC).replace(microsecond=0).isoformat()
 
 
 def _safe_version(package: str) -> str | None:

@@ -711,6 +711,36 @@ class TestDistributionPlacement(
             f"negative-direction mean ({mean_neg:.1f}) should be > 50 for beta(2, 5)",
         )
 
+    def _positions(self, seed, storage):
+        """Compile a network and return its positions, sorted for comparison.
+
+        DistributionPlacement's along-axis coordinate is drawn through
+        ``Distribution.draw``, which used to bypass the configured randomness
+        entirely and draw from scipy's own unseeded default instead: the same
+        seed placed differently on every run.
+        """
+        cfg = self._make_config(count=300)
+        cfg.rng.seed = seed
+        network = Scaffold(cfg, storage)
+        network.compile(clear=True)
+        pos = network.get_placement_set("cell").load_positions()
+        # Sorted, because which chunk a rank writes first is not part of the result.
+        return pos[np.lexsort(pos.T)]
+
+    def test_same_seed_reproduces_positions(self):
+        first = self._positions(1234, self.storage)
+        again = self._positions(1234, self.random_storage())
+        self.assertEqual(first.shape, again.shape, "the same seed must place as many")
+        self.assertClose(first, again, "the same seed must place in the same spots")
+
+    def test_different_seeds_differ(self):
+        first = self._positions(1234, self.storage)
+        other = self._positions(4321, self.random_storage())
+        self.assertFalse(
+            first.shape == other.shape and np.allclose(first, other),
+            "different seeds must not place identically",
+        )
+
 
 class VoxelParticleTest(Partition, classmap_entry="test"):
     vs = VoxelSet(

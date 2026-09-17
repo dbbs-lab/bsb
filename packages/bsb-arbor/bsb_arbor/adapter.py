@@ -186,27 +186,17 @@ class Population:
         This method handles array-based indexing, including boolean masks,
         integer arrays, and slices.
 
-        :param arr: A numpy array of indices to include in the subpopulation
+        :param arr: A numpy array of the GIDs to include in the subpopulation
         :return: A new Population instance containing only the selected cells
         """
         pop = self.copy()
-        if not len(pop):
-            return pop
         ranges = []
-        prev = None
-        start, stop = self._ranges[0]
-        for i in arr:
-            if prev is None:
-                start += i
-                stop = start + 1
-            elif i == prev + 1:
-                stop += 1
+        for gid in arr:
+            gid = int(gid)
+            if ranges and gid == ranges[-1][1]:
+                ranges[-1] = (ranges[-1][0], gid + 1)
             else:
-                ranges.append((start, stop))
-                start = i
-                stop = i + 1
-            prev = i
-        ranges.append((start, stop))
+                ranges.append((gid, gid + 1))
         pop._ranges = ranges
 
         return pop
@@ -225,7 +215,8 @@ class Population:
         ptr = 0
         for start, stop in self._ranges:
             if item < (ptr + stop - start):
-                pop._ranges = [(start + ptr - item, start + ptr - item + 1)]
+                gid = start + item - ptr
+                pop._ranges = [(gid, gid + 1)]
                 return pop
             else:
                 ptr += stop - start

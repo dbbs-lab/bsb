@@ -56,6 +56,24 @@ class TestHDF5Provenance(RandomStorageFixture, unittest.TestCase, engine_name="h
         Scaffold(Configuration.default(), storage=s)
         self.assertGreater(s._engine.state_id, before)
 
+    def test_opening_a_network_leaves_its_state(self):
+        from bsb.config import Configuration
+        from bsb.core import Scaffold, from_storage
+
+        cfg = Configuration.default(
+            cell_types=dict(A=dict(spatial=dict(radius=1, density=1)))
+        )
+        Scaffold(cfg, storage=self.storage)
+        before = self.storage._engine.state_id
+
+        network = from_storage(self.storage.root)
+        from_storage(self.storage.root)
+
+        self.assertEqual(before, network.state_id, "opening a network is not a change")
+        network.configuration.cell_types.A.spatial.radius = 2
+        network.storage.store_active_config(network.configuration)
+        self.assertGreater(network.state_id, before, "a changed configuration is")
+
     @skip_parallel  # warning is emitted on the main rank only; asserts single-rank
     def test_auto_upgrade_of_legacy_file(self):
         from bsb import BsbProvenanceUpgradeWarning

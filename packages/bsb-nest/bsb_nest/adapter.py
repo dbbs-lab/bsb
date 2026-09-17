@@ -12,7 +12,6 @@ from bsb import (
     report,
     warn,
 )
-from neo import SpikeTrain
 from tqdm import tqdm
 
 from .exceptions import (
@@ -26,30 +25,6 @@ from .rng import kernel_seed
 
 if typing.TYPE_CHECKING:  # pragma: nocover
     from .simulation import NestSimulation
-
-
-class NestResult(SimulationResult):
-    # It seems that the record method is not used,
-    # probably we will have to uniform the behavior with NeuronResult
-    def record(self, nc, **annotations):
-        recorder = nest.Create("spike_recorder", params={"record_to": "memory"})
-        nest.Connect(nc, recorder)
-
-        def flush(segment):
-            events = recorder.events[0]
-
-            segment.spiketrains.append(
-                SpikeTrain(
-                    events["times"],
-                    array_annotations={"senders": events["senders"]},
-                    t_stop=nest.biological_time,
-                    units="ms",
-                    **annotations,
-                )
-            )
-            # Free the Memory -> not possible to free the memory while sim is running
-
-        self.create_recorder(flush)
 
 
 class NestAdapter(SimulatorAdapter):
@@ -115,7 +90,7 @@ class NestAdapter(SimulatorAdapter):
         """
         self.simdata[simulation] = SimulationData(
             simulation,
-            result=NestResult(
+            result=SimulationResult(
                 simulation, filename, comm=self.comm, simulation_id=self.new_run_id()
             ),
         )

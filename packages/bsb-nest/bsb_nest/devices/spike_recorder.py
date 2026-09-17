@@ -1,6 +1,6 @@
 import nest
 import numpy as np
-from bsb import config
+from bsb import cell_annotations, config
 from neo import SpikeTrain
 
 from ..device import NestDevice
@@ -13,9 +13,13 @@ class SpikeRecorder(NestDevice, classmap_entry="spike_recorder"):
     def implement(self, adapter, simulation, simdata):
         targets_dict = self.get_dict_targets(adapter, simulation, simdata)
         nodes = self._flatten_nodes_ids(targets_dict)
-        inv_targets = self._invert_targets_dict(targets_dict)
+        ranges = self._node_ranges(simdata, targets_dict)
         device = self.register_device(simdata, nest.Create("spike_recorder"))
         self.connect_to_nodes(device, nodes)
+        # Each rank writes the trains of the targets it hosts, and the ranks' results
+        # are concatenated: a rank writing every target would repeat each cell once
+        # per rank. Kept as a NEST collection, which does not hold a node id per node.
+        local_nodes = nest.GetLocalNodeCollection(nodes) if len(nodes) else None
 
         def recorder(segment):
             senders = np.asarray(device.events["senders"])
@@ -24,17 +28,17 @@ class SpikeRecorder(NestDevice, classmap_entry="spike_recorder"):
             # cells those were is then the set of recordings itself, so nothing
             # has to say it a second time, and a silent cell is told apart from
             # one that was never watched by reading the results alone.
-            # `nodes` is a NEST collection; its `tolist` is the ids the recorder
-            # reports its senders by, which is what a train is keyed on.
-            for node in nodes.tolist():
+            # Trains are keyed on node ids, which is what the recorder reports its
+            # senders by. The train itself names the cell, never the node.
+            for node in local_nodes.tolist() if local_nodes is not None else ():
+                cell_model, cell_id = self._cell_of_node(ranges, node)
                 segment.spiketrains.append(
                     SpikeTrain(
                         times[senders == node],
                         units="ms",
                         t_stop=simulation.duration,
-                        name=self.name,
-                        cell_id=int(node),
-                        cell_type=inv_targets[node],
+                        name="spikes",
+                        **cell_annotations(cell_model, cell_id, "record"),
                     )
                 )
 

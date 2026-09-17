@@ -17,30 +17,39 @@ fashion, which allows for efficient management and organization of large dataset
 The content is read/written using the :doc:`Neo Python package <neo:index>`, a library designed
 for handling electrophysiology data.
 
-Let's extract the spike train data produced by your last simulation. A recording names the cell it
-belongs to, but only the network knows where that cell is and what it is, so the results are read
-together with the network they were simulated on. Load your
-``simulation-results/NAME_OF_YOUR_NEO_FILE.nio`` file with the following code:
+Let's extract the spike train data produced by your last simulation. A recording only stores
+the id of the cell it belongs to; it doesn't store the cell's position for instance.
+That information lives in the network, so results must be loaded together with the network they were simulated on.
+Load your ``simulation-results/NAME_OF_YOUR_NEO_FILE.nio`` file with the following code:
 
 .. literalinclude:: /../../../examples/nest-simulation/scripts/analyze_spike_results.py
     :language: python
     :lines: 1-8
 
 :func:`~bsb.simulation.results.read_results` checks that the results were produced by this network
-before it returns anything. If you followed the previous simulation example, the results hold the
-spikes recorded by :guilabel:`base_layer_record` and :guilabel:`top_layer_record`.
-
-Each recording holds the spikes of one cell, and ``recording.target`` is that cell in the network:
-its ``id`` in its placement set, its ``position``, its ``cell_type``, and its ``placement_set``.
-A device records every cell it targeted, including the ones that never fired:
+before it returns anything. The function returns a :class:`~bsb.simulation.results.ResultsReader`
+class that contains all the ``recordings`` performed during the simulation. You can filter these recordings by
+``kind`` (e.g.: "cell" or "synapse") or by ``device`` name: if you followed the previous simulation example, the spikes
+were recorded by :guilabel:`base_layer_record` and :guilabel:`top_layer_record`.
 
 .. literalinclude:: /../../../examples/nest-simulation/scripts/analyze_spike_results.py
     :language: python
-    :lines: 10-36
+    :lines: 10-13
+
+Each recording (see :class:`~bsb.simulation.results.Recording`) holds the spikes
+of one cell under ``signal`` (see :class:`SpikeTrain <neo.core.SpikeTrain>`), and ``target``
+is that cell in the network: its ``id`` in its placement set, its ``position``, its ``cell_type``,
+and its ``placement_set``. A device records every cell it targeted, including the ones that never fired:
+
+.. literalinclude:: /../../../examples/nest-simulation/scripts/analyze_spike_results.py
+    :language: python
+    :lines: 15-31
 
 This code should produce one figure with 2 subplots showing the raster plot of spiking activity
 for each spike recorder of the simulation. The resulting figure is saved in the
-``simulation-results`` folder. The plot for the base type cells should show some spike events:
+``simulation-results`` folder.
+
+Here is a plot of the spike events of the base type cells (only a few cells are displayed):
 
 .. figure:: /images/raster_base_types.png
   :figwidth: 90%

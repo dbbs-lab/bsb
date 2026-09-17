@@ -92,7 +92,7 @@ class TestNestExamples(
         self._test_simulation_results(
             results.read_all_blocks()[0].segments[0].spiketrains
         )
-        # check if analyze analog results runs without any problems
+        # check if analyze spike results runs without any problems
         import scripts.analyze_spike_results  # noqa: F401
 
         files = os.listdir("simulation-results")  # 1 png and 1 nio file

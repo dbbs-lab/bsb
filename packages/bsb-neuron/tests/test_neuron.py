@@ -682,7 +682,7 @@ class TestRecordingsNameTheirCells(
         for model in ("A", "B", "C"):
             with self.subTest(device="sphere", model=model):
                 cells = [r.target.cell for r in sphere if r.target.cell.model == model]
-                self.assertEqual(sorted(in_sphere), sorted(c.id for c in cells))
+                self.assertEqual(sorted(in_sphere), sorted({c.id for c in cells}))
                 for cell in cells:
                     self.assertClose(self.positions[cell.id], cell.position)
 

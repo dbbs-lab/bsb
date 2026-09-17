@@ -37,7 +37,7 @@ Additional information is available through the annotations attribute.
 
 .. literalinclude:: /../../../examples/neuron-simulation/scripts/analyze_analog_results.py
     :language: python
-    :lines: 10-44
+    :lines: 10-45
 
 This code generates 2 plots: one for a postsynaptic synapse and one for the membrane
 potential. The resulting figures are saved in the ``simulation-results`` folder.

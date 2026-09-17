@@ -1,4 +1,4 @@
-from bsb import LocationTargetting, config
+from bsb import LocationTargetting, config, point_annotations
 
 from .._util import ignore_arborize_proxy_warnings
 from ..device import NeuronDevice
@@ -17,17 +17,18 @@ class VoltageRecorder(NeuronDevice, classmap_entry="voltage_recorder"):
         ).items():
             for target in pop:
                 for location in self.locations.get_locations(target):
-                    self._add_voltage_recorder(
-                        simdata.result,
-                        location,
-                        device=self,
-                        name=self.name,
-                        cell_type=target.cell_model.name,
-                        cell_id=target.id,
-                    )
+                    self._add_voltage_recorder(simdata.result, target, location)
 
     @ignore_arborize_proxy_warnings()
-    def _add_voltage_recorder(self, results, location, device=None, **annotations):
+    def _add_voltage_recorder(self, results, target, location):
         section = location.section
         x = location.arc(0)
-        results.record(section(x)._ref_v, device=device, **annotations)
+        results.record(
+            section(x)._ref_v,
+            device=self,
+            target=point_annotations(
+                target.cell_model, target.id, *location._loc, x, "record"
+            ),
+            name="v",
+            units="mV",
+        )

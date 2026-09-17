@@ -25,20 +25,19 @@ your ``simulation-results/NAME_OF_YOUR_NEO_FILE.nio`` file, use the following co
 
 .. literalinclude:: /../../../examples/neuron-simulation/scripts/analyze_analog_results.py
     :language: python
-    :lines: 1-11
+    :lines: 1-8
 
-If you followed the previous simulation example, :func:`~bsb.simulation.results.iter_recordings`
-should yield one recording per cell each of the :guilabel:`vrecorder` and :guilabel:`synapses_rec`
-devices watched: the membrane potential and the synapse current, respectively.
+If you followed the previous simulation example, the :guilabel:`analogsignals` attribute in the block
+should contain a list of all measured signals: the membrane potential recorded by the
+:guilabel:`vrecorder` device and the synapse current obtained from the :guilabel:`synapses_rec` device.
 
-Each recording carries the :class:`AnalogSignal <neo.core.AnalogSignal>` itself, the device that
-made it, and the cell it belongs to. Additional information a device adds on top, such as which
-synapse a current was recorded from, is available through the signal's own :guilabel:`annotations`
-attribute.
+Each :class:`AnalogSignal <neo.core.AnalogSignal>` object contains information about the device name,
+the sampling rate, and an array of the simulated measurement values.
+Additional information is available through the annotations attribute.
 
 .. literalinclude:: /../../../examples/neuron-simulation/scripts/analyze_analog_results.py
     :language: python
-    :lines: 13-46
+    :lines: 10-45
 
 This code generates 2 plots: one for a postsynaptic synapse and one for the membrane
 potential. The resulting figures are saved in the ``simulation-results`` folder.

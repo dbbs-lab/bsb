@@ -46,9 +46,9 @@ class TestNeuronExamples(
         count_neurons = 0
         count_synapses = 0
         for signal in analogsignals:
-            if signal.name == "vrecorder":
+            if signal.annotations["bsb_device_name"] == "vrecorder":
                 count_neurons += 1
-            if signal.name == "synapses_rec":
+            if signal.annotations["bsb_device_name"] == "synapses_rec":
                 count_synapses += 1
             self.assertEqual(signal.t_start, 0)
             # simulation should last 100 ms + 1 dt

@@ -12,14 +12,6 @@ bsb\_arbor.devices.poisson\_generator module
    :undoc-members:
    :show-inheritance:
 
-bsb\_arbor.devices.probe module
--------------------------------
-
-.. automodule:: bsb_arbor.devices.probe
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 bsb\_arbor.devices.spike\_recorder module
 -----------------------------------------
 

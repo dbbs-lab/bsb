@@ -197,12 +197,90 @@ The following attributes can be added to the configuration to define the filteri
 Simulation results
 ==================
 
-A run's results are stored in one ``.nio`` file, read and written through the
-:doc:`Neo Python package <neo:index>`. Every recording -- a spike train or an analog
-signal alike -- belongs to a single cell and is annotated with the device that made
-it and the cell it belongs to, whichever backend produced it. See
-:doc:`/simulation/results` for the full shape of a results file, its annotations, and
-how to read it with :func:`~bsb.simulation.results.iter_recordings`.
+The results of a simulation are stored in ``.nio`` files.
+These files are read and written using the :doc:`Neo Python package <neo:index>`, which is specifically
+designed for managing electrophysiology data. The files utilize the HDF5 (Hierarchical Data Format version 5)
+structure, which organizes data in a hierarchical manner, similar to a dictionary.
+The data is organized into blocks, where each block represents a recording session (i.e., a simulation block).
+Each block is further subdivided into segments, with each segment representing a specific timeframe within the session.
+To retrieve the blocks from a ``.nio`` file:
+
+.. code-block:: python
+
+  from neo import io
+
+  neo_obj = io.NixIO("NAME_OF_YOUR_NEO_FILE.nio", mode="ro")
+  blocks = neo_obj.read_all_blocks()
+
+  for block in blocks:
+    list_of_segments = blocks.segments
+
+
+For more information, please refer to the :doc:`Neo documentation <neo:read_and_analyze>`.
+
+Spike Trains
+------------
+
+Within a segment, you can access all the :class:`SpikeTrain <neo.core.SpikeTrain>` objects recorded during
+that particular timeframe. A ``SpikeTrain`` holds the spikes of a single cell, and is annotated with the
+device that recorded it and the cell it belongs to. This information is stored in the
+:guilabel:`annotations` attribute:
+
+.. code-block:: python
+
+  for spiketrain in segment.spiketrains:
+      spiketrain_array = spiketrain.magnitude
+      unit_of_measure = spiketrain.units
+      device_name = spiketrain.annotations["bsb_device_name"]
+      placement_set = spiketrain.annotations["bsb_ps_name"]
+      cell_id = spiketrain.annotations["bsb_cell_id"]
+      end_time_of_the_simulation = spiketrain.t_stop
+
+A cell is named by its placement set and its id in that placement set, whichever simulator ran
+it. All annotations written by the BSB start with ``bsb_``; they are listed in
+:doc:`/simulation/results`.
+
+A device writes one train per cell it watched, so its trains are its cells and a cell that
+never fired has an empty one. To walk them together with the cells of the network they
+belong to, use :func:`~bsb.simulation.results.read_results`, which is described in
+:doc:`/simulation/results`:
+
+.. code-block:: python
+
+  from bsb import read_results
+
+  results = read_results("network.hdf5", "simulation-results/run.nio")
+  for recording in results.recordings("my_spike_recorder"):
+      print(recording.target.id, recording.target.position, len(recording.signal))
+
+Analog Signals
+--------------
+
+Each segment also contains an :guilabel:`analogsignals` attribute, which holds a list of Neo :class:`AnalogSignal <neo.core.AnalogSignal>` objects.
+These objects contain the trace of the recorded property, along with the associated time points.
+They are annotated the same way as spike trains. A signal recorded at a location on a cell, such
+as a membrane voltage in NEURON, also says where on the cell's morphology it was recorded, and a
+signal recorded from a synapse names both of the cells it connects, as ``bsb_pre_*`` and
+``bsb_post_*``:
+
+.. code-block:: python
+
+  for signal in segment.analogsignals:
+    trace_of_the_signal = signal.magnitude
+    unit_of_measure = signal.units
+    time_signature = signal.times
+    time_unit = signal.times.units
+    what_was_recorded = signal.name
+    device_name = signal.annotations["bsb_device_name"]
+    if signal.annotations["bsb_recording_kind"] == "synapse":
+      cell_id = signal.annotations["bsb_post_cell_id"]
+      presynaptic_cell_id = signal.annotations.get("bsb_pre_cell_id")
+    else:
+      cell_id = signal.annotations["bsb_cell_id"]
+      branch = signal.annotations.get("bsb_branch")
+
+As with spike trains, the :guilabel:`analogsignals` attribute contains a separate ``AnalogSignal``
+object for each cell the device recorded, and for each property when a device samples several.
 
 Advanced Features
 =================

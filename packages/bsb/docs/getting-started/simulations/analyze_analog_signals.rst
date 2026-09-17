@@ -17,32 +17,40 @@ fashion, which allows for efficient management and organization of large dataset
 The content is read/written using the :doc:`Neo Python package <neo:index>`, a library designed
 for handling electrophysiology data.
 
-In our case, we have only one ``block`` of data since we only ran one simulation. We also have a
-unique ``segment`` since all our data is recorded with the same time frame (see
-:doc:`Neo docs <neo:read_and_analyze>` for more details).
-Let's extract the simulation block data produced by your last simulation. First, load the content from
-your ``simulation-results/NAME_OF_YOUR_NEO_FILE.nio`` file, use the following code:
+Let's extract the spike train data produced by your last simulation. A recording only stores
+the id of the cell it belongs to; it doesn't store the cell's position for instance.
+That information lives in the network, so results must be loaded together with the network they were simulated on.
+Load your ``simulation-results/NAME_OF_YOUR_NEO_FILE.nio`` file with the following code:
 
 .. literalinclude:: /../../../examples/neuron-simulation/scripts/analyze_analog_results.py
     :language: python
-    :lines: 1-8
+    :lines: 1-7
 
-If you followed the previous simulation example, the :guilabel:`analogsignals` attribute in the block
+:func:`~bsb.simulation.results.read_results` checks that the results were produced by this network
+before it returns anything. The function returns a :class:`~bsb.simulation.results.ResultsReader`
+class that contains all the ``recordings`` performed during the simulation. You can filter these recordings by
+``kind`` (e.g.: "cell" or "synapse") or by ``device`` name: if you followed the previous simulation example,
+the :guilabel:`analogsignals` attribute in the block
 should contain a list of all measured signals: the membrane potential recorded by the
 :guilabel:`vrecorder` device and the synapse current obtained from the :guilabel:`synapses_rec` device.
 
-Each :class:`AnalogSignal <neo.core.AnalogSignal>` object contains information about the device name,
-the sampling rate, and an array of the simulated measurement values.
-Additional information is available through the annotations attribute.
+.. literalinclude:: /../../../examples/neuron-simulation/scripts/analyze_analog_results.py
+    :language: python
+    :lines: 9-12
+
+Each recording (see :class:`~bsb.simulation.results.Recording`) holds the traces
+of one cell under ``signal`` (see :class:`AnalogSignal <neo.core.AnalogSignal>`), and
+``annotations`` contains additional information such as the target id in the simulation,
+or the synapse type.
 
 .. literalinclude:: /../../../examples/neuron-simulation/scripts/analyze_analog_results.py
     :language: python
-    :lines: 10-45
+    :lines: 13-37
 
-This code generates 2 plots: one for a postsynaptic synapse and one for the membrane
+This code generates 2 plots: one for a postsynaptic synapse current and one for the membrane
 potential. The resulting figures are saved in the ``simulation-results`` folder.
 
-Here are some example of the figures that are produced:
+Here are some examples of the figures that are produced:
 
 .. figure:: /images/vrecorder_example.png
   :figwidth: 90%

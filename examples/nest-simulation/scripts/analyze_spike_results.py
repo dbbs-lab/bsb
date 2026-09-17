@@ -29,8 +29,6 @@ for i, (name, recordings) in enumerate(recorders.items()):
     axis.set_xlabel(f"Time ({units})")
     axis.set_ylabel("Cell ID")
     axis.set_title(f"Spikes from {name}")
-    # Every cell the device recorded has a recording, silent ones included, and each
-    # one knows its placement set, so the rows span the whole population.
-    axis.set_ylim(-0.5, len(recordings[0].target.placement_set) - 0.5)
+
 plt.tight_layout()
 plt.savefig("simulation-results/raster_plot.png", dpi=200)

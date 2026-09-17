@@ -142,7 +142,7 @@ In this example, we assign the ``static_synapse`` model to the connections :guil
 
     .. literalinclude:: /../../../examples/nest-simulation/configs/guide_nest.json
         :language: json
-        :lines: 82-90
+        :lines: 82-92
 
     .. literalinclude:: /../../../examples/nest-simulation/configs/guide_nest.yaml
         :language: yaml
@@ -170,7 +170,7 @@ filter elements of your neuron circuit to which you want to link your devices (s
 
     .. literalinclude:: /../../../examples/nest-simulation/configs/guide_nest.json
         :language: json
-        :lines: 91-124
+        :lines: 93-126
 
     .. literalinclude:: /../../../examples/nest-simulation/configs/guide_nest.yaml
         :language: yaml

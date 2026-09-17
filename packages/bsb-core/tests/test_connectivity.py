@@ -1295,3 +1295,125 @@ class TestConnectivityReproducibility(
             first_pre.shape == other_pre.shape and np.allclose(first_pre, other_pre),
             "different seeds must not produce the same connectome",
         )
+
+
+class TestVoxelIntersectionContactsReproducibility(
+    RandomStorageFixture, NumpyTestCase, unittest.TestCase, engine_name="hdf5"
+):
+    """
+    A `contacts` distribution draws through `Distribution.draw`, which used to
+    bypass the configured randomness entirely and draw from scipy's own unseeded
+    default instead: which cells connect was reproducible, but how many synapses
+    each pair formed was not.
+    """
+
+    def _cfg(self, seed):
+        cfg = Configuration.default(
+            cell_types=dict(
+                pre=dict(
+                    spatial=dict(radius=1, density=1, morphologies=[dict(names=["C"])])
+                ),
+                post=dict(
+                    spatial=dict(radius=1, density=1, morphologies=[dict(names=["B"])])
+                ),
+            ),
+            placement=dict(
+                fixed_pre=dict(
+                    strategy="bsb.placement.FixedPositions",
+                    partitions=[],
+                    cell_types=["pre"],
+                    positions=[[0, 0, 0]],
+                ),
+                fixed_post=dict(
+                    strategy="bsb.placement.FixedPositions",
+                    partitions=[],
+                    cell_types=["post"],
+                    positions=[[0, 0, 0]],
+                ),
+            ),
+            connectivity=dict(
+                intersect=dict(
+                    strategy="bsb.connectivity.VoxelIntersection",
+                    presynaptic=dict(cell_types=["pre"]),
+                    postsynaptic=dict(cell_types=["post"]),
+                    # A distribution rather than a fixed count, so the number of
+                    # contacts a pair forms is itself a draw.
+                    contacts=dict(distribution="randint", low=1, high=6),
+                )
+            ),
+        )
+        cfg.rng.seed = seed
+        return cfg
+
+    def _save_morphologies(self, network):
+        # A long branch (C) crossing a box (B) repeatedly, so many voxel pairs
+        # overlap and `contacts` is drawn many times over -- reused from
+        # TestVoxelIntersection.test_contacts.
+        if MPI.get_rank():
+            MPI.barrier()
+            return
+        mB = Morphology(
+            [
+                Branch(
+                    [
+                        [0, 0, 0],
+                        [0, 0, 100],
+                        [0, 100, 100],
+                        [0, 100, 0],
+                        [0, 0, 0],
+                        [100, 0, 0],
+                        [200, 0, 0],
+                    ],
+                    [1] * 7,
+                )
+            ]
+        )
+        network.morphologies.save("B", mB)
+        mC = Morphology(
+            [
+                Branch(
+                    (
+                        b := [
+                            [0, 0, 0],
+                            [0, 25, 25],
+                            [25, 0, 0],
+                            [50, 0, 0],
+                            [75, 0, 0],
+                            [100, 0, 0],
+                            [125, 0, 0],
+                            [150, 0, 0],
+                            [175, 0, 0],
+                            [200, 0, 0],
+                        ]
+                    ),
+                    [1] * len(b),
+                )
+            ]
+        )
+        network.morphologies.save("C", mC)
+        MPI.barrier()
+
+    def _connections(self, seed, storage):
+        network = Scaffold(self._cfg(seed), storage)
+        self._save_morphologies(network)
+        network.compile(clear=True)
+        pre, post = network.get_connectivity_set("intersect").load_connections().all()
+        order = np.lexsort(np.concatenate([pre, post], axis=1).T)
+        return pre[order], post[order]
+
+    def test_same_seed_reproduces_contact_counts(self):
+        first_pre, first_post = self._connections(1234, self.storage)
+        again_pre, again_post = self._connections(1234, self.random_storage())
+        self.assertEqual(
+            first_pre.shape, again_pre.shape, "same seed must draw the same contacts"
+        )
+        self.assertClose(first_pre, again_pre, "same seed must pick the same contacts")
+        self.assertClose(first_post, again_post, "same seed must pick the same contacts")
+
+    def test_different_seeds_differ(self):
+        first_pre, _ = self._connections(1234, self.storage)
+        other_pre, _ = self._connections(4321, self.random_storage())
+        self.assertFalse(
+            first_pre.shape == other_pre.shape and np.allclose(first_pre, other_pre),
+            "different seeds must not draw the same number of contacts",
+        )

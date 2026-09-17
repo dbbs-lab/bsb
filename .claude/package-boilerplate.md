@@ -31,7 +31,7 @@ build-backend = "flit_core.buildapi"
 name = "bsb-{name}"
 version = "7.2.3"           # keep in sync with monorepo
 readme = "README.md"
-requires-python = ">=3.10,<4"
+requires-python = ">=3.11,<4"
 dynamic = ["description"]
 classifiers = [
   "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"

@@ -17,6 +17,11 @@ The engine is loaded from the ``bsb.storage.engines`` plugin category (see
 :class:`fs <bsb:bsb.storage.fs.FileSystemEngine>` and
 :class:`hdf5 <bsb_hdf5:bsb_hdf5.HDF5Engine>`.
 
+The on-disk artefact also carries a provenance bundle (storage identity, plugin
+manifest, host info, timestamps, per-PlacementSet revision counters, ...),
+regardless of which engine wrote it. Plugin authors and operators that need the
+full bundle layout should consult :ref:`storage-engine-contract`.
+
 Storage engines
 ===============
 
@@ -58,8 +63,3 @@ for compiled networks. The root is a **single HDF5 file**. Top-level layout:
 
 Concurrent reader safety, locking, and slow-lock diagnostics are handled by the
 engine; component code does not need to manage these.
-
-The on-disk artefact also carries a provenance bundle (storage identity, plugin
-manifest, host info, timestamps, per-PlacementSet revision counters, ...). Plugin
-authors and operators that need the full bundle layout should consult
-:ref:`storage-engine-contract`.

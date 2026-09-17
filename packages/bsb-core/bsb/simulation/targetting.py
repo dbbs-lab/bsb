@@ -327,8 +327,24 @@ class LocationTargetting:
 
 @config.node
 class SomaTargetting(LocationTargetting, classmap_entry="soma"):
+    """
+    Targets every location of a cell that its morphology labels ``soma``.
+    """
+
     def get_locations(self, cell):
-        return [cell.locations[(0, 0)]]
+        return [loc for loc in cell.locations.values() if "soma" in _labels_of(loc)]
+
+
+def _labels_of(location):
+    """
+    The labels of a location on a cell's morphology.
+
+    A point too short to become a section of its own is simulated as part of a
+    neighbouring one, whose labels need not be its own; such a proxied location keeps
+    its own labels.
+    """
+    labels = getattr(location, "_labels", None)
+    return location.section.labels if labels is None else labels
 
 
 @config.node

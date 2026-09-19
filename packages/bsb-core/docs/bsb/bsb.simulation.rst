@@ -60,6 +60,14 @@ bsb.simulation.parameter module
    :undoc-members:
    :show-inheritance:
 
+bsb.simulation.postprocessing module
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. automodule:: bsb.simulation.postprocessing
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 bsb.simulation.results module
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

@@ -151,7 +151,9 @@ class TestCLICommands(
         nio_files = [
             filename for filename in os.listdir("./") if filename.endswith(".nio")
         ]
-        self.assertEqual(len(nio_files), MPI.get_size())
+        # A run ends with one file however many ranks it took: each writes its part
+        # and rank 0 merges them, so the parts are gone by the time this looks.
+        self.assertEqual(1, len(nio_files))
 
     def test_simulate_wrong_name(self):
         with self.assertRaises(NodeNotFoundError):
@@ -187,4 +189,6 @@ class TestCLICommands(
         nio_files = [
             filename for filename in os.listdir("./") if filename.endswith(".nio")
         ]
-        self.assertEqual(len(nio_files), MPI.get_size())
+        # A run ends with one file however many ranks it took: each writes its part
+        # and rank 0 merges them, so the parts are gone by the time this looks.
+        self.assertEqual(1, len(nio_files))

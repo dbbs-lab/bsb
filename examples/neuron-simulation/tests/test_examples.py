@@ -46,9 +46,9 @@ class TestNeuronExamples(
         count_neurons = 0
         count_synapses = 0
         for signal in analogsignals:
-            if signal.name == "vrecorder":
+            if signal.annotations["bsb_device_name"] == "vrecorder":
                 count_neurons += 1
-            if signal.name == "synapses_rec":
+            if signal.annotations["bsb_device_name"] == "synapses_rec":
                 count_synapses += 1
             self.assertEqual(signal.t_start, 0)
             # simulation should last 100 ms + 1 dt
@@ -67,7 +67,7 @@ class TestNeuronExamples(
         self.scaffold.compile()
         self._test_scaffold_results()
         results = self.scaffold.run_simulation("neuronsim")
-        self._test_simulation_results(results.analogsignals)
+        self._test_simulation_results(results.block.segments[0].analogsignals)
 
     def test_yaml_example(self):
         self.cfg = parse_configuration_file(
@@ -77,7 +77,7 @@ class TestNeuronExamples(
         self.scaffold.compile()
         self._test_scaffold_results()
         results = self.scaffold.run_simulation("neuronsim")
-        self._test_simulation_results(results.analogsignals)
+        self._test_simulation_results(results.block.segments[0].analogsignals)
 
     def test_python_example(self):
         import scripts.guide_neuron  # noqa: F401
@@ -94,9 +94,9 @@ class TestNeuronExamples(
 
         files = os.listdir("simulation-results")  # two pngs 1 nio file
         self.assertEqual(len(files), 3)
-        self.assertTrue(any([re.search("^vrecorder_[0-9]+\.png$", f) for f in files]))
+        self.assertTrue(any([re.search(r"^vrecorder_[0-9]+\.png$", f) for f in files]))
         self.assertTrue(
-            any([re.search("^synapses_rec_[0-9]+_.+\.png$", f) for f in files])
+            any([re.search(r"^synapses_rec_[0-9]+_.+\.png$", f) for f in files])
         )
 
         os.remove("my_network.hdf5")

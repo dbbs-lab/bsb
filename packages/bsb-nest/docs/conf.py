@@ -43,6 +43,10 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 nitpick_ignore = [
     ("py:class", "bsb_nest._kernel_proxy.NestModelTypeHandler"),
+    # Rendered from the annotation an overridden attribute inherits from bsb-core,
+    # which names them as they are written there rather than by their full path.
+    ("py:class", "cfgdict"),
+    ("py:class", "CellParameter"),
 ]
 
 

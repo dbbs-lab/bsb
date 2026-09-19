@@ -266,31 +266,26 @@ Type variable for synapses.
 
 class Definition(typing.Generic[CT, CP, I, M, S], abc.ABC):
     @classmethod
-    @property
     @abstractmethod
     def cable_type_class(cls) -> type[CT]:  # pragma: nocover
         pass
 
     @classmethod
-    @property
     @abstractmethod
     def cable_properties_class(cls) -> type[CP]:  # pragma: nocover
         pass
 
     @classmethod
-    @property
     @abstractmethod
     def ion_class(cls) -> type[I]:  # pragma: nocover
         pass
 
     @classmethod
-    @property
     @abstractmethod
     def mechanism_class(cls) -> type[M]:  # pragma: nocover
         pass
 
     @classmethod
-    @property
     @abstractmethod
     def synapse_class(cls) -> type[S]:  # pragma: nocover
         pass
@@ -335,30 +330,11 @@ class Definition(typing.Generic[CT, CP, I, M, S], abc.ABC):
 
 
 class ModelDefinition(Definition[CableType, CableProperties, Ion, Mechanism, Synapse]):
-    @classmethod
-    @property
-    def cable_type_class(cls):
-        return CableType
-
-    @classmethod
-    @property
-    def cable_properties_class(cls):
-        return CableProperties
-
-    @classmethod
-    @property
-    def ion_class(cls):
-        return Ion
-
-    @classmethod
-    @property
-    def mechanism_class(cls):
-        return Mechanism
-
-    @classmethod
-    @property
-    def synapse_class(cls):
-        return Synapse
+    cable_type_class = CableType
+    cable_properties_class = CableProperties
+    ion_class = Ion
+    mechanism_class = Mechanism
+    synapse_class = Synapse
 
 
 class ModelDefinitionDict(typing.TypedDict, total=False):

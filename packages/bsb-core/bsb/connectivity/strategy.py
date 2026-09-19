@@ -14,6 +14,7 @@ from ..config import refs, types
 from ..exceptions import ConnectivityError
 from ..mixins import HasDependencies
 from ..reporting import warn
+from ..rng import RngConsumer
 from ..storage._chunks import Chunk
 
 if typing.TYPE_CHECKING:  # pragma: nocover
@@ -94,6 +95,24 @@ class Hemitype:
         return lbounds, ubounds
 
 
+def roi_key(collection):
+    """
+    Name the chunks a hemitype covers, so a draw can be keyed on them.
+
+    Sorted, because the order chunks arrive in is not part of what is being
+    connected, and a collection with no region of interest covers the whole network,
+    which is as stable a thing to key on as an explicit list.
+
+    :param collection: The hemitype collection being connected.
+    :type collection: HemitypeCollection
+    :returns: A stable, rank independent name for the chunks involved.
+    """
+    roi = getattr(collection, "roi", None)
+    if roi is None:
+        return "all"
+    return sorted(int(chunk.id) for chunk in roi)
+
+
 class HemitypeCollection:
     """
     Class used to iterate over an ``Hemitype`` placement sets within a list of chunks, and
@@ -126,7 +145,7 @@ class HemitypeCollection:
 
 
 @config.dynamic(attr_name="strategy", required=True, auto_classmap=True)
-class ConnectionStrategy(abc.ABC, HasDependencies):
+class ConnectionStrategy(abc.ABC, HasDependencies, RngConsumer):
     scaffold: Scaffold
     name: str = config.attr(key=True)
     """

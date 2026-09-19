@@ -553,6 +553,195 @@ class TestVoxelDensities(RandomStorageFixture, unittest.TestCase, engine_name="h
             network.compile(clear=True)
 
 
+@unittest.skipIf(MPI.get_size() > 1, "Skipped during parallel testing.")
+class TestDistributionPlacement(
+    RandomStorageFixture, NumpyTestCase, unittest.TestCase, engine_name="hdf5"
+):
+    """Tests for bsb.placement.random.DistributionPlacement."""
+
+    _PARTITION_SIZE = 100.0
+    _CHUNK_SIZE = _PARTITION_SIZE / 5.0
+
+    def _make_config(
+        self, count=3000, axis=2, direction="positive", distrib_cfg=None, eps=1e-3
+    ):
+        """Build a multi-chunks network with DistributionPlacement."""
+        if distrib_cfg is None:
+            distrib_cfg = {"distribution": "beta", "a": 2, "b": 5}
+        return Configuration.default(
+            network={
+                "x": self._PARTITION_SIZE,
+                "y": self._PARTITION_SIZE,
+                "z": self._PARTITION_SIZE,
+                "chunk_size": self._CHUNK_SIZE,
+            },
+            partitions={"layer": {"thickness": self._PARTITION_SIZE}},
+            cell_types={"cell": {"spatial": {"radius": 1.0, "count": count}}},
+            placement={
+                "dp": {
+                    "strategy": "distribution_placement",
+                    "partitions": ["layer"],
+                    "cell_types": ["cell"],
+                    "distribution": distrib_cfg,
+                    "axis": axis,
+                    "direction": direction,
+                    "interval_probability": eps,
+                }
+            },
+        )
+
+    def test_positions_within_partition_bounds(self):
+        """Every placed position must lie within the configured partition bounds."""
+        N = 500
+        cfg = self._make_config(count=N)
+        network = Scaffold(cfg, self.storage)
+        network.compile(clear=True)
+        ps = network.get_placement_set("cell")
+        pos = ps.load_positions()
+        ldc = network.partitions["layer"].data.ldc
+        mdc = network.partitions["layer"].data.mdc
+        self.assertGreater(len(ps), N / 2, "expected cells to be placed")
+        self.assertAll(
+            np.all(pos >= ldc, axis=-1), "position below partition lower bound"
+        )
+        self.assertAll(
+            np.all(pos <= mdc, axis=-1), "position above partition upper bound"
+        )
+
+    def test_draw_interval_filters_to_requested_subinterval(self):
+        """draw_interval returns only values within the requested fraction of the support.
+
+        For uniform(0, 1) with bounds (0, 0.5) the returned values must all lie in
+        [0, 0.5]; with bounds (0.5, 1) they must all lie in [0.5, 1].
+        """
+        network = Scaffold(self._make_config(), self.storage)
+        strategy = network.placement["dp"]
+        n = 5000
+
+        lower_vals = strategy.draw_interval(n, lower=0.0, upper=0.5)
+        self.assertGreater(len(lower_vals), 0, "draw_interval returned no values")
+        self.assertAll(lower_vals >= 0.0)
+        self.assertAll(lower_vals <= 0.5)
+
+        upper_vals = strategy.draw_interval(n, lower=0.5, upper=1.0)
+        self.assertGreater(len(upper_vals), 0, "draw_interval returned no values")
+        self.assertAll(upper_vals >= 0.5)
+        self.assertAll(upper_vals <= 1.0)
+
+    def test_axis_parameter_selects_distributed_coordinate(self):
+        """The 'axis' parameter controls which coordinate follows the distribution.
+
+        For each axis value (0, 1, 2), the corresponding position coordinate — after
+        normalisation by the partition size — should be consistent with the transformed
+        distribution used by draw_interval.
+
+        draw_interval normalises raw beta(2, 5) samples from [ppf(eps), ppf(1-eps)] to
+        [0, 1], producing a shifted variable Y = (X − lo) / diff where
+        lo = ppf(eps), diff = ppf(1−eps) − ppf(eps), eps = interval_probability.
+        Its moments are (to high accuracy, truncation at 0.1% per tail is negligible):
+            μ_Y = (μ_X − lo) / diff
+            σ_Y = σ_X / diff
+
+        By the Central Limit Theorem (CLT), the standardised sample mean converges to
+        N(0, 1):
+            Z = |ȳ − μ_Y| × √N / σ_Y  ~  N(0, 1)
+
+        A threshold |Z| < 3.72 corresponds to a false-positive probability ≈ 1 × 10^-4.
+        """
+        import scipy.stats as st
+
+        eps = 1e-3
+        beta_dist = st.beta(2, 5)
+        lo = beta_dist.ppf(eps)
+        hi = beta_dist.ppf(1 - eps)
+        diff = hi - lo
+        # Moments of the normalised variable Y = (X - lo) / diff
+        mu = (beta_dist.mean() - lo) / diff
+        sigma = np.sqrt(beta_dist.var()) / diff
+        N = 3000
+
+        for axis in (0, 1, 2):
+            with self.subTest(axis=axis):
+                cfg = self._make_config(count=N, axis=axis, eps=eps)
+                network = Scaffold(cfg, self.random_storage())
+                network.compile(clear=True)
+                pos = network.get_placement_set("cell").load_positions()
+                n_actual = len(pos)
+
+                normalised = pos[:, axis] / self._PARTITION_SIZE
+                # CLT Z-score: Z = |ȳ − μ_Y| × √n / σ_Y
+                z = abs(np.mean(normalised) - mu) * np.sqrt(n_actual) / sigma
+                self.assertLess(
+                    z,
+                    3.72,
+                    f"axis={axis}: CLT Z-score {z:.3f} — positions are inconsistent "
+                    f"with the normalised beta(a=2, b=5) along the requested axis",
+                )
+
+    def test_direction_negative_mirrors_distribution_along_axis(self):
+        """direction='negative' flips the density: v → 1 − v along the axis.
+
+        For the asymmetric beta(2, 5) distribution (mean ≈ 0.286), 'positive' places
+        most cells near zero, while 'negative' mirrors it so most cells appear near
+        the far end of the partition (mean ≈ 0.714 = 1 − 0.286).  Each normalised
+        mean is verified to lie on the correct side of 0.5.
+        """
+        N = 3000
+        # beta(2, 5) has support [0, 1] and is skewed towards zero: mean = 2/7 ≈ 0.286
+
+        cfg_pos = self._make_config(count=N, direction="positive")
+        net_pos = Scaffold(cfg_pos, self.storage)
+        net_pos.compile(clear=True)
+        mean_pos = np.mean(net_pos.get_placement_set("cell").load_positions()[:, 2])
+
+        cfg_neg = self._make_config(count=N, direction="negative")
+        net_neg = Scaffold(cfg_neg, self.random_storage())
+        net_neg.compile(clear=True)
+        mean_neg = np.mean(net_neg.get_placement_set("cell").load_positions()[:, 2])
+
+        # Normalised means should be on opposite sides of 0.5
+        self.assertLess(
+            mean_pos / self._PARTITION_SIZE,
+            0.5,
+            f"positive-direction mean ({mean_pos:.1f}) should be < 50 for beta(2, 5)",
+        )
+        self.assertGreater(
+            mean_neg / self._PARTITION_SIZE,
+            0.5,
+            f"negative-direction mean ({mean_neg:.1f}) should be > 50 for beta(2, 5)",
+        )
+
+    def _positions(self, seed, storage):
+        """Compile a network and return its positions, sorted for comparison.
+
+        DistributionPlacement's along-axis coordinate is drawn through
+        ``Distribution.draw``, which used to bypass the configured randomness
+        entirely and draw from scipy's own unseeded default instead: the same
+        seed placed differently on every run.
+        """
+        cfg = self._make_config(count=300)
+        cfg.rng.seed = seed
+        network = Scaffold(cfg, storage)
+        network.compile(clear=True)
+        pos = network.get_placement_set("cell").load_positions()
+        # Sorted, because which chunk a rank writes first is not part of the result.
+        return pos[np.lexsort(pos.T)]
+
+    def test_same_seed_reproduces_positions(self):
+        first = self._positions(1234, self.storage)
+        again = self._positions(1234, self.random_storage())
+        self.assertEqual(first.shape, again.shape, "the same seed must place as many")
+        self.assertClose(first, again, "the same seed must place in the same spots")
+
+    def test_different_seeds_differ(self):
+        first = self._positions(1234, self.storage)
+        other = self._positions(4321, self.random_storage())
+        self.assertFalse(
+            first.shape == other.shape and np.allclose(first, other),
+            "different seeds must not place identically",
+        )
+
+
 class VoxelParticleTest(Partition, classmap_entry="test"):
     vs = VoxelSet(
         [
@@ -586,3 +775,138 @@ class VoxelParticleTest(Partition, classmap_entry="test"):
 
     # Noop city bish, noop noop city bish
     surface = volume = scale = translate = rotate = lambda self, smth: 5
+
+
+class TestPoissonDiskPlacement(
+    RandomStorageFixture, unittest.TestCase, engine_name="hdf5"
+):
+    """End-to-end check that the bsb-native Poisson-disk kernel places cells in a
+    region while respecting the minimum distance."""
+
+    def test_min_distance(self):
+        min_distance = 8.0
+        cfg = Configuration.default(
+            # A box that fits a single chunk, so the within-chunk minimum-distance
+            # guarantee holds globally (no cross-chunk seams to account for).
+            network=dict(chunk_size=[100, 100, 100]),
+            regions={"reg": {"type": "group", "children": ["box"]}},
+            partitions={
+                "box": {
+                    "type": "rhomboid",
+                    "origin": [10, 10, 10],
+                    "dimensions": [80, 80, 80],
+                }
+            },
+            cell_types={"cell": {"spatial": {"density": 1e-3, "radius": 2}}},
+            placement={
+                "poisson": {
+                    "strategy": "bsb.placement.PoissonDiskPlacement",
+                    "partitions": ["box"],
+                    "cell_types": ["cell"],
+                    "min_distance": min_distance,
+                    "seed": 1,
+                }
+            },
+        )
+        network = Scaffold(cfg, self.storage)
+        network.compile(clear=True)
+        pos = network.get_placement_set("cell").load_positions()
+        self.assertGreater(len(pos), 0, "expected cells to be placed")
+        d2 = ((pos[:, None, :] - pos[None, :, :]) ** 2).sum(-1)
+        np.fill_diagonal(d2, np.inf)
+        self.assertGreaterEqual(
+            d2.min() ** 0.5,
+            min_distance - 1e-6,
+            "Poisson-disk min-distance violated",
+        )
+        self.assertTrue(
+            (pos >= [10, 10, 10]).all() and (pos < [90, 90, 90]).all(),
+            "cells placed outside the region",
+        )
+
+    def test_seamless_across_chunks(self):
+        # A box spanning 4 chunks: seamless mode must keep the minimum distance
+        # across chunk borders (no seams), via colored wavefront scheduling and
+        # the neighbour halo.
+        min_distance = 8.0
+        cfg = Configuration.default(
+            network=dict(chunk_size=[50, 50, 50]),
+            regions={"reg": {"type": "group", "children": ["box"]}},
+            partitions={
+                "box": {
+                    "type": "rhomboid",
+                    "origin": [0, 0, 0],
+                    "dimensions": [100, 100, 50],
+                }
+            },
+            cell_types={"cell": {"spatial": {"density": 1e-3, "radius": 2}}},
+            placement={
+                "poisson": {
+                    "strategy": "bsb.placement.PoissonDiskPlacement",
+                    "partitions": ["box"],
+                    "cell_types": ["cell"],
+                    "min_distance": min_distance,
+                    "seed": 1,
+                    "seamless": True,
+                }
+            },
+        )
+        network = Scaffold(cfg, self.storage)
+        network.compile(clear=True)
+        pos = network.get_placement_set("cell").load_positions()
+        self.assertGreater(len(pos), 0, "expected cells to be placed")
+        d2 = ((pos[:, None, :] - pos[None, :, :]) ** 2).sum(-1)
+        np.fill_diagonal(d2, np.inf)
+        self.assertGreaterEqual(
+            d2.min() ** 0.5,
+            min_distance - 1e-6,
+            "seamless placement violated min-distance across a chunk border",
+        )
+
+
+class TestPlacementReproducibility(
+    RandomStorageFixture, NumpyTestCase, unittest.TestCase, engine_name="hdf5"
+):
+    """
+    Placement draws have to come from the configured randomness, or a seed cannot
+    reproduce a reconstruction and two ranks can disagree about the same chunk.
+    """
+
+    def _cfg(self, seed=None):
+        cfg = Configuration.default(
+            network=dict(x=100, y=100, z=100, chunk_size=[50, 50, 50]),
+            partitions=dict(layer=dict(type="layer", thickness=100)),
+            cell_types=dict(cell=dict(spatial=dict(radius=2, count=200))),
+            placement=dict(
+                place=dict(
+                    strategy="bsb.placement.RandomPlacement",
+                    partitions=["layer"],
+                    cell_types=["cell"],
+                )
+            ),
+        )
+        if seed is not None:
+            cfg.rng.seed = seed
+        return cfg
+
+    def _positions(self, seed=None):
+        network = Scaffold(self._cfg(seed), self.random_storage())
+        network.compile(append=False, redo=False)
+        ps = network.cell_types.cell.get_placement_set()
+        positions = ps.load_positions()
+        # Sorted, because which chunk a rank writes first is not part of the result
+        return positions[np.lexsort(positions.T)]
+
+    def test_same_seed_reproduces_positions(self):
+        first = self._positions(seed=1234)
+        again = self._positions(seed=1234)
+        self.assertEqual(first.shape, again.shape, "the same seed must place as many")
+        self.assertClose(first, again, "the same seed must place in the same spots")
+
+    def test_different_seeds_differ(self):
+        first = self._positions(seed=1234)
+        other = self._positions(seed=4321)
+        self.assertFalse(
+            first.shape == other.shape and np.allclose(first, other),
+            "different seeds must not place identically",
+        )

@@ -1,14 +1,17 @@
 import itertools
+import os
+import shutil
+import tempfile
 import unittest
 from copy import copy
 
-from bsb.core import Scaffold
-from bsb.services import MPI
-from bsb.simulation import get_simulation_adapter
+import numpy as np
+from bsb import MPI, Scaffold, get_simulation_adapter, read_results
 from bsb_test import (
     ConfigFixture,
     MorphologiesFixture,
     NetworkFixture,
+    NumpyTestCase,
     RandomStorageFixture,
 )
 from patch import p
@@ -49,6 +52,38 @@ class TestNeuronMinimal(
         adapter.simulate(sim, sim2)
 
         self.assertAlmostEqual(h.t, sim2.duration, msg="sim duration incorrect")
+
+    def test_composition_writes_separate_blocks(self):
+        """Two simulations composed in one adapter and streamed to one file are written
+        as separate blocks with distinct storage keys."""
+        import os
+        import shutil
+        import tempfile
+
+        from neo import io
+
+        scaffold_copy = Scaffold(copy(self.cfg), self.storage)
+        sim = self.network.simulations.test
+        sim2 = scaffold_copy.simulations.test
+        adapter = get_simulation_adapter(sim.simulator)
+
+        # One directory for the whole run. The ranks write parts of one file and
+        # rank 0 merges them, so a directory drawn per rank would leave every other
+        # rank looking for a file that was assembled somewhere else.
+        tmpdir = MPI.bcast(tempfile.mkdtemp() if not MPI.get_rank() else None)
+        if not MPI.get_rank():
+            self.addCleanup(shutil.rmtree, tmpdir, ignore_errors=True)
+        nio_file = os.path.join(tmpdir, "composed.nio")
+
+        adapter.simulate(sim, sim2, filename=nio_file)
+
+        blocks = io.NixIO(nio_file, "ro").read_all_blocks()
+        self.assertEqual(len(blocks), 2, "Expected one block per composed simulation")
+        self.assertEqual(
+            len({b.annotations["nix_name"] for b in blocks}),
+            2,
+            "Composed simulations must get distinct storage keys",
+        )
 
 
 class TestNeuronMultichunk(
@@ -525,3 +560,165 @@ class TestNeuronMultiBranchLoop(
             ],
             receiving_cells,
         )
+
+
+def _placement_order(positions, chunk_size):
+    """
+    Positions in the order a placement set holds them: grouped by chunk in order of
+    chunk id, and in the order they were placed within a chunk.
+    """
+    chunks = np.floor_divide(positions, chunk_size).astype(np.int64)
+    chunk_ids = chunks[:, 0] + chunks[:, 1] * 2**16 + chunks[:, 2] * 2**32
+    return positions[np.argsort(chunk_ids, kind="stable")]
+
+
+class TestRecordingsNameTheirCells(
+    RandomStorageFixture,
+    ConfigFixture,
+    NetworkFixture,
+    MorphologiesFixture,
+    NumpyTestCase,
+    unittest.TestCase,
+    config="chunked",
+    morpho_filters=["2comp"],
+    engine_name="hdf5",
+):
+    """
+    A recording names its cell by cell model and placement set id, so reading the
+    results with the network gives back the recorded cells.
+    """
+
+    def setUp(self):
+        super().setUp()
+        p.parallel.gid_clear()
+        # Placed out of chunk order, so the placement set's order is not the order
+        # given.
+        placement = self.network.placement.across_chunks
+        given = np.array(placement.positions)[::-1]
+        placement.positions = given.tolist()
+        self.positions = _placement_order(given, self.network.network.chunk_size)
+        for ct in self.network.cell_types.values():
+            ct.spatial.morphologies = ["2comp"]
+        hh_soma = {
+            "cable_types": {
+                "soma": {
+                    "cable": {"Ra": 10, "cm": 1},
+                    "mechanisms": {"pas": {}, "hh": {}},
+                }
+            },
+            "synapse_types": {"ExpSyn": {}},
+        }
+        self.network.simulations.add(
+            "test",
+            simulator="neuron",
+            duration=5,
+            resolution=0.1,
+            temperature=32,
+            cell_models={name: ArborizedModel(model=hh_soma) for name in "ABC"},
+            connection_models={
+                "A_to_B": TransceiverModel(synapses=[dict(synapse="ExpSyn")])
+            },
+            devices={
+                "synapses": {
+                    "device": "synapse_recorder",
+                    "locations": {"strategy": "everywhere"},
+                    "targetting": {"strategy": "by_id", "ids": {"B": [0, 8]}},
+                },
+                "by_id": {
+                    "device": "voltage_recorder",
+                    "locations": {"strategy": "everywhere"},
+                    "targetting": {"strategy": "by_id", "ids": {"B": [3, 7, 11]}},
+                },
+                "sphere": {
+                    "device": "voltage_recorder",
+                    "targetting": {
+                        "strategy": "sphere",
+                        "origin": [45, 10, 10],
+                        "radius": 20,
+                    },
+                },
+            },
+        )
+        self.network.compile()
+
+    def _results_file(self):
+        tmpdir = MPI.bcast(tempfile.mkdtemp() if not MPI.get_rank() else None)
+        if not MPI.get_rank():
+            self.addCleanup(shutil.rmtree, tmpdir, ignore_errors=True)
+        return os.path.join(tmpdir, "traced.nio")
+
+    def test_recordings_trace_back_to_their_cells(self):
+        filename = self._results_file()
+        self.network.run_simulation("test", output_filename=filename)
+        if MPI.get_rank():
+            return
+        results = read_results(self.network, filename)
+
+        by_id = list(results.recordings("by_id"))
+        self.assertEqual([3, 7, 11], sorted({r.target.cell.id for r in by_id}))
+        self.assertGreater(len(by_id), 3, "every location of every cell is recorded")
+        for recording in by_id:
+            cell = recording.target.cell
+            with self.subTest(device="by_id", cell=cell.id):
+                self.assertEqual(
+                    ("point", "record"), (recording.kind, recording.direction)
+                )
+                self.assertEqual("B", cell.model)
+                self.assertEqual("B", cell.cell_type.name)
+                self.assertClose(self.positions[cell.id], cell.position)
+                # A voltage recorder records at the start of its location, so the arc
+                # it wrote lands exactly on the point it names.
+                target = recording.target
+                self.assertClose(
+                    cell.morphology.branches[target.branch].points[target.point],
+                    target.position,
+                )
+
+        in_sphere = np.flatnonzero(
+            np.sum((self.positions - [45, 10, 10]) ** 2, axis=1) < 20**2
+        )
+        self.assertEqual(2, len(in_sphere), "the sphere has to span two chunks")
+        sphere = list(results.recordings("sphere"))
+        for model in ("A", "B", "C"):
+            with self.subTest(device="sphere", model=model):
+                targets = [r.target for r in sphere if r.target.cell.model == model]
+                cells = [t.cell for t in targets]
+                # A voltage recorder defaults to the soma, which is every point its
+                # morphology labels soma, so each cell is recorded once per soma point.
+                soma = [
+                    (b, p)
+                    for b, branch in enumerate(cells[0].morphology.branches)
+                    for p in np.flatnonzero(branch.get_label_mask(["soma"]))
+                ]
+                self.assertEqual(2, len(soma), "the morphology has to have 2 soma points")
+                self.assertEqual(
+                    sorted((int(c), b, int(p)) for c in in_sphere for b, p in soma),
+                    sorted((int(t.cell.id), t.branch, t.point) for t in targets),
+                )
+                for cell in cells:
+                    self.assertClose(self.positions[cell.id], cell.position)
+
+        # The connectivity is fixed: A 0 and A 1 onto B 0, and A 3 onto B 8.
+        synapses = list(results.recordings("synapses"))
+        self.assertEqual(
+            [(0, 0), (0, 1), (8, 3)],
+            sorted((r.target.post.cell.id, r.target.pre.cell.id) for r in synapses),
+        )
+        for recording in synapses:
+            synapse = recording.target
+            with self.subTest(device="synapses", cell=synapse.post.cell.id):
+                self.assertEqual("synapse", recording.kind)
+                self.assertEqual("ExpSyn", synapse.synapse_type)
+                self.assertEqual("A_to_B", synapse.connectivity_set)
+                self.assertEqual(
+                    ("A", "B"), (synapse.pre.cell.model, synapse.post.cell.model)
+                )
+                self.assertClose(
+                    self.positions[synapse.pre.cell.id], synapse.pre.cell.position
+                )
+                # Every connection starts at point 0 of branch 0 of its presynaptic cell.
+                self.assertEqual((0, 0), (synapse.pre.branch, synapse.pre.point))
+                self.assertClose(
+                    synapse.pre.cell.morphology.branches[0].points[0],
+                    synapse.pre.position,
+                )

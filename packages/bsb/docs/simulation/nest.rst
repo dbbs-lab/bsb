@@ -40,7 +40,10 @@ Each key in the block can have the following attributes:
 
     * :guilabel:`model`: NEST neuron model, See the available models in the NEST documentation
 
-    * :guilabel:`constants`: parameters that are defined in the NEST neuron model. Most models include the following parameters:
+    * :guilabel:`parameters`: values for the NEST neuron model, computed when the
+      simulation loads. See :ref:`nest-parameters` for what a value may be.
+
+    * :guilabel:`constants`: constant values for the NEST neuron model. Most models include the following parameters:
 
         * t_ref: refractory period duration [ms]
         * C_m: membrane capacitance [pF]
@@ -78,6 +81,72 @@ For cell_type_two, we use the NEST model named ``another_nest_name``, setting a 
 
 To select the most suitable model and its parameters, the NEST website provides a useful model `list <https://nest-simulator.readthedocs.io/en/v3.8/neurons/index.html>`_.
 
+.. _nest-parameters:
+
+Parameter values
+================
+
+Anywhere a model parameter is named -- :guilabel:`weight`, :guilabel:`delay`,
+:guilabel:`receptor_type`, a key of :guilabel:`constants`, or a key of
+:guilabel:`parameters` -- its value may be written in any of three ways:
+
+    * a **plain value**, when it is the same everywhere: ``"weight": 5``
+    * a **NEST distribution**, drawn by NEST itself:
+      ``"weight": {"distribution": "uniform", "min": 1, "max": 5}``
+    * a **computed parameter**, worked out when the simulation loads:
+      ``"delay": {"strategy": "distance_delay", "axon_speed": 2.0}``
+
+The difference between the two blocks is only what they accept.
+:guilabel:`constants` takes the first two, so a block documented as constant stays
+constant; :guilabel:`parameters` takes all three. Naming the same parameter in both
+is an error rather than a silent win for one of them.
+
+``distance_delay`` derives a transmission delay from the distance between the
+connected somata and an :guilabel:`axon_speed`, floored at the simulation's
+:guilabel:`resolution`. Since it is worked out per connection, it needs BSB to
+connect cell by cell: on a connection model with a NEST :guilabel:`rule`, where NEST
+decides the pairs itself, a computed parameter is refused with an error rather than
+quietly ignored.
+
+.. tab-set-code::
+
+    .. code-block:: json
+
+        "connection_models": {
+          "A_to_B": {
+            "synapses": [
+              {
+                "model": "static_synapse",
+                "weight": {"distribution": "uniform", "min": 1, "max": 5},
+                "parameters": {
+                  "delay": {"strategy": "distance_delay", "axon_speed": 2.0}
+                }
+              }
+            ]
+          }
+        }
+
+    .. code-block:: python
+
+        config.simulations["my_sim"].connection_models["A_to_B"] = dict(
+            synapses=[
+                dict(
+                    model="static_synapse",
+                    weight={"distribution": "uniform", "min": 1, "max": 5},
+                    parameters={
+                        "delay": {"strategy": "distance_delay", "axon_speed": 2.0}
+                    },
+                )
+            ]
+        )
+
+Writing your own is a matter of subclassing the arity that matches what the value
+varies over -- :class:`~bsb.simulation.parameter.CellParameter` per cell,
+:class:`~bsb.simulation.parameter.ConnectionParameter` per connection,
+:class:`~bsb.simulation.parameter.PointParameter` per morphology point -- and
+implementing its ``compute``.
+
+
 Connection Models
 =================
 
@@ -93,7 +162,8 @@ The available keys in the synapse specification dictionary include:
     * :guilabel:`weight` : *float* that defines a weight for the synapse (**required**).
     * :guilabel:`delay` : *float* that defines a delay (**required**).
     * :guilabel:`receptor_type` : *int* that identifies NEST receptor types. For more details see the `receptors section <https://nest-simulator.readthedocs.io/en/v3.8/synapses/synapse_specification.html#receptor-types>`_ .
-    * :guilabel:`constants` : Any parameters specific to the selected synapse model.
+    * :guilabel:`constants` : Any constant values specific to the selected synapse model, written directly on the synapse.
+    * :guilabel:`parameters` : Values specific to the selected synapse model, computed when the simulation loads. See :ref:`nest-parameters`.
 
 .. tab-set-code::
 

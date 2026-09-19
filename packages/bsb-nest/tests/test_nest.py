@@ -1,13 +1,27 @@
+import os
+import shutil
+import tempfile
 import unittest
 from unittest.mock import patch
 
 import nest
 import numpy as np
-from bsb import BootError, CastError, ConfigurationError, RequirementError
+from bsb import (
+    AfterPrepareHook,
+    AfterSimulationHook,
+    BootError,
+    CastError,
+    ConfigurationError,
+    RequirementError,
+    config,
+    read_results,
+)
 from bsb.config import Configuration, build_context
 from bsb.core import Scaffold
 from bsb.services import MPI
+from bsb.simulation.results import iter_recordings
 from bsb_test import NumpyTestCase, RandomStorageFixture, get_test_config
+from neo import io
 from packaging.version import Version
 
 if Version(nest.__version__) >= Version("3.10"):
@@ -17,11 +31,32 @@ else:
 from scipy.optimize import curve_fit
 
 from bsb_nest import NestAdapter
+from bsb_nest.exceptions import NestKernelError
+
+
+def _population_rate(block, device, duration):
+    """
+    Mean firing rate over a device's targets, in Hz.
+
+    Spikes are recorded one train per cell, so the population's spikes are the
+    trains of that device summed; cells that never fired have no train at all,
+    which is why the divisor is the device's target count and not the number of
+    trains.
+    """
+    recordings = list(iter_recordings(block, device=device))
+    assert recordings, f"no recordings for device {device!r}"
+    n_spikes = sum(len(recording.signal) for recording in recordings)
+    # Every cell the device watched has a train, so the trains are the population.
+    return n_spikes / duration * 1000.0 / len(recordings)
 
 
 def _conf_single_cell():
     return Configuration(
         {
+            "rng": {
+                "seed": 1234,
+                "settings": {"kernel": {"strategy": "nest", "seed": 1234}},
+            },
             "name": "test",
             "storage": {"engine": "hdf5"},
             "network": {"x": 100, "y": 100, "z": 100},
@@ -45,6 +80,10 @@ def _conf_single_cell():
 def _conf_two_cells():
     return Configuration(
         {
+            "rng": {
+                "seed": 1234,
+                "settings": {"kernel": {"strategy": "nest", "seed": 1234}},
+            },
             "name": "test",
             "storage": {"engine": "hdf5"},
             "network": {"x": 1, "y": 1, "z": 1},
@@ -100,59 +139,61 @@ class TestNest(
         vm = None
         nspike = None
 
-        def probe(_, sim, data):
-            # Probe and steal some local refs to data that's otherwise encapsulated :)
-            nonlocal vm, simulation
-            simulation = sim
+        @config.node
+        class Probe(AfterPrepareHook):
+            # `inner`, not `self`: the body closes over the test case's `self`.
+            def postprocess(inner, _, sim, data):
+                # Probe and steal some local refs to data that's otherwise encapsulated :)
+                nonlocal vm, simulation
+                simulation = sim
 
-            # Get the important information out of the sim/data
-            cell_m = sim.cell_models.gif_pop_psc_exp
-            conn_m = sim.connection_models.gif_pop_psc_exp
-            pop = data.populations[cell_m]
-            syn = data.connections[conn_m]
+                # Get the important information out of the sim/data
+                cell_m = sim.cell_models.gif_pop_psc_exp
+                conn_m = sim.connection_models.gif_pop_psc_exp
+                pop = data.populations[cell_m]
+                syn = data.connections[conn_m]
 
-            # Add a voltmeter
-            vm = nest.Create(
-                "voltmeter",
-                params={"record_from": ["n_events"], "interval": sim.resolution},
-            )
-            nest.Connect(vm, pop)
+                # Add a voltmeter
+                vm = nest.Create(
+                    "voltmeter",
+                    params={"record_from": ["n_events"], "interval": sim.resolution},
+                )
+                nest.Connect(vm, pop)
 
-            # Add a spying recorder
-            def spy(_):
+                # Test node parameter transfer
+                for param, value in {
+                    "V_reset": 0.0,
+                    "V_T_star": 10.0,
+                    "E_L": 0.0,
+                    "Delta_V": 2.0,
+                    "C_m": 250.0,
+                    "tau_m": 20.0,
+                    "t_ref": 4.0,
+                    "I_e": 500.0,
+                    "lambda_0": 10.0,
+                    "tau_syn_in": 2.0,
+                    "tau_sfa": (500.0,),
+                    "q_sfa": (1.0,),
+                }.items():
+                    with self.subTest(param=param, value=value):
+                        self.assertEqual(value, pop.get(param))
+
+                # Test synapse parameter transfer
+                for param, value in (("weight", -6.25), ("delay", 1)):
+                    with self.subTest(param=param, value=value):
+                        self.assertEqual(value, syn.get(param))
+
+        @config.node
+        class Readout(AfterSimulationHook):
+            # The voltmeter is read while the kernel still holds what it recorded.
+            def postprocess(inner, adapter, sim, result):
                 nonlocal nspike
-
-                start_time = 1000
-                start_step = int(start_time / simulation.resolution)
+                start_step = int(1000 / sim.resolution)
                 nspike = vm.events["n_events"][start_step:]
 
-            data.result.create_recorder(spy)
-
-            # Test node parameter transfer
-            for param, value in {
-                "V_reset": 0.0,
-                "V_T_star": 10.0,
-                "E_L": 0.0,
-                "Delta_V": 2.0,
-                "C_m": 250.0,
-                "tau_m": 20.0,
-                "t_ref": 4.0,
-                "I_e": 500.0,
-                "lambda_0": 10.0,
-                "tau_syn_in": 2.0,
-                "tau_sfa": (500.0,),
-                "q_sfa": (1.0,),
-            }.items():
-                with self.subTest(param=param, value=value):
-                    self.assertEqual(value, pop.get(param))
-
-            # Test synapse parameter transfer
-            for param, value in (("weight", -6.25), ("delay", 1)):
-                with self.subTest(param=param, value=value):
-                    self.assertEqual(value, syn.get(param))
-
-        network.simulations.test_nest.post_prepare.append(probe)
-        network.run_simulation("test_nest")
+        network.simulations.test_nest.after_prepare["probe"] = Probe()
+        network.simulations.test_nest.after_simulation["readout"] = Readout()
+        NestAdapter().simulate(network.simulations.test_nest)
 
         mean_nspike = np.mean(nspike)
         mean_rate = mean_nspike / pop_size / simulation.resolution * 1000.0
@@ -189,19 +230,8 @@ class TestNest(
         network.compile()
         result = network.run_simulation("test_nest")
 
-        spiketrains = result.block.segments[0].spiketrains
-        sr_exc, sr_inh = None, None
-        for st in spiketrains:
-            if st.annotations["device"] == "sr_exc":
-                sr_exc = st
-            elif st.annotations["device"] == "sr_inh":
-                sr_inh = st
-
-        self.assertIsNotNone(sr_exc)
-        self.assertIsNotNone(sr_inh)
-
-        rate_ex = len(sr_exc) / simcfg.duration * 1000.0 / sr_exc.annotations["pop_size"]
-        rate_in = len(sr_inh) / simcfg.duration * 1000.0 / sr_inh.annotations["pop_size"]
+        rate_ex = _population_rate(result.block, "sr_exc", simcfg.duration)
+        rate_in = _population_rate(result.block, "sr_inh", simcfg.duration)
 
         self.assertAlmostEqual(rate_in, 50, delta=1)
         self.assertAlmostEqual(rate_ex, 50, delta=1)
@@ -214,19 +244,8 @@ class TestNest(
         network.compile()
         result = network.run_simulation("test_nest")
 
-        spiketrains = result.block.segments[0].spiketrains
-        sr_exc, sr_inh = None, None
-        for st in spiketrains:
-            if st.annotations["device"] == "sr_exc":
-                sr_exc = st
-            elif st.annotations["device"] == "sr_inh":
-                sr_inh = st
-
-        self.assertIsNotNone(sr_exc)
-        self.assertIsNotNone(sr_inh)
-
-        rate_ex = len(sr_exc) / simcfg.duration * 1000.0 / sr_exc.annotations["pop_size"]
-        rate_in = len(sr_inh) / simcfg.duration * 1000.0 / sr_inh.annotations["pop_size"]
+        rate_ex = _population_rate(result.block, "sr_exc", simcfg.duration)
+        rate_in = _population_rate(result.block, "sr_inh", simcfg.duration)
 
         self.assertAlmostEqual(rate_in, 50, delta=1)
         self.assertAlmostEqual(rate_ex, 50, delta=1)
@@ -285,12 +304,12 @@ class TestNest(
         netw = Scaffold(cfg, self.storage)
         netw.compile()
         results = netw.run_simulation("test")
-        spike_times_bsb = results.spiketrains[0]
-        self.assertTrue(np.unique(spike_times_bsb.array_annotations["senders"]) == 1)
-        membrane_potentials = results.analogsignals[0]
+        spike_times_bsb = results.block.segments[0].spiketrains[0]
+        self.assertEqual(0, spike_times_bsb.annotations["bsb_cell_id"])
+        membrane_potentials = results.block.segments[0].analogsignals[0]
         # last time point is not recorded because of recorder delay.
         self.assertTrue(len(membrane_potentials) == duration / resolution - 1)
-        self.assertTrue(membrane_potentials.annotations["cell_id"] == 1)
+        self.assertEqual(0, membrane_potentials.annotations["bsb_cell_id"])
         defaults = nest.GetDefaults("iaf_cond_alpha")
         # since current injected is positive, the V_m should be clamped between default
         # initial V_m = -70mV and spike threshold V_th = -55 mV
@@ -384,7 +403,7 @@ class TestNest(
         netw = Scaffold(cfg, self.storage)
         netw.compile()
         results = netw.run_simulation("test")
-        v_ms = np.array(results.analogsignals[0])[:, 0]
+        v_ms = np.array(results.block.segments[0].analogsignals[0])[:, 0]
         self.assertAll(v_ms[: int(50 / resolution) + 1] == -70)
         self.assertAll(
             v_ms[int(50 / resolution) + 1 : int(60 / resolution) + 1] > -70,
@@ -413,7 +432,6 @@ class TestNest(
                 "simulator": "nest",
                 "duration": 1000,
                 "resolution": 0.1,
-                "seed": 1234,
                 "cell_models": {
                     "A": {
                         "model": "gif_cond_exp",
@@ -441,10 +459,13 @@ class TestNest(
             }
         }
         cfg = Configuration(conf)
+        # Compared against a NEST run seeded by hand, so the kernel has to be
+        # that number rather than one derived from the root seed.
+        cfg.simulations.test.rng = "kernel"
         netw = Scaffold(cfg, self.storage)
         netw.compile()
         results = netw.run_simulation("test")
-        spike_times_bsb = results.spiketrains[0]
+        spike_times_bsb = results.block.segments[0].spiketrains[0]
         self.assertClose(np.array(spike_times_nest), np.array(spike_times_bsb))
         self.assertEqual(
             cfg.__tree__()["simulations"]["test"]["cell_models"]["A"]["constants"]["V_m"],
@@ -507,7 +528,6 @@ class TestNest(
                 "simulator": "nest",
                 "duration": duration,
                 "resolution": resolution,
-                "seed": 1234,
                 "cell_models": {
                     "A": {
                         "model": "aeif_cond_alpha_multisynapse",
@@ -563,7 +583,7 @@ class TestNest(
         netw = Scaffold(cfg, self.storage)
         netw.compile()
         results = netw.run_simulation("test")
-        v_ms = np.array(results.analogsignals[0])[:, 0]
+        v_ms = np.array(results.block.segments[0].analogsignals[0])[:, 0]
         self.assertAll(v_ms[: int(50 / resolution) + 1] + 70.6 < 1e-3)
         self.assertAll(
             v_ms[int(50 / resolution) + 1 : int(60 / resolution) + 1] >= -70.6,
@@ -618,19 +638,22 @@ class TestNest(
                 "simulator": "nest",
                 "duration": duration,
                 "resolution": resolution,
-                "seed": 1234,
-                "cell_models": {
-                    "A": {
-                        "model": "iaf_cond_alpha",
-                        "constants": {
-                            "V_reset": -70,  # V_m, E_L and V_reset are the same
-                        },
+                # A parrot repeats every spike it receives, so recording it records
+                # what the generators sent.
+                "cell_models": {"A": {"model": "parrot_neuron"}},
+                "connection_models": {},
+                "devices": {
+                    "received": {
+                        "device": "spike_recorder",
+                        "delay": resolution,
+                        "targetting": {"strategy": "cell_model", "cell_models": ["A"]},
                     }
                 },
-                "connection_models": {},
-                "devices": {},
             }
         }
+        # Compared against a NEST run seeded by hand, so the kernel has to be
+        # that number rather than one derived from the root seed.
+        cfg.simulations.test.rng = "kernel"
         dict_spike_gen = {
             "device": "sinusoidal_poisson_generator",
             "delay": resolution,
@@ -651,7 +674,8 @@ class TestNest(
         netw.compile()
 
         results = netw.run_simulation("test")
-        spike_times = np.array(np.concatenate(results.spiketrains))
+        (received,) = iter_recordings(results.block, device="received")
+        spike_times = np.asarray(received.signal)
         self.assertAlmostEqual(
             100 * nb_gen,
             len(spike_times),
@@ -681,7 +705,9 @@ class TestNest(
 
         params = fit_sinus(bins[:-1] / 1e3, counts)
         self.assertAlmostEqual(20, params[0], delta=0.2)
-        self.assertAlmostEqual(nb_gen, params[1], delta=2)
+        # About 100 spikes per 1 ms bin, so each bin is off by about 10 and the fitted
+        # amplitude by about 1.4; this allows three times that.
+        self.assertAlmostEqual(nb_gen, params[1], delta=4)
         self.assertAlmostEqual(nb_gen, params[3], delta=1)
 
     def test_error_sinusoidal_poisson_generator(self):
@@ -693,7 +719,6 @@ class TestNest(
                 "simulator": "nest",
                 "duration": duration,
                 "resolution": resolution,
-                "seed": 1234,
                 "cell_models": {
                     "A": {
                         "model": "iaf_cond_alpha",
@@ -752,7 +777,6 @@ class TestNest(
                 "simulator": "nest",
                 "duration": duration,
                 "resolution": resolution,
-                "seed": 1234,
                 "cell_models": {
                     "A": {
                         "model": "iaf_cond_alpha",
@@ -807,9 +831,9 @@ class TestNest(
         results = netw.run_simulation("test")
 
         # get spike time of first spike of C
-        spike_times_bsb = results.spiketrains[1]
-        self.assertEqual("record_C_spikes", spike_times_bsb.annotations["device"])
-        membrane_potentials = results.analogsignals[0].magnitude[:, 0]
+        (recording,) = iter_recordings(results.block, device="record_C_spikes")
+        spike_times_bsb = recording.signal
+        membrane_potentials = results.block.segments[0].analogsignals[0].magnitude[:, 0]
         time_effect_first_syn = int((spike_times_bsb.magnitude[0] + 1) / resolution)
         time_effect_sec_syn = int((spike_times_bsb.magnitude[0] + 30) / resolution)
         self.assertClose(membrane_potentials[time_effect_first_syn - 1], -70.0, atol=1e-5)
@@ -843,7 +867,6 @@ class TestNest(
                     "duration": duration,
                     "resolution": resolution,
                     "modules": ["bla"],
-                    "seed": 1234,
                     "cell_models": {
                         "A": {"model": "iaf_cond_alpha"},
                         "C": {"model": "parrot_neuron"},
@@ -873,7 +896,6 @@ class TestNest(
                     "simulator": "nest",
                     "duration": duration,
                     "resolution": resolution,
-                    "seed": 1234,
                     "cell_models": {
                         "A": {"model": "iaf_cond_alpha"},
                         "C": {"model": "parrot_neuron"},
@@ -903,7 +925,6 @@ class TestNest(
                     "simulator": "nest",
                     "duration": duration,
                     "resolution": resolution,
-                    "seed": 1234,
                     "cell_models": {
                         "A": {"model": "bla_bla"},
                         "C": {"model": "parrot_neuron"},
@@ -928,7 +949,6 @@ class TestNest(
                 "simulator": "nest",
                 "duration": duration,
                 "resolution": resolution,
-                "seed": 1234,
                 "cell_models": {
                     "A": {"model": "hh_psc_alpha_gap"},
                     "C": {"model": "hh_psc_alpha_gap"},
@@ -961,7 +981,6 @@ class TestNest(
                     "simulator": "nest",
                     "duration": duration,
                     "resolution": resolution,
-                    "seed": 1234,
                     "cell_models": {
                         "A": {"model": "hh_psc_alpha_gap"},
                         "C": {"model": "hh_psc_alpha_gap"},
@@ -1001,7 +1020,6 @@ class TestNest(
                 "simulator": "nest",
                 "duration": 100,
                 "resolution": 0.1,
-                "seed": 1234,
                 "cell_models": {
                     "A": {
                         "model": "iaf_cond_alpha",
@@ -1112,3 +1130,236 @@ class TestNest(
             )
             <= 1e-5
         )
+
+    @unittest.skipIf(MPI.get_size() > 1, "Skipped during parallel testing.")
+    def test_composition_writes_separate_blocks(self):
+        """Two NEST simulations sharing one resolution, composed in a single adapter and
+        streamed to one file, are written as separate blocks with distinct keys."""
+        dt = 0.1
+        spike_times = np.array([100, 150, 200])
+
+        def _sim(duration):
+            return {
+                "duration": duration,
+                "resolution": dt,
+                "simulator": "nest",
+                "cell_models": {"cell_A": {"model": "parrot_neuron"}},
+                "connection_models": {},
+                "devices": {
+                    "gen": {
+                        "delay": dt,
+                        "device": "external",
+                        "nest_model": "spike_generator",
+                        "constants": {"spike_times": spike_times},
+                        "targetting": {
+                            "cell_models": ["cell_A"],
+                            "strategy": "cell_model",
+                        },
+                        "weight": 1,
+                    },
+                    "rec": {
+                        "delay": dt,
+                        "device": "spike_recorder",
+                        "targetting": {
+                            "cell_models": ["cell_A"],
+                            "strategy": "cell_model",
+                        },
+                    },
+                },
+            }
+
+        cfg = Configuration.default(
+            **{
+                "network": {"chunk_size": 200},
+                "storage": {"engine": "hdf5"},
+                "partitions": {"my_layer": {"thickness": 40.0}},
+                "cell_types": {"cell_A": {"spatial": {"count": 1, "radius": 1.0}}},
+                "placement": {
+                    "cell_A_placement": {
+                        "cell_types": ["cell_A"],
+                        "partitions": ["my_layer"],
+                        "strategy": "bsb.placement.RandomPlacement",
+                    }
+                },
+                "simulations": {"sim_a": _sim(300), "sim_b": _sim(500)},
+            }
+        )
+        scaffold = Scaffold(cfg, storage=self.storage)
+        scaffold.compile(clear=True)
+
+        tmpdir = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, tmpdir, ignore_errors=True)
+        nio_file = os.path.join(tmpdir, "composed.nio")
+
+        NestAdapter().simulate(
+            scaffold.simulations["sim_a"],
+            scaffold.simulations["sim_b"],
+            filename=nio_file,
+        )
+
+        blocks = {b.name: b for b in io.NixIO(nio_file, "ro").read_all_blocks()}
+        self.assertEqual(
+            set(blocks), {"sim_a", "sim_b"}, "Expected one block per composed simulation"
+        )
+        self.assertEqual(
+            len({b.annotations["nix_name"] for b in blocks.values()}),
+            2,
+            "Composed simulations must get distinct storage keys",
+        )
+
+    @unittest.skipIf(MPI.get_size() > 1, "Skipped during parallel testing.")
+    def test_composition_differing_resolution_raises(self):
+        """NEST has a single kernel resolution, so composing simulations that ask for
+        different resolutions is rejected up front rather than failing in the kernel."""
+
+        def _sim(resolution):
+            return {
+                "duration": 100,
+                "resolution": resolution,
+                "simulator": "nest",
+                "cell_models": {"cell_A": {"model": "parrot_neuron"}},
+                "connection_models": {},
+                "devices": {},
+            }
+
+        cfg = Configuration.default(
+            **{
+                "network": {"chunk_size": 200},
+                "storage": {"engine": "hdf5"},
+                "partitions": {"my_layer": {"thickness": 40.0}},
+                "cell_types": {"cell_A": {"spatial": {"count": 1, "radius": 1.0}}},
+                "placement": {
+                    "cell_A_placement": {
+                        "cell_types": ["cell_A"],
+                        "partitions": ["my_layer"],
+                        "strategy": "bsb.placement.RandomPlacement",
+                    }
+                },
+                "simulations": {"sim_a": _sim(0.1), "sim_b": _sim(0.5)},
+            }
+        )
+        scaffold = Scaffold(cfg, storage=self.storage)
+        scaffold.compile(clear=True)
+
+        with self.assertRaises(NestKernelError):
+            NestAdapter().simulate(
+                scaffold.simulations["sim_a"], scaffold.simulations["sim_b"]
+            )
+
+
+def _placement_order(positions, chunk_size):
+    """
+    Positions in the order a placement set holds them: grouped by chunk in order of
+    chunk id, and in the order they were placed within a chunk.
+    """
+    chunks = np.floor_divide(positions, chunk_size).astype(np.int64)
+    chunk_ids = chunks[:, 0] + chunks[:, 1] * 2**16 + chunks[:, 2] * 2**32
+    return positions[np.argsort(chunk_ids, kind="stable")]
+
+
+class TestRecordingsNameTheirCells(
+    RandomStorageFixture, NumpyTestCase, unittest.TestCase, engine_name="hdf5"
+):
+    """
+    A recording names its cell by cell model and placement set id, whatever node id
+    NEST gave it, so reading the results with the network gives back the recorded
+    cells.
+    """
+
+    def setUp(self):
+        super().setUp()
+        nest.ResetKernel()
+        cfg = get_test_config("chunked")
+        cfg.connectivity = {}
+        # Placed out of chunk order, so the placement set's order is not the order
+        # given, and every model but the first starts at a node id offset.
+        given = np.array(cfg.placement.across_chunks.positions)[::-1]
+        cfg.placement.across_chunks.positions = given.tolist()
+        self.positions = _placement_order(given, cfg.network.chunk_size)
+        cfg.simulations.add(
+            "test",
+            simulator="nest",
+            duration=100,
+            resolution=0.1,
+            cell_models={name: {"model": "iaf_psc_alpha"} for name in ("A", "B", "C")},
+            connection_models={},
+            devices={
+                "noise": {
+                    "device": "poisson_generator",
+                    "rate": 1000,
+                    "weight": 100,
+                    "delay": 0.1,
+                    "targetting": {"strategy": "cell_model", "cell_models": ["B"]},
+                },
+                "by_id": {
+                    "device": "spike_recorder",
+                    "delay": 0.1,
+                    "targetting": {"strategy": "by_id", "ids": {"B": [3, 7, 11]}},
+                },
+                "sphere": {
+                    "device": "spike_recorder",
+                    "delay": 0.1,
+                    "targetting": {
+                        "strategy": "sphere",
+                        "origin": [45, 10, 10],
+                        "radius": 20,
+                    },
+                },
+                "voltmeter": {
+                    "device": "multimeter",
+                    "delay": 0.1,
+                    "properties": ["V_m"],
+                    "units": ["mV"],
+                    "targetting": {"strategy": "by_id", "ids": {"C": [2, 9]}},
+                },
+            },
+        )
+        self.network = Scaffold(cfg, self.storage)
+        self.network.compile()
+
+    def _results_file(self):
+        tmpdir = MPI.bcast(tempfile.mkdtemp() if not MPI.get_rank() else None)
+        if not MPI.get_rank():
+            self.addCleanup(shutil.rmtree, tmpdir, ignore_errors=True)
+        return os.path.join(tmpdir, "traced.nio")
+
+    def test_recordings_trace_back_to_their_cells(self):
+        filename = self._results_file()
+        self.network.run_simulation("test", output_filename=filename)
+        if MPI.get_rank():
+            return
+        results = read_results(self.network, filename)
+
+        by_id = list(results.recordings("by_id"))
+        self.assertEqual([3, 7, 11], sorted(r.target.id for r in by_id))
+        self.assertTrue(any(len(r.signal) for r in by_id), "the noise has to spike")
+        for recording in by_id:
+            with self.subTest(device="by_id", cell=recording.target.id):
+                self.assertEqual("B", recording.target.model)
+                self.assertEqual("B", recording.target.cell_type.name)
+                self.assertClose(
+                    self.positions[recording.target.id], recording.target.position
+                )
+
+        in_sphere = np.flatnonzero(
+            np.sum((self.positions - [45, 10, 10]) ** 2, axis=1) < 20**2
+        )
+        self.assertEqual(2, len(in_sphere), "the sphere has to span two chunks")
+        sphere = list(results.recordings("sphere"))
+        for model in ("A", "B", "C"):
+            with self.subTest(device="sphere", model=model):
+                cells = [r.target for r in sphere if r.target.model == model]
+                self.assertEqual(sorted(in_sphere), sorted(c.id for c in cells))
+                for cell in cells:
+                    self.assertClose(self.positions[cell.id], cell.position)
+
+        voltmeter = list(results.recordings("voltmeter"))
+        self.assertEqual([2, 9], sorted(r.target.id for r in voltmeter))
+        for recording in voltmeter:
+            self.assertEqual("V_m", recording.signal.name)
+            self.assertEqual("C", recording.target.model)
+            self.assertClose(
+                self.positions[recording.target.id], recording.target.position
+            )
+
+        self.assertNotIn("noise", results.devices, "a generator records nothing")

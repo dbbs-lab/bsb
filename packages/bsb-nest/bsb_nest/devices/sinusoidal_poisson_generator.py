@@ -1,6 +1,5 @@
 import nest
 from bsb import ConfigurationError, config
-from neo import SpikeTrain
 
 from ..device import NestDevice
 
@@ -44,20 +43,4 @@ class SinusoidalPoissonGenerator(
         device = self.register_device(
             simdata, nest.Create("sinusoidal_poisson_generator", params=params)
         )
-        sr = nest.Create("spike_recorder")
-        nest.Connect(device, sr)
         self.connect_to_nodes(device, nodes)
-
-        def recorder(segment):
-            segment.spiketrains.append(
-                SpikeTrain(
-                    sr.events["times"],
-                    units="ms",
-                    array_annotations={"senders": sr.events["senders"]},
-                    t_stop=simulation.duration,
-                    device=self.name,
-                    pop_size=len(nodes),
-                )
-            )
-
-        simdata.result.create_recorder(recorder)

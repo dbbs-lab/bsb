@@ -84,7 +84,7 @@
           "synapses": [
             {
               "model": "static_synapse",
-              "weight": 300,
+              "weight": 100,
               "delay": 1
             }
           ]
@@ -93,7 +93,7 @@
       "devices": {
         "background_noise": {
           "device": "poisson_generator",
-          "rate": 10,
+          "rate": 20,
           "targetting": {
             "strategy": "cell_model",
             "cell_models": [

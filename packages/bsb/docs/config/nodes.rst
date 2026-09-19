@@ -184,6 +184,19 @@ Child classes can then register themselves in the classmap of the parent by prov
 
 This will generate a mapping from ``short`` to the ``my.module.path.MappedChild`` class.
 
+A child that gives no ``classmap_entry`` is registered under the snake case of its own
+class name, so a class is configurable without saying anything. One that gives ``None``
+stays out of the classmap altogether, which is what an abstract intermediate class wants:
+
+.. code-block:: python
+
+  class Intermediate(Example, classmap_entry=None):
+    pass
+
+Whatever a class declares is the only name it answers to; the snake case of its class
+name is a fallback for classes that declare nothing, not an alias alongside a declared
+entry.
+
 If the base class is not supposed to be abstract, it can be added to the
 classmap as well:
 

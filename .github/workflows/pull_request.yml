@@ -13,6 +13,41 @@ jobs:
         with:
           task_types: '["feat","fix","chore","docs","test","ci","refactor","perf","revert"]'
 
+  # A CI skip marker in a commit message survives into the squash-merge commit,
+  # because GitHub's default squash message concatenates the merged commits. A
+  # `next` -> `main` merge carrying one silently suppresses the release run, which
+  # is what happened in #193. Blocking the marker at the PR keeps it out of the
+  # history in the first place, rather than relying on nobody reintroducing it.
+  forbid-ci-skip-markers:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Reject CI skip markers in commit messages
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_COMMITS_URL: repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/commits
+        run: |
+          set -euo pipefail
+          # The markers GitHub Actions itself honours.
+          markers='\[(skip ci|ci skip|no ci|skip actions|actions skip)\]'
+          found=0
+          # Messages are base64'd so a multi-line body stays on one record.
+          commits=$(gh api "$PR_COMMITS_URL" --paginate \
+            --jq '.[] | [.sha, (.commit.message | @base64)] | @tsv')
+          while IFS=$'\t' read -r sha encoded; do
+            [ -n "$sha" ] || continue
+            message=$(printf '%s' "$encoded" | base64 -d)
+            if printf '%s' "$message" | grep -Eqi "$markers"; then
+              echo "::error::Commit $sha contains a CI skip marker: $(printf '%s' "$message" | head -1)"
+              found=1
+            fi
+          done <<< "$commits"
+          if [ "$found" -ne 0 ]; then
+            echo "A CI skip marker is inherited by the squash-merge commit and suppresses"
+            echo "the release workflow on main. Reword the offending commits."
+            exit 1
+          fi
+          echo "No CI skip markers found."
+
   get-modified:
     runs-on: ubuntu-latest
     if: github.event.action != 'edited'
@@ -28,23 +63,24 @@ jobs:
           \. "$HOME/.nvm/nvm.sh"
           nvm install --lts
 
+      # Sets NX_BASE/NX_HEAD env vars for the rest of the job. For pull_request
+      # events it resolves NX_BASE to merge-base(origin/<PR base ref>, HEAD).
+      - name: Derive base/head SHAs for nx affected
+        uses: nrwl/nx-set-shas@v5
+
       - name: Get affected projects
         id: get-affected
         run: |
-          # Manually set the NX BASE and HEAD variables.
-          # see https://github.com/dbbs-lab/bsb/issues/152
-          NX_BASE=origin/main
-          if [ "${{ github.ref }}" == "refs/heads/main" ]; then
-            NX_BASE="${NX_BASE}~1"
-          fi
           # Run the nx command once to install required npm libs
-          # so that the logs of the installation do not pollute the 
+          # so that the logs of the installation do not pollute the
           # output of the next command
-          ./nx show projects
-          # Here we extract the list of nx bsb projects and store 
-          # them as a list that can be parsed in the next job
-          packages=$(./nx show projects --affected --base=$NX_BASE --head=HEAD --exclude=sphinxext-bsb,examples)
-          packages=[\"$(echo $packages | sed -r 's/[ ]+/", "/g')\"]
+          ./nx show projects > /dev/null
+          # Here we extract the list of nx bsb projects and store
+          # them as a list that can be parsed in the next job. `--json` is
+          # explicit because `show projects` only formats as JSON by itself
+          # when stdout is not a terminal, and `fromJSON` needs an array.
+          packages=$(./nx show projects --affected --json \
+            --base="$NX_BASE" --head="$NX_HEAD" --exclude=sphinxext-bsb,examples)
           echo "packages=$packages" >> $GITHUB_OUTPUT
   preview-docs:
     needs: [ get-modified ]

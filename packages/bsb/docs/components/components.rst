@@ -18,7 +18,8 @@ parameters and outputs. You will find these at the following pages:
 * :doc:`Morphologies </morphologies/intro>` ,
 * :doc:`Placement </placement/intro>`,
 * :doc:`Connectivity </connectivity/defining>`,
-* :doc:`Simulations </simulation/intro>`
+* :doc:`Simulations </simulation/intro>`,
+* :doc:`Post processing hooks </postprocess/postprocessing>`
 
 If some aspects of the documentation are not sufficiently clear or missing, do not hesitate
 to reach out for us.
@@ -62,6 +63,10 @@ Here is how you do it (theoretically):
 
 #. Refer to the class from the configuration by its importable module name, or use a
    :ref:`Class map <classmap>`.
+
+If your component draws randomly, take its generator from the configuration rather than
+from a global one, so a model stays reproducible and its runs stay independent. See
+:doc:`/core/randomness`.
 
 Share your code with the whole world and become an author of a :ref:`plugin <plugins>`!
 |:heart_eyes:|

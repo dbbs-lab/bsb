@@ -1,4 +1,3 @@
-import contextlib
 import itertools
 
 import numpy as np
@@ -26,34 +25,42 @@ class NeuronSimulationData(SimulationData):
 
 
 class NeuronResult(SimulationResult):
-    def record(self, obj, **annotations):
+    def record(self, obj, *, device, target: dict, name: str, units: str):
+        """
+        Record a NEURON variable every time step, as a recording of a device.
+
+        :param obj: Reference to the NEURON variable to record, such as ``seg._ref_v``.
+        :param device: The device the recording belongs to.
+        :type device: bsb_neuron.device.NeuronDevice
+        :param target: What is recorded, as the annotations of
+          :func:`~bsb.simulation.results.cell_annotations`,
+          :func:`~bsb.simulation.results.point_annotations` or
+          :func:`~bsb.simulation.results.synapse_annotations` give them.
+        :param name: What the recorded variable measures, such as ``v`` or ``i``.
+        :param units: Units of the recorded variable.
+        """
         from patch import p
         from quantities import ms
 
+        if "bsb_recording_kind" not in target or "bsb_direction" not in target:
+            raise AdapterError(
+                f"Device '{device.name}' has to say what it records: pass the "
+                "annotations of `cell_annotations`, `point_annotations` or "
+                "`synapse_annotations` as `target`."
+            )
         v = p.record(obj)
 
         def flush(segment):
-            if "units" not in annotations:
-                annotations["units"] = "mV"
             segment.analogsignals.append(
-                AnalogSignal(list(v), sampling_period=p.dt * ms, **annotations)
+                AnalogSignal(
+                    list(v), sampling_period=p.dt * ms, name=name, units=units, **target
+                )
             )
             # Free the memory
             if v.size():
                 v.remove(0, v.size() - 1)
 
-        self.create_recorder(flush)
-
-
-@contextlib.contextmanager
-def fill_parameter_data(parameters, data):
-    for param in parameters:
-        if hasattr(param, "load_data"):
-            param.load_data(*data)
-    yield
-    for param in parameters:
-        if hasattr(param, "load_data"):
-            param.drop_data()
+        self.create_recorder(flush, device=device)
 
 
 class NeuronAdapter(SimulatorAdapter):
@@ -70,7 +77,7 @@ class NeuronAdapter(SimulatorAdapter):
 
         return engine
 
-    def prepare(self, simulation):
+    def prepare(self, simulation, filename=None):
         """
         Prepare the simulation environment and data structures for running a NEURON
         simulation.
@@ -90,7 +97,13 @@ class NeuronAdapter(SimulatorAdapter):
         """
 
         self.simdata[simulation] = NeuronSimulationData(
-            simulation, result=NeuronResult(simulation)
+            simulation,
+            result=NeuronResult(
+                simulation,
+                filename=filename,
+                comm=self.comm,
+                simulation_id=self.new_run_id(),
+            ),
         )
         try:
             report("Preparing simulation", level=2)
@@ -170,10 +183,9 @@ class NeuronAdapter(SimulatorAdapter):
         self._allocate_transmitters(simulation)
         for conn_model in simulation.connection_models.values():
             cs = simulation.scaffold.get_connectivity_set(conn_model.name)
-            with fill_parameter_data(conn_model.parameters, []):
-                simdata.connections[conn_model] = conn_model.create_connections(
-                    simulation, simdata, cs
-                )
+            simdata.connections[conn_model] = conn_model.create_connections(
+                simulation, simdata, cs
+            )
 
     def _allocate_transmitters(self, simulation):
         simdata = self.simdata[simulation]
@@ -282,9 +294,8 @@ class NeuronAdapter(SimulatorAdapter):
             except DatasetNotFoundError:
                 data.append(itertools.repeat(None))
 
-        with fill_parameter_data(cell_model.parameters, data):
-            instances = cell_model.create_instances(len(ps), *data)
-            simdata.populations[cell_model] = NeuronPopulation(cell_model, instances)
+        instances = cell_model.create_instances(len(ps), *data)
+        simdata.populations[cell_model] = NeuronPopulation(cell_model, instances)
 
 
 class NeuronPopulation(list):

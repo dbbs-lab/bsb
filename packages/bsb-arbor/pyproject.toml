@@ -6,16 +6,16 @@ build-backend = "flit_core.buildapi"
 name = "bsb-arbor"
 version = "7.6.1"
 readme = "README.md"
-requires-python = ">=3.10,<4"
+requires-python = ">=3.11,<4"
 dynamic = [ "description" ]
 classifiers = [
   "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"
 ]
 dependencies = [
-  "numpy~=1.21",
+  "numpy~=2.0",
   "bsb-core~=7.0",
   "arborize~=7.0",
-  "arbor==0.11; sys_platform != 'win32'",
+  "arbor~=0.12; sys_platform != 'win32'",
   "arborize[arbor]~=7.0; sys_platform != 'win32'"
 ]
 

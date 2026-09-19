@@ -126,6 +126,7 @@ def uniform_surface_sampling(
     phi_min=0,
     phi_max=np.pi,
     precision=25,
+    rng: np.random.Generator | None = None,
 ):
     """
     Uniform-like random sampling of polar coordinates based on surface estimation.
@@ -136,15 +137,19 @@ def uniform_surface_sampling(
     :param Callable[..., numpy.ndarray[float]] surface_function: function converting polar
         coordinates into cartesian coordinates
     :param int precision: size of grid used to estimate function surface
+    :param numpy.random.Generator rng: Generator to draw the sampling from. Defaults to
+        an unseeded generator, so callers that need reproducibility must supply one.
     """
+    if rng is None:
+        rng = np.random.default_rng()
 
     theta, phi, cum_S_t, cum_S_u = _surface_resampling(
         surface_function, theta_min, theta_max, phi_min, phi_max, precision
     )
     # resample along the cumulative surface to uniformize point distribution
     # equivalent to a multinomial sampling
-    sampled_t = np.random.rand(n_points) * cum_S_t[-1]
-    sampled_u = np.random.rand(n_points) * cum_S_u[-1]
+    sampled_t = rng.random(n_points) * cum_S_t[-1]
+    sampled_u = rng.random(n_points) * cum_S_u[-1]
     sampled_t = interp1d(cum_S_t, theta[0, :])(sampled_t)
     sampled_u = interp1d(cum_S_u, phi[:, 0])(sampled_u)
 
@@ -329,11 +334,16 @@ class GeometricShape(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def generate_point_cloud(self, npoints: int):  # pragma: nocover
+    def generate_point_cloud(
+        self, npoints: int, rng: np.random.Generator | None = None
+    ):  # pragma: nocover
         """
         Generate a point cloud made by npoints points.
 
         :param int npoints: The number of points to generate.
+        :param numpy.random.Generator rng: Generator to draw the point cloud from.
+            Defaults to an unseeded generator, so callers that need reproducibility
+            must supply one.
         :return: a (npoints x 3) numpy array.
         :rtype: numpy.ndarray
         """
@@ -507,11 +517,16 @@ class ShapesComposition:
         """
         return [int(shape.get_volume() // self.voxel_size**3) for shape in self._shapes]
 
-    def generate_point_cloud(self) -> np.ndarray[float] | None:
+    def generate_point_cloud(
+        self, rng: np.random.Generator | None = None
+    ) -> np.ndarray[float] | None:
         """
         Generate a point cloud. The number of points to generate is determined
         automatically using the voxel size.
 
+        :param numpy.random.Generator rng: Generator to draw the point cloud from.
+            Defaults to an unseeded generator, so callers that need reproducibility
+            must supply one.
         :return: A numpy.ndarray containing the 3D points of the cloud. If there are no
             shapes in the collection, it returns None.
         :rtype: numpy.ndarray[float] | None
@@ -519,7 +534,7 @@ class ShapesComposition:
         if len(self._shapes) != 0:
             return np.concatenate(
                 [
-                    shape.generate_point_cloud(numpts)
+                    shape.generate_point_cloud(numpts, rng)
                     for shape, numpts in zip(
                         self._shapes, self.compute_n_points(), strict=False
                     )
@@ -694,9 +709,11 @@ class Ellipsoid(GeometricShape, classmap_entry="ellipsoid"):
             ]
         )
 
-    def generate_point_cloud(self, npoints: int):
-        sampling = uniform_surface_sampling(npoints, self.surface_point)
-        sampling = sampling.T * np.random.rand(npoints, 3)  # sample within the shape
+    def generate_point_cloud(self, npoints: int, rng: np.random.Generator | None = None):
+        if rng is None:
+            rng = np.random.default_rng()
+        sampling = uniform_surface_sampling(npoints, self.surface_point, rng=rng)
+        sampling = sampling.T * rng.random((npoints, 3))  # sample within the shape
 
         # Rotate the ellipse
         rmat = np.array([self.v0, self.v1, self.v2]).T
@@ -782,10 +799,12 @@ class Cone(GeometricShape, classmap_entry="cone"):
         rot = R.from_rotvec(r_versor * angle)
         self.apex = rot.apply(self.apex)
 
-    def generate_point_cloud(self, npoints: int):
-        theta = np.pi * 2.0 * np.random.rand(npoints)
-        rand_a = np.random.rand(npoints)
-        rand_b = np.random.rand(npoints)
+    def generate_point_cloud(self, npoints: int, rng: np.random.Generator | None = None):
+        if rng is None:
+            rng = np.random.default_rng()
+        theta = np.pi * 2.0 * rng.random(npoints)
+        rand_a = rng.random(npoints)
+        rand_b = rng.random(npoints)
 
         # Height vector
         hv = self.origin - self.apex
@@ -912,11 +931,13 @@ class Cylinder(GeometricShape, classmap_entry="cylinder"):
         # rotation according to bottom center
         self.top_center = rot.apply(self.top_center)
 
-    def generate_point_cloud(self, npoints: int):
+    def generate_point_cloud(self, npoints: int, rng: np.random.Generator | None = None):
+        if rng is None:
+            rng = np.random.default_rng()
         # Generate an ellipse orientated along x,y,z
         cloud = np.full((npoints, 3), 0, dtype=float)
-        theta = np.pi * 2.0 * np.random.rand(npoints)
-        rand = np.random.rand(npoints, 3)
+        theta = np.pi * 2.0 * rng.random(npoints)
+        rand = rng.random((npoints, 3))
         height = np.linalg.norm(self.top_center - self.origin)
 
         # Generate an ellipsoid centered at the origin, with the semiaxes on x,y,z
@@ -1025,10 +1046,12 @@ class Sphere(GeometricShape, classmap_entry="sphere"):
             ]
         )
 
-    def generate_point_cloud(self, npoints: int):
+    def generate_point_cloud(self, npoints: int, rng: np.random.Generator | None = None):
+        if rng is None:
+            rng = np.random.default_rng()
         # Generate a sphere centered at the origin.
-        cloud = uniform_surface_sampling(npoints, self.surface_function)
-        cloud = cloud.T * np.random.rand(npoints, 3)  # sample within the shape
+        cloud = uniform_surface_sampling(npoints, self.surface_function, rng=rng)
+        cloud = cloud.T * rng.random((npoints, 3))  # sample within the shape
 
         cloud = cloud + self.origin
 
@@ -1130,9 +1153,11 @@ class Cuboid(GeometricShape, classmap_entry="cuboid"):
         rot = R.from_rotvec(r_versor * angle)
         self.top_center = rot.apply(self.top_center)
 
-    def generate_point_cloud(self, npoints: int):
+    def generate_point_cloud(self, npoints: int, rng: np.random.Generator | None = None):
+        if rng is None:
+            rng = np.random.default_rng()
         # Generate a unit cuboid whose base rectangle has the barycenter in the origin
-        rand = np.random.rand(npoints, 3)
+        rand = rng.random((npoints, 3))
         rand[:, 0] = rand[:, 0] - 0.5
         rand[:, 1] = rand[:, 1] - 0.5
 
@@ -1269,10 +1294,12 @@ class Parallelepiped(GeometricShape, classmap_entry="parallelepiped"):
         self.side_vector_2 = rot.apply(self.side_vector_2)
         self.side_vector_3 = rot.apply(self.side_vector_3)
 
-    def generate_point_cloud(self, npoints: int):
+    def generate_point_cloud(self, npoints: int, rng: np.random.Generator | None = None):
+        if rng is None:
+            rng = np.random.default_rng()
         # Generate a linear combination of points in the volume
         cloud = np.full((npoints, 3), 0, dtype=float)
-        rand = np.random.rand(npoints, 3)
+        rand = rng.random((npoints, 3))
         for i in range(npoints):
             cloud[i] = (
                 rand[i, 0] * self.side_vector_1

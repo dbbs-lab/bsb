@@ -1,5 +1,7 @@
+import collections
+
 import neo
-from bsb import config
+from bsb import cell_annotations, config
 
 from ..device import ArborDevice
 
@@ -11,28 +13,33 @@ class SpikeRecorder(ArborDevice, classmap_entry="spike_recorder"):
 
     def implement(self, adapter, simulation, simdata):
         super().implement(adapter, simulation, simdata)
+        # Arbor distributes the cells itself and its Python API gathers the spikes,
+        # so rank 0 holds the whole run's results and is by convention the rank
+        # that writes them.
         if not adapter.comm.get_rank():
 
             def record_device_spikes(segment):
-                spiketrain = list()
-                senders = list()
+                times = collections.defaultdict(list)
                 for (gid, index), time in simdata.arbor_sim.spikes():
                     if index == 0 and gid in self._gids:
-                        spiketrain.append(time)
-                        senders.append(gid)
-                segment.spiketrains.append(
-                    neo.SpikeTrain(
-                        spiketrain,
-                        units="ms",
-                        array_annotations={"senders": senders},
-                        t_stop=self.simulation.duration,
-                        device=self.name,
-                        gids=list(self._gids),
-                        pop_size=len(self._gids),
+                        times[gid].append(time)
+                # One train per cell the device watched, empty ones included. Which
+                # cells those were is then the set of recordings itself, so nothing
+                # has to say it a second time, and a silent cell is told apart from
+                # one that was never watched by reading the results alone.
+                for gid in sorted(self._gids):
+                    cell_model, cell_id = _cell_of_gid(simdata, gid)
+                    segment.spiketrains.append(
+                        neo.SpikeTrain(
+                            times[gid],
+                            units="ms",
+                            t_stop=self.simulation.duration,
+                            name="spikes",
+                            **cell_annotations(cell_model, cell_id, "record"),
+                        )
                     )
-                )
 
-            simdata.result.create_recorder(record_device_spikes)
+            simdata.result.create_recorder(record_device_spikes, device=self)
 
     def implement_probes(self, simdata, gid):
         self._gids.add(gid)
@@ -40,3 +47,15 @@ class SpikeRecorder(ArborDevice, classmap_entry="spike_recorder"):
 
     def implement_generators(self, simdata, gid):
         return []
+
+
+def _cell_of_gid(simdata, gid):
+    """
+    The cell model and cell id that an arbor gid simulates.
+
+    Each model's gids start at its offset and follow its placement set row by row,
+    so the cell id is the gid counted from there.
+    """
+    manager = simdata.gid_manager
+    model = manager.lookup_model(gid)
+    return model, gid - manager.lookup_offset(gid)

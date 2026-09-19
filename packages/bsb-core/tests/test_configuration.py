@@ -6,6 +6,7 @@ import os.path
 import pathlib
 import pickle
 import sys
+import tempfile
 import unittest
 
 import numpy as np
@@ -28,15 +29,19 @@ from bsb import (
     ConfigurationWarning,
     DynamicClassInheritanceError,
     DynamicObjectNotFoundError,
+    LayoutError,
     NrrdDependencyNode,
     PackageRequirementWarning,
     Partition,
+    PlacementIndicator,
     Region,
     RegionGroup,
     RequirementError,
     Scaffold,
     UnfitClassCastError,
     UnresolvedClassCastError,
+    Voxels,
+    VoxelSet,
     config,
     from_storage,
     refs,
@@ -1332,6 +1337,85 @@ class TestTypes(unittest.TestCase):
             # Check that unknown distributions throw a CastError
             a = Test({"c": {"distribution": "alphaa"}})
 
+    def test_distribution_draw_uses_the_given_rng(self):
+        """`Distribution.draw` must draw through a passed rng, not scipy's own
+        unseeded default, or a distribution config value can never be reproduced."""
+
+        @config.root
+        class Test:
+            c = config.attr(type=types.distribution())
+
+        a = Test({"c": {"distribution": "norm"}})
+
+        first = a.c.draw(5, np.random.default_rng(1234))
+        again = a.c.draw(5, np.random.default_rng(1234))
+        self.assertTrue(np.array_equal(first, again), "same rng must draw the same")
+
+        other = a.c.draw(5, np.random.default_rng(4321))
+        self.assertFalse(
+            np.array_equal(first, other), "different rngs must not draw the same"
+        )
+
+        # Left unset, still falls back to scipy's own default rather than raising.
+        self.assertEqual(5, len(a.c.draw(5)))
+
+        # A constant distribution ignores whatever rng it is handed.
+        b = Test({"c": 7})
+        self.assertTrue(
+            np.array_equal(np.full(3, 7), b.c.draw(3, np.random.default_rng()))
+        )
+
+    def test_distribution_draw_only_needs_random(self):
+        """`draw` draws through a distribution's inverse CDF on uniform samples
+        from `rng.random(n)`, rather than handing `rng` to scipy as a
+        `random_state` -- unlike the rest of the framework, which also reaches
+        for `.integers()`/`.choice()`, nothing else is asked of it. A kind with
+        nothing numpy-specific behind it -- one backed by `bsb_native`'s Rust,
+        say -- only has to answer that one method, not satisfy scipy's stricter,
+        `isinstance`-checked `random_state` contract.
+        """
+
+        @config.root
+        class Test:
+            c = config.attr(type=types.distribution())
+
+        a = Test({"c": {"distribution": "norm"}})
+
+        class OnlyRandom:
+            """No numpy machinery anywhere in it -- stands in for a generator
+            kind backed by something other than numpy, Rust or otherwise."""
+
+            def __init__(self, seed):
+                self._rng = np.random.default_rng(seed)
+
+            def random(self, size):
+                return self._rng.random(size)
+
+        first = a.c.draw(5, OnlyRandom(1234))
+        self.assertEqual(5, len(first))
+        self.assertTrue(
+            np.array_equal(first, a.c.draw(5, OnlyRandom(1234))),
+            "same seed must draw the same",
+        )
+        self.assertFalse(
+            np.array_equal(first, a.c.draw(5, OnlyRandom(4321))),
+            "different seeds must not draw the same",
+        )
+
+        class NoRandomAtAll:
+            """Satisfies the *other* call sites' contract, not this one."""
+
+            def integers(self, *args, **kwargs):
+                return 0
+
+            def choice(self, *args, **kwargs):
+                return 0
+
+        with self.assertRaises(
+            AttributeError, msg="missing .random() must fail, not draw unseeded"
+        ):
+            a.c.draw(5, NoRandomAtAll())
+
     def test_evaluation(self):
         @config.root
         class Test:
@@ -1501,6 +1585,39 @@ class TestTypes(unittest.TestCase):
             _parent=TestRoot(),
         )
         self.assertEqual(b.c.load_object(), module.tree)
+
+    def test_code_dependency_node_installed_module(self):
+        # Regression test: a dotted import string pointing to a module of an
+        # installed package (i.e. not located relative to the current working
+        # directory) must be resolved through the import machinery, instead of
+        # being naively guessed as a path relative to `cwd`.
+        @config.node
+        class Test:
+            c = config.attr(type=CodeDependencyNode)
+
+        import bsb_test.configs as installed_module
+
+        expected_path = os.path.abspath(installed_module.__file__)
+        expected_uri = pathlib.Path(expected_path).as_uri()
+        old_cwd = os.getcwd()
+        with tempfile.TemporaryDirectory() as tmpdir:
+            os.chdir(tmpdir)
+            try:
+                b = Test(
+                    c="bsb_test.configs",
+                    _parent=TestRoot(),
+                )
+                self.assertEqual(
+                    b.c.file.uri,
+                    expected_uri,
+                    "module-like string should resolve through the import "
+                    "machinery, not a path guess relative to cwd",
+                )
+                loaded = b.c.load_object()
+                self.assertEqual(os.path.abspath(loaded.__file__), expected_path)
+                self.assertTrue(hasattr(loaded, "get_test_config_module"))
+            finally:
+                os.chdir(old_cwd)
 
 
 @config.dynamic(
@@ -1899,6 +2016,43 @@ class TestNodeClass(unittest.TestCase):
 
         self.assertEqual("{root}", Test().get_node_name())
 
+    def test_node_name_inside_empty_container(self):
+        """
+        A node that is cast into a container that is still empty has to report its full
+        config path, and not disown its parents as `{standalone}`.
+        """
+
+        @config.node
+        class Child:
+            needed = config.attr(required=True)
+
+        @config.root
+        class Root:
+            d = config.dict(type=Child)
+            ls = config.list(type=Child)
+
+        with self.assertRaises(RequirementError) as ctx:
+            Root(d={"first": {}})
+        self.assertIn("{root}.d.first", str(ctx.exception))
+        with self.assertRaises(RequirementError) as ctx:
+            Root(ls=[{}])
+        self.assertIn("{root}.ls", str(ctx.exception))
+
+    def test_node_name_during_configuration_default(self):
+        """
+        Regression test for the node names of nodes built by `Configuration.default`.
+        """
+        with self.assertRaises(RequirementError) as ctx:
+            Configuration.default(
+                connectivity=dict(
+                    x=dict(
+                        strategy="bsb.connectivity.VoxelIntersection",
+                        presynaptic=dict(cell_types=["A"]),
+                    )
+                )
+            )
+        self.assertIn("{root}.connectivity.x", str(ctx.exception))
+
 
 class TestNodeComposition(unittest.TestCase):
     def setUp(self):
@@ -1998,3 +2152,85 @@ class TestPackageRequirements(RandomStorageFixture, unittest.TestCase, engine_na
         self.assertEqual(
             self.network.configuration.packages, network2.configuration.packages
         )
+
+
+class TestErrorNodeAttribution(unittest.TestCase):
+    """
+    Configuration errors have to name the node they occurred on, and not the nearest
+    ancestor that happened to be able to name itself.
+    """
+
+    def setUp(self):
+        @config.dynamic(attr_name="kind", auto_classmap=True)
+        class Widget:
+            pass
+
+        @config.node
+        class RoundWidget(Widget, classmap_entry="round"):
+            size = config.attr(type=int)
+
+        @config.node
+        class Leaf:
+            pass
+
+        @config.node
+        class Holder:
+            widgets = config.dict(type=Widget)
+            leaf = config.attr(type=Leaf)
+
+        @config.root
+        class Root:
+            holders = config.dict(type=Holder)
+
+        self.Root = Root
+
+    def test_missing_dynamic_attr(self):
+        """
+        The dynamic class of a node is determined before the node exists, so the error
+        has to be attributed to the slot the node was being built for.
+        """
+        with self.assertRaises(RequirementError) as ctx:
+            self.Root(holders={"h": {"widgets": {"w": {}}}})
+        self.assertIn("{root}.holders.h.widgets.w", str(ctx.exception))
+
+    def test_unconvertible_node_value(self):
+        with self.assertRaises(CastError) as ctx:
+            self.Root(holders={"h": {"leaf": "nonsense"}})
+        self.assertIn("{root}.holders.h.leaf", str(ctx.exception))
+
+    def test_unconvertible_attr_of_dynamic_node(self):
+        with self.assertRaises(CastError) as ctx:
+            self.Root(holders={"h": {"widgets": {"w": {"kind": "round", "size": "nan"}}}})
+        self.assertIn("{root}.holders.h.widgets.w.size", str(ctx.exception))
+
+
+class TestSurfaceErrorAttribution(unittest.TestCase):
+    """
+    Partitions that can't calculate a surface have to say which partition they are, and
+    the planar density estimate has to say which cell type and strategy asked for it.
+    """
+
+    def test_planar_density_on_surfaceless_partition(self):
+        @config.node
+        class SurfacelessVoxels(Voxels, classmap_entry="surfaceless_voxels"):
+            def to_voxels(self):
+                return VoxelSet([[0, 0, 0]], 100)
+
+        cfg = Configuration.default(
+            cell_types=dict(cell_A=dict(spatial=dict(radius=1, planar_density=0.1))),
+            partitions=dict(vox=dict(type="surfaceless_voxels")),
+            placement=dict(
+                placement_A=dict(
+                    strategy="bsb.placement.RandomPlacement",
+                    cell_types=["cell_A"],
+                    partitions=["vox"],
+                )
+            ),
+        )
+        indicator = PlacementIndicator(cfg.placement.placement_A, cfg.cell_types.cell_A)
+        with self.assertRaises(LayoutError) as ctx:
+            indicator.guess()
+        msg = str(ctx.exception)
+        self.assertIn("'vox'", msg, "surface error should name the partition")
+        self.assertIn("'cell_A'", msg, "surface error should name the cell type")
+        self.assertIn("'placement_A'", msg, "surface error should name the strategy")

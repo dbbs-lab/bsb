@@ -251,30 +251,11 @@ class ConstraintsDefinition(
     :rtype: ConstraintsDefinition
     """
 
-    @classmethod
-    @property
-    def cable_type_class(cls):
-        return CableTypeConstraints
-
-    @classmethod
-    @property
-    def cable_properties_class(cls):
-        return CablePropertyConstraints
-
-    @classmethod
-    @property
-    def ion_class(cls):
-        return IonConstraints
-
-    @classmethod
-    @property
-    def mechanism_class(cls):
-        return MechanismConstraints
-
-    @classmethod
-    @property
-    def synapse_class(cls):
-        return SynapseConstraints
+    cable_type_class = CableTypeConstraints
+    cable_properties_class = CablePropertyConstraints
+    ion_class = IonConstraints
+    mechanism_class = MechanismConstraints
+    synapse_class = SynapseConstraints
 
     def set_tolerance(self, tolerance=None):
         for syn in self._synapse_types.values():

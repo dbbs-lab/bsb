@@ -246,6 +246,32 @@ class Scaffold:
     def files(self) -> FileStore:
         return self.storage.files
 
+    @property
+    def storage_id(self) -> str | None:
+        """
+        Permanent UUID of the underlying storage root. ``None`` when the storage
+        is opened read-only against a legacy file that could not be upgraded.
+        """
+        return self._storage._engine.storage_id
+
+    @property
+    def state_id(self) -> int | None:
+        """
+        Monotonic revision counter of the underlying storage. ``None`` when the
+        storage is opened read-only against a legacy file.
+        """
+        return self._storage._engine.state_id
+
+    @property
+    def provenance(self) -> dict:
+        """
+        Full provenance bundle of the underlying storage root, as a plain dict.
+
+        See :mod:`bsb.storage.provenance` for the canonical layout. Returns an
+        empty dict if the storage has no provenance recorded.
+        """
+        return dict(self._storage._engine.metadata)
+
     def clear(self):
         """
         Clears the storage.
@@ -449,7 +475,7 @@ class Scaffold:
                 pool.schedule(pipelines)
             pool.execute()
 
-    def run_simulation(self, simulation_name: str):
+    def run_simulation(self, simulation_name: str, output_filename: str = None):
         """
         Run a simulation starting from the default single-instance adapter.
 
@@ -460,7 +486,7 @@ class Scaffold:
         adapter = get_simulation_adapter(
             simulation.simulator, comm=self._comm.get_communicator()
         )
-        return adapter.simulate(simulation)[0]
+        return adapter.simulate(simulation, filename=output_filename)[0]
 
     def get_simulation(self, sim_name: str) -> Simulation:
         """

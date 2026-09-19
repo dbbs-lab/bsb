@@ -110,6 +110,7 @@ class PlacementSet(
         if path in handle:
             raise DatasetExistsError(f"PlacementSet '{tag}' already exists.")
         handle.create_group(path)
+        _init_ps_attrs(handle, path, cell_type.name)
         return cls(engine, cell_type)
 
     @staticmethod
@@ -118,12 +119,18 @@ class PlacementSet(
         return "/placement/" + cell_type.name in handle
 
     @classmethod
-    @handles_class_handles("a")
-    def require(cls, engine, cell_type, handle=HANDLED):
-        tag = cell_type.name
-        path = _root + tag
-        handle.require_group(path)
+    def require(cls, engine, cell_type):
+        # Requiring a set that exists changes nothing, so it takes no write handle: a
+        # write handle counts as a change to the storage's state, and every network
+        # requires its sets each time it is opened.
+        if not cls.exists(engine, cell_type):
+            cls._require_group(engine, cell_type)
         return cls(engine, cell_type)
+
+    @staticmethod
+    @handles_static_handles("a")
+    def _require_group(engine, cell_type, handle=HANDLED):
+        handle.require_group(_root + cell_type.name)
 
     @handles_handles("r")
     def load_positions(self, handle=HANDLED):
@@ -246,11 +253,30 @@ class PlacementSet(
             self.load_morphologies(),
         )
 
-    def __len__(self):
+    @handles_handles("r")
+    def __len__(self, handle=HANDLED):
         if self._labels:
-            return np.sum(self._labels_chunks.load().get_mask(self._labels))
-        else:
-            return len(self._position_chunks.load())
+            return int(np.sum(self.get_label_mask(self._labels, handle=handle)))
+        return self._count(handle)
+
+    def _count(self, handle):
+        """
+        Count the cells in the chunks under the chunk filter, ignoring any label filter.
+
+        Reads the count tracked per chunk on the placement set, so that it also counts
+        entities, which store a count but no data.
+        """
+        try:
+            chunk_stats = json.loads(handle[self._path].attrs["chunks"])
+        except KeyError:
+            # Sets stored without a tracked count have to be counted the hard way. An
+            # entity set is indistinguishable from an empty one here, but counting the
+            # positions is still the best guess available.
+            return len(self._position_chunks.load(handle=handle))
+        if self._chunks:
+            filter_ = {str(chunk.id) for chunk in self._chunks}
+            return sum(c for id_, c in chunk_stats.items() if id_ in filter_)
+        return sum(chunk_stats.values())
 
     @handles_handles("a")
     def append_data(
@@ -285,7 +311,7 @@ class PlacementSet(
         if not isinstance(chunk, Chunk):
             chunk = Chunk(chunk, None)
         if positions is not None:
-            positions = np.array(positions, copy=False)
+            positions = np.asarray(positions)
         if count is not None:
             if not (positions is None and morphologies is None):
                 raise ValueError(
@@ -329,7 +355,8 @@ class PlacementSet(
         """
         self.append_data(chunk, count=count, additional=additional)
 
-    def append_additional(self, name, chunk, data):
+    @handles_handles("a")
+    def append_additional(self, name, chunk, data, handle=HANDLED):
         self._additional_chunks.append(chunk, name, data)
 
     @handles_handles("a")
@@ -337,28 +364,37 @@ class PlacementSet(
         path = _root + self.tag
         g = handle.require_group(path)
         stats = self._engine._read_chunk_stats(handle)
-        for chunk, data in g.items():
+        chunk_stats = json.loads(g.attrs.get("chunks", "{}"))
+        # Snapshot the keys: the loop deletes the chunk groups it visits, and h5py does
+        # not support removing members of a group while iterating over it.
+        for chunk in list(g.keys()):
             if chunks is None or chunk in chunks:
-                stats[chunk]["placed"] -= len(data["position"])
+                count = chunk_stats.pop(chunk, None)
+                if count is None:
+                    # Untracked chunk, fall back to the amount of stored positions.
+                    count = len(g[chunk].get("position", ()))
+                stats[chunk]["placed"] -= count
                 del g[chunk]
+        g.attrs["chunks"] = json.dumps(chunk_stats)
+        g.attrs["len"] = sum(chunk_stats.values())
         self._engine._write_chunk_stats(handle, stats)
 
     @handles_handles("a")
     def label_by_mask(self, labels, mask, handle=HANDLED):
-        cells = np.array(mask, copy=False)
+        cells = np.asarray(mask)
         if cells.dtype != bool or len(cells) != len(self):
             raise LabellingError("Mask doesn't fit data.")
         self.label(labels, np.where(cells)[0], handle=handle)
 
     @handles_handles("a")
     def remove_labels_by_mask(self, labels, mask, handle=HANDLED):
-        cells = np.array(mask, copy=False)
+        cells = np.asarray(mask)
         if cells.dtype != bool or len(cells) != len(self):
             raise LabellingError("Mask doesn't fit data.")
         self.remove_labels(labels, np.where(cells)[0], handle=handle)
 
     def _check_cell_ids(self, cells):
-        cells = np.array(cells, copy=False)
+        cells = np.asarray(cells)
         len_ = len(self)
         oob = (cells >= len_) + (cells < 0)
         if np.any(oob):
@@ -484,17 +520,18 @@ class PlacementSet(
     @handles_handles("r")
     def load_ids(self, handle=HANDLED):
         if self._chunks is None or not len(self._chunks):
-            return self.get_labelled(self._labels, handle=handle)
-        stats = self.get_chunk_stats(handle)
-        ranges = []
-        ctr = 0
-        for chunk, len_ in sorted(
-            stats.items(), key=lambda k: Chunk.from_id(int(k[0]), None).id
-        ):
-            if chunk in self._chunks:
-                ranges.append(np.arange(ctr, ctr + len_))
-            ctr += len_
-        ranges = np.concatenate(ranges)
+            ranges = np.arange(self._count(handle))
+        else:
+            stats = self.get_chunk_stats(handle)
+            ranges = []
+            ctr = 0
+            for chunk, len_ in sorted(
+                stats.items(), key=lambda k: Chunk.from_id(int(k[0]), None).id
+            ):
+                if chunk in self._chunks:
+                    ranges.append(np.arange(ctr, ctr + len_))
+                ctr += len_
+            ranges = np.concatenate(ranges)
         if self._labels:
             ranges = ranges[self.get_label_mask(self._labels, handle=handle)]
         return ranges
@@ -559,3 +596,45 @@ def encode_labels(data, ds):
     serialized = json.dumps(EncodedLabels.none(1).labels, default=list)
     labels = json.loads(ps_group.attrs.get("labelsets", serialized))
     return EncodedLabels(shape=data.shape, buffer=data, labels=labels)
+
+
+def _init_ps_attrs(handle, ps_path, cell_type_name):
+    """Stamp the provenance attrs that every PlacementSet should have."""
+    from bsb.storage.provenance import iso_now
+
+    grp = handle[ps_path]
+    grp.attrs["cell_type"] = cell_type_name
+    grp.attrs["revision"] = 0
+    grp.attrs["created_at"] = iso_now()
+
+
+def _bump_ps_revision(handle, ps_path):
+    """
+    Move a placement set's ``revision`` and refresh its ``morphology_hashes``.
+
+    The hashes are refreshed here rather than on every write: appending positions
+    to a chunk cannot change a morphology's hash, and re-reading the whole
+    morphology metadata per chunk cost a quarter of the placement write path on a
+    network with a thousand morphologies.
+    """
+    grp = handle[ps_path]
+    current = grp.attrs.get("revision", 0)
+    if hasattr(current, "item"):
+        current = current.item()
+    grp.attrs["revision"] = int(current) + 1
+    loaders = grp.attrs.get("morphology_loaders")
+    if loaders is not None and len(loaders):
+        all_meta = _read_morphology_meta_from_handle(handle)
+        names = loaders.tolist() if hasattr(loaders, "tolist") else list(loaders)
+        hashes = [(all_meta.get(name) or {}).get("hash") for name in names]
+        grp.attrs["morphology_hashes"] = json.dumps(hashes)
+
+
+def _read_morphology_meta_from_handle(handle):
+    """Read morphology_meta directly from an open handle without re-locking."""
+    if "morphology_meta" not in handle:
+        return {}
+    try:
+        return json.loads(handle["morphology_meta"][()])
+    except (TypeError, json.JSONDecodeError):
+        return {}

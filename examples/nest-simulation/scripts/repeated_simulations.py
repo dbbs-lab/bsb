@@ -26,6 +26,10 @@ for i in range(nb_repetitions):
     results = adapter.run(simulation)
     results = adapter.collect(results)
     results = results[0]  # here we only run one simulation
+    # `simulate()` calls this for you; driving the adapter yourself, as we do
+    # here, means merging every rank's part into the one file a run produces
+    # is on you too.
+    results.finalize()
     # Organize the Neo data file into your data workflow by tagging it,
     # renaming it, moving it, giving it metadata, ...
     output_file = f"simulation-results/my_simulation_results_{input_rate}Hz.nio"

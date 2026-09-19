@@ -1,3 +1,6 @@
+import ast
+import inspect
+import textwrap
 import unittest
 from collections import defaultdict
 
@@ -12,6 +15,7 @@ from bsb_test import (
     skip_parallel,
 )
 
+import bsb
 from bsb import (
     MPI,
     Branch,
@@ -1098,3 +1102,318 @@ class TestOutputNamingConnect(
         ps_post = self.network.get_placement_set("D")
         with self.assertRaises(ConnectivityError):
             self.network.connectivity.x.connect_cells(ps_pre, ps_post, [], [])
+
+
+class TestSegmentIntersection(
+    RandomStorageFixture,
+    NetworkFixture,
+    NumpyTestCase,
+    unittest.TestCase,
+    engine_name="hdf5",
+):
+    """End-to-end check that the bsb-native segment-intersection kernel connects
+    cells whose morphologies overlap, and leaves distant cells unconnected."""
+
+    def setUp(self):
+        self.cfg = Configuration.default(
+            cell_types=dict(
+                test_cell_A=dict(
+                    spatial=dict(radius=1, density=1, morphologies=[dict(names=["A"])])
+                ),
+                test_cell_B=dict(
+                    spatial=dict(radius=1, density=1, morphologies=[dict(names=["B"])])
+                ),
+            ),
+            placement=dict(
+                fixed_A=dict(
+                    strategy="bsb.placement.FixedPositions",
+                    cell_types=["test_cell_A"],
+                    partitions=[],
+                    # cell 1 ([50,0,0]) overlaps B; cell 2 ([0,0,300]) is far away.
+                    positions=[[0, 0, 0], [50, 0, 0], [0, 0, 300]],
+                ),
+                fixed_B=dict(
+                    strategy="bsb.placement.FixedPositions",
+                    cell_types=["test_cell_B"],
+                    partitions=[],
+                    positions=[[95, 0, 0]],
+                ),
+            ),
+        )
+        super().setUp()
+        self.network.connectivity.add(
+            "intersect",
+            dict(
+                strategy="bsb.connectivity.SegmentIntersection",
+                presynaptic=dict(cell_types=["test_cell_A"]),
+                postsynaptic=dict(cell_types=["test_cell_B"]),
+                contact_distance=10.0,
+            ),
+        )
+        if MPI.get_rank():
+            MPI.barrier()
+        else:
+            mA = Morphology(
+                [Branch([[0, 0, 0], [0, 25, 25], [25, 0, 0], [50, 0, 0]], [1] * 4)]
+            )
+            self.network.morphologies.save("A", mA)
+            mB = Morphology(
+                [Branch([[0, 0, 0], [0, 25, 25], [-25, 0, 0], [-50, 0, 0]], [1] * 4)]
+            )
+            self.network.morphologies.save("B", mB)
+            MPI.barrier()
+
+    def test_segment_contacts(self):
+        self.network.compile()
+        cs = self.network.get_connectivity_set("intersect")
+        total = 0
+        for (
+            _pre_chunks,
+            pre_locs,
+            _post_chunks,
+            _post_locs,
+        ) in cs.load_connections().chunk_iter():
+            total += len(pre_locs)
+        self.assertGreater(
+            total, 0, "expected the overlapping A/B morphologies to connect"
+        )
+
+
+class TestPublicConnectionStrategies(unittest.TestCase):
+    """
+    Every :class:`~bsb.connectivity.strategy.ConnectionStrategy` reachable from the
+    public ``bsb`` API must be runnable. The job pool invokes ``strategy.connect(pre,
+    post)``, so a public strategy whose ``connect`` cannot bind that call, or whose body
+    is a placeholder, can only fail at compile time, after the user has configured it.
+    """
+
+    def _public_strategies(self):
+        for name in sorted(bsb.__annotations__):
+            obj = getattr(bsb, name)
+            if (
+                isinstance(obj, type)
+                and issubclass(obj, ConnectionStrategy)
+                and not inspect.isabstract(obj)
+            ):
+                yield name, obj
+
+    def test_public_strategies_found(self):
+        # Guards the guard: an empty iteration makes the tests below vacuous.
+        self.assertNotEqual([], [name for name, _ in self._public_strategies()])
+
+    def test_connect_is_callable_by_the_job_pool(self):
+        for name, strategy in self._public_strategies():
+            with self.subTest(strategy=name):
+                signature = inspect.signature(strategy.connect)
+                try:
+                    signature.bind(None, "pre", "post")
+                except TypeError:
+                    self.fail(
+                        f"public strategy '{name}' has connect{signature}, which the "
+                        f"job pool's `connect(pre, post)` call cannot bind"
+                    )
+
+    def test_connect_is_not_a_placeholder(self):
+        for name, strategy in self._public_strategies():
+            with self.subTest(strategy=name):
+                source = textwrap.dedent(inspect.getsource(strategy.connect))
+                body = ast.parse(source).body[0].body
+                if isinstance(body[0], ast.Expr) and isinstance(
+                    body[0].value, ast.Constant
+                ):
+                    body = body[1:]  # Drop the docstring.
+                is_stub = (
+                    len(body) == 1
+                    and isinstance(body[0], ast.Raise)
+                    and "NotImplementedError" in ast.dump(body[0])
+                )
+                self.assertFalse(
+                    is_stub,
+                    f"public strategy '{name}' only raises NotImplementedError; "
+                    f"strategies that cannot run should not be public API",
+                )
+
+
+class TestConnectivityReproducibility(
+    RandomStorageFixture, NumpyTestCase, unittest.TestCase, engine_name="hdf5"
+):
+    """
+    Connectivity draws have to come from the configured randomness, or a seed cannot
+    reproduce a connectome and two ranks can disagree about the same chunk pair.
+
+    Positions are fixed so that only the connectivity draw varies: placement has its
+    own randomness, and letting it move would test that instead of this.
+    """
+
+    def _cfg(self, seed):
+        cfg = Configuration.default(
+            network=dict(x=100, y=100, z=100, chunk_size=[100, 100, 100]),
+            cell_types=dict(
+                pre=dict(spatial=dict(radius=2, count=40)),
+                post=dict(spatial=dict(radius=2, count=40)),
+            ),
+            placement=dict(
+                fixed=dict(
+                    strategy="bsb.placement.strategy.FixedPositions",
+                    partitions=[],
+                    cell_types=["pre", "post"],
+                )
+            ),
+            connectivity=dict(
+                connect=dict(
+                    strategy="bsb.connectivity.AllToAll",
+                    affinity=0.4,
+                    presynaptic=dict(cell_types=["pre"]),
+                    postsynaptic=dict(cell_types=["post"]),
+                )
+            ),
+        )
+        cfg.placement.fixed.positions = MPI.bcast(
+            np.random.default_rng(0).random((80, 3)) * 90
+        )
+        cfg.rng.seed = seed
+        return cfg
+
+    def _connections(self, seed):
+        network = Scaffold(self._cfg(seed), self.random_storage())
+        network.compile(append=False, redo=False)
+        pre, post = network.get_connectivity_set("connect").load_connections().all()
+        order = np.lexsort((post[:, 0], pre[:, 0]))
+        return pre[order], post[order]
+
+    def test_same_seed_reproduces_connections(self):
+        first_pre, first_post = self._connections(1234)
+        again_pre, again_post = self._connections(1234)
+        self.assertEqual(first_pre.shape, again_pre.shape, "same seed, same count")
+        self.assertClose(first_pre, again_pre, "same seed must connect the same cells")
+        self.assertClose(first_post, again_post, "same seed must connect the same cells")
+
+    def test_different_seeds_differ(self):
+        first_pre, _ = self._connections(1234)
+        other_pre, _ = self._connections(4321)
+        self.assertFalse(
+            first_pre.shape == other_pre.shape and np.allclose(first_pre, other_pre),
+            "different seeds must not produce the same connectome",
+        )
+
+
+class TestVoxelIntersectionContactsReproducibility(
+    RandomStorageFixture, NumpyTestCase, unittest.TestCase, engine_name="hdf5"
+):
+    """
+    A `contacts` distribution draws through `Distribution.draw`, which used to
+    bypass the configured randomness entirely and draw from scipy's own unseeded
+    default instead: which cells connect was reproducible, but how many synapses
+    each pair formed was not.
+    """
+
+    def _cfg(self, seed):
+        cfg = Configuration.default(
+            cell_types=dict(
+                pre=dict(
+                    spatial=dict(radius=1, density=1, morphologies=[dict(names=["C"])])
+                ),
+                post=dict(
+                    spatial=dict(radius=1, density=1, morphologies=[dict(names=["B"])])
+                ),
+            ),
+            placement=dict(
+                fixed_pre=dict(
+                    strategy="bsb.placement.FixedPositions",
+                    partitions=[],
+                    cell_types=["pre"],
+                    positions=[[0, 0, 0]],
+                ),
+                fixed_post=dict(
+                    strategy="bsb.placement.FixedPositions",
+                    partitions=[],
+                    cell_types=["post"],
+                    positions=[[0, 0, 0]],
+                ),
+            ),
+            connectivity=dict(
+                intersect=dict(
+                    strategy="bsb.connectivity.VoxelIntersection",
+                    presynaptic=dict(cell_types=["pre"]),
+                    postsynaptic=dict(cell_types=["post"]),
+                    # A distribution rather than a fixed count, so the number of
+                    # contacts a pair forms is itself a draw.
+                    contacts=dict(distribution="randint", low=1, high=6),
+                )
+            ),
+        )
+        cfg.rng.seed = seed
+        return cfg
+
+    def _save_morphologies(self, network):
+        # A long branch (C) crossing a box (B) repeatedly, so many voxel pairs
+        # overlap and `contacts` is drawn many times over -- reused from
+        # TestVoxelIntersection.test_contacts.
+        if MPI.get_rank():
+            MPI.barrier()
+            return
+        mB = Morphology(
+            [
+                Branch(
+                    [
+                        [0, 0, 0],
+                        [0, 0, 100],
+                        [0, 100, 100],
+                        [0, 100, 0],
+                        [0, 0, 0],
+                        [100, 0, 0],
+                        [200, 0, 0],
+                    ],
+                    [1] * 7,
+                )
+            ]
+        )
+        network.morphologies.save("B", mB)
+        mC = Morphology(
+            [
+                Branch(
+                    (
+                        b := [
+                            [0, 0, 0],
+                            [0, 25, 25],
+                            [25, 0, 0],
+                            [50, 0, 0],
+                            [75, 0, 0],
+                            [100, 0, 0],
+                            [125, 0, 0],
+                            [150, 0, 0],
+                            [175, 0, 0],
+                            [200, 0, 0],
+                        ]
+                    ),
+                    [1] * len(b),
+                )
+            ]
+        )
+        network.morphologies.save("C", mC)
+        MPI.barrier()
+
+    def _connections(self, seed, storage):
+        network = Scaffold(self._cfg(seed), storage)
+        self._save_morphologies(network)
+        network.compile(clear=True)
+        pre, post = network.get_connectivity_set("intersect").load_connections().all()
+        order = np.lexsort(np.concatenate([pre, post], axis=1).T)
+        return pre[order], post[order]
+
+    def test_same_seed_reproduces_contact_counts(self):
+        first_pre, first_post = self._connections(1234, self.storage)
+        again_pre, again_post = self._connections(1234, self.random_storage())
+        self.assertEqual(
+            first_pre.shape, again_pre.shape, "same seed must draw the same contacts"
+        )
+        self.assertClose(first_pre, again_pre, "same seed must pick the same contacts")
+        self.assertClose(first_post, again_post, "same seed must pick the same contacts")
+
+    def test_different_seeds_differ(self):
+        first_pre, _ = self._connections(1234, self.storage)
+        other_pre, _ = self._connections(4321, self.random_storage())
+        self.assertFalse(
+            first_pre.shape == other_pre.shape and np.allclose(first_pre, other_pre),
+            "different seeds must not draw the same number of contacts",
+        )

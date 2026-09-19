@@ -1,28 +1,10 @@
-import typing
-
 import numpy as np
 
 from .. import config
 from ..config import types
 from ..exceptions import ConnectivityError
 from ..mixins import InvertedRoI
-from .strategy import ConnectionStrategy
-
-if typing.TYPE_CHECKING:  # pragma: nocover
-    from ..config import Distribution
-
-
-@config.node
-class Convergence(ConnectionStrategy):
-    """
-    Connect cells based on a convergence distribution, i.e. by connecting each source cell
-    to X target cells.
-    """
-
-    convergence: "Distribution" = config.attr(type=types.distribution(), required=True)
-
-    def connect(self):
-        raise NotImplementedError("Needs to be restored, please open an issue.")
+from .strategy import ConnectionStrategy, roi_key
 
 
 @config.node
@@ -42,7 +24,19 @@ class AllToAll(ConnectionStrategy):
             for to_ps in post.placement:
                 len_ = len(to_ps)
                 ml = fl * len_
-                filtered_ = np.random.binomial(1, p=self.affinity, size=ml) > 0
+                # Keyed on the strategy, the cell type pair and the chunks involved, so
+                # every rank draws the same connections for the same chunk pair.
+                rng = self.get_rng(
+                    key=(
+                        "connectivity",
+                        self.name,
+                        from_ps.cell_type.name,
+                        to_ps.cell_type.name,
+                        roi_key(pre),
+                        roi_key(post),
+                    ),
+                )
+                filtered_ = rng.binomial(1, p=self.affinity, size=ml) > 0
                 ml = np.count_nonzero(filtered_)
                 src_locs = np.full((ml, 3), -1)
                 dest_locs = np.full((ml, 3), -1)
@@ -53,7 +47,17 @@ class AllToAll(ConnectionStrategy):
 
 def _connect_fixed_degree(self, pre, post, degree, is_in):
     # Generalized connect function for Fixed in- and out-degree
-    rng = np.random.default_rng()
+    # Keyed on the strategy and the chunks involved, so every rank draws the same
+    # targets for the same chunk pair.
+    rng = self.get_rng(
+        key=(
+            "connectivity",
+            self.name,
+            "fixed_degree",
+            roi_key(pre),
+            roi_key(post),
+        ),
+    )
     ps_counted = pre.placement if is_in else post.placement
     ps_fixed = post.placement if is_in else pre.placement
     high = sum(len(ps) for ps in ps_counted)
@@ -120,4 +124,4 @@ class FixedOutdegree(ConnectionStrategy):
         _connect_fixed_degree(self, pre, post, self.outdegree, False)
 
 
-__all__ = ["AllToAll", "Convergence", "FixedIndegree", "FixedOutdegree"]
+__all__ = ["AllToAll", "FixedIndegree", "FixedOutdegree"]

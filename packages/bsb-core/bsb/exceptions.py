@@ -90,7 +90,10 @@ _t(
             ParameterError=_e(
                 "parameter",
                 ReificationError=_e(),
-            )
+            ),
+            ResultsError=_e(
+                ResultsMismatchError=_e(),
+            ),
         ),
         SelectorError=_e(),
         TreeError=_e(),
@@ -149,12 +152,25 @@ class PackageRequirementWarning(ScaffoldWarning):
     pass
 
 
+class ResultsWarning(ScaffoldWarning):
+    """Emitted when a results file cannot be fully verified against its network."""
+
+    pass
+
+
+class BsbProvenanceUpgradeWarning(ScaffoldWarning):
+    """Emitted once when a legacy storage file is auto-upgraded with provenance."""
+
+    pass
+
+
 __all__ = [
     "AdapterError",
     "AllenApiError",
     "AttributeMissingError",
     "AttributeOrderError",
     "BootError",
+    "BsbProvenanceUpgradeWarning",
     "CLIError",
     "CastConfigurationError",
     "CastError",
@@ -229,6 +245,9 @@ __all__ = [
     "ReferenceLambdaError",
     "ReificationError",
     "RequirementError",
+    "ResultsError",
+    "ResultsMismatchError",
+    "ResultsWarning",
     "ScaffoldError",
     "ScaffoldWarning",
     "SelectorError",

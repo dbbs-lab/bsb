@@ -1,3 +1,13 @@
+## 7.6.1 (2026-09-18)
+
+### 🩹 Fixes
+
+- **bsb-nest:** version-guarded NESTErrors import for NEST 3.10 compatibility | add packaging 26.2+ compatibility ([#287](https://github.com/dbbs-lab/bsb/pull/287))
+
+### ❤️ Thank You
+
+- Filippo @filimarc
+
 ## 7.6.0 (2026-06-30)
 
 ### 🚀 Features

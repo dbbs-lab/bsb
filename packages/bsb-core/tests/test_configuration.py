@@ -1443,7 +1443,6 @@ class TestTypes(unittest.TestCase):
             a = config.attr(type=types.class_())
             b = config.attr(type=types.class_(module_path=["test_configuration"]))
 
-        import pathlib
         import sys
 
         sys.path.insert(0, str(pathlib.Path(__file__).parent))

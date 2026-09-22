@@ -11,20 +11,41 @@ Recordings are per target
 =========================
 
 Every recording belongs to a single target: one cell, one point on a cell, one
-synapse. A device that watches a thousand cells writes a thousand recordings, not
-one recording holding a thousand cells' data.
-
-This costs nothing that matters and buys the thing that does: a recording can be
-annotated with exactly what it recorded. A spike train of the whole population can
-only say which cells are in it; a spike train per cell can also say which cell, of
-which cell model, and carry any annotation a device or a downstream tool wants to
-add. Neuroscience is numerous by design, and the tools downstream of Neo are built
-to handle many objects.
+synapse. This is a promise about what :func:`~bsb.simulation.results.iter_recordings`
+and :meth:`~bsb.simulation.results.SimulationRun.recordings` hand back, not about how
+many Neo objects a device writes to disk: a recording can be annotated with exactly
+what it recorded, so that a spike train can say which cell it belongs to, of which
+cell model, and carry any annotation a device or a downstream tool wants to add,
+rather than only saying which cells are somewhere in a population.
 
 A device writes one recording per target it watched, and a target that produced
 nothing gets an empty one. Its recordings are therefore its targets, which is what
 makes a population answerable from the results alone: a cell with an empty train
 was watched and stayed quiet, a cell with no train at all was never watched.
+
+Stored multiplexed
+-------------------
+
+Writing a thousand separate Neo objects for a thousand targets does not scale: each
+one costs its own ``nixio`` entities, and a network's worth of cells makes both
+writing and reading a file impractically slow. The devices that come with the BSB
+instead write **one Neo object per device per checkpoint**, holding every target's
+data multiplexed together, and reading demultiplexes it back into one recording per
+target transparently -- the "recordings are per target" promise above holds either
+way, only how it is paid for on disk differs.
+
+:func:`~bsb.simulation.results.multiplex_targets` packs a list of per-target
+annotations (built with :func:`~bsb.simulation.results.cell_annotations`,
+:func:`~bsb.simulation.results.point_annotations` or
+:func:`~bsb.simulation.results.synapse_annotations`, one call per target) into the
+annotations of a single ``SpikeTrain`` that can speak for all of them; a
+``bsb_target_index`` array annotation, one entry per spike, then says which target
+each spike belongs to.
+:func:`~bsb.simulation.results.multiplex_channels` does the same for a single
+``AnalogSignal`` with one channel per target, using Neo's own multi-channel
+representation directly. A device that writes its own Neo objects rather than one
+per target, as the built-in devices do, should use these rather than writing one
+object per target.
 
 Annotations
 ===========
@@ -135,8 +156,8 @@ A device author builds these annotations with
 :func:`~bsb.simulation.results.cell_annotations`,
 :func:`~bsb.simulation.results.point_annotations`,
 :func:`~bsb.simulation.results.synapse_annotations` and
-:func:`~bsb.simulation.results.device_annotations`, and passes them to the Neo
-object:
+:func:`~bsb.simulation.results.device_annotations`, one call per target. A device
+that writes one Neo object per target passes them to it directly:
 
 .. code-block:: python
 
@@ -148,6 +169,25 @@ object:
         t_stop=duration,
         name="spikes",
         **cell_annotations(cell_model, cell_id, "record"),
+    )
+
+A device that multiplexes every target into one object per checkpoint, as the
+built-in devices do, packs the same per-target annotations with
+:func:`~bsb.simulation.results.multiplex_targets` instead:
+
+.. code-block:: python
+
+    from bsb import cell_annotations, multiplex_targets
+
+    targets = [cell_annotations(model, cell_id, "record") for cell_id in watched]
+    SpikeTrain(
+        times,
+        units="ms",
+        t_stop=duration,
+        name="spikes",
+        # One entry per spike, indexing into `targets` in the order given above.
+        array_annotations={"bsb_target_index": target_index},
+        **multiplex_targets(targets),
     )
 
 Reading results

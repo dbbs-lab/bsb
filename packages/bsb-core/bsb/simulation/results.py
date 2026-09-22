@@ -339,6 +339,111 @@ def _hemitype(side, cell_model, cell_id, branch, point):
     }
 
 
+#: Annotations every target of a multiplexed recording agrees on, so they are stamped
+#: once rather than repeated per target.
+_BASELINE_KEYS = ("bsb_recording_kind", "bsb_direction")
+_PRESENT_SUFFIX = "_present"
+
+
+def _multiplex_baseline(targets: "list[dict]") -> dict:
+    """The annotations every target of a multiplexed recording has to agree on."""
+    kinds = {target.get("bsb_recording_kind") for target in targets}
+    directions = {target.get("bsb_direction") for target in targets}
+    if len(kinds) > 1 or len(directions) > 1:
+        raise ResultsError(
+            "A multiplexed recording has to be all the same kind and direction, so "
+            "one recorder can speak for every target: got kinds "
+            f"{sorted(k for k in kinds if k is not None)} and directions "
+            f"{sorted(d for d in directions if d is not None)}."
+        )
+    return {
+        "bsb_multiplexed": True,
+        "bsb_recording_kind": kinds.pop() if kinds else None,
+        "bsb_direction": directions.pop() if directions else None,
+    }
+
+
+def _pack_targets(targets: "list[dict]") -> "dict[str, np.ndarray]":
+    """
+    Turn a list of per-target annotation dicts into one parallel array per key that
+    varies across them, in the order the targets were given.
+
+    A target missing a key -- ``synapse_annotations``' ``bsb_pre_*`` keys, when a
+    synapse belongs to no connection -- is filled with a sentinel, and the key gets a
+    companion ``<key>_present`` boolean array, so a filled-in sentinel is never mistaken
+    for a real value.
+
+    :param targets: Per-target annotations, as :func:`cell_annotations`,
+      :func:`point_annotations` or :func:`synapse_annotations` give them.
+    :returns: One array per varying key, each of length ``len(targets)``.
+    """
+    keys = set()
+    for target in targets:
+        keys.update(target)
+    keys.difference_update(_BASELINE_KEYS)
+    packed = {}
+    for key in sorted(keys):
+        raw = [target.get(key) for target in targets]
+        present = [value is not None for value in raw]
+        if all(present):
+            packed[key] = np.array(raw)
+            continue
+        sample = next(value for value in raw if value is not None)
+        if isinstance(sample, str):
+            sentinel = ""
+        elif isinstance(sample, bool):
+            sentinel = False
+        elif isinstance(sample, int):
+            # An int sentinel, not `nan`, so a present int stays an int: a float
+            # column forces every value in it to float, sentinel included.
+            sentinel = -1
+        else:
+            sentinel = float("nan")
+        packed[key] = np.array(
+            [value if value is not None else sentinel for value in raw]
+        )
+        packed[f"{key}{_PRESENT_SUFFIX}"] = np.array(present)
+    return packed
+
+
+def multiplex_targets(targets: "list[dict]") -> dict:
+    """
+    Annotations for a single spike train recording every target in ``targets``, as a
+    roster: one flat list per key that varies across targets, encoded as a single
+    annotation. Pair with a ``bsb_target_index`` array annotation, one entry per
+    spike, indexing into the roster in the order given, so a single ``SpikeTrain``
+    can speak for every target it watches -- including ones that never fire, which
+    the roster still names.
+
+    The roster is encoded with :func:`~bsb.storage.provenance.encode_annotation`
+    rather than written as one flat-list annotation per key: ``nixio`` collapses a
+    property holding a single value back to a bare scalar on read, which a roster of
+    exactly one target would trip on if its lists were written directly.
+
+    :param targets: Per-target annotations, as :func:`cell_annotations`,
+      :func:`point_annotations` or :func:`synapse_annotations` give them, one call per
+      target, in roster order.
+    :returns: Annotations to pass to the multiplexed ``SpikeTrain``.
+    """
+    baseline = _multiplex_baseline(targets)
+    roster = {key: values.tolist() for key, values in _pack_targets(targets).items()}
+    baseline["bsb_roster"] = encode_annotation(roster, "multiplexed recording roster")
+    return baseline
+
+
+def multiplex_channels(targets: "list[dict]") -> "tuple[dict, dict]":
+    """
+    Annotations for a single analog signal recording every target in ``targets`` as one
+    channel each, in the same order.
+
+    :param targets: Per-target annotations, one call per target, in channel order.
+    :returns: A ``(baseline, array_annotations)`` pair: baseline annotations for the
+      multiplexed ``AnalogSignal``, and its ``array_annotations``, one array per key,
+      each of length ``len(targets)``.
+    """
+    return _multiplex_baseline(targets), _pack_targets(targets)
+
+
 @dataclasses.dataclass(frozen=True)
 class Recording:
     """
@@ -394,24 +499,124 @@ def iter_recordings(
     for segment in _iter_segments(source):
         for name in _RECORDING_LISTS:
             for signal in getattr(segment, name, ()):
-                annotations = signal.annotations
-                if device is not None and annotations.get("bsb_device_name") != device:
-                    continue
-                if kind is not None and annotations.get("bsb_recording_kind") != kind:
-                    continue
-                if (
-                    cell_model is not None
-                    and _on_cell(annotations, "cell_model") != cell_model
-                ):
-                    continue
-                if cell_id is not None and _on_cell(annotations, "cell_id") != cell_id:
-                    continue
-                yield Recording(
-                    device=annotations.get("bsb_device_name"),
-                    kind=annotations.get("bsb_recording_kind"),
-                    direction=annotations.get("bsb_direction"),
-                    signal=signal,
-                )
+                for recording in _expand(signal):
+                    annotations = recording.annotations
+                    if (
+                        device is not None
+                        and annotations.get("bsb_device_name") != device
+                    ):
+                        continue
+                    if kind is not None and annotations.get("bsb_recording_kind") != kind:
+                        continue
+                    if (
+                        cell_model is not None
+                        and _on_cell(annotations, "cell_model") != cell_model
+                    ):
+                        continue
+                    if (
+                        cell_id is not None
+                        and _on_cell(annotations, "cell_id") != cell_id
+                    ):
+                        continue
+                    yield recording
+
+
+def _expand(signal) -> "typing.Iterator[Recording]":
+    """
+    Yield one :class:`Recording` per target a signal speaks for: itself, unless it is
+    multiplexed, in which case one reconstructed per-target Neo object per target.
+    """
+    annotations = signal.annotations
+    if not annotations.get("bsb_multiplexed"):
+        yield Recording(
+            device=annotations.get("bsb_device_name"),
+            kind=annotations.get("bsb_recording_kind"),
+            direction=annotations.get("bsb_direction"),
+            signal=signal,
+        )
+        return
+    demux = (
+        _demux_spiketrain
+        if type(signal).__name__ == "SpikeTrain"
+        else _demux_analogsignal
+    )
+    for target_signal in demux(signal):
+        target_annotations = target_signal.annotations
+        yield Recording(
+            device=target_annotations.get("bsb_device_name"),
+            kind=target_annotations.get("bsb_recording_kind"),
+            direction=target_annotations.get("bsb_direction"),
+            signal=target_signal,
+        )
+
+
+def _roster_entry(roster: dict, index: int) -> dict:
+    """The annotations of one roster target, dropping sentinel-filled misses."""
+    entry = {}
+    for key, values in roster.items():
+        if key.endswith(_PRESENT_SUFFIX):
+            continue
+        present = roster.get(f"{key}{_PRESENT_SUFFIX}")
+        if present is not None and not present[index]:
+            continue
+        entry[key] = values[index]
+    return entry
+
+
+def _demux_spiketrain(train) -> "typing.Iterator[neo.core.SpikeTrain]":
+    """Split a multiplexed spike train back into one train per target it watches."""
+    from neo import SpikeTrain
+
+    annotations = train.annotations
+    roster = decode_annotation(annotations.get("bsb_roster")) or {}
+    if not roster:
+        return
+    baseline = {
+        key: value
+        for key, value in annotations.items()
+        if key not in ("bsb_multiplexed", "bsb_roster")
+    }
+    n_targets = len(next(iter(roster.values())))
+    # `array_annotations` are validated by Neo itself and stay arrays even at
+    # length 1, unlike the plain annotations the roster had to avoid for that
+    # reason -- see `multiplex_targets`.
+    target_index = np.atleast_1d(train.array_annotations.get("bsb_target_index", []))
+    for index in range(n_targets):
+        mask = target_index == index
+        yield SpikeTrain(
+            train.times[mask],
+            t_start=train.t_start,
+            t_stop=train.t_stop,
+            units=train.units,
+            name=train.name,
+            **baseline,
+            **_roster_entry(roster, index),
+        )
+
+
+def _demux_analogsignal(signal) -> "typing.Iterator[neo.core.AnalogSignal]":
+    """Split a multiplexed analog signal back into one signal per channel."""
+    baseline = {
+        key: value
+        for key, value in signal.annotations.items()
+        if key != "bsb_multiplexed"
+    }
+    array_annotations = signal.array_annotations
+    keys = [key for key in array_annotations if not key.endswith(_PRESENT_SUFFIX)]
+    for index in range(signal.shape[1]):
+        per_channel = {}
+        for key in keys:
+            present_key = f"{key}{_PRESENT_SUFFIX}"
+            if (
+                present_key in array_annotations
+                and not array_annotations[present_key][index]
+            ):
+                continue
+            value = array_annotations[key][index]
+            per_channel[key] = value.item() if hasattr(value, "item") else value
+        channel = signal[:, index]
+        channel.annotations = {**baseline, **per_channel}
+        yield channel
 
 
 def _on_cell(annotations, key):
@@ -1230,6 +1435,8 @@ __all__ = [
     "device_annotations",
     "iter_recordings",
     "merge_rank_results",
+    "multiplex_channels",
+    "multiplex_targets",
     "point_annotations",
     "rank_part_path",
     "read_provenance",

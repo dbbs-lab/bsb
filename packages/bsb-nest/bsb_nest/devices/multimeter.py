@@ -1,7 +1,14 @@
 import nest
 import numpy as np
 import quantities as pq
-from bsb import ConfigurationError, _util, cell_annotations, config, types
+from bsb import (
+    ConfigurationError,
+    _util,
+    cell_annotations,
+    config,
+    multiplex_channels,
+    types,
+)
 from neo import AnalogSignal
 
 from ..device import NestDevice
@@ -41,18 +48,30 @@ class Multimeter(NestDevice, classmap_entry="multimeter"):
 
         def recorder(segment):
             senders = device.events["senders"]
-            for sender in np.unique(senders):
-                sender_filter = senders == sender
-                cell_model, cell_id = self._cell_of_node(ranges, int(sender))
-                for prop, unit in zip(self.properties, self.units, strict=False):
-                    segment.analogsignals.append(
-                        AnalogSignal(
-                            device.events[prop][sender_filter],
-                            units=pq.units.__dict__[unit],
-                            sampling_period=self.simulation.resolution * pq.ms,
-                            name=prop,
-                            **cell_annotations(cell_model, cell_id, "record"),
-                        )
+            unique_senders = np.unique(senders)
+            if not len(unique_senders):
+                return
+            # One channel per cell this rank recorded, in the same order for every
+            # property, so all of a checkpoint's properties multiplex the same roster.
+            targets = [
+                cell_annotations(*self._cell_of_node(ranges, int(sender)), "record")
+                for sender in unique_senders
+            ]
+            baseline, array_annotations = multiplex_channels(targets)
+            for prop, unit in zip(self.properties, self.units, strict=False):
+                data = np.stack(
+                    [device.events[prop][senders == sender] for sender in unique_senders],
+                    axis=1,
+                )
+                segment.analogsignals.append(
+                    AnalogSignal(
+                        data,
+                        units=pq.units.__dict__[unit],
+                        sampling_period=self.simulation.resolution * pq.ms,
+                        name=prop,
+                        array_annotations=array_annotations,
+                        **baseline,
                     )
+                )
 
         simdata.result.create_recorder(recorder, device=self)

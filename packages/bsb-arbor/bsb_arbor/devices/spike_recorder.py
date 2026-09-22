@@ -1,7 +1,6 @@
-import collections
-
 import neo
-from bsb import cell_annotations, config
+import numpy as np
+from bsb import cell_annotations, config, multiplex_targets
 
 from ..device import ArborDevice
 
@@ -19,25 +18,36 @@ class SpikeRecorder(ArborDevice, classmap_entry="spike_recorder"):
         if not adapter.comm.get_rank():
 
             def record_device_spikes(segment):
-                times = collections.defaultdict(list)
-                for (gid, index), time in simdata.arbor_sim.spikes():
-                    if index == 0 and gid in self._gids:
-                        times[gid].append(time)
-                # One train per cell the device watched, empty ones included. Which
-                # cells those were is then the set of recordings itself, so nothing
-                # has to say it a second time, and a silent cell is told apart from
-                # one that was never watched by reading the results alone.
-                for gid in sorted(self._gids):
-                    cell_model, cell_id = _cell_of_gid(simdata, gid)
-                    segment.spiketrains.append(
-                        neo.SpikeTrain(
-                            times[gid],
-                            units="ms",
-                            t_stop=self.simulation.duration,
-                            name="spikes",
-                            **cell_annotations(cell_model, cell_id, "record"),
-                        )
+                if not self._gids:
+                    return
+                # One roster entry per cell the device watches, silent ones included.
+                # Which cells those were is then the roster itself, so nothing has to
+                # say it a second time, and a silent cell is told apart from one that
+                # was never watched by reading the results alone.
+                sorted_gids = sorted(self._gids)
+                index_of = {gid: index for index, gid in enumerate(sorted_gids)}
+                targets = [
+                    cell_annotations(*_cell_of_gid(simdata, gid), "record")
+                    for gid in sorted_gids
+                ]
+                times = []
+                target_index = []
+                for (gid, probe_index), time in simdata.arbor_sim.spikes():
+                    if probe_index == 0 and gid in index_of:
+                        times.append(time)
+                        target_index.append(index_of[gid])
+                segment.spiketrains.append(
+                    neo.SpikeTrain(
+                        times,
+                        units="ms",
+                        t_stop=self.simulation.duration,
+                        name="spikes",
+                        array_annotations={
+                            "bsb_target_index": np.array(target_index, dtype=int)
+                        },
+                        **multiplex_targets(targets),
                     )
+                )
 
             simdata.result.create_recorder(record_device_spikes, device=self)
 

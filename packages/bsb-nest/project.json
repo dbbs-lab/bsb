@@ -16,11 +16,10 @@
         "{workspaceRoot}/.nx/installation/nest"
       ],
       "options": {
-        "commands": [
-          "uv pip install cmake cython~=3.0.12",
-          "uv run bash ../../devtools/install-nest.sh"
-        ],
-        "parallel": false,
+        // `--with` layers NEST's build dependencies onto this invocation. The target
+        // runs before anything has synced the project, so there is no environment for
+        // a plain `uv pip install` to install them into.
+        "command": "uv run --with cmake --with cython~=3.0.12 bash ../../devtools/install-nest.sh",
         "cwd": "{projectRoot}"
       },
       "cache": true
@@ -87,7 +86,8 @@
         "commands": [
           "npx -y rimraf .coverage*",
           "uv run --env-file ../../.nx/installation/nest/install/bin/nest_vars.sh coverage run -p -m unittest discover -v -s ./tests",
-          "mpiexec -n 2 uv run --env-file ../../.nx/installation/nest/install/bin/nest_vars.sh coverage run -p -m unittest discover -v -s ./tests",
+          // mpi_yield_when_idle: yield the CPU when idle so CI's oversubscribed MPI ranks don't busy-wait and deadlock mpilock
+          "mpiexec --mca mpi_yield_when_idle 1 -n 2 uv run --env-file ../../.nx/installation/nest/install/bin/nest_vars.sh coverage run -p -m unittest discover -v -s ./tests",
           "uv run coverage combine",
           "uv run coverage xml -i -o ../../coverage/packages/bsb-nest/coverage.xml",
           "uv run coverage html -i -d ../../coverage/packages/bsb-nest/html"
@@ -139,10 +139,5 @@
       "outputs": []
     }
   },
-  "tags": [],
-  "release": {
-    "version": {
-      "generator": "@nxlv/python:release-version"
-    }
-  }
+  "tags": []
 }

@@ -45,34 +45,35 @@ class TestArborPopulation(
 
     def test_getitem(self):
         """
-        Test if getitem method works as expected for all int and bool data types.
+        Test if getitem method works as expected for all int and bool data types, on
+        every population, including those whose gids start at an offset.
         """
         self.network.compile(clear=True)
         sim = self.network.simulations.test
         adapter = get_simulation_adapter(sim.simulator)
         simdata = adapter.prepare(sim)
 
-        pop = simdata.populations[sim.cell_models["A"]]
-        ids = np.array([cell for cell in simdata.populations[sim.cell_models["A"]]])
-        all_tests = np.array([])
-        # test int list and np.int64 array
-        list_test = [0, 1, 3]
-        np.append(all_tests, [ele for ele in pop[list_test]] == ids[list_test])
-        int64_test = np.array(list_test, dtype=np.int64)
-        np.append(all_tests, [ele for ele in pop[int64_test]] == ids[int64_test])
-        int8_test = np.array(list_test, dtype=np.int8)
-        np.append(all_tests, [ele for ele in pop[int8_test]] == ids[int8_test])
-        uint_test = np.array(list_test, dtype=np.uint)
-        np.append(all_tests, [ele for ele in pop[uint_test]] == ids[uint_test])
-        # test bool
-        bool_test = [True for ele in pop]
-        np.append(all_tests, [ele for ele in pop[bool_test]] == ids[bool_test])
-        npbool_test = np.array(bool_test, dtype=np.bool_)
-        np.append(all_tests, [ele for ele in pop[npbool_test]] == ids[npbool_test])
+        list_test = [0, 1, 3, 11]
+        for name in ("A", "B", "C"):
+            with self.subTest(model=name):
+                pop = simdata.populations[sim.cell_models[name]]
+                gids = np.array(list(pop))
+                for index in (
+                    list_test,
+                    np.array(list_test, dtype=np.int64),
+                    np.array(list_test, dtype=np.int8),
+                    np.array(list_test, dtype=np.uint),
+                ):
+                    self.assertEqual(gids[list_test].tolist(), list(pop[index]))
+                mask = np.arange(len(pop)) % 2 == 0
+                self.assertEqual(gids[mask].tolist(), list(pop[mask]))
+                self.assertEqual(gids[mask].tolist(), list(pop[mask.tolist()]))
+                self.assertEqual([], list(pop[np.zeros(len(pop), dtype=bool)]))
+                for item in (0, 5, 11):
+                    self.assertEqual([gids[item]], list(pop[item]))
+                    self.assertEqual([gids[item]], list(pop[np.int64(item)]))
 
-        self.assertAll(all_tests)
-
-        # test float
-        float_test = np.array(list_test, dtype=np.float32)
-        with self.assertRaises(ValueError):
-            pop[float_test]
+                # test float
+                float_test = np.array(list_test, dtype=np.float32)
+                with self.assertRaises(ValueError):
+                    pop[float_test]

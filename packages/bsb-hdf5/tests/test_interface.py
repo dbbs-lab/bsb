@@ -1,6 +1,8 @@
 import unittest
 
 import numpy as np
+from bsb import CellType, Chunk
+from bsb_test import skip_parallel
 from bsb_test.engines import TestConnectivitySet as _TestConnectivitySet
 from bsb_test.engines import TestMorphologyRepository as _TestMorphologyRepository
 from bsb_test.engines import TestPlacementSet as _TestPlacementSet
@@ -12,6 +14,33 @@ class TestStorage(_TestStorage, unittest.TestCase, engine_name="hdf5"):
 
 
 class TestPlacementSet(_TestPlacementSet, unittest.TestCase, engine_name="hdf5"):
+    @skip_parallel
+    def test_len_of_entities(self):
+        # Entities carry no positional data, so their length can only come from the
+        # count tracked on the placement set, never from the position datasets.
+        ct = CellType(name="entity_cell", entity=True, spatial=dict(count=12))
+        ps = self.storage.require_placement_set(ct)
+        ps.append_entities(Chunk((0, 0, 0), self.chunk_size), 7)
+        ps.append_entities(Chunk((0, 0, 1), self.chunk_size), 5)
+        self.assertEqual(12, len(ps), "len should count the placed entities")
+        self.assertEqual(len(ps.load_ids()), len(ps), "len should match the id count")
+        ps.set_chunk_filter([self.chunks[1]])
+        self.assertEqual(5, len(ps), "entity len should respect the chunk filter")
+        self.assertEqual(len(ps.load_ids()), len(ps), "len should match the id count")
+
+    def test_len_of_chunk_filter(self):
+        self.network.compile()
+        ps = self.network.get_placement_set("test_cell")
+        self.assertEqual(100, len(ps), "len should count every chunk")
+        ps.set_chunk_filter(self.chunks[:2])
+        self.assertEqual(50, len(ps), "len should count only the filtered chunks")
+        self.assertEqual(len(ps.load_ids()), len(ps), "len should match the id count")
+        self.assertEqual(
+            len(ps.load_positions()), len(ps), "len should match the loaded positions"
+        )
+        ps.clear_chunk_filter()
+        self.assertEqual(100, len(ps), "len should count every chunk again")
+
     def test_convert_to_local(self):
         self.network.compile()
         ps = self.network.get_placement_set("test_cell")

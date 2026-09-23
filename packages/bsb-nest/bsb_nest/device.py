@@ -2,9 +2,9 @@ import abc
 import warnings
 
 import nest
-from bsb import DeviceModel, Targetting, config, refs, types
+from bsb import AdapterError, DeviceModel, Targetting, config, refs, types
 
-from .distributions import nest_parameter
+from .distributions import nest_constant
 
 
 @config.node
@@ -67,8 +67,42 @@ class NestDevice(DeviceModel):
         return sum(dict_targets.values(), start=nest.NodeCollection())
 
     @staticmethod
-    def _invert_targets_dict(dict_targets):
-        return {elem: k.name for k, v in dict_targets.items() for elem in v.tolist()}
+    def _node_ranges(simdata, dict_targets):
+        """
+        The node id range of the population of each targeted cell model.
+
+        A population is created in one call to NEST, which gives its nodes consecutive
+        ids in placement set order, so a node's cell id is its distance from the first
+        node. Only where each range starts and ends is kept, not an entry per node.
+
+        :param bsb.simulation.adapter.SimulationData simdata: Simulation data instance
+        :param dict dict_targets: Targeted NEST collection per cell model, as given by
+          :meth:`get_dict_targets`.
+        :return: First node id, last node id and cell model of each population.
+        :rtype: list[tuple[int, int, bsb_nest.cell.NestCell]]
+        """
+        ranges = []
+        for model in dict_targets:
+            population = simdata.populations[model]
+            if not len(population):
+                continue
+            first = population[0].global_id
+            last = population[-1].global_id
+            if last - first + 1 != len(population):
+                raise AdapterError(
+                    f"The nodes of cell model '{model.name}' are not consecutive, so "
+                    "they cannot be traced back to its placement set."
+                )
+            ranges.append((first, last, model))
+        return ranges
+
+    @staticmethod
+    def _cell_of_node(ranges, node):
+        """The cell model and cell id of a node, from :meth:`_node_ranges`."""
+        for first, last, model in ranges:
+            if first <= node <= last:
+                return model, node - first
+        raise AdapterError(f"Node {node} is not in any targeted population.")
 
     def get_target_nodes(
         self,
@@ -140,12 +174,19 @@ class ExtNestDevice(NestDevice, classmap_entry="external"):
 
     nest_model = config.attr(type=str, required=True)
     """Importable reference to the NEST model describing the device type."""
-    constants = config.dict(type=nest_parameter())
-    """Dictionary of the constants values to assign to the device model."""
+    constants = config.dict(type=nest_constant())
+    """
+    Constant values to assign to the device model.
+
+    A bare value, or a ``distribution`` node NEST draws itself. A device's own
+    settings do not vary over cells or connections, so there is no computed
+    counterpart here.
+    """
 
     def implement(self, adapter, simulation, simdata):
         simdata.devices[self] = device = nest.Create(
-            self.nest_model, params=self.constants
+            self.nest_model,
+            params={name: p.compute() for name, p in self.constants.items()},
         )
         nodes = self.get_target_nodes(adapter, simulation, simdata)
         self.connect_to_nodes(device, nodes)

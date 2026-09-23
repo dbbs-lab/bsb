@@ -1,6 +1,6 @@
 import numpy as np
 
-from .. import config
+from .. import config, types
 from ..exceptions import PackingError, PackingWarning
 from ..reporting import report, warn
 from ..voxels import VoxelSet
@@ -29,7 +29,9 @@ class _VoxelBasedFiller:
             for name, indicator in indicators.items()
         ]
         # Create and fill the particle system.
-        system = VolumeFiller(track_displaced=False, scaffold=self.scaffold, strat=self)
+        system = VolumeFiller(
+            track_displaced=False, scaffold=self.scaffold, strat=self, chunk=chunk
+        )
         system.fill(voxels, particles, check_pack=check_pack)
         return system
 
@@ -110,12 +112,15 @@ class ParticleVoxel:
 
 
 class VolumeFiller:
-    def __init__(self, track_displaced=False, scaffold=None, strat=None):
+    def __init__(self, track_displaced=False, scaffold=None, strat=None, chunk=None):
         self.particle_types = []
         self.voxels = []
         self.track_displaced = track_displaced
         self.scaffold = scaffold
         self.strat = strat
+        # The chunk being filled, so draws can be keyed on it and every rank
+        # fills a given chunk the same way.
+        self.chunk = chunk
 
     def fill(self, voxels, particles, check_pack=True):
         """
@@ -180,7 +185,7 @@ class VolumeFiller:
         for particle_type in self.particle_types:
             count = particle_type["count"]
             if count.size == 1:
-                particle_type["count"] = particle_type["count"][0]
+                particle_type["count"] = count.item()
                 self._fill_global(particle_type)
             else:
                 self._fill_per_voxel(particle_type)
@@ -193,9 +198,18 @@ class VolumeFiller:
                 f"Particle system voxel mismatch. "
                 f"Given {len(voxel_counts)} expected {len(self.voxels)}"
             )
+        rng = self.strat.get_rng(
+            key=(
+                "placement",
+                getattr(self.strat, "name", None),
+                "fill_per_voxel",
+                particle_type["name"],
+                getattr(self.chunk, "id", None),
+            ),
+        )
         for voxel, count in zip(self.voxels, voxel_counts, strict=False):
             particle_type["placed"] = particle_type.get("placed", 0) + count
-            placement_matrix = np.random.rand(count, self.dimensions)
+            placement_matrix = rng.random((count, self.dimensions))
             for in_voxel_pos in placement_matrix:
                 particle_position = voxel.origin + in_voxel_pos * voxel.size
                 self.add_particle(radius, particle_position, type=particle_type)
@@ -206,7 +220,16 @@ class VolumeFiller:
         radius = particle_type["radius"]
         # Generate a matrix with random positions for the particles
         # Add an extra dimension to determine in which voxels to place the particles
-        placement_matrix = np.random.rand(particle_count, self.dimensions + 1)
+        rng = self.strat.get_rng(
+            key=(
+                "placement",
+                getattr(self.strat, "name", None),
+                "fill_global",
+                particle_type["name"],
+                getattr(self.chunk, "id", None),
+            ),
+        )
+        placement_matrix = rng.random((particle_count, self.dimensions + 1))
         # Generate each particle
         for row in placement_matrix:
             # Determine the voxel to be placed in.
@@ -287,4 +310,113 @@ def distance(a, b):
     return np.sqrt(np.sum((b - a) ** 2))
 
 
-__all__ = ["RandomPlacement"]
+@config.node
+class DistributionPlacement(PlacementStrategy):
+    """
+    Place cells based on a scipy distribution along a specified axis.
+    """
+
+    distribution = config.attr(type=types.distribution(), required=True)
+    """Scipy distribution to apply to the cell coordinate along the axis"""
+    axis: int = config.attr(type=types.int(min=0, max=2), required=False, default=2)
+    """Axis along which to apply the distribution (i.e. x, y or z)"""
+    direction: str = config.attr(
+        type=types.in_(["positive", "negative"]), required=False, default="positive"
+    )
+    """Specify if the distribution is applied along positive or negative axis direction"""
+    interval_probability: float = config.attr(
+        type=types.float(min=1e-9, max=1e-3), required=False, default=1e-9
+    )
+    """Tail probability used to clip the distribution to a finite interval. This 
+    value corresponds to probability for a sampled value to be out of the interval."""
+
+    def draw_interval(self, n, lower, upper, rng: np.random.Generator | None = None):
+        """
+        This method draws n random values and returns the ones which fall in
+        the provided interval boundaries.
+
+        :param int n: Number of points to draw
+        :param float lower: Lower bound of the interval within [0, 1]
+        :param float upper: Upper bound of the interval within [0, 1]
+        :param rng: Generator to draw from. Left unset, the underlying
+            distribution falls back to its own unseeded default.
+        :return: random values that fell within the interval boundaries.
+        :rtype: numpy.ndarray
+        """
+        # Extract the interval of values that can be generated by the distribution
+        # Since some distribution values can reach infinite, we clamp the interval
+        # so that the probability to be out of this interval is `interval_probability`
+        distrib_interval = self.distribution.definition_interval(
+            self.interval_probability
+        )
+        # Draw values until they land all in the defined interval.
+        accepted_values = []
+        while len(accepted_values) < n:
+            random_values = self.distribution.draw(n - len(accepted_values), rng=rng)
+            selected = (random_values > distrib_interval[0]) * (
+                random_values <= distrib_interval[1]
+            )
+            accepted_values = np.concatenate([accepted_values, random_values[selected]])
+
+        # Retrieve the value at the lower and upper bound ratios of the
+        # distribution's interval
+        diff_ = np.diff(distrib_interval)
+        value_upper = upper * diff_ + distrib_interval[0]
+        value_lower = lower * diff_ + distrib_interval[0]
+
+        selected = (accepted_values > value_lower) * (accepted_values <= value_upper)
+        # Returns the normalized values passing the test
+        return (accepted_values[selected] - distrib_interval[0]) / diff_
+
+    def place(self, chunk, indicators):
+        # For each placement indicator
+        for indicator in indicators.values():
+            # Keyed on the strategy, the cell type and the chunk, so a chunk is
+            # placed the same way whichever rank happens to compute it.
+            rng = self.get_rng(
+                key=("placement", self.name, indicator.cell_type.name, chunk.id),
+            )
+            # Prepare an array to store positions
+            all_positions = np.empty((0, 3))
+            # For each partitions
+            for p in indicator.partitions:
+                # Guess the number of cells to place within the partition.
+                num_to_place = indicator.guess(voxels=p.to_voxels())
+                # Extract the size of the partition
+                partition_size = p._data.mdc - p._data.ldc
+                # Retrieve the ratio interval occupied by the current Chunk along the axis
+                chunk_borders = np.array([chunk.ldc, chunk.mdc])
+                ratios = (chunk_borders - p._data.ldc) / partition_size
+                bounds = ratios[:, self.axis]
+                if self.direction == "negative":
+                    # If the direction on which to apply the distribution is inverted,
+                    # then the ratio interval should be inverted too.
+                    bounds = 1 - bounds
+                    bounds = bounds[::-1]
+
+                # Draw according to the distribution the random number of cells to
+                # place in the Chunk
+                random_values = self.draw_interval(
+                    num_to_place, lower=bounds[0], upper=bounds[1], rng=rng
+                )
+                num_selected = random_values.size
+                # ratio of area occupied by the chunk along the two other dimensions
+                ratio_area = np.diff(np.delete(ratios, self.axis, axis=1), axis=0)
+                num_selected = int(num_selected * np.prod(ratio_area))
+                if num_selected > 0:
+                    # Assign a random position to the cells within this Chunk
+                    positions = rng.random((num_selected, 2))
+                    positions = positions * np.delete(
+                        chunk.dimensions, self.axis
+                    ) + np.delete(chunk.ldc, self.axis)
+
+                    pos_on_axis = rng.choice(random_values, num_selected, replace=False)
+                    if self.direction == "negative":
+                        pos_on_axis = 1 - pos_on_axis
+                    pos_on_axis *= partition_size[self.axis]
+                    positions = np.insert(positions, self.axis, pos_on_axis, 1)
+                    all_positions = np.concatenate([all_positions, positions])
+            self.place_cells(indicator, all_positions, chunk)
+
+
+__all__ = ["DistributionPlacement", "RandomPlacement"]

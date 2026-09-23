@@ -15,13 +15,14 @@ from .exceptions import (
     MorphologyError,
 )
 from .reporting import report
+from .rng import RngConsumer
 
 if typing.TYPE_CHECKING:  # pragma: nocover
     from .cell_types import CellType
 
 
 @config.dynamic(attr_name="strategy")
-class AfterPlacementHook(abc.ABC):
+class AfterPlacementHook(abc.ABC, RngConsumer):
     name: str = config.attr(key=True)
 
     def queue(self, pool):
@@ -36,7 +37,7 @@ class AfterPlacementHook(abc.ABC):
 
 
 @config.dynamic(attr_name="strategy", auto_classmap=True)
-class AfterConnectivityHook(abc.ABC):
+class AfterConnectivityHook(abc.ABC, RngConsumer):
     name: str = config.attr(key=True)
 
     def queue(self, pool):

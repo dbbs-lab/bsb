@@ -6,7 +6,7 @@ build-backend = "flit_core.buildapi"
 name = "bsb-nest"
 version = "7.6.1"
 readme = "README.md"
-requires-python = ">=3.10,<4"
+requires-python = ">=3.11,<4"
 dynamic = [ "description" ]
 classifiers = [
   "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"
@@ -30,6 +30,11 @@ dependencies = [ "bsb-core~=7.0" ]
 [project.entry-points."bsb.simulation_backends"]
 nest = "bsb_nest"
 
+# Loaded before a configuration is parsed, so `rng.settings` knows the `nest` kind
+# without the simulation having been reached yet.
+[project.entry-points."bsb.components"]
+nest = "bsb_nest.rng"
+
 [dependency-groups]
 test = [
   "bsb-core[parallel]",
@@ -38,7 +43,9 @@ test = [
   "bsb-arbor~=7.0",
   "bsb-otel[sdk]~=7.2",
   "coverage~=7.0",
-  "nestml~=8.3.0rc2"
+  # Builds the minimal extension module in test_nestml_module; must match the
+  # NEST version under test (the test skips if the build is unavailable).
+  "nestml~=8.3.0"
 ]
 docs = [ "furo~=2024.0", "sphinxext-bsb~=7.0" ]
 dev = [ "pre-commit~=3.5", "snakeviz~=2.1", "ruff>=0.8.2" ]

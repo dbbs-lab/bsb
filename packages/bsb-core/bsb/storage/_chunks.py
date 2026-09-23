@@ -80,15 +80,15 @@ class Chunk(np.ndarray):
 
     @property
     def box(self):
-        return np.array(np.concatenate((self.ldc, self.mdc)), copy=False)
+        return np.concatenate((self.ldc, self.mdc))
 
     @property
     def ldc(self):
-        return np.array(self._size * self.astype(np.float64), copy=False)
+        return np.asarray(self._size * self.astype(np.float64))
 
     @property
     def mdc(self):
-        return np.array(self._size * (self.astype(np.float64) + 1), copy=False)
+        return np.asarray(self._size * (self.astype(np.float64) + 1))
 
     @classmethod
     def from_id(cls, id, size):
@@ -112,8 +112,8 @@ def chunklist(chunks) -> list[Chunk]:
 
 def _safe_ids(self, other):
     return (
-        np.array(self, copy=False).view(Chunk)._safe_id(),
-        np.array(other, copy=False).view(Chunk)._safe_id(),
+        np.asarray(self).view(Chunk)._safe_id(),
+        np.asarray(other).view(Chunk)._safe_id(),
     )
 
 

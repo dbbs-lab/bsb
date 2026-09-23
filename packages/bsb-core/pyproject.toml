@@ -6,14 +6,15 @@ build-backend = "flit_core.buildapi"
 name = "bsb-core"
 version = "7.6.1"
 readme = "README.md"
-requires-python = ">=3.10,<4"
+requires-python = ">=3.11,<4"
 dynamic = [ "description" ]
 classifiers = [
   "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"
 ]
 dependencies = [
   "bsb-otel~=7.2",
-  "numpy~=1.19",
+  "bsb-native~=7.0",
+  "numpy~=2.0",
   "scipy~=1.5",
   "scikit-learn~=1.0",
   "errr~=1.2",
@@ -29,10 +30,10 @@ dependencies = [
   "tqdm~=4.50",
   "dashing-next~=0.1",
   "shortuuid~=1.0",
-  "quantities~=0.15.0",
+  "quantities~=0.16",
   "exceptiongroup>=1.2.0",
-  "opentelemetry-api~=1.0",
-  "packaging>=24.0"
+  "packaging>=24.0",
+  "opentelemetry-api~=1.0"
 ]
 
   [[project.authors]]
@@ -77,7 +78,7 @@ test = [
   "bsb-json~=7.0",
   "bsb-test~=7.0",
   "bsb-otel[sdk]~=7.2",
-  "coverage>=7.3"
+  "coverage>=7.3",
 ]
 docs = [
   "furo~=2024.4",
@@ -94,6 +95,10 @@ default-groups = [ "dev", "docs", "test" ]
 
 [tool.uv.sources.bsb-otel]
 path = "../bsb-otel"
+editable = true
+
+[tool.uv.sources.bsb-native]
+path = "../bsb-native"
 editable = true
 
 [tool.uv.sources.bsb-test]

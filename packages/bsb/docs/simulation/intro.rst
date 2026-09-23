@@ -13,6 +13,9 @@ All simulation details are specified within the simulation block, which includes
  * set of ``cell models`` : the simulator specific representations of the network's :doc:`CellTypes </cells/intro>`
  * set of ``connection models`` :  that instruct the simulator on how to handle the :doc:`ConnectivityStrategies </connectivity/defining>` of the network
  * set of ``devices`` : define the experimental setup (such as input stimuli and recorders).
+ * optionally, a set of ``after_prepare`` hooks : run on the prepared simulation
+   before it runs, and a set of ``after_simulation`` hooks : run on the results once
+   the simulation has finished (see :doc:`/postprocess/postprocessing`).
 
 All of the above is simulation backend specific and is covered in the corresponding sections:
 
@@ -44,8 +47,10 @@ When using the CLI, the framework sets up a "hands off" simulation workflow:
 * Read the simulation configuration
 * Translate the simulation configuration to the simulator
 * Create all cells, connections and devices
+* Run the :guilabel:`after_prepare` hooks on what was prepared
 * Run the simulation
 * Collect all the output
+* Run the :guilabel:`after_simulation` hooks on the collected results
 
 When you use the library, you can set up more complex workflows, such as
 :doc:`parameter sweeps </examples/nest_repeated_sim>`
@@ -217,32 +222,46 @@ Spike Trains
 ------------
 
 Within a segment, you can access all the :class:`SpikeTrain <neo.core.SpikeTrain>` objects recorded during
-that particular timeframe. A ``SpikeTrain`` represents the collection of spikes emitted by the target population,
-and it includes metadata about the device name, the size of the cell population, and the IDs of the spiking cells.
-This information is stored in the :guilabel:`annotations` attribute:
+that particular timeframe. A ``SpikeTrain`` holds the spikes of a single cell, and is annotated with the
+device that recorded it and the cell it belongs to. This information is stored in the
+:guilabel:`annotations` attribute:
 
 .. code-block:: python
 
   for spiketrain in segment.spiketrains:
       spiketrain_array = spiketrain.magnitude
       unit_of_measure = spiketrain.units
-      device_name = spiketrain.annotations["device"]
-      list_of_spiking_cell_ids = spiketrain.annotations["senders"]
-      end_time_of_the_simulation = spiketrain.annotations["t_stop"]
-      population_size = spiketrain.annotations["pop_size"]
+      device_name = spiketrain.annotations["bsb_device_name"]
+      placement_set = spiketrain.annotations["bsb_ps_name"]
+      cell_id = spiketrain.annotations["bsb_cell_id"]
+      end_time_of_the_simulation = spiketrain.t_stop
 
-.. note::
+A cell is named by its placement set and its id in that placement set, whichever simulator ran
+it. All annotations written by the BSB start with ``bsb_``; they are listed in
+:doc:`/simulation/results`.
 
-  To retrieve the spike train for a specific cell, the spike time at index i in the ``spiketrain_array[i]``
-  corresponds to the cell with ID ``list_of_spiking_cell_ids[i]``.
+A device writes one train per cell it watched, so its trains are its cells and a cell that
+never fired has an empty one. To walk them together with the cells of the network they
+belong to, use :func:`~bsb.simulation.results.read_results`, which is described in
+:doc:`/simulation/results`:
+
+.. code-block:: python
+
+  from bsb import read_results
+
+  results = read_results("network.hdf5", "simulation-results/run.nio")
+  for recording in results.recordings("my_spike_recorder"):
+      print(recording.target.id, recording.target.position, len(recording.signal))
 
 Analog Signals
 --------------
 
 Each segment also contains an :guilabel:`analogsignals` attribute, which holds a list of Neo :class:`AnalogSignal <neo.core.AnalogSignal>` objects.
 These objects contain the trace of the recorded property, along with the associated time points.
-They are also annotated with information such as the device name, the type of cell recorded, and the cell ID,
-which can be accessed through the :guilabel:`annotations` attribute:
+They are annotated the same way as spike trains. A signal recorded at a location on a cell, such
+as a membrane voltage in NEURON, also says where on the cell's morphology it was recorded, and a
+signal recorded from a synapse names both of the cells it connects, as ``bsb_pre_*`` and
+``bsb_post_*``:
 
 .. code-block:: python
 
@@ -251,14 +270,17 @@ which can be accessed through the :guilabel:`annotations` attribute:
     unit_of_measure = signal.units
     time_signature = signal.times
     time_unit = signal.times.units
-    device_name = signal.annotations['name']
-    cell_type = signal.annotations['cell_type']
-    cell_id = signal.annotations['cell_id']
+    what_was_recorded = signal.name
+    device_name = signal.annotations["bsb_device_name"]
+    if signal.annotations["bsb_recording_kind"] == "synapse":
+      cell_id = signal.annotations["bsb_post_cell_id"]
+      presynaptic_cell_id = signal.annotations.get("bsb_pre_cell_id")
+    else:
+      cell_id = signal.annotations["bsb_cell_id"]
+      branch = signal.annotations.get("bsb_branch")
 
-.. note::
-
-  Unlike the spike train case, the :guilabel:`analogsignals` attribute contains a separate ``AnalogSignal``
-  object for each target of the device.
+As with spike trains, the :guilabel:`analogsignals` attribute contains a separate ``AnalogSignal``
+object for each cell the device recorded, and for each property when a device samples several.
 
 Advanced Features
 =================

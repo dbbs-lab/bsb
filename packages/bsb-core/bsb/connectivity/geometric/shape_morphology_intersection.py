@@ -2,6 +2,7 @@ import numpy as np
 
 from ... import config
 from ...config import types
+from ...connectivity.strategy import roi_key
 from .. import ConnectionStrategy
 from .shape_shape_intersection import ShapeHemitype
 
@@ -55,9 +56,23 @@ class ShapeToMorphologyIntersection(ConnectionStrategy):
     def connect(self, pre, post):
         for pre_ps in pre.placement:
             for post_ps in post.placement:
-                self._connect_type(pre_ps.cell_type, pre_ps, post_ps.cell_type, post_ps)
+                # Keyed on the strategy, the cell type pair and the chunks involved, so
+                # every rank draws the same connections for the same chunk pair.
+                rng = self.get_rng(
+                    key=(
+                        "connectivity",
+                        self.name,
+                        pre_ps.cell_type.name,
+                        post_ps.cell_type.name,
+                        roi_key(pre),
+                        roi_key(post),
+                    ),
+                )
+                self._connect_type(
+                    pre_ps.cell_type, pre_ps, post_ps.cell_type, post_ps, rng
+                )
 
-    def _connect_type(self, pre_ct, pre_ps, post_ct, post_ps):
+    def _connect_type(self, pre_ct, pre_ps, post_ct, post_ps, rng):
         pre_pos = pre_ps.load_positions()
         post_pos = post_ps.load_positions()
 
@@ -93,7 +108,7 @@ class ShapeToMorphologyIntersection(ConnectionStrategy):
                             nb_targets = np.max(
                                 [1, int(np.floor(self.affinity * len(local_selection)))]
                             )
-                            chosen_targets = np.random.choice(
+                            chosen_targets = rng.choice(
                                 local_selection.shape[0], nb_targets
                             )
                             local_selection = local_selection[chosen_targets, :]
@@ -107,7 +122,7 @@ class ShapeToMorphologyIntersection(ConnectionStrategy):
                             to_connect_pre = np.vstack([to_connect_pre, pre_tmp])
                 pre_shapes.translate(-pre_coord)
         if self.pruning_ratio < 1 and len(to_connect_pre) > 0:
-            ids_to_select = np.random.choice(
+            ids_to_select = rng.choice(
                 len(to_connect_pre),
                 int(np.floor(self.pruning_ratio * len(to_connect_pre))),
                 replace=False,

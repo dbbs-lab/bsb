@@ -12,37 +12,19 @@ from bsb import (
     report,
     warn,
 )
-from neo import SpikeTrain
 from tqdm import tqdm
 
-from .exceptions import KernelWarning, NestConnectError, NestModelError, NestModuleError
+from .exceptions import (
+    KernelWarning,
+    NestConnectError,
+    NestKernelError,
+    NestModelError,
+    NestModuleError,
+)
+from .rng import kernel_seed
 
 if typing.TYPE_CHECKING:  # pragma: nocover
     from .simulation import NestSimulation
-
-
-class NestResult(SimulationResult):
-    # It seems that the record method is not used,
-    # probably we will have to uniform the behavior with NeuronResult
-    def record(self, nc, **annotations):
-        recorder = nest.Create("spike_recorder", params={"record_to": "memory"})
-        nest.Connect(nc, recorder)
-
-        def flush(segment):
-            events = recorder.events[0]
-
-            segment.spiketrains.append(
-                SpikeTrain(
-                    events["times"],
-                    array_annotations={"senders": events["senders"]},
-                    t_stop=nest.biological_time,
-                    units="ms",
-                    **annotations,
-                )
-            )
-            # Free the Memory -> not possible to free the memory while sim is running
-
-        self.create_recorder(flush)
 
 
 class NestAdapter(SimulatorAdapter):
@@ -51,14 +33,41 @@ class NestAdapter(SimulatorAdapter):
         self.loaded_modules = set()
         self._prev_chkpoint = 0
 
-    def simulate(self, *simulations, post_prepare=None):
+    def simulate(self, *simulations, filename=None):
         try:
             self.reset_kernel()
-            return super().simulate(*simulations, post_prepare=post_prepare)
+            self._set_resolution(simulations)
+            return super().simulate(*simulations, filename=filename)
         finally:
             self.reset_kernel()
 
-    def prepare(self, simulation):
+    def _set_resolution(self, simulations):
+        # NEST has a single kernel resolution that is frozen once nodes are created, so
+        # it must be set once, up front, before any simulation creates its neurons.
+        resolutions = {simulation.resolution for simulation in simulations}
+        if len(resolutions) > 1:
+            raise NestKernelError(
+                "NEST uses a single kernel resolution; cannot compose simulations with "
+                f"differing resolutions {sorted(resolutions)}."
+            )
+        if resolutions:
+            nest.resolution = resolutions.pop()
+
+    def master_seed(self, simulation) -> int:
+        """
+        The number NEST's kernel is seeded from.
+
+        A simulation that names an :guilabel:`rng.settings` entry is handed what that
+        entry says, which the configuration records. One that names none is seeded
+        from the root seed, keyed on the simulation, so two simulations of one
+        network do not share NEST's streams.
+
+        :param simulation: The simulation being prepared.
+        :returns: A seed NEST accepts.
+        """
+        return kernel_seed(simulation, ("nest", simulation.name))
+
+    def prepare(self, simulation, filename=None):
         """
         Prepare the simulation environment in NEST.
 
@@ -80,7 +89,10 @@ class NestAdapter(SimulatorAdapter):
         :rtype: bsb.simulation.adapter.SimulationData
         """
         self.simdata[simulation] = SimulationData(
-            simulation, result=NestResult(simulation)
+            simulation,
+            result=SimulationResult(
+                simulation, filename, comm=self.comm, simulation_id=self.new_run_id()
+            ),
         )
         try:
             report("Installing  NEST modules...", level=2)
@@ -189,13 +201,16 @@ class NestAdapter(SimulatorAdapter):
                 raise NestConnectError(f"{connection_model} error during connect.") from e
 
     def set_settings(self, simulation: "NestSimulation"):
+        # Resolution is set once up front in `_set_resolution`, before any neurons are
+        # created, because NEST freezes the kernel resolution after node creation.
         nest.set_verbosity(simulation.verbosity)
-        nest.resolution = simulation.resolution
         nest.overwrite_files = True
         # When simulating with MUSIC the following line might cause issue.
         # Set the MPI communicator for NEST manually in your script once
         # the NESTAdapter has been prepared.
         if "mpi4py" in sys.modules:
             nest.set_communicator.__func__(self.comm._comm)
-        if simulation.seed is not None:
-            nest.rng_seed = simulation.seed
+        # Always set: NEST's own default is a fixed constant, so leaving it alone
+        # gives every run of every simulation the same streams, which is the opposite
+        # of a replicate.
+        nest.rng_seed = self.master_seed(simulation)

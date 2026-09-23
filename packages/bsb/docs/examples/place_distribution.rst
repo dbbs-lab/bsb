@@ -7,6 +7,9 @@ Distribution-based Placement Strategy
     the getting started :doc:`section </getting-started/guide_components>`
     on writing  components.
 
+.. note::
+    The component presented here has been implemented in the BSB. Find more information here: :ref:`distrib_placement`.
+
 We will start from the following configuration file (corresponds to the first network file
 from the getting started tutorial):
 

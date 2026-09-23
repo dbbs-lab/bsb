@@ -7,7 +7,7 @@ This folder contains the configurations and python files related to
 
 ## Installation 
 
-This example is supported on Python 3.10 and above. 
+This example is supported on Python 3.11 and above. 
 To install the required Python libraries, run the following command in this folder:
 ```bash
 pip install -e.

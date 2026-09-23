@@ -2,7 +2,7 @@
 name = "examples"
 version = "1.0.0"
 description = "BSB examples"
-requires-python = ">=3.9,<4"
+requires-python = ">=3.11,<4"
 readme = 'README.md'
 dependencies = []
 

@@ -91,6 +91,7 @@ Content
    /core/scaffold
    /config/configuration-toc
    /core/storage
+   /core/randomness
    /core/job-distribution
 
 .. toctree::
@@ -134,7 +135,7 @@ Content
 
 .. toctree::
   :maxdepth: 2
-  :caption: Developer Guides:
+  :caption: For Developers:
 
   dev/monorepo
   dev/guidelines
@@ -145,3 +146,4 @@ Content
   dev/plugins
   dev/hooks
   dev/reference
+  /interfaces/interfaces-toc

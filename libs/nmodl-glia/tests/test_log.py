@@ -1,25 +1,24 @@
+import os
 import unittest
-from pathlib import Path
 
-from glia._fs import get_cache_path, log
+from glia._fs import get_log_path, log
 
 
 class TestLog(unittest.TestCase):
-    def test_log_hash(self):
-        # We use the fact that Python salts hashes per session (see
-        # https://docs.python.org/3/using/cmdline.html#envvar-PYTHONHASHSEED) to get a
-        # a unique logfile hash per process, test this.
-        self.assertEqual(id("5"), id("5"))
+    def test_log_path_per_process(self):
+        # The logfile is named after the pid, so concurrently running processes
+        # never write to, or unlink, each other's file.
+        self.assertEqual(f"{os.getpid()}.txt", get_log_path().name)
 
     def test_log(self):
-        log_path = Path(get_cache_path(f"{id('5')}.txt"))
+        log_path = get_log_path()
         log_path.unlink(missing_ok=True)
         log("hello world")
         self.assertTrue(log_path.exists(), "Logs not created")
         self.assertIn("hello world", log_path.read_text(), "Log not logged")
 
     def test_exc(self):
-        log_path = Path(get_cache_path(f"{id('5')}.txt"))
+        log_path = get_log_path()
         log_path.unlink(missing_ok=True)
         try:
             raise RuntimeError()

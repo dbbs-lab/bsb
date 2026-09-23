@@ -216,7 +216,15 @@ def compile_isc(node_cls, dynamic_config):
     def __init_subclass__(cls, classmap_entry=MISSING, **kwargs):
         super(node_cls, cls).__init_subclass__(**kwargs)
         if classmap_entry is MISSING:
+            # `compile_class` rebuilds a node class from a copy of its own namespace,
+            # and class keywords are not repeated then. The entry the class was
+            # defined with rides along in that namespace, so a class that named its
+            # entry keeps that name, and one that opted out with `None` stays out
+            # instead of being registered under its own name after all.
+            classmap_entry = cls.__dict__.get("_config_classmap_entry", MISSING)
+        if classmap_entry is MISSING:
             classmap_entry = _snake_case(cls.__name__)
+        cls._config_classmap_entry = classmap_entry
         if classmap_entry is not None:
             node_cls._config_dynamic_classmap[classmap_entry] = cls
         f(**kwargs)
@@ -243,7 +251,15 @@ def compile_new(node_cls, dynamic=False, pluggable=False, root=False):
         class_determinant = _node_determinant
 
     def __new__(_cls, *args, _parent=None, _key=None, **kwargs):
-        ncls = class_determinant(_cls, kwargs)
+        try:
+            ncls = class_determinant(_cls, kwargs)
+        except (CastError, RequirementError) as e:
+            # The node that is being determined does not exist yet, so it can't name
+            # itself the way `__post_new__` errors do. Point at the slot it was being
+            # built for instead, or an ancestor ends up taking the blame.
+            if _parent is not None and getattr(e, "node", None) is None:
+                e.node, e.attr = _parent, _key
+            raise
         instance = object.__new__(ncls)
         instance._config_pos_init = bool(len(args))
         _set_pk(instance, _parent, _key)
@@ -506,8 +522,12 @@ def _get_node_name(self):
             name = "[" + str(self._config_index) + "]"
     if getattr(self, "name", None) is not None:
         name = "." + self.name
-    if getattr(self, "_config_parent", None):
-        return self._config_parent.get_node_name() + name
+    # Test the parent against `None`, not against its truthiness: parents are often
+    # `cfgdict`/`cfglist` containers, and while a node is being cast into one it is
+    # still empty, which would make a truthiness test disown the whole node path.
+    parent = getattr(self, "_config_parent", None)
+    if parent is not None:
+        return parent.get_node_name() + name
     else:
         return "{standalone}" + name
 

@@ -4,8 +4,8 @@ import unittest
 from os.path import abspath, dirname, isdir, isfile, join
 from sys import path
 
-import numpy as np
 from bsb import Scaffold, from_storage, parse_configuration_file
+from bsb.simulation.results import iter_recordings
 from bsb_test import RandomStorageFixture
 from neo import io
 
@@ -40,19 +40,31 @@ class TestNestExamples(
         )
         self.assertEqual(len(self.scaffold.get_connectivity_set("A_to_B")), 40 * 1560)
 
-    def _test_simulation_results(self, spiketrains):
-        neuron_ids = []
-        self.assertEqual(len(spiketrains), 3)
-        for signal in spiketrains:
-            neuron_ids = np.concatenate(
-                [neuron_ids, np.unique(signal.array_annotations["senders"])]
+    def _test_simulation_results(self, segment):
+        # Recordings are per cell, whatever it took to write them to disk, so the
+        # devices and cells are recovered from the annotations of each recording.
+        recordings = list(iter_recordings(segment))
+        devices = {}
+        for recording in recordings:
+            devices.setdefault(recording.annotations["bsb_device_name"], []).append(
+                recording
             )
-            self.assertEqual(signal.t_start, 0)
-            self.assertEqual(signal.t_stop, 5000)
+            self.assertEqual(recording.signal.t_start, 0)
+            self.assertEqual(recording.signal.t_stop, 5000)
+        self.assertEqual({"base_layer_record", "top_layer_record"}, set(devices))
 
-        # test the number of cell recorded
-        self.assertLess(neuron_ids.size, 1600 + 1)
-        self.assertEqual(np.max(neuron_ids), 1600 + 1)
+        # Recordings of a cell name its cell model and its id in its placement set.
+        cells = {}
+        for recording in recordings:
+            cells.setdefault(recording.annotations["bsb_cell_model"], []).append(
+                recording.annotations["bsb_cell_id"]
+            )
+        # A device records every cell it watched, so these are all of the watched
+        # cells and not only the ones that fired.
+        self.assertEqual(
+            {"base_type": list(range(1560)), "top_type": list(range(40))},
+            {model: sorted(ids) for model, ids in cells.items()},
+        )
 
     def test_json_example(self):
         self.cfg = parse_configuration_file(
@@ -62,7 +74,7 @@ class TestNestExamples(
         self.scaffold.compile()
         self._test_scaffold_results()
         results = self.scaffold.run_simulation("basal_activity")
-        self._test_simulation_results(results.spiketrains)
+        self._test_simulation_results(results.block.segments[0])
 
     def test_yaml_example(self):
         self.cfg = parse_configuration_file(
@@ -72,7 +84,7 @@ class TestNestExamples(
         self.scaffold.compile()
         self._test_scaffold_results()
         results = self.scaffold.run_simulation("basal_activity")
-        self._test_simulation_results(results.spiketrains)
+        self._test_simulation_results(results.block.segments[0])
 
     def test_python_example(self):
         import scripts.guide_nest  # noqa: F401
@@ -81,10 +93,8 @@ class TestNestExamples(
         self._test_scaffold_results()
         self.assertTrue(isfile("simulation-results/basal_activity.nio"))
         results = io.NixIO("simulation-results/basal_activity.nio", mode="ro")
-        self._test_simulation_results(
-            results.read_all_blocks()[0].segments[0].spiketrains
-        )
-        # check if analyze analog results runs without any problems
+        self._test_simulation_results(results.read_all_blocks()[0].segments[0])
+        # check if analyze spike results runs without any problems
         import scripts.analyze_spike_results  # noqa: F401
 
         files = os.listdir("simulation-results")  # 1 png and 1 nio file

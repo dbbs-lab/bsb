@@ -95,22 +95,47 @@ Configuration parsers
 
 **Category:** ``bsb.config.parsers``
 
-Inherit from :class:`bsb:bsb.config.parsers.ConfigurationParser`.
-You can set the class variable
-``data_description`` to describe what kind of data this parser parses to users. You can
-also set ``data_extensions`` to a sequence of extensions that this parser will be
-considered first for when parsing files of unknown content.
-
+Parsers turn a configuration source (file or string) into a
+:class:`Configuration <bsb:bsb.config.Configuration>`. Implementations subclass
+:class:`bsb:bsb.config.parsers.ConfigurationParser`. Set ``data_description`` to
+label the format for users and ``data_extensions`` to claim file extensions for
+auto-detection. Bundled implementations:
+:mod:`bsb_json <bsb_json:bsb_json>` and
+:mod:`bsb_yaml <bsb_yaml:bsb_yaml>`.
 
 Storage engines
 ---------------
 
 **Category:** ``bsb.storage.engines``
 
+An engine persists a reconstruction (placement, connectivity, files, morphologies)
+on disk and exposes the provenance bundle that simulation results back-point to.
+Implementations subclass :class:`Engine <bsb:bsb.storage.interfaces.Engine>` and
+provide backend-specific :class:`FileStore <bsb:bsb.storage.interfaces.FileStore>`,
+:class:`PlacementSet <bsb:bsb.storage.interfaces.PlacementSet>`,
+:class:`ConnectivitySet <bsb:bsb.storage.interfaces.ConnectivitySet>` and
+:class:`MorphologyRepository <bsb:bsb.storage.interfaces.MorphologyRepository>`
+classes. Bundled implementations:
+:class:`HDF5Engine <bsb_hdf5:bsb_hdf5.HDF5Engine>` and
+:class:`FileSystemEngine <bsb:bsb.storage.fs.FileSystemEngine>`.
+
+For the full interface contract see :ref:`storage-engine-contract`.
+
 Simulator backends
 ------------------
 
 **Category:** ``bsb.simulation_backends``
+
+A backend translates a
+:class:`Simulation <bsb:bsb.simulation.simulation.Simulation>` configuration into a
+concrete simulator and runs it. Implementations subclass
+:class:`SimulatorAdapter <bsb:bsb.simulation.adapter.SimulatorAdapter>` and supply
+backend-specific cell models, connection models, devices, and a
+:class:`SimulationResult <bsb:bsb.simulation.results.SimulationResult>` subclass.
+Bundled implementations:
+:mod:`bsb_nest <bsb_nest:bsb_nest>`,
+:mod:`bsb_neuron <bsb_neuron:bsb_neuron>`,
+:mod:`bsb_arbor <bsb_arbor:bsb_arbor>`.
 
 Components
 ----------

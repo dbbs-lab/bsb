@@ -1,10 +1,8 @@
-name: Check branch commit
+name: Build and test Pull Request
 
 on:
-  push:
-    branches:
-      - '**'  # matches every branch ...
-      - '!main'  # ... that is not main
+  pull_request:
+    types: [opened, synchronize, reopened]
 
 jobs:
   check-api:

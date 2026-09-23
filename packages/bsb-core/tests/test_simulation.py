@@ -175,18 +175,18 @@ class TestTargetting(
             },
         )
         result = self.network.run_simulation("test")
-        spiketrains = result.block.segments[0].spiketrains
+        recordings = list(iter_recordings(result.block))
         # Cell ids are placement set ids, so each model's run from 0 to its size.
         expected = {
             "count_recorder": {"model": "h_cell", "size": 7, "max": 20},
             "fraction_recorder": {"model": "h_cell", "size": 10, "max": 20},
             "new_recorder": {"model": "test_cell", "size": 100, "max": 100},
         }
-        # A device writes one train per cell it watched, so its trains are its
-        # targets: their count is the size it targeted and their ids are which.
+        # A device writes one recording per cell it watched, so its recordings are
+        # its targets: their count is the size it targeted and their ids are which.
         watched = {}
-        for spiketrain in spiketrains:
-            annotations = spiketrain.annotations
+        for recording in recordings:
+            annotations = recording.annotations
             watched.setdefault(annotations["bsb_device_name"], []).append(
                 (annotations["bsb_cell_model"], annotations["bsb_cell_id"])
             )
@@ -209,14 +209,14 @@ class TestTargetting(
             },
         )
         result = self.network.run_simulation("test")
-        spiketrains = result.block.segments[0].spiketrains
-        # Its trains are the cells it targeted, whether or not they fired.
+        recordings = list(iter_recordings(result.block))
+        # Its recordings are the cells it targeted, whether or not they fired.
         self.assertEqual(
             [0, 5, 7, 10],
-            sorted(train.annotations["bsb_cell_id"] for train in spiketrains),
+            sorted(r.annotations["bsb_cell_id"] for r in recordings),
         )
         self.assertEqual(
-            {"h_cell"}, {train.annotations["bsb_cell_model"] for train in spiketrains}
+            {"h_cell"}, {r.annotations["bsb_cell_model"] for r in recordings}
         )
 
     def test_sphere(self):
@@ -308,9 +308,9 @@ class TestTargetting(
             },
         )
         result = self.network.run_simulation("test")
-        spiketrains = result.block.segments[0].spiketrains
+        recordings = list(iter_recordings(result.block))
 
-        sorted_ids = np.sort([t.annotations["bsb_cell_id"] for t in spiketrains])
+        sorted_ids = np.sort([r.annotations["bsb_cell_id"] for r in recordings])
         self.assertAll(sorted_ids == sub_pop_h_cell)
         self.assertEqual(len(sorted_ids), 4)
 

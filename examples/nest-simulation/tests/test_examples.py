@@ -5,6 +5,7 @@ from os.path import abspath, dirname, isdir, isfile, join
 from sys import path
 
 from bsb import Scaffold, from_storage, parse_configuration_file
+from bsb.simulation.results import iter_recordings
 from bsb_test import RandomStorageFixture
 from neo import io
 
@@ -39,21 +40,24 @@ class TestNestExamples(
         )
         self.assertEqual(len(self.scaffold.get_connectivity_set("A_to_B")), 40 * 1560)
 
-    def _test_simulation_results(self, spiketrains):
-        # Spikes are recorded one train per cell, so the devices are recovered from
-        # the annotations rather than from the number of trains.
+    def _test_simulation_results(self, segment):
+        # Recordings are per cell, whatever it took to write them to disk, so the
+        # devices and cells are recovered from the annotations of each recording.
+        recordings = list(iter_recordings(segment))
         devices = {}
-        for signal in spiketrains:
-            devices.setdefault(signal.annotations["bsb_device_name"], []).append(signal)
-            self.assertEqual(signal.t_start, 0)
-            self.assertEqual(signal.t_stop, 5000)
+        for recording in recordings:
+            devices.setdefault(recording.annotations["bsb_device_name"], []).append(
+                recording
+            )
+            self.assertEqual(recording.signal.t_start, 0)
+            self.assertEqual(recording.signal.t_stop, 5000)
         self.assertEqual({"base_layer_record", "top_layer_record"}, set(devices))
 
         # Recordings of a cell name its cell model and its id in its placement set.
         cells = {}
-        for signal in spiketrains:
-            cells.setdefault(signal.annotations["bsb_cell_model"], []).append(
-                signal.annotations["bsb_cell_id"]
+        for recording in recordings:
+            cells.setdefault(recording.annotations["bsb_cell_model"], []).append(
+                recording.annotations["bsb_cell_id"]
             )
         # A device records every cell it watched, so these are all of the watched
         # cells and not only the ones that fired.
@@ -70,7 +74,7 @@ class TestNestExamples(
         self.scaffold.compile()
         self._test_scaffold_results()
         results = self.scaffold.run_simulation("basal_activity")
-        self._test_simulation_results(results.block.segments[0].spiketrains)
+        self._test_simulation_results(results.block.segments[0])
 
     def test_yaml_example(self):
         self.cfg = parse_configuration_file(
@@ -80,7 +84,7 @@ class TestNestExamples(
         self.scaffold.compile()
         self._test_scaffold_results()
         results = self.scaffold.run_simulation("basal_activity")
-        self._test_simulation_results(results.block.segments[0].spiketrains)
+        self._test_simulation_results(results.block.segments[0])
 
     def test_python_example(self):
         import scripts.guide_nest  # noqa: F401
@@ -89,9 +93,7 @@ class TestNestExamples(
         self._test_scaffold_results()
         self.assertTrue(isfile("simulation-results/basal_activity.nio"))
         results = io.NixIO("simulation-results/basal_activity.nio", mode="ro")
-        self._test_simulation_results(
-            results.read_all_blocks()[0].segments[0].spiketrains
-        )
+        self._test_simulation_results(results.read_all_blocks()[0].segments[0])
         # check if analyze spike results runs without any problems
         import scripts.analyze_spike_results  # noqa: F401
 

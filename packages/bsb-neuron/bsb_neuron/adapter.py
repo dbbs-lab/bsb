@@ -5,10 +5,12 @@ from bsb import (
     AdapterError,
     Chunk,
     DatasetNotFoundError,
+    ResultsError,
     SimulationData,
     SimulationError,
     SimulationResult,
     SimulatorAdapter,
+    multiplex_channels,
     report,
 )
 from neo import AnalogSignal
@@ -25,9 +27,21 @@ class NeuronSimulationData(SimulationData):
 
 
 class NeuronResult(SimulationResult):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # A device's channels, recorded across however many calls to `record` it
+        # makes, one flush of one multiplexed signal apiece: keyed on the device, not
+        # drawn per call, so every point/synapse of a device lands in the one signal.
+        self._channels = {}
+
     def record(self, obj, *, device, target: dict, name: str, units: str):
         """
         Record a NEURON variable every time step, as a recording of a device.
+
+        Every call for the same device joins one multiplexed signal, flushed as a
+        single ``AnalogSignal`` with one channel per call, rather than one signal per
+        call: cheap to write and to merge across ranks, at the scale of a device
+        rather than the scale of a cell.
 
         :param obj: Reference to the NEURON variable to record, such as ``seg._ref_v``.
         :param device: The device the recording belongs to.
@@ -36,11 +50,12 @@ class NeuronResult(SimulationResult):
           :func:`~bsb.simulation.results.cell_annotations`,
           :func:`~bsb.simulation.results.point_annotations` or
           :func:`~bsb.simulation.results.synapse_annotations` give them.
-        :param name: What the recorded variable measures, such as ``v`` or ``i``.
-        :param units: Units of the recorded variable.
+        :param name: What the recorded variable measures, such as ``v`` or ``i``. Has
+          to agree with every other call for the same device.
+        :param units: Units of the recorded variable. Has to agree with every other
+          call for the same device.
         """
         from patch import p
-        from quantities import ms
 
         if "bsb_recording_kind" not in target or "bsb_direction" not in target:
             raise AdapterError(
@@ -48,19 +63,57 @@ class NeuronResult(SimulationResult):
                 "annotations of `cell_annotations`, `point_annotations` or "
                 "`synapse_annotations` as `target`."
             )
-        v = p.record(obj)
-
-        def flush(segment):
-            segment.analogsignals.append(
-                AnalogSignal(
-                    list(v), sampling_period=p.dt * ms, name=name, units=units, **target
-                )
+        entry = self._channels.get(device)
+        if entry is None:
+            entry = self._channels[device] = {
+                "name": name,
+                "units": units,
+                "channels": [],
+            }
+            self.create_recorder(
+                lambda segment: self._flush_device(segment, device), device=device
             )
-            # Free the memory
+        elif entry["name"] != name or entry["units"] != units:
+            raise AdapterError(
+                f"Device '{device.name}' recorded '{entry['name']}' in "
+                f"'{entry['units']}' before, and now '{name}' in '{units}': every "
+                "channel of a device has to measure the same thing, in the same units."
+            )
+        entry["channels"].append((p.record(obj), target))
+
+    def _flush_device(self, segment, device):
+        """Combine every channel a device recorded since the last flush into one
+        multiplexed ``AnalogSignal``, and free the NEURON vectors that held them."""
+        from patch import p
+        from quantities import ms
+
+        entry = self._channels[device]
+        channels = entry["channels"]
+        lengths = {v.size() for v, _ in channels}
+        if len(lengths) > 1:
+            raise ResultsError(
+                f"Device '{device.name}' recorded channels of different lengths "
+                f"{sorted(lengths)} this checkpoint; they cannot be combined into one "
+                "signal."
+            )
+        data = np.array([list(v) for v, _ in channels]).T
+        baseline, array_annotations = multiplex_channels(
+            [target for _, target in channels]
+        )
+        segment.analogsignals.append(
+            AnalogSignal(
+                data,
+                sampling_period=p.dt * ms,
+                name=entry["name"],
+                units=entry["units"],
+                array_annotations=array_annotations,
+                **baseline,
+            )
+        )
+        # Free the memory
+        for v, _ in channels:
             if v.size():
                 v.remove(0, v.size() - 1)
-
-        self.create_recorder(flush, device=device)
 
 
 class NeuronAdapter(SimulatorAdapter):

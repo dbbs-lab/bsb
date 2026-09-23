@@ -6,6 +6,7 @@ from os.path import abspath, dirname, isdir, isfile, join
 from sys import path
 
 from bsb import Scaffold, from_storage, parse_configuration_file
+from bsb.simulation.results import iter_recordings
 from bsb_test import RandomStorageFixture
 from neo import io
 
@@ -42,14 +43,17 @@ class TestNeuronExamples(
             len(self.scaffold.get_connectivity_set("stellate_to_stellate")), 50
         )
 
-    def _test_simulation_results(self, analogsignals):
+    def _test_simulation_results(self, segment):
+        # Recordings are per cell/synapse, whatever it took to write them to disk, so
+        # they are counted from the demultiplexed recordings, not the raw signals.
         count_neurons = 0
         count_synapses = 0
-        for signal in analogsignals:
-            if signal.annotations["bsb_device_name"] == "vrecorder":
+        for recording in iter_recordings(segment):
+            if recording.annotations["bsb_device_name"] == "vrecorder":
                 count_neurons += 1
-            if signal.annotations["bsb_device_name"] == "synapses_rec":
+            if recording.annotations["bsb_device_name"] == "synapses_rec":
                 count_synapses += 1
+            signal = recording.signal
             self.assertEqual(signal.t_start, 0)
             # simulation should last 100 ms + 1 dt
             self.assertEqual(signal.t_stop, 0.100025)  # in s
@@ -67,7 +71,7 @@ class TestNeuronExamples(
         self.scaffold.compile()
         self._test_scaffold_results()
         results = self.scaffold.run_simulation("neuronsim")
-        self._test_simulation_results(results.block.segments[0].analogsignals)
+        self._test_simulation_results(results.block.segments[0])
 
     def test_yaml_example(self):
         self.cfg = parse_configuration_file(
@@ -77,7 +81,7 @@ class TestNeuronExamples(
         self.scaffold.compile()
         self._test_scaffold_results()
         results = self.scaffold.run_simulation("neuronsim")
-        self._test_simulation_results(results.block.segments[0].analogsignals)
+        self._test_simulation_results(results.block.segments[0])
 
     def test_python_example(self):
         import scripts.guide_neuron  # noqa: F401
@@ -86,9 +90,7 @@ class TestNeuronExamples(
         self._test_scaffold_results()
         self.assertTrue(isfile("simulation-results/neuronsimulation.nio"))
         results = io.NixIO("simulation-results/neuronsimulation.nio", mode="ro")
-        self._test_simulation_results(
-            results.read_all_blocks()[0].segments[0].analogsignals
-        )
+        self._test_simulation_results(results.read_all_blocks()[0].segments[0])
         # check if analyze analog results runs without any problems
         import scripts.analyze_analog_results  # noqa: F401
 

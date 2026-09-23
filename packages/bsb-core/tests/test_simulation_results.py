@@ -28,6 +28,8 @@ from bsb.simulation.results import (
     device_annotations,
     iter_recordings,
     merge_rank_results,
+    multiplex_channels,
+    multiplex_targets,
     point_annotations,
     rank_part_path,
     read_provenance,
@@ -154,6 +156,164 @@ class TestIterRecordings(unittest.TestCase):
         self.assertEqual(4, len(list(iter_recordings(segment, kind="cell"))))
         self.assertEqual([], list(iter_recordings(segment, kind="synapse")))
         self.assertEqual(2, len(list(iter_recordings(segment, cell_model="a"))))
+
+
+class TestMultiplexedRecordings(unittest.TestCase):
+    """
+    A multiplexed signal -- one Neo object speaking for every target a device
+    watches, per #294 -- reads back as one recording per target, exactly as #272's
+    one-object-per-cell layout did.
+    """
+
+    def setUp(self):
+        self.model_a = types.SimpleNamespace(
+            name="a", cell_type=types.SimpleNamespace(name="cells_a")
+        )
+        self.model_b = types.SimpleNamespace(
+            name="b", cell_type=types.SimpleNamespace(name="cells_b")
+        )
+
+    def test_spike_trains_demultiplex_per_target_including_silent_ones(self):
+        targets = [
+            cell_annotations(self.model_a, 0, "record"),
+            cell_annotations(self.model_a, 1, "record"),
+            cell_annotations(self.model_b, 5, "record"),
+        ]
+        roster = multiplex_targets(targets)
+        train = SpikeTrain(
+            [1.0, 2.0, 3.0] * ms,
+            t_stop=10 * ms,
+            name="spikes",
+            # Cell 0 fires twice, cell 1 never fires, cell 5 fires once.
+            array_annotations={"bsb_target_index": np.array([0, 2, 0])},
+            bsb_device_name="rec",
+            **roster,
+        )
+        segment = Segment()
+        segment.spiketrains.append(train)
+
+        recordings = {
+            (r.annotations["bsb_cell_model"], r.annotations["bsb_cell_id"]): r
+            for r in iter_recordings(segment)
+        }
+        self.assertEqual({("a", 0), ("a", 1), ("b", 5)}, set(recordings))
+        self.assertEqual(
+            [1.0, 3.0], sorted(recordings[("a", 0)].signal.times.magnitude.tolist())
+        )
+        self.assertEqual(
+            [], recordings[("a", 1)].signal.times.magnitude.tolist(), "still a train"
+        )
+        self.assertEqual([2.0], recordings[("b", 5)].signal.times.magnitude.tolist())
+
+    def test_analog_signals_demultiplex_one_recording_per_channel(self):
+        targets = [
+            cell_annotations(self.model_a, 0, "record"),
+            cell_annotations(self.model_b, 1, "record"),
+        ]
+        baseline, array_annotations = multiplex_channels(targets)
+        data = np.array([[0.0, 10.0], [1.0, 11.0]]) * mV
+        signal = AnalogSignal(
+            data,
+            sampling_period=1 * ms,
+            name="v",
+            array_annotations=array_annotations,
+            bsb_device_name="rec",
+            **baseline,
+        )
+        segment = Segment()
+        segment.analogsignals.append(signal)
+
+        recordings = {r.annotations["bsb_cell_id"]: r for r in iter_recordings(segment)}
+        self.assertEqual({0, 1}, set(recordings))
+        self.assertEqual("a", recordings[0].annotations["bsb_cell_model"])
+        self.assertEqual("b", recordings[1].annotations["bsb_cell_model"])
+        self.assertEqual([0.0, 1.0], recordings[0].signal.magnitude.flatten().tolist())
+        self.assertEqual([10.0, 11.0], recordings[1].signal.magnitude.flatten().tolist())
+
+    def test_a_synapse_without_a_connection_keeps_its_own_annotations(self):
+        targets = [
+            synapse_annotations(
+                (self.model_a, 0, 0, 0, 0.5),
+                "ExpSyn",
+                "record",
+                pre=(self.model_b, 1, 0, 1),
+                connectivity_set="cs1",
+            ),
+            synapse_annotations(
+                (self.model_a, 1, 0, 0, 0.5), "ExpSyn", "record", pre=None
+            ),
+        ]
+        roster = multiplex_targets(targets)
+        train = SpikeTrain(
+            [0.5, 1.5] * ms,
+            t_stop=10 * ms,
+            name="spikes",
+            array_annotations={"bsb_target_index": np.array([0, 1])},
+            bsb_device_name="syn",
+            **roster,
+        )
+        segment = Segment()
+        segment.spiketrains.append(train)
+
+        recordings = {
+            r.annotations["bsb_post_cell_id"]: r for r in iter_recordings(segment)
+        }
+        # A missing value elsewhere in the same roster column must not turn a
+        # present int into a float.
+        self.assertEqual(1, recordings[0].annotations["bsb_pre_cell_id"])
+        self.assertIsInstance(recordings[0].annotations["bsb_pre_cell_id"], int)
+        self.assertNotIn("bsb_pre_cell_id", recordings[1].annotations)
+        self.assertEqual("cs1", recordings[0].annotations["bsb_connectivity_set"])
+        self.assertNotIn("bsb_connectivity_set", recordings[1].annotations)
+
+    def test_a_multiplexed_recording_has_to_agree_on_kind_and_direction(self):
+        targets = [
+            cell_annotations(self.model_a, 0, "record"),
+            cell_annotations(self.model_a, 1, "stimulate"),
+        ]
+        with self.assertRaises(ResultsError):
+            multiplex_targets(targets)
+
+    def test_multiplexed_recordings_survive_a_rank_merge(self):
+        # Merging is a concatenation: two ranks' multiplexed trains come back as two
+        # separate recordings, not folded into one train per cell.
+        tmpdir = pathlib.Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, tmpdir, ignore_errors=True)
+        targets = [cell_annotations(self.model_a, 0, "record")]
+
+        def _write(path, times, rank):
+            roster = multiplex_targets(targets)
+            train = SpikeTrain(
+                np.asarray(times) * ms,
+                t_stop=10 * ms,
+                name="spikes",
+                array_annotations={"bsb_target_index": np.zeros(len(times), dtype=int)},
+                bsb_device_name="rec",
+                mpi_rank=rank,
+                **roster,
+            )
+            block = Block(name="sim")
+            block.annotate(bsb_simulation_id="run")
+            segment = Segment()
+            segment.annotate(checkpoint_index=0)
+            segment.spiketrains.append(train)
+            block.segments.append(segment)
+            with neo_io.NixIO(str(path), mode="ow") as out:
+                out.write_block(block)
+
+        first, second = tmpdir / "r0.nio", tmpdir / "r1.nio"
+        _write(first, [1.0], rank=0)
+        _write(second, [2.0, 3.0], rank=1)
+        final = tmpdir / "final.nio"
+
+        merge_rank_results([first, second], final)
+
+        with neo_io.NixIO(str(final), "ro") as reader:
+            (block,) = reader.read_all_blocks()
+        recordings = list(iter_recordings(block, cell_id=0, cell_model="a"))
+        self.assertEqual(2, len(recordings), "one recording per rank's train")
+        trains = sorted((r.signal.times.magnitude.tolist() for r in recordings), key=len)
+        self.assertEqual([[1.0], [2.0, 3.0]], trains)
 
 
 @skip_parallel

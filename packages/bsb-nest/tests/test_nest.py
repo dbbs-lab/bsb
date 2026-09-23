@@ -304,9 +304,11 @@ class TestNest(
         netw = Scaffold(cfg, self.storage)
         netw.compile()
         results = netw.run_simulation("test")
-        spike_times_bsb = results.block.segments[0].spiketrains[0]
+        (recording,) = iter_recordings(results.block, device="record_A_spikes")
+        spike_times_bsb = recording.signal
         self.assertEqual(0, spike_times_bsb.annotations["bsb_cell_id"])
-        membrane_potentials = results.block.segments[0].analogsignals[0]
+        (recording,) = iter_recordings(results.block, device="voltmeter_A")
+        membrane_potentials = recording.signal
         # last time point is not recorded because of recorder delay.
         self.assertTrue(len(membrane_potentials) == duration / resolution - 1)
         self.assertEqual(0, membrane_potentials.annotations["bsb_cell_id"])
@@ -465,7 +467,8 @@ class TestNest(
         netw = Scaffold(cfg, self.storage)
         netw.compile()
         results = netw.run_simulation("test")
-        spike_times_bsb = results.block.segments[0].spiketrains[0]
+        (recording,) = iter_recordings(results.block, device="record_A_spikes")
+        spike_times_bsb = recording.signal
         self.assertClose(np.array(spike_times_nest), np.array(spike_times_bsb))
         self.assertEqual(
             cfg.__tree__()["simulations"]["test"]["cell_models"]["A"]["constants"]["V_m"],

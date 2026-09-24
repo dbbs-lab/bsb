@@ -6,6 +6,7 @@ from ... import config
 from ...config import types
 from ...exceptions import ConnectivityWarning
 from ...reporting import warn
+from ...rng import get_rng
 from ...storage._chunks import Chunk
 
 
@@ -49,19 +50,34 @@ class Intersectional:
         for cset in candidate_coll.placement:
             box_tree = cset.load_box_tree()
             for _ttype, tset, tboxes in target_cache:
-                yield (tset, cset, self._affinity_filter(box_tree.query(tboxes)))
+                yield (
+                    tset,
+                    cset,
+                    self._affinity_filter(
+                        box_tree.query(tboxes),
+                        key=(
+                            tset.cell_type.name,
+                            cset.cell_type.name,
+                            [c.id for c in target_coll.roi],
+                            [c.id for c in candidate_coll.roi],
+                        ),
+                    ),
+                )
 
-    def _affinity_filter(self, query):
+    def _affinity_filter(self, query, key):
         if self.affinity == 1:
             return query
         else:
             aff = self.affinity
+            # Keyed on the strategy, the cell type pair and the chunks involved, so
+            # every rank draws the same candidates for the same chunk pair.
+            rng = get_rng(self, key=("connectivity", self.name, "affinity", *key))
 
             def sizemod(q):
                 ln = len(q)
-                return int(np.floor(ln * aff) + (np.random.rand() < ((ln * aff) % 1)))
+                return int(np.floor(ln * aff) + (rng.random() < ((ln * aff) % 1)))
 
-            return (np.random.choice(q, sizemod(q), replace=False) for q in query)
+            return (rng.choice(q, sizemod(q), replace=False) for q in query)
 
 
 __all__ = ["Intersectional"]

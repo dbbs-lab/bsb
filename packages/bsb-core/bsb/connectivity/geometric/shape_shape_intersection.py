@@ -2,6 +2,7 @@ import numpy as np
 
 from ... import config
 from ...config import types
+from ...rng import get_rng
 from ...trees import BoxTree
 from .. import ConnectionStrategy
 from ..strategy import Hemitype
@@ -78,9 +79,24 @@ class ShapeToShapeIntersection(ConnectionStrategy):
     def connect(self, pre, post):
         for pre_ps in pre.placement:
             for post_ps in post.placement:
-                self._connect_type(pre_ps.cell_type, pre_ps, post_ps.cell_type, post_ps)
+                # Keyed on the strategy, the cell type pair and the chunks involved, so
+                # every rank draws the same connections for the same chunk pair.
+                rng = get_rng(
+                    self,
+                    key=(
+                        "connectivity",
+                        self.name,
+                        pre_ps.cell_type.name,
+                        post_ps.cell_type.name,
+                        [c.id for c in pre.roi],
+                        [c.id for c in post.roi],
+                    ),
+                )
+                self._connect_type(
+                    pre_ps.cell_type, pre_ps, post_ps.cell_type, post_ps, rng
+                )
 
-    def _connect_type(self, pre_ct, pre_ps, post_ct, post_ps):
+    def _connect_type(self, pre_ct, pre_ps, post_ct, post_ps, rng):
         pre_pos = pre_ps.load_positions()
         post_pos = post_ps.load_positions()
 

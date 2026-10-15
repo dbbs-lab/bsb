@@ -5,12 +5,12 @@ description = "BSB manipulate morphologies example"
 readme = "README.md"
 requires-python = ">=3.11,<4"
 dependencies = [
-    "bsb~=7.0",
+    "bsb~=8.0",
 ]
 
 [dependency-groups]
 test = [
-    "bsb-test~=7.0",
+    "bsb-test~=8.0",
 ]
 
 [tool.uv]

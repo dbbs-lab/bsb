@@ -1,3 +1,116 @@
+# 8.0.0 (2026-10-15)
+
+### 🚀 Features
+
+- ⚠️  **bsb-core:** recordings say what they recorded, and read_results traces it back to the network ([#293](https://github.com/dbbs-lab/bsb/pull/293), [#288](https://github.com/dbbs-lab/bsb/issues/288))
+- ⚠️  **bsb-core:** a device records every cell it watched ([#290](https://github.com/dbbs-lab/bsb/pull/290))
+- ⚠️  **bsb-core:** record one signal per cell, annotated the same way everywhere ([#272](https://github.com/dbbs-lab/bsb/pull/272))
+- ⚠️  **bsb-core:** a run ends with one results file, whatever it took to make it ([#266](https://github.com/dbbs-lab/bsb/pull/266))
+- ⚠️  **bsb-nest:** seed the kernel from the network's randomness ([#275](https://github.com/dbbs-lab/bsb/pull/275))
+- ⚠️  **bsb-core:** draw connectivity from the configured randomness ([#277](https://github.com/dbbs-lab/bsb/pull/277))
+- ⚠️  **bsb-core:** draw placement from the configured randomness ([#276](https://github.com/dbbs-lab/bsb/pull/276))
+- **bsb-core:** configured randomness, with replicates and reproduction ([#264](https://github.com/dbbs-lab/bsb/pull/264))
+- ⚠️  **bsb-core:** parameters answer what a model's values are, per arity ([#260](https://github.com/dbbs-lab/bsb/pull/260))
+- ⚠️  **bsb-core:** drop the adapter's post_prepare argument ([#278](https://github.com/dbbs-lab/bsb/pull/278))
+- ⚠️  **bsb-core:** give the prepared simulation a hook of its own ([#263](https://github.com/dbbs-lab/bsb/pull/263))
+- **bsb-core:** add an after_simulation hook ([#257](https://github.com/dbbs-lab/bsb/pull/257))
+- Rust acceleration for segment intersection touch detection and Poisson-disk placement ([#256](https://github.com/dbbs-lab/bsb/pull/256))
+- Add distribution based placement ([#242](https://github.com/dbbs-lab/bsb/pull/242))
+- numpy 2.x compatibility ([#240](https://github.com/dbbs-lab/bsb/pull/240))
+
+### 🩹 Fixes
+
+- ⚠️  **bsb-core:** multiplex per-device recordings instead of one Neo object per cell ([#297](https://github.com/dbbs-lab/bsb/pull/297))
+- ⚠️  seed postprocessing hooks and Distribution draws; require Python 3.11 ([#291](https://github.com/dbbs-lab/bsb/pull/291))
+- ⚠️  **bsb-core:** the soma is every location labelled soma ([#295](https://github.com/dbbs-lab/bsb/pull/295))
+- ⚠️  **bsb-arbor:** draw the poisson generators from the network's randomness ([#280](https://github.com/dbbs-lab/bsb/pull/280))
+- ⚠️  **bsb-core:** draw device targets the same way on every rank ([#265](https://github.com/dbbs-lab/bsb/pull/265))
+- ⚠️  **bsb-core:** store structured metadata so it survives being written ([#262](https://github.com/dbbs-lab/bsb/pull/262))
+- **bsb-core:** stop re-parsing pyproject.toml per report, and survive an offline fetch ([#269](https://github.com/dbbs-lab/bsb/pull/269))
+- **bsb-core:** attribute configuration errors to the node they happened on ([#273](https://github.com/dbbs-lab/bsb/pull/273), [#67](https://github.com/dbbs-lab/bsb/issues/67), [#45](https://github.com/dbbs-lab/bsb/issues/45), [#59](https://github.com/dbbs-lab/bsb/issues/59))
+- ⚠️  **bsb-neuron:** default synapse delay to 1 ms, and drop the unrunnable Convergence strategy ([#271](https://github.com/dbbs-lab/bsb/pull/271), [#99](https://github.com/dbbs-lab/bsb/issues/99), [#136](https://github.com/dbbs-lab/bsb/issues/136))
+- **bsb-core:** parse config package requirements into a slotted subclass ([#268](https://github.com/dbbs-lab/bsb/pull/268))
+- **release:** bump sibling pins on release and stop skipping the release run ([#259](https://github.com/dbbs-lab/bsb/pull/259), [#193](https://github.com/dbbs-lab/bsb/issues/193))
+- code dependency config for dotted paths. ([#255](https://github.com/dbbs-lab/bsb/pull/255))
+- Python 3.13 and 3.14 compatibility, arbor 0.12 ([#249](https://github.com/dbbs-lab/bsb/pull/249))
+- ⚠️  Let writing data to file at flush ([#213](https://github.com/dbbs-lab/bsb/pull/213))
+
+### ⚠️  Breaking Changes
+
+- **bsb-core:** multiplex per-device recordings instead of one Neo object per cell  ([#297](https://github.com/dbbs-lab/bsb/pull/297))
+- seed postprocessing hooks and Distribution draws; require Python 3.11  ([#291](https://github.com/dbbs-lab/bsb/pull/291))
+  BSB requires Python 3.11 or newer. Every package's
+  `requires-python` moves from `>=3.10,<4` to `>=3.11,<4`.
+- **bsb-core:** the soma is every location labelled soma  ([#295](https://github.com/dbbs-lab/bsb/pull/295))
+  `SomaTargetting` targets the locations labelled `soma` instead of
+  location (0, 0). A cell whose morphology labels no soma has no soma locations, so
+  devices that default to it (voltage recorder, current and voltage clamp, spike
+  generator) target nothing on such a cell.
+- **bsb-core:** recordings say what they recorded, and read_results traces it back to the network  ([#293](https://github.com/dbbs-lab/bsb/pull/293), [#288](https://github.com/dbbs-lab/bsb/issues/288))
+  the `cell_type` annotation of recordings and
+  `Recording.cell_type` are renamed to `cell_model`. On NEST and arbor,
+  `cell_id` is the cell's placement set id instead of the simulator's node id
+  or gid.
+- **bsb-core:** a device records every cell it watched  ([#290](https://github.com/dbbs-lab/bsb/pull/290))
+  recordings no longer carry `gids` or `pop_size`. A device's
+  recordings are the cells it watched, so their number is the population and their
+  `cell_id`s are which cells.
+  Claude-Session: https://claude.ai/code/session_017Zcwom5VRiA5WMreKncmVg
+- **bsb-core:** record one signal per cell, annotated the same way everywhere  ([#272](https://github.com/dbbs-lab/bsb/pull/272))
+- **bsb-core:** a run ends with one results file, whatever it took to make it  ([#266](https://github.com/dbbs-lab/bsb/pull/266))
+  `bsb simulate` writes one file per run rather than one per rank,
+  and `SimulationResult` gains `finalize`, which an adapter driving the result
+  itself has to call.
+  Claude-Session: https://claude.ai/code/session_01BHScuq1Hoemb5AUeofueWP
+- **bsb-nest:** seed the kernel from the network's randomness  ([#275](https://github.com/dbbs-lab/bsb/pull/275))
+  `seed` is no longer configured on a NEST simulation. Pin the
+  network's `rng.seed`, or declare an `rng.settings` entry of strategy `nest` and
+  name it on the simulation's `rng`.
+  Claude-Session: https://claude.ai/code/session_017Zcwom5VRiA5WMreKncmVg
+- **bsb-core:** draw connectivity from the configured randomness  ([#277](https://github.com/dbbs-lab/bsb/pull/277))
+- **bsb-core:** draw placement from the configured randomness  ([#276](https://github.com/dbbs-lab/bsb/pull/276))
+- **bsb-arbor:** draw the poisson generators from the network's randomness  ([#280](https://github.com/dbbs-lab/bsb/pull/280))
+- **bsb-core:** draw device targets the same way on every rank  ([#265](https://github.com/dbbs-lab/bsb/pull/265))
+  a device targetting a `fraction` or `count` of a population
+  selects a different subset than before, since the selection is now seeded.
+- **bsb-core:** parameters answer what a model's values are, per arity  ([#260](https://github.com/dbbs-lab/bsb/pull/260))
+  `Parameter` no longer has a `value` attribute and
+  `ParameterValue` is removed. `CellModel.parameters` is a dict keyed by the model
+  parameter, not a list. `constants` blocks no longer accept a computed parameter;
+  write it in `parameters`. `resolution` is configured on any simulation, not only
+  per backend.
+- **bsb-core:** store structured metadata so it survives being written  ([#262](https://github.com/dbbs-lab/bsb/pull/262))
+  the `config` annotation on a result block is a JSON string rather
+  than a dict, in memory as well as on file. Keeping it a dict in memory and a
+  string on file would reintroduce exactly the trap that caused this. Read it with
+  `read_simulation_config`.
+- **bsb-core:** drop the adapter's post_prepare argument  ([#278](https://github.com/dbbs-lab/bsb/pull/278))
+- **bsb-core:** give the prepared simulation a hook of its own  ([#263](https://github.com/dbbs-lab/bsb/pull/263))
+  `post_prepare` on a simulation is replaced by `after_prepare`,
+  whose entries are named dynamic nodes with a `strategy` rather than a list of
+  dotted function paths.
+  Claude-Session: https://claude.ai/code/session_01BHScuq1Hoemb5AUeofueWP
+- **bsb-neuron:** default synapse delay to 1 ms, and drop the unrunnable Convergence strategy  ([#271](https://github.com/dbbs-lab/bsb/pull/271), [#99](https://github.com/dbbs-lab/bsb/issues/99), [#136](https://github.com/dbbs-lab/bsb/issues/136))
+  `bsb.connectivity.Convergence` and the `bsb.Convergence`
+  public API entry are removed. Configurations using
+  `strategy: bsb.connectivity.Convergence` did not work; use
+  `bsb.connectivity.FixedIndegree` or a custom strategy instead.
+  Closes #99
+- Let writing data to file at flush  ([#213](https://github.com/dbbs-lab/bsb/pull/213))
+
+### ❤️ Thank You
+
+- Claude Opus 4.6
+- Claude Opus 4.8 (1M context)
+- Claude Opus 5
+- Claude Opus 5 (1M context)
+- Claude Sonnet 4.6
+- Claude Sonnet 5
+- Dimitri Rodarie
+- Dimitri RODARIE
+- Filippo @filimarc
+- Robin De Schepper
+
 ## 7.6.1 (2026-09-18)
 
 ### 🩹 Fixes

@@ -1,3 +1,47 @@
+# 8.0.0 (2026-10-15)
+
+### 🚀 Features
+
+- ⚠️  **bsb-core:** recordings say what they recorded, and read_results traces it back to the network ([#293](https://github.com/dbbs-lab/bsb/pull/293), [#288](https://github.com/dbbs-lab/bsb/issues/288))
+- Rust acceleration for segment intersection touch detection and Poisson-disk placement ([#256](https://github.com/dbbs-lab/bsb/pull/256))
+- numpy 2.x compatibility ([#240](https://github.com/dbbs-lab/bsb/pull/240))
+
+### 🩹 Fixes
+
+- ⚠️  seed postprocessing hooks and Distribution draws; require Python 3.11 ([#291](https://github.com/dbbs-lab/bsb/pull/291))
+- ⚠️  **bsb-core:** store structured metadata so it survives being written ([#262](https://github.com/dbbs-lab/bsb/pull/262))
+- **bsb-hdf5:** count placement sets from the tracked chunk stats ([#270](https://github.com/dbbs-lab/bsb/pull/270), [#26](https://github.com/dbbs-lab/bsb/issues/26), [#28](https://github.com/dbbs-lab/bsb/issues/28))
+- **release:** bump sibling pins on release and stop skipping the release run ([#259](https://github.com/dbbs-lab/bsb/pull/259), [#193](https://github.com/dbbs-lab/bsb/issues/193))
+- Python 3.13 and 3.14 compatibility, arbor 0.12 ([#249](https://github.com/dbbs-lab/bsb/pull/249))
+
+### ⚠️  Breaking Changes
+
+- seed postprocessing hooks and Distribution draws; require Python 3.11  ([#291](https://github.com/dbbs-lab/bsb/pull/291))
+  BSB requires Python 3.11 or newer. Every package's
+  `requires-python` moves from `>=3.10,<4` to `>=3.11,<4`.
+- **bsb-core:** recordings say what they recorded, and read_results traces it back to the network  ([#293](https://github.com/dbbs-lab/bsb/pull/293), [#288](https://github.com/dbbs-lab/bsb/issues/288))
+  the `cell_type` annotation of recordings and
+  `Recording.cell_type` are renamed to `cell_model`. On NEST and arbor,
+  `cell_id` is the cell's placement set id instead of the simulator's node id
+  or gid.
+- **bsb-core:** store structured metadata so it survives being written  ([#262](https://github.com/dbbs-lab/bsb/pull/262))
+  the `config` annotation on a result block is a JSON string rather
+  than a dict, in memory as well as on file. Keeping it a dict in memory and a
+  string on file would reintroduce exactly the trap that caused this. Read it with
+  `read_simulation_config`.
+
+### ❤️ Thank You
+
+- Claude Opus 4.6
+- Claude Opus 4.8 (1M context)
+- Claude Opus 5
+- Claude Opus 5 (1M context)
+- Claude Sonnet 4.6
+- Claude Sonnet 5
+- Dimitri RODARIE
+- Filippo @filimarc
+- Robin De Schepper
+
 ## 7.6.1 (2026-09-18)
 
 This was a version bump only for bsb-hdf5 to align it with other projects, there were no code changes.

@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "arborize"
-version = "7.6.1"
+version = "8.0.0"
 readme = "README.md"
 requires-python = ">=3.11,<4"
 dynamic = [ "description" ]
@@ -15,7 +15,7 @@ dependencies = [
   "numpy>=1.21",
   "errr~=1.2",
   "morphio>=3.3.6,<4",
-  "bsb-core~=7.4"
+  "bsb-core~=8.0"
 ]
 
   [[project.authors]]
@@ -34,7 +34,7 @@ dependencies = [
 [dependency-groups]
 docs = [
   "sphinx~=8.1",
-  "sphinxext-bsb~=7.0",
+  "sphinxext-bsb~=8.0",
   "furo~=2024.0",
   "sphinxemoji~=0.3",
   "sphinx-copybutton~=0.5"

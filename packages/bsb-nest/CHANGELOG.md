@@ -1,3 +1,79 @@
+# 8.0.0 (2026-10-15)
+
+### 🚀 Features
+
+- ⚠️  **bsb-core:** recordings say what they recorded, and read_results traces it back to the network ([#293](https://github.com/dbbs-lab/bsb/pull/293), [#288](https://github.com/dbbs-lab/bsb/issues/288))
+- ⚠️  **bsb-core:** a device records every cell it watched ([#290](https://github.com/dbbs-lab/bsb/pull/290))
+- ⚠️  **bsb-core:** record one signal per cell, annotated the same way everywhere ([#272](https://github.com/dbbs-lab/bsb/pull/272))
+- ⚠️  **bsb-core:** a run ends with one results file, whatever it took to make it ([#266](https://github.com/dbbs-lab/bsb/pull/266))
+- ⚠️  **bsb-nest:** seed the kernel from the network's randomness ([#275](https://github.com/dbbs-lab/bsb/pull/275))
+- ⚠️  **bsb-core:** parameters answer what a model's values are, per arity ([#260](https://github.com/dbbs-lab/bsb/pull/260))
+- ⚠️  **bsb-core:** drop the adapter's post_prepare argument ([#278](https://github.com/dbbs-lab/bsb/pull/278))
+- ⚠️  **bsb-core:** give the prepared simulation a hook of its own ([#263](https://github.com/dbbs-lab/bsb/pull/263))
+- Rust acceleration for segment intersection touch detection and Poisson-disk placement ([#256](https://github.com/dbbs-lab/bsb/pull/256))
+
+### 🩹 Fixes
+
+- ⚠️  **bsb-core:** multiplex per-device recordings instead of one Neo object per cell ([#297](https://github.com/dbbs-lab/bsb/pull/297))
+- ⚠️  seed postprocessing hooks and Distribution draws; require Python 3.11 ([#291](https://github.com/dbbs-lab/bsb/pull/291))
+- **bsb-nest:** install NEST without a synced environment ([#279](https://github.com/dbbs-lab/bsb/pull/279))
+- **release:** bump sibling pins on release and stop skipping the release run ([#259](https://github.com/dbbs-lab/bsb/pull/259), [#193](https://github.com/dbbs-lab/bsb/issues/193))
+- Python 3.13 and 3.14 compatibility, arbor 0.12 ([#249](https://github.com/dbbs-lab/bsb/pull/249))
+- ⚠️  Let writing data to file at flush ([#213](https://github.com/dbbs-lab/bsb/pull/213))
+
+### ⚠️  Breaking Changes
+
+- **bsb-core:** multiplex per-device recordings instead of one Neo object per cell  ([#297](https://github.com/dbbs-lab/bsb/pull/297))
+- seed postprocessing hooks and Distribution draws; require Python 3.11  ([#291](https://github.com/dbbs-lab/bsb/pull/291))
+  BSB requires Python 3.11 or newer. Every package's
+  `requires-python` moves from `>=3.10,<4` to `>=3.11,<4`.
+- **bsb-core:** recordings say what they recorded, and read_results traces it back to the network  ([#293](https://github.com/dbbs-lab/bsb/pull/293), [#288](https://github.com/dbbs-lab/bsb/issues/288))
+  the `cell_type` annotation of recordings and
+  `Recording.cell_type` are renamed to `cell_model`. On NEST and arbor,
+  `cell_id` is the cell's placement set id instead of the simulator's node id
+  or gid.
+- **bsb-core:** a device records every cell it watched  ([#290](https://github.com/dbbs-lab/bsb/pull/290))
+  recordings no longer carry `gids` or `pop_size`. A device's
+  recordings are the cells it watched, so their number is the population and their
+  `cell_id`s are which cells.
+  Claude-Session: https://claude.ai/code/session_017Zcwom5VRiA5WMreKncmVg
+- **bsb-core:** record one signal per cell, annotated the same way everywhere  ([#272](https://github.com/dbbs-lab/bsb/pull/272))
+- **bsb-core:** a run ends with one results file, whatever it took to make it  ([#266](https://github.com/dbbs-lab/bsb/pull/266))
+  `bsb simulate` writes one file per run rather than one per rank,
+  and `SimulationResult` gains `finalize`, which an adapter driving the result
+  itself has to call.
+  Claude-Session: https://claude.ai/code/session_01BHScuq1Hoemb5AUeofueWP
+- **bsb-nest:** seed the kernel from the network's randomness  ([#275](https://github.com/dbbs-lab/bsb/pull/275))
+  `seed` is no longer configured on a NEST simulation. Pin the
+  network's `rng.seed`, or declare an `rng.settings` entry of strategy `nest` and
+  name it on the simulation's `rng`.
+  Claude-Session: https://claude.ai/code/session_017Zcwom5VRiA5WMreKncmVg
+- **bsb-core:** parameters answer what a model's values are, per arity  ([#260](https://github.com/dbbs-lab/bsb/pull/260))
+  `Parameter` no longer has a `value` attribute and
+  `ParameterValue` is removed. `CellModel.parameters` is a dict keyed by the model
+  parameter, not a list. `constants` blocks no longer accept a computed parameter;
+  write it in `parameters`. `resolution` is configured on any simulation, not only
+  per backend.
+- **bsb-core:** drop the adapter's post_prepare argument  ([#278](https://github.com/dbbs-lab/bsb/pull/278))
+- **bsb-core:** give the prepared simulation a hook of its own  ([#263](https://github.com/dbbs-lab/bsb/pull/263))
+  `post_prepare` on a simulation is replaced by `after_prepare`,
+  whose entries are named dynamic nodes with a `strategy` rather than a list of
+  dotted function paths.
+  Claude-Session: https://claude.ai/code/session_01BHScuq1Hoemb5AUeofueWP
+- Let writing data to file at flush  ([#213](https://github.com/dbbs-lab/bsb/pull/213))
+
+### ❤️ Thank You
+
+- Claude Opus 4.6
+- Claude Opus 4.8 (1M context)
+- Claude Opus 5
+- Claude Opus 5 (1M context)
+- Claude Sonnet 5
+- Dimitri Rodarie
+- Dimitri RODARIE
+- Filippo @filimarc
+- Robin De Schepper
+
 ## 7.6.1 (2026-09-18)
 
 ### 🩹 Fixes

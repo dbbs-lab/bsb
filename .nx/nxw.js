@@ -113,34 +113,6 @@ if (!process.env.NX_WRAPPER_SKIP_INSTALL) {
     ensureUpToDateInstallation();
 }
 
-// @nxlv/python (23.x) decides whether a local dependency already carries a version
-// with a regex that accepts neither extras nor environment markers, so at publish time
-// `nmodl-glia[neuron]~=8.0` or `nrn-patch~=8.0 ; sys_platform != 'win32'` get
-// `==<version>` appended, and PyPI rejects the result (it broke the 8.0.0 release).
-// Widen the regex until upstream fixes it; only `.test()` is called on it.
-function patchNxlvVersionRange() {
-    const resolver = path.join(__dirname, 'installation', 'node_modules', '@nxlv', 'python', 'dist', 'provider', 'uv', 'build', 'resolvers', 'project.js');
-    const broken = 'const VERSION_RANGE_REGEX = /^([a-zA-Z0-9._-]+)\\s*(==|!=|~=|===|>=|<=|>|<)\\s*([^\\s,;]+)(?:,?\\s*(==|!=|~=|===|>=|<=|>|<)\\s*([^\\s,;]+))*$/;';
-    const fixed = 'const VERSION_RANGE_REGEX = /^([a-zA-Z0-9._-]+)\\s*(?:\\[[^\\]]*\\])?\\s*(==|!=|~=|===|>=|<=|>|<)\\s*([^\\s,;]+)(?:\\s*,?\\s*(==|!=|~=|===|>=|<=|>|<)\\s*([^\\s,;]+))*\\s*(?:;.*)?$/;';
-    let source;
-    try {
-        source = fs.readFileSync(resolver, 'utf-8');
-    }
-    catch {
-        return;
-    }
-    if (source.includes(fixed)) {
-        return;
-    }
-    if (source.includes(broken)) {
-        fs.writeFileSync(resolver, source.replace(broken, fixed));
-        return;
-    }
-    console.warn('[NX]: Could not patch @nxlv/python VERSION_RANGE_REGEX: the code it targets changed. ' +
-        'Check whether upstream fixed extras/markers in local dependency pins, then remove this patch from .nx/nxw.js.');
-}
-patchNxlvVersionRange();
-
 // Resolve the CLI entrypoint from nx's own manifest rather than a fixed path:
 // nx moved its bin from `bin/nx` to `dist/bin/nx.js` in v23.
 const nxPackageDir = path.join(__dirname, 'installation', 'node_modules', 'nx');

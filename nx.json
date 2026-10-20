@@ -2,7 +2,7 @@
   "installation": {
     "version": "23.1.2",
     "plugins": {
-      "@nxlv/python": "23.0.1"
+      "@nxlv/python": "npm:@helveg/nx-python@23.3.1"
     }
   },
   "plugins": [

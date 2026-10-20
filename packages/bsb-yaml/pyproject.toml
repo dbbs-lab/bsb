@@ -4,7 +4,7 @@ build-backend = "flit_core.buildapi"
 
 [project]
 name = "bsb-yaml"
-version = "8.0.1"
+version = "8.0.2"
 readme = "README.md"
 requires-python = ">=3.11,<4"
 dynamic = [ "description" ]

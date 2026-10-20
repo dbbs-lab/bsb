@@ -1,3 +1,14 @@
+## 8.0.2 (2026-10-20)
+
+### 🩹 Fixes
+
+- **release:** install @nxlv/python as the @helveg/nx-python fork ([#303](https://github.com/dbbs-lab/bsb/pull/303))
+
+### ❤️ Thank You
+
+- Claude Opus 4.8
+- Robin De Schepper
+
 ## 8.0.1 (2026-10-20)
 
 ### 🩹 Fixes

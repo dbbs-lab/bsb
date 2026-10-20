@@ -32,7 +32,7 @@ dependencies = [
 
   [project.optional-dependencies]
   parallel = [ "mpi4py~=4.1.0" ]
-  neuron = [ "nrn-patch~=7.0" ]
+  neuron = [ "nrn-patch~=8.0" ]
   arbor = [ "arbor~=0.12" ]
 
   [project.scripts]

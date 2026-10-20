@@ -28,8 +28,8 @@ dependencies = [
   [project.optional-dependencies]
   parallel = [ "mpi4py~=4.1.0" ]
   bluepyopt = [ "bluepyopt~=1.14", "dill>=0.3.8" ]
-  neuron = [ "nrn-patch~=7.0", "nmodl-glia[neuron]~=7.0" ]
-  arbor = [ "arbor~=0.12", "nmodl-glia[arbor]~=7.0" ]
+  neuron = [ "nrn-patch~=8.0", "nmodl-glia[neuron]~=8.0" ]
+  arbor = [ "arbor~=0.12", "nmodl-glia[arbor]~=8.0" ]
 
 [dependency-groups]
 docs = [

@@ -1,3 +1,14 @@
+## 8.0.1 (2026-10-20)
+
+### 🩹 Fixes
+
+- **release:** publish packages whose sibling pins carry extras or markers ([#301](https://github.com/dbbs-lab/bsb/pull/301))
+
+### ❤️ Thank You
+
+- Claude Opus 5.5
+- Dimitri RODARIE
+
 # 8.0.0 (2026-10-15)
 
 ### 🚀 Features

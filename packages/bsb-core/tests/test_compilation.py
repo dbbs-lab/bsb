@@ -8,7 +8,7 @@ from bsb_test import (
     get_test_config,
 )
 
-from bsb import Configuration, InputError, RedoError
+from bsb import MPI, Branch, Configuration, InputError, Morphology, RedoError
 
 
 class TestSingleTypeCompilation(
@@ -230,3 +230,62 @@ class TestRedoCompilation(
         self.network.compile(
             redo=True, only=["layer_placement"], skip=["second_placement"], force=True
         )
+
+
+class TestClearCompilation(
+    RandomStorageFixture, NetworkFixture, unittest.TestCase, engine_name="hdf5"
+):
+    """
+    Check that `clear` keeps the stored files and morphologies, unless `clear_files`
+    is given.
+    """
+
+    def setUp(self) -> None:
+        self.cfg = get_test_config("single")
+        self.cfg.files["dependency"] = __file__
+        super().setUp()
+        self.network.compile()
+        if not MPI.get_rank():
+            self.network.files.store(b"content", meta={"source": "cached_file"})
+            self.network.morphologies.save(
+                "cached_morpho", Morphology([Branch(np.zeros((2, 3)), np.ones(2))])
+            )
+        MPI.barrier()
+
+    def assertCached(self, cached, msg):
+        self.assertEqual(
+            cached,
+            self.network.files.find_meta("source", "cached_file") is not None,
+            msg,
+        )
+        self.assertEqual(cached, self.network.morphologies.has("cached_morpho"), msg)
+
+    def test_clear_keeps_files(self):
+        self.network.compile(clear=True, skip_placement=True)
+        self.assertEqual(
+            0,
+            len(self.network.get_placement_set("test_cell")),
+            "clear should remove the placement data",
+        )
+        self.assertCached(True, "clear should keep the stored files and morphologies")
+        self.network.compile(clear=True)
+        self.assertEqual(
+            40,
+            len(self.network.get_placement_set("test_cell")),
+            "should place 40 cells again after a clear",
+        )
+
+    def test_clear_files(self):
+        self.network.compile(clear_files=True)
+        self.assertCached(False, "clear_files should remove the files and morphologies")
+        self.assertIsNotNone(
+            self.network.configuration.files["dependency"].get_stored_file(),
+            "clear_files should store the file dependencies again",
+        )
+        self.assertEqual(40, len(self.network.get_placement_set("test_cell")))
+
+    def test_clear_files_exclusive(self):
+        for flag in ("clear", "append", "redo"):
+            with self.subTest(flag=flag), self.assertRaises(InputError):
+                self.network.compile(clear_files=True, **{flag: True})
+        self.assertCached(True, "a refused compile should not touch the storage")

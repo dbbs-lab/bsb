@@ -36,6 +36,13 @@ class Targetting(RngConsumer):
         elif self.type == "connection":
             return simdata.connections
 
+    def get_placement_labels(self) -> list[str] | None:
+        """
+        The labels the targets are selected by in their placement sets, or ``None``
+        when the targets are not selected by label.
+        """
+        return None
+
 
 @config.node
 class CellTargetting(Targetting, classmap_entry="all"):
@@ -196,6 +203,9 @@ class ByLabelTargetting(
     """
 
     labels: list[str] = config.attr(type=types.list(type=str), required=True)
+
+    def get_placement_labels(self) -> list[str]:
+        return list(self.labels)
 
     @FractionFilter.filter
     def get_targets(self, adapter, simulation, simdata):

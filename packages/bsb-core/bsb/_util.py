@@ -91,7 +91,7 @@ def sanitize_ndarray(arr_input, shape, dtype=None):
     if dtype is not None:
         kwargs["dtype"] = dtype
     arr = _np.asarray(arr_input, **kwargs)
-    arr.shape = shape
+    arr = arr.reshape(shape)
     return arr
 
 

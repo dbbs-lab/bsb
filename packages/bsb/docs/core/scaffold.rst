@@ -52,7 +52,7 @@ You can run the full reconstruction with the :meth:`compile <bsb:bsb.core.Scaffo
 - Run a simulation: :meth:`run_simulation <bsb:bsb.core.Scaffold.run_simulation>`
 
 Similarly, you can clear the results of the reconstruction stored so far with the :meth:`clear <bsb:bsb.core.Scaffold.clear>`
-or any of its sub-step:
+or any of its sub-step. The stored files and morphologies are kept, unless you pass ``keep_files=False``:
 
 - Cell placement: :meth:`clear_placement <bsb:bsb.core.Scaffold.clear_placement>`
 - Cell connectivity: :meth:`clear_connectivity <bsb:bsb.core.Scaffold.clear_connectivity>`

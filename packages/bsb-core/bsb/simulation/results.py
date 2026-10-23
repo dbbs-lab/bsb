@@ -229,11 +229,22 @@ def _stamp_baseline(segment, before: dict, recorder, simulation_id, segment_id) 
         "bsb_segment_id": segment_id,
     }
     baseline = {key: value for key, value in baseline.items() if value is not None}
+    labels = recorder.placement_labels
     for name in _RECORDING_LISTS:
         recordings = getattr(segment, name)
         for recording in recordings[before[name] :]:
             for key, value in baseline.items():
                 recording.annotations.setdefault(key, value)
+            # A recording of the device itself has no cell to have been selected.
+            if (
+                labels is not None
+                and recording.annotations.get("bsb_recording_kind") != "device"
+            ):
+                # Encoded, because `nixio` reads a list of one label back as a bare
+                # string.
+                recording.annotations.setdefault(
+                    "bsb_ps_labels", encode_annotation(labels, "placement labels")
+                )
 
 
 def device_annotations(direction: str) -> dict:
@@ -468,6 +479,15 @@ class Recording:
     def annotations(self) -> dict:
         """All annotations of the Neo object, including those of its kind."""
         return self.signal.annotations
+
+    @property
+    def placement_labels(self) -> list[str] | None:
+        """
+        The labels the device selected its target cells by in their placement sets,
+        or ``None`` when it did not select them by label. Cell ids still index the
+        whole placement set, not the labelled cells.
+        """
+        return decode_annotation(self.annotations.get("bsb_ps_labels"))
 
     @property
     def is_spike_train(self) -> bool:
@@ -894,6 +914,16 @@ class SimulationRecorder:
     def device_kind(self):
         """The kind of device this recorder belongs to, as it is configured."""
         return getattr(self.device, "device", None)
+
+    @property
+    def placement_labels(self):
+        """
+        The labels the device selects its target cells by in their placement sets, or
+        ``None`` when it does not select them by label.
+        """
+        targetting = getattr(self.device, "targetting", None)
+        get_labels = getattr(targetting, "get_placement_labels", None)
+        return None if get_labels is None else get_labels()
 
     def flush(self, segment: "neo.core.Segment"):
         raise NotImplementedError("Recorders need to implement the `flush` function.")

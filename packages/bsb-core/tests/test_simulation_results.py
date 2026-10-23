@@ -12,6 +12,7 @@ from quantities import ms, mV
 
 from bsb import (
     Branch,
+    ByLabelTargetting,
     Configuration,
     Morphology,
     MorphologySet,
@@ -474,6 +475,71 @@ class TestRecordingsSayWhatTheyRecord(unittest.TestCase):
         for train in trains:
             self.assertEqual("rec", train.annotations["bsb_device_name"])
             self.assertEqual("test_recorder", train.annotations["bsb_device_kind"])
+
+    def _labelled_device(self, labels):
+        return types.SimpleNamespace(
+            name="rec",
+            device="test_recorder",
+            targetting=ByLabelTargetting(labels=labels),
+        )
+
+    def test_a_device_selecting_by_label_records_its_labels(self):
+        def flush(segment):
+            segment.spiketrains.append(
+                self._train(**cell_annotations(self.model, 3, "record"))
+            )
+            segment.spiketrains.append(self._train(**device_annotations("record")))
+
+        self.result.create_recorder(flush, self._labelled_device(["a", "b"]))
+        self.result.flush()
+
+        cell, device = iter_recordings(self.result.block)
+        self.assertEqual(["a", "b"], cell.placement_labels)
+        self.assertIsNone(device.placement_labels, "a device is selected by no label")
+
+    def test_a_device_not_selecting_by_label_records_no_labels(self):
+        def flush(segment):
+            segment.spiketrains.append(
+                self._train(**cell_annotations(self.model, 3, "record"))
+            )
+
+        self.result.create_recorder(flush, self.device)
+        self.result.flush()
+
+        (recording,) = iter_recordings(self.result.block)
+        self.assertNotIn("bsb_ps_labels", recording.annotations)
+        self.assertIsNone(recording.placement_labels)
+
+    def test_a_single_label_survives_a_multiplexed_round_trip(self):
+        tmpdir = pathlib.Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, tmpdir, ignore_errors=True)
+        targets = [
+            cell_annotations(self.model, 0, "record"),
+            cell_annotations(self.model, 1, "record"),
+        ]
+
+        def flush(segment):
+            segment.spiketrains.append(
+                SpikeTrain(
+                    [1.0, 2.0] * ms,
+                    t_stop=10 * ms,
+                    name="spikes",
+                    array_annotations={"bsb_target_index": np.array([0, 1])},
+                    **multiplex_targets(targets),
+                )
+            )
+
+        self.result.create_recorder(flush, self._labelled_device(["only"]))
+        self.result.flush()
+        path = tmpdir / "labels.nio"
+        self.result.write(path)
+
+        with neo_io.NixIO(str(path), "ro") as reader:
+            (block,) = reader.read_all_blocks()
+        recordings = list(iter_recordings(block))
+        self.assertEqual(2, len(recordings))
+        for recording in recordings:
+            self.assertEqual(["only"], recording.placement_labels)
 
     def test_an_untraceable_recording_reads_with_a_warning(self):
         segment = Segment()

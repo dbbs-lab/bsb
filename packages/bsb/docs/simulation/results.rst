@@ -86,6 +86,13 @@ The first four are stamped by the :class:`~bsb.simulation.results.SimulationResu
 rather than by each device, so a new backend cannot forget to say where a signal
 came from. A device that sets one of them itself keeps its own answer.
 
+The result also stamps ``bsb_ps_labels`` on every recording of a device that
+selects its cells by label, such as with the ``by_label`` targetting. It holds the
+labels as a JSON list, and :attr:`Recording.placement_labels
+<bsb.simulation.results.Recording.placement_labels>` reads them back. Recordings of
+the device itself do not get it. The labels only record how the cells were
+selected: cell ids still index the whole placement set, not the labelled cells.
+
 The result checks the rest. A recorder has to belong to a device, and at every
 checkpoint anything a recorder recorded without one of the recording kinds, or
 without a direction of ``record`` or ``stimulate``, emits a

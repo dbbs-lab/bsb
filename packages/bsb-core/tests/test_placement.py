@@ -464,6 +464,52 @@ class TestPlacementStrategies(
         ps = network.get_placement_set("purkinje_cell")
         self.assertEqual(4, len(ps), "parallel array placement with offset is broken")
 
+    def test_parallel_arrays_non_cubic_chunks(self):
+        """
+        Each cell must be stored in the chunk that contains it, also when the chunk
+        sides differ: the chunk index along each axis must use that axis' chunk size.
+        """
+        chunk_size = [50, 25, 30]
+        cfg = Configuration.default(
+            network={"x": 300, "y": 200, "z": 300, "chunk_size": chunk_size},
+            regions={"cortex": {"type": "group", "children": ["purkinje_layer"]}},
+            partitions={
+                "purkinje_layer": {
+                    "type": "rhomboid",
+                    "origin": [0, 0, 100],
+                    "dimensions": [300, 200, 50],
+                }
+            },
+            cell_types={
+                "purkinje_cell": {
+                    "spatial": {"planar_density": 0.0012, "radius": 7.5},
+                }
+            },
+            placement={
+                "purkinje_layer_placement": {
+                    "strategy": "bsb.placement.ParallelArrayPlacement",
+                    "partitions": ["purkinje_layer"],
+                    "cell_types": ["purkinje_cell"],
+                    "spacing_x": 50,
+                    "angle": 80,
+                }
+            },
+        )
+        network = Scaffold(cfg, self.storage)
+        network.compile(clear=True)
+        ps = network.get_placement_set("purkinje_cell")
+        self.assertGreater(len(ps), 0, "no cells placed")
+        # Make sure the cells span several chunks along every axis.
+        expected = np.floor_divide(ps.load_positions(), chunk_size)
+        self.assertAll(np.ptp(expected, axis=0) > 0, "cells in one chunk layer")
+        for chunk in ps.get_all_chunks():
+            with ps.chunk_context([chunk]):
+                pos = ps.load_positions()
+            self.assertAll(
+                np.floor_divide(pos, chunk_size) == np.asarray(chunk),
+                f"cells stored in the wrong chunk {chunk}",
+            )
+
 
 class TestVoxelDensities(RandomStorageFixture, unittest.TestCase, engine_name="hdf5"):
     def test_particle_vd(self):

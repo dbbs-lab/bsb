@@ -21,6 +21,8 @@ tree = {
             "indegree": 200,
             "presynaptic": {"cell_types": ["excitatory"]},
             "postsynaptic": {"cell_types": ["excitatory"]},
+            # As in the NEST reference model, where autapses are allowed.
+            "allow_autapses": True,
         },
         "excitatory_to_inhibitory": {
             "strategy": "bsb.connectivity.FixedIndegree",
@@ -33,6 +35,8 @@ tree = {
             "indegree": 50,
             "presynaptic": {"cell_types": ["inhibitory"]},
             "postsynaptic": {"cell_types": ["inhibitory"]},
+            # As in the NEST reference model, where autapses are allowed.
+            "allow_autapses": True,
         },
         "inhibitory_to_excitatory": {
             "strategy": "bsb.connectivity.FixedIndegree",

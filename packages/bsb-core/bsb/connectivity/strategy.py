@@ -95,6 +95,23 @@ class Hemitype:
         return lbounds, ubounds
 
 
+def _drop_autapses(pre_set, post_set, src_locs, dest_locs):
+    # Remove the connections from a cell onto itself. The two sets can be filtered on
+    # different chunks, so their local indices differ: compare the global cell ids.
+    src_locs = np.asarray(src_locs, dtype=int).reshape(-1, 3)
+    dest_locs = np.asarray(dest_locs, dtype=int).reshape(-1, 3)
+    if not len(src_locs):
+        return src_locs, dest_locs
+    pre_ids = pre_set.load_ids()
+    post_ids = post_set.load_ids()
+    src, dst = src_locs[:, 0], dest_locs[:, 0]
+    # Leave out of bounds locations in, for the storage engine to report them.
+    valid = (src >= 0) & (src < len(pre_ids)) & (dst >= 0) & (dst < len(post_ids))
+    keep = ~valid
+    keep[valid] = pre_ids[src[valid]] != post_ids[dst[valid]]
+    return src_locs[keep], dest_locs[keep]
+
+
 def roi_key(collection):
     """
     Name the chunks a hemitype covers, so a draw can be keyed on them.
@@ -180,6 +197,12 @@ class ConnectionStrategy(abc.ABC, HasDependencies, RngConsumer):
     Specifies how to name the output ConnectivitySets in which the connections between
     cell type pairs are stored.
     """
+    allow_autapses: bool = config.attr(type=bool, default=False)
+    """
+    Whether a cell may connect to itself, when the presynaptic and postsynaptic
+    populations share a cell type. Defaults to ``False``: such self connections are
+    removed before they are stored.
+    """
 
     def __hash__(self):
         return id(self)
@@ -235,6 +258,8 @@ class ConnectionStrategy(abc.ABC, HasDependencies, RngConsumer):
         :param list[list[int, int, int]] dest_locs: list of the postsynaptic
             `connection location`.
         """
+        if not self.allow_autapses and pre_set.cell_type is post_set.cell_type:
+            src_locs, dest_locs = _drop_autapses(pre_set, post_set, src_locs, dest_locs)
         names = self.get_output_names(pre_set.cell_type, post_set.cell_type)
         between_msg = f"between {pre_set.cell_type.name} and {post_set.cell_type.name}"
         if len(names) == 0:

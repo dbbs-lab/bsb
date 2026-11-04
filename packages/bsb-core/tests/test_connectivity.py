@@ -24,6 +24,7 @@ from bsb import (
     ConnectivityError,
     Morphology,
     Scaffold,
+    WorkflowError,
 )
 
 
@@ -42,6 +43,8 @@ class TestAllToAll(
                 strategy="bsb.connectivity.AllToAll",
                 presynaptic=dict(cell_types=["test_cell"]),
                 postsynaptic=dict(cell_types=["test_cell"]),
+                # These tests expect the full matrix, self connections included.
+                allow_autapses=True,
             ),
         )
         self.network = Scaffold(self.cfg, self.storage)
@@ -120,6 +123,8 @@ class TestConnectivitySet(
                 strategy="bsb.connectivity.AllToAll",
                 presynaptic=dict(cell_types=["test_cell"]),
                 postsynaptic=dict(cell_types=["test_cell"]),
+                # These tests expect the full matrix, self connections included.
+                allow_autapses=True,
             ),
         )
         self.network = Scaffold(self.cfg, self.storage)
@@ -320,6 +325,8 @@ class TestConnWithLabels(
                 strategy="bsb.connectivity.AllToAll",
                 presynaptic=dict(cell_types=["test_cell"]),
                 postsynaptic=dict(cell_types=["test_cell"]),
+                # These tests expect the full matrix, self connections included.
+                allow_autapses=True,
             ),
         )
         self.network = Scaffold(self.cfg, self.storage)
@@ -667,6 +674,41 @@ class TestVoxelIntersection(
         new_conns = len(self.network.get_connectivity_set("intersect"))
         self.assertEqual(conns * 2, new_conns, "Expected double contacts")
 
+    def test_autapses(self):
+        # Every A cell overlaps with itself, and the cells at [0, 0, 0] and [50, 0, 0]
+        # also overlap with each other.
+        self.network.connectivity.add(
+            "self_intersect",
+            dict(
+                strategy="bsb.connectivity.VoxelIntersection",
+                presynaptic=dict(cell_types=["test_cell_A"]),
+                postsynaptic=dict(cell_types=["test_cell_A"]),
+            ),
+        )
+        self.assertFalse(
+            self.network.connectivity.self_intersect.allow_autapses,
+            "autapses should be excluded by default",
+        )
+        self.network.compile()
+        pre_locs, post_locs = (
+            self.network.get_connectivity_set("self_intersect").load_connections().all()
+        )
+        self.assertGreater(len(pre_locs), 0, "expected connections between cells")
+        self.assertAll(pre_locs[:, 0] != post_locs[:, 0], "expected no autapses")
+
+        self.network.connectivity.self_intersect.allow_autapses = True
+        self.network.compile(redo=True, only=["self_intersect"])
+        pre_locs, post_locs = (
+            self.network.get_connectivity_set("self_intersect").load_connections().all()
+        )
+        autapses = pre_locs[:, 0] == post_locs[:, 0]
+        self.assertEqual(
+            list(range(4)),
+            np.unique(pre_locs[autapses, 0]).tolist(),
+            "expected every cell to connect to itself",
+        )
+        self.assertGreater(np.sum(~autapses), 0, "expected connections between cells")
+
     def test_zero_contacts(self):
         self.network.connectivity.intersect.contacts = 0
         self.network.placement.fixed_pos_B.positions = [[100, 0, 0]]
@@ -678,6 +720,128 @@ class TestVoxelIntersection(
         self.network.compile(redo=True)
         conns = len(self.network.get_connectivity_set("intersect"))
         self.assertEqual(0, conns, "expected no contacts")
+
+
+class TestAutapses(
+    RandomStorageFixture, NetworkFixture, unittest.TestCase, engine_name="hdf5"
+):
+    """
+    Connection strategies that connect a cell type to itself exclude self connections,
+    unless `allow_autapses` is set. The cells are spread over several chunks, so that
+    the pre- and postsynaptic placement sets do not share their local indices.
+    """
+
+    def setUp(self):
+        self.cfg = Configuration.default(
+            network=dict(x=100, y=100, z=100, chunk_size=[50, 50, 50]),
+            partitions=dict(all=dict(type="layer", thickness=100)),
+            cell_types=dict(
+                cell_A=dict(spatial=dict(radius=1, count=40)),
+                cell_B=dict(spatial=dict(radius=1, count=40)),
+            ),
+            placement=dict(
+                random=dict(
+                    strategy="bsb.placement.RandomPlacement",
+                    cell_types=["cell_A", "cell_B"],
+                    partitions=["all"],
+                )
+            ),
+        )
+        super().setUp()
+
+    def _compile(self, **strategy):
+        self.network.connectivity.add("conn", strategy)
+        self.network.compile(clear=True)
+        return {
+            name: self.network.get_connectivity_set(name).load_connections().all()
+            for name in self.network.connectivity.conn.get_output_names()
+        }
+
+    def _assert_autapses(self, conns, expect, msg):
+        pre_locs, post_locs = conns
+        has_autapses = bool(np.any(pre_locs[:, 0] == post_locs[:, 0]))
+        self.assertEqual(expect, has_autapses, msg)
+
+    def test_all_to_all(self):
+        conns = self._compile(
+            strategy="bsb.connectivity.AllToAll",
+            presynaptic=dict(cell_types=["cell_A"]),
+            postsynaptic=dict(cell_types=["cell_A"]),
+        )["conn"]
+        self._assert_autapses(conns, False, "expected no autapses by default")
+        self.assertEqual(40 * 39, len(conns[0]), "expected all pairs but autapses")
+
+    def test_all_to_all_allowed(self):
+        conns = self._compile(
+            strategy="bsb.connectivity.AllToAll",
+            presynaptic=dict(cell_types=["cell_A"]),
+            postsynaptic=dict(cell_types=["cell_A"]),
+            allow_autapses=True,
+        )["conn"]
+        self._assert_autapses(conns, True, "expected autapses when allowed")
+        self.assertEqual(40 * 40, len(conns[0]), "expected all pairs")
+
+    def test_different_types(self):
+        # Cells of different types share their ids, they are not autapses.
+        conns = self._compile(
+            strategy="bsb.connectivity.AllToAll",
+            presynaptic=dict(cell_types=["cell_A"]),
+            postsynaptic=dict(cell_types=["cell_B"]),
+        )["conn"]
+        self.assertEqual(40 * 40, len(conns[0]), "expected all pairs")
+
+    def _check_degree(self, strategy, degree_key, axis, allow):
+        # Connect from and to both types, so that each cell draws from a population
+        # that contains itself.
+        degree = 79 if not allow else 80
+        conns = self._compile(
+            strategy=strategy,
+            presynaptic=dict(cell_types=["cell_A", "cell_B"]),
+            postsynaptic=dict(cell_types=["cell_A", "cell_B"]),
+            allow_autapses=allow,
+            **{degree_key: degree},
+        )
+        degrees = {"cell_A": np.zeros(40, dtype=int), "cell_B": np.zeros(40, dtype=int)}
+        for tag, locs in conns.items():
+            pre_type, post_type = tag.removeprefix("conn_").split("_to_")
+            fixed_type = post_type if axis else pre_type
+            if pre_type == post_type:
+                self._assert_autapses(locs, allow, f"unexpected autapses state in {tag}")
+            ids, counts = np.unique(locs[axis][:, 0], return_counts=True)
+            degrees[fixed_type][ids] += counts
+        for name, d in degrees.items():
+            self.assertTrue(np.all(d == degree), f"{name} cells degree is not {degree}")
+
+    def test_fixed_indegree(self):
+        # Every cell draws from all 80 cells but itself: an indegree of 79 is exact.
+        self._check_degree("bsb.connectivity.FixedIndegree", "indegree", 1, False)
+
+    def test_fixed_indegree_allowed(self):
+        self._check_degree("bsb.connectivity.FixedIndegree", "indegree", 1, True)
+
+    def test_fixed_outdegree(self):
+        self._check_degree("bsb.connectivity.FixedOutdegree", "outdegree", 0, False)
+
+    def test_fixed_outdegree_allowed(self):
+        self._check_degree("bsb.connectivity.FixedOutdegree", "outdegree", 0, True)
+
+    def test_fixed_degree_too_high(self):
+        # 80 cells, but only 79 others to connect to.
+        with self.assertRaises(WorkflowError):
+            self._compile(
+                strategy="bsb.connectivity.FixedIndegree",
+                presynaptic=dict(cell_types=["cell_A", "cell_B"]),
+                postsynaptic=dict(cell_types=["cell_A", "cell_B"]),
+                indegree=80,
+            )
+
+    def test_import_keeps_autapses(self):
+        from bsb.connectivity import CsvImportConnectivity
+
+        self.assertTrue(
+            CsvImportConnectivity.allow_autapses.default,
+            "imported connectivity should be kept as given",
+        )
 
 
 class TestFixedIndegree(
@@ -1176,6 +1340,37 @@ class TestSegmentIntersection(
             total += len(pre_locs)
         self.assertGreater(
             total, 0, "expected the overlapping A/B morphologies to connect"
+        )
+
+    def test_autapses(self):
+        # Every A cell intersects with itself, and the cells at [0, 0, 0] and
+        # [50, 0, 0] also intersect with each other.
+        self.network.connectivity.add(
+            "self_intersect",
+            dict(
+                strategy="bsb.connectivity.SegmentIntersection",
+                presynaptic=dict(cell_types=["test_cell_A"]),
+                postsynaptic=dict(cell_types=["test_cell_A"]),
+                contact_distance=10.0,
+            ),
+        )
+        self.network.compile()
+        pre_locs, post_locs = (
+            self.network.get_connectivity_set("self_intersect").load_connections().all()
+        )
+        self.assertGreater(len(pre_locs), 0, "expected connections between cells")
+        self.assertAll(pre_locs[:, 0] != post_locs[:, 0], "expected no autapses")
+
+        self.network.connectivity.self_intersect.allow_autapses = True
+        self.network.compile(redo=True, only=["self_intersect"])
+        pre_locs, post_locs = (
+            self.network.get_connectivity_set("self_intersect").load_connections().all()
+        )
+        autapses = pre_locs[:, 0] == post_locs[:, 0]
+        self.assertEqual(
+            list(range(3)),
+            np.unique(pre_locs[autapses, 0]).tolist(),
+            "expected every cell to connect to itself",
         )
 
 

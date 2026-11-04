@@ -73,6 +73,9 @@ cell type.
   downregulate the amount of cells that any cell connects with.
 * ``contacts``: A number or distribution determining the amount of synaptic contacts one
   cell will form on another after they have selected eachother as connection partners.
+* ``allow_autapses``: Whether a cell may connect to itself, when the presynaptic and
+  postsynaptic populations share a cell type. Defaults to ``false``, which excludes such
+  self connections.
 
 .. note::
   The affinity only affects the number of cells that are contacted, not the number of

@@ -667,6 +667,41 @@ class TestVoxelIntersection(
         new_conns = len(self.network.get_connectivity_set("intersect"))
         self.assertEqual(conns * 2, new_conns, "Expected double contacts")
 
+    def test_autapses(self):
+        # Every A cell overlaps with itself, and the cells at [0, 0, 0] and [50, 0, 0]
+        # also overlap with each other.
+        self.network.connectivity.add(
+            "self_intersect",
+            dict(
+                strategy="bsb.connectivity.VoxelIntersection",
+                presynaptic=dict(cell_types=["test_cell_A"]),
+                postsynaptic=dict(cell_types=["test_cell_A"]),
+            ),
+        )
+        self.assertFalse(
+            self.network.connectivity.self_intersect.allow_autapses,
+            "autapses should be excluded by default",
+        )
+        self.network.compile()
+        pre_locs, post_locs = (
+            self.network.get_connectivity_set("self_intersect").load_connections().all()
+        )
+        self.assertGreater(len(pre_locs), 0, "expected connections between cells")
+        self.assertAll(pre_locs[:, 0] != post_locs[:, 0], "expected no autapses")
+
+        self.network.connectivity.self_intersect.allow_autapses = True
+        self.network.compile(redo=True, only=["self_intersect"])
+        pre_locs, post_locs = (
+            self.network.get_connectivity_set("self_intersect").load_connections().all()
+        )
+        autapses = pre_locs[:, 0] == post_locs[:, 0]
+        self.assertEqual(
+            list(range(4)),
+            np.unique(pre_locs[autapses, 0]).tolist(),
+            "expected every cell to connect to itself",
+        )
+        self.assertGreater(np.sum(~autapses), 0, "expected connections between cells")
+
     def test_zero_contacts(self):
         self.network.connectivity.intersect.contacts = 0
         self.network.placement.fixed_pos_B.positions = [[100, 0, 0]]

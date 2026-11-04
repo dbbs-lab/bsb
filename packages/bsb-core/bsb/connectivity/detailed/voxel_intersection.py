@@ -20,8 +20,6 @@ class VoxelIntersection(Intersectional, ConnectionStrategy):
     :param voxel_pre: the number of voxels into which the morphology will be subdivided.
     :param voxel_post: the number of voxels into which the morphology will be subdivided.
     :param favor_cache: choose whether to cache the pre or post morphology.
-    :param allow_autapses: whether a cell may connect to itself, when the pre- and
-        postsynaptic populations share a cell type. Defaults to ``False``.
     """
 
     contacts = config.attr(type=types.distribution(), default=1)
@@ -29,7 +27,6 @@ class VoxelIntersection(Intersectional, ConnectionStrategy):
     voxels_post = config.attr(type=int, default=50)
     cache = config.attr(type=bool, default=True)
     favor_cache = config.attr(type=types.in_(["pre", "post"]), default="pre")
-    allow_autapses = config.attr(type=bool, default=False)
 
     def connect(self, pre, post):
         # Note on the caching terms: `targets` are the population that will be cached the
@@ -55,8 +52,6 @@ class VoxelIntersection(Intersectional, ConnectionStrategy):
         combo_itr = self.candidate_intersection(targets, candidates)
         mset_cache = {}
         for target_set, cand_set, match_itr in combo_itr:
-            if not self.allow_autapses and target_set.cell_type is cand_set.cell_type:
-                match_itr = _exclude_self(match_itr, target_set, cand_set)
             if self.cache:
                 if id(target_set) not in mset_cache:
                     mset_cache[id(target_set)] = target_morpho(target_set)
@@ -197,16 +192,6 @@ class VoxelIntersection(Intersectional, ConnectionStrategy):
             clocs.append((cid, *cpick[rng.integers(len(cpick))]))
             tlocs.append((tid, *tpick[rng.integers(len(tpick))]))
         return tlocs, clocs
-
-
-def _exclude_self(matches, target_set, cand_set):
-    # Both sets are filtered on their own chunks, so their local indices differ: compare
-    # the global cell ids instead.
-    target_ids = target_set.load_ids()
-    cand_ids = cand_set.load_ids()
-    for target_id, candidates in zip(target_ids, matches, strict=False):
-        candidates = np.asarray(candidates, dtype=int)
-        yield candidates[cand_ids[candidates] != target_id]
 
 
 def _pairs_with_zero(iterable):

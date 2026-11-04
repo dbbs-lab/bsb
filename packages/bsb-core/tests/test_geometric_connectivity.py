@@ -86,6 +86,8 @@ class TestShapeConnectivity(
             ),
             affinity=0.9,
             pruning_ratio=0.1,
+            # The cells only intersect with themselves.
+            allow_autapses=True,
         )
 
         # There are no intersections between the presyn and postsyn shapes

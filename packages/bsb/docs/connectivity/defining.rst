@@ -45,6 +45,13 @@ Connections are defined in the configuration under the ``connectivity`` block:
   * :guilabel:`morphology_labels`: (optional) a list of labels that filter which pieces
     of the morphology to consider when forming connections (such as ``axon``,
     ``dendrites``, or any other label you've created)
+* :guilabel:`allow_autapses`: (optional) whether a cell may connect to itself, when the
+  presynaptic and postsynaptic populations share a cell type. Defaults to ``false``:
+  such self connections are removed, for every strategy. Strategies drawing a fixed
+  number of partners, such as
+  :class:`FixedIndegree <bsb:bsb.connectivity.general.FixedIndegree>`, draw them among
+  the other cells only, so that the degree is still met. Imported connectivity, such as
+  ``CsvImportConnectivity``, is kept as given and defaults to ``true``.
 
 What each connection type does depends entirely on the selec
 

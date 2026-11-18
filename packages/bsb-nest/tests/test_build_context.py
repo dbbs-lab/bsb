@@ -1,6 +1,6 @@
 import unittest
 import warnings
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from bsb import ConfigurationError, RequirementError
 from bsb.config import build_context
@@ -35,6 +35,50 @@ class TestKernelProxyLifecycle(unittest.TestCase):
                 self.assertIs(get_nest_kernel_proxy(), sentinel)
                 self.assertEqual(shutdowns, [])
             self.assertEqual(shutdowns, [True])
+
+
+class TestKernelEnvironment(unittest.TestCase):
+    """The kernel subprocess must not inherit the MPI launcher's environment."""
+
+    def _child_env(self, environ):
+        with (
+            patch.dict("os.environ", environ, clear=True),
+            patch("bsb_nest._kernel_proxy.subprocess.Popen") as popen,
+            patch("bsb_nest._kernel_proxy._connect_with_retry", return_value=MagicMock()),
+        ):
+            from bsb_nest._kernel_proxy import _connect_kernel
+
+            _, shutdown = _connect_kernel()
+            env = popen.call_args.kwargs["env"]
+            with patch("bsb_nest._kernel_proxy._shutdown_kernel"):
+                shutdown()
+        return env
+
+    def test_strips_launcher_variables(self):
+        launcher = {
+            "OMPI_COMM_WORLD_RANK": "0",
+            "OMPI_MCA_orte_hnp_uri": "x",
+            "PMIX_NAMESPACE": "x",
+            "PMI_RANK": "0",
+            # Open MPI 5 / PRRTE
+            "PRTE_LAUNCHED": "1",
+            "PRTE_SHARED_FS": "FALSE",
+            "OPAL_USER_PARAMS_GIVEN": "1",
+            "OPAL_SYS_PARAMS_GIVEN": "1",
+        }
+        env = self._child_env({**launcher, "PATH": "/usr/bin"})
+        self.assertFalse(set(launcher) & set(env), "launcher variables leaked")
+        self.assertEqual(env["PATH"], "/usr/bin")
+
+    def test_keeps_open_mpi_install_dirs(self):
+        install = {"OPAL_PREFIX": "/opt/ompi", "OPAL_LIBDIR": "/opt/ompi/lib"}
+        env = self._child_env(install)
+        self.assertEqual({k: env[k] for k in install}, install)
+
+    def test_disables_opentelemetry(self):
+        env = self._child_env({"OTEL_TRACES_EXPORTER": "otlp"})
+        self.assertNotIn("OTEL_TRACES_EXPORTER", env)
+        self.assertEqual(env["OTEL_SDK_DISABLED"], "true")
 
 
 class TestDelayRequiredChecker(unittest.TestCase):

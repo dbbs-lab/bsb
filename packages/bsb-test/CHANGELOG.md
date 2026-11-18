@@ -1,3 +1,14 @@
+## 8.1.0 (2026-11-18)
+
+### 🚀 Features
+
+- Connectivity strategies do no allow autapses by default. ([#308](https://github.com/dbbs-lab/bsb/pull/308))
+
+### ❤️ Thank You
+
+- Claude Opus 5.5
+- Dimitri RODARIE
+
 ## 8.0.2 (2026-10-20)
 
 ### 🩹 Fixes

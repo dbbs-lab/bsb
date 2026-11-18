@@ -1,3 +1,7 @@
+## 8.1.0 (2026-11-18)
+
+This was a version bump only for bsb-hdf5 to align it with other projects, there were no code changes.
+
 ## 8.0.2 (2026-10-20)
 
 ### 🩹 Fixes

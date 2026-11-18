@@ -4,7 +4,7 @@ requires = [ "setuptools" ]
 
 [project]
 name = "bsb"
-version = "8.0.2"
+version = "8.1.0"
 readme = "README.md"
 requires-python = ">=3.11,<4"
 description = "Black-box component framework for multiscale neural modeling"
@@ -12,10 +12,10 @@ classifiers = [
   "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)"
 ]
 dependencies = [
-  "bsb-core~=8.0",
-  "bsb-hdf5~=8.0",
-  "bsb-json~=8.0",
-  "bsb-yaml~=8.0"
+  "bsb-core~=8.1",
+  "bsb-hdf5~=8.1",
+  "bsb-json~=8.1",
+  "bsb-yaml~=8.1"
 ]
 
   [[project.authors]]
@@ -35,9 +35,9 @@ dependencies = [
 
   [project.optional-dependencies]
   parallel = [ "bsb-core[parallel]" ]
-  neuron = [ "bsb-neuron~=8.0" ]
-  nest = [ "bsb-nest~=8.0" ]
-  arbor = [ "bsb-arbor~=8.0" ]
+  neuron = [ "bsb-neuron~=8.1" ]
+  nest = [ "bsb-nest~=8.1" ]
+  arbor = [ "bsb-arbor~=8.1" ]
 
   [project.urls]
   Home = "https://github.com/dbbs-lab/bsb"
@@ -56,7 +56,7 @@ docs = [
   "furo~=2024.0",
   "sphinxemoji~=0.3",
   "sphinx-copybutton~=0.5",
-  "sphinxext-bsb~=8.0"
+  "sphinxext-bsb~=8.1"
 ]
 
 [tool.uv]

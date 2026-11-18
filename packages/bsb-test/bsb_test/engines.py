@@ -649,6 +649,8 @@ class TestConnectivitySet(
                 strategy="bsb.connectivity.AllToAll",
                 presynaptic=dict(cell_types=["test_cell"]),
                 postsynaptic=dict(cell_types=["test_cell"]),
+                # These tests expect the full matrix, self connections included.
+                allow_autapses=True,
             ),
         )
         self.network = Scaffold(self.cfg, self.storage)

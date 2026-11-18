@@ -68,14 +68,26 @@ def _connect_fixed_degree(self, pre, post, degree, is_in):
         )
     for ps in ps_fixed:
         l_ = len(ps)
+        self_idx = _self_indices(self, ps, ps_counted)
+        if np.any(self_idx >= 0) and high - 1 < degree:
+            raise ConnectivityError(
+                f"Number of cells for dependant population other than the cell itself "
+                f"({high - 1}) is too small to match required degree value {degree} for "
+                f"connection strategy {self.name}. Set `allow_autapses` to allow cells "
+                "to connect to themselves."
+            )
         counted_targets = np.full((l_ * degree, 3), -1)
         fixed_targets = np.full((l_ * degree, 3), -1)
         ptr = 0
         for i in range(l_):
             fixed_targets[ptr : ptr + degree, 0] = i
-            counted_targets[ptr : ptr + degree, 0] = rng.choice(
-                high, degree, replace=False
-            )
+            if self_idx[i] < 0:
+                drawn = rng.choice(high, degree, replace=False)
+            else:
+                # Draw among the other cells only, so the degree stays exact.
+                drawn = rng.choice(high - 1, degree, replace=False)
+                drawn[drawn >= self_idx[i]] += 1
+            counted_targets[ptr : ptr + degree, 0] = drawn
             ptr += degree
         lowmux = 0
         for ps_o in ps_counted:
@@ -90,6 +102,26 @@ def _connect_fixed_degree(self, pre, post, degree, is_in):
             else:
                 self.connect_cells(ps, ps_o, fixed_targets[demux_idx], demuxed)
             lowmux = highmux
+
+
+def _self_indices(self, ps, ps_counted):
+    # Index of each cell of `ps` among the concatenated counted populations, or -1 if
+    # it is not part of them (or if autapses are allowed).
+    self_idx = np.full(len(ps), -1)
+    if self.allow_autapses:
+        return self_idx
+    lowmux = 0
+    for ps_o in ps_counted:
+        if ps_o.cell_type is ps.cell_type and len(ps_o):
+            counted_ids = ps_o.load_ids()
+            fixed_ids = ps.load_ids()
+            order = np.argsort(counted_ids)
+            found = np.searchsorted(counted_ids, fixed_ids, sorter=order)
+            found = np.minimum(found, len(counted_ids) - 1)
+            match = counted_ids[order[found]] == fixed_ids
+            self_idx[match] = lowmux + order[found[match]]
+        lowmux += len(ps_o)
+    return self_idx
 
 
 @config.node

@@ -57,7 +57,7 @@ class MorphologySet:
     def set_label_filter(self, labels):
         self._cached = {}
         for loader in self._loaders:
-            loader._cached_load.cache_clear()
+            loader.clear_cache()
         self._labels = labels
 
     @_gutil.obj_str_insert

@@ -803,19 +803,29 @@ class TestStoredMorphologyHardCache(
             root.attach_child(child)
         return Morphology([root])
 
+    @staticmethod
+    def _save_on_main(storage, name, morpho, **kwargs):
+        # All ranks share the same file: only the main rank writes, and the others
+        # wait for it. `try_main` also forwards any error raised on the main rank.
+        with storage._comm.try_main():
+            if storage.is_main_process():
+                storage.morphologies.save(name, morpho, **kwargs)
+
     def test_hardcache_per_storage(self):
         other = self.random_storage()
-        self.storage.morphologies.save("cell", self._axon_morpho(2))
-        other.morphologies.save("cell", self._axon_morpho(5))
+        self._save_on_main(self.storage, "cell", self._axon_morpho(2))
+        self._save_on_main(other, "cell", self._axon_morpho(5))
         m1 = self.storage.morphologies.preload("cell").cached_load(["axon"])
         m2 = other.morphologies.preload("cell").cached_load(["axon"])
         self.assertEqual(2, len(m1.branches), "expected morpho of first storage")
         self.assertEqual(5, len(m2.branches), "expected morpho of second storage")
 
     def test_hardcache_after_overwrite(self):
-        self.storage.morphologies.save("cell", self._axon_morpho(3))
+        self._save_on_main(self.storage, "cell", self._axon_morpho(3))
         m1 = self.storage.morphologies.preload("cell").cached_load(["axon"])
-        self.storage.morphologies.save("cell", self._axon_morpho(7), overwrite=True)
+        # Every rank must have loaded the original before it is overwritten.
+        self.storage._comm.barrier()
+        self._save_on_main(self.storage, "cell", self._axon_morpho(7), overwrite=True)
         m2 = self.storage.morphologies.preload("cell").cached_load(["axon"])
         self.assertEqual(3, len(m1.branches), "expected original morpho")
         self.assertEqual(7, len(m2.branches), "expected overwritten morpho")

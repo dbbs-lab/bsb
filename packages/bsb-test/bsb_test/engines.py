@@ -216,9 +216,13 @@ class TestPlacementSet(
         self.network.compile()
         ps = self.network.get_placement_set("test_cell")
         self.assertEqual(100, len(ps), "expected 100 cells globally")
+        # Every rank has to read the count before any rank clears, or a slower rank
+        # reads the cleared count, fails, and skips the barrier the others wait in.
+        MPI.barrier()
         ps.clear(chunks=[Chunk([0, 0, 0], self.network.network.chunk_size)])
         MPI.barrier()
         self.assertEqual(75, len(ps), "expected 75 cells after clearing 1 chunk")
+        MPI.barrier()
         ps.clear()
         MPI.barrier()
         self.assertEqual(0, len(ps), "expected 0 cells after clearing all chunks")
@@ -413,17 +417,17 @@ class TestPlacementSet(
         cells_to_label = [33, 12, 0, 3, 77]
         labels = ["label1", "label2"]
         # Test empty labeling.
-        # MPI.barrier() between ps.label() and get_unique_labels() so a fast
-        # rank cannot race ahead into the next ps.label() call below and
-        # have a slower rank observe its labels via get_unique_labels() —
-        # mpilock serialises writes but does not align ranks at op
-        # boundaries.
+        # mpilock serialises the writes but does not align the ranks, so every rank
+        # has to finish writing before any rank reads, and finish reading before any
+        # rank writes again. Otherwise a slower rank reads the next write's labels,
+        # fails, and skips the barrier the others wait in.
         ps.label(labels, np.full(len(ps), False))
         MPI.barrier()
         self.assertAll(
             np.asarray(ps.get_unique_labels()) == np.asarray([set()]),
             "No cells should have been labelled.",
         )
+        MPI.barrier()
 
         ps.label(labels, cells_to_label)
         MPI.barrier()

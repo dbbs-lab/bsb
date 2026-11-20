@@ -112,11 +112,10 @@ class ParallelArrayPlacement(NotParallel, PlacementStrategy):
                 # Place all the cells in 1 batch (more efficient)
                 positions = cells[cells[:, 0] < prt.data.ldc[0] + width - radius]
 
-                # Determine in which chunks the cells must be placed
+                # Determine in which chunks the cells must be placed. Each axis is
+                # divided by its own chunk size.
                 cs = self.scaffold.configuration.network.chunk_size
-                chunks_list = np.array(
-                    [chunk.data + np.floor_divide(p, cs[0]) for p in positions]
-                )
+                chunks_list = chunk.data + np.floor_divide(positions, cs).astype(int)
                 unique_chunks_list = np.unique(chunks_list, axis=0)
 
                 # For each chunk, place the cells

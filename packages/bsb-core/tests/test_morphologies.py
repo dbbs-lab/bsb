@@ -761,6 +761,75 @@ class TestMorphologySet(NumpyTestCase, unittest.TestCase):
         self.assertEqual(2, len(m), "expected filtered morpho")
         self.assertClose([[1, 1, 1], [2, 2, 2]], m.points, "expected B labelled points")
 
+    def test_hardcache_not_shared_between_loaders(self):
+        # Loaders compare equal by name, but must not share their hard cache.
+        def loader(n_points):
+            return StoredMorphology(
+                "ello",
+                lambda: Morphology(
+                    [Branch([[i, i, i] for i in range(n_points)], [1] * n_points)]
+                ),
+                dict(),
+            )
+
+        ms1 = MorphologySet([loader(2)], [0])
+        ms2 = MorphologySet([loader(5)], [0])
+        self.assertEqual(2, len(ms1.get(0, hard_cache=True)), "expected first morpho")
+        self.assertEqual(5, len(ms2.get(0, hard_cache=True)), "expected second morpho")
+        self.assertEqual(
+            5,
+            len(next(ms2.iter_morphologies(hard_cache=True))),
+            "expected second morpho",
+        )
+
+    def test_set_label_filter_clears_own_cache_only(self):
+        l1, l2 = self._label_loader("ello"), self._label_loader("ello")
+        m1 = l1.cached_load(["A"])
+        m2 = l2.cached_load(["A"])
+        MorphologySet([l1], [0]).set_label_filter(["B"])
+        self.assertIsNot(m1, l1.cached_load(["A"]), "expected cleared hard cache")
+        self.assertIs(m2, l2.cached_load(["A"]), "expected untouched hard cache")
+
+
+class TestStoredMorphologyHardCache(
+    RandomStorageFixture, NumpyTestCase, unittest.TestCase, engine_name="hdf5"
+):
+    @staticmethod
+    def _axon_morpho(n_axons):
+        root = Branch([[0, 0, 0], [1, 0, 0]], [1] * 2)
+        for i in range(n_axons):
+            child = Branch([[1, 0, 0], [2, i, 0]], [1] * 2)
+            child.label(["axon"])
+            root.attach_child(child)
+        return Morphology([root])
+
+    @staticmethod
+    def _save_on_main(storage, name, morpho, **kwargs):
+        # All ranks share the same file: only the main rank writes, and the others
+        # wait for it. `try_main` also forwards any error raised on the main rank.
+        with storage._comm.try_main():
+            if storage.is_main_process():
+                storage.morphologies.save(name, morpho, **kwargs)
+
+    def test_hardcache_per_storage(self):
+        other = self.random_storage()
+        self._save_on_main(self.storage, "cell", self._axon_morpho(2))
+        self._save_on_main(other, "cell", self._axon_morpho(5))
+        m1 = self.storage.morphologies.preload("cell").cached_load(["axon"])
+        m2 = other.morphologies.preload("cell").cached_load(["axon"])
+        self.assertEqual(2, len(m1.branches), "expected morpho of first storage")
+        self.assertEqual(5, len(m2.branches), "expected morpho of second storage")
+
+    def test_hardcache_after_overwrite(self):
+        self._save_on_main(self.storage, "cell", self._axon_morpho(3))
+        m1 = self.storage.morphologies.preload("cell").cached_load(["axon"])
+        # Every rank must have loaded the original before it is overwritten.
+        self.storage._comm.barrier()
+        self._save_on_main(self.storage, "cell", self._axon_morpho(7), overwrite=True)
+        m2 = self.storage.morphologies.preload("cell").cached_load(["axon"])
+        self.assertEqual(3, len(m1.branches), "expected original morpho")
+        self.assertEqual(7, len(m2.branches), "expected overwritten morpho")
+
 
 class TestMorphometry(NumpyTestCase, unittest.TestCase):
     def setUp(self):

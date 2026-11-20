@@ -26,6 +26,11 @@ class ImportConnectivity(NotParallel, ConnectionStrategy, abc.ABC, classmap_entr
     source: FileDependencyNode = config.file(required=True)
     cell_types: list[CellType] = config.reflist(refs.cell_type_ref, required=False)
     partitions: list[Partition] = config.reflist(refs.partition_ref, required=False)
+    allow_autapses: bool = config.attr(type=bool, default=True)
+    """
+    Imported connections are stored as given, self connections included, unless this
+    is set to ``False``.
+    """
 
     @config.property(default=False)
     def cache(self):

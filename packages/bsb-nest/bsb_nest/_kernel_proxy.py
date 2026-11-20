@@ -75,6 +75,50 @@ class _KernelProxy:
         return self._call("models", mtype)
 
 
+# Prefixes of the variables an MPI launcher exports to its ranks. Open MPI 4 puts
+# everything under ``OMPI_`` and ``PMIX_``. Open MPI 5 launches through PRRTE and
+# PMIx, which also export ``PRTE_*`` and ``OPAL_*``: ``OPAL_USER_PARAMS_GIVEN`` and
+# ``OPAL_SYS_PARAMS_GIVEN`` tell a rank that the launcher already read the MCA
+# parameter files and forwarded them as ``OMPI_MCA_*``. Since those copies are
+# stripped, a child that kept the flags would skip the files and start MPI
+# without the user's settings, which can block ``MPI_Init``.
+_MPI_LAUNCHER_PREFIXES = ("OMPI_", "PMI_", "PMIX_", "PRTE_", "OPAL_")
+# ``OPAL_*`` variables that the user or environment sets, not the launcher: they
+# point a relocated Open MPI install (conda, Spack, containers) at its files.
+_OPAL_INSTALL_DIRS = frozenset(
+    f"OPAL_{name}"
+    for name in (
+        "PREFIX",
+        "EXEC_PREFIX",
+        "BINDIR",
+        "SBINDIR",
+        "LIBEXECDIR",
+        "DATAROOTDIR",
+        "DATADIR",
+        "SYSCONFDIR",
+        "SHAREDSTATEDIR",
+        "LOCALSTATEDIR",
+        "LIBDIR",
+        "INCLUDEDIR",
+        "INFODIR",
+        "MANDIR",
+        "PKGDATADIR",
+        "PKGLIBDIR",
+        "PKGINCLUDEDIR",
+    )
+)
+
+
+def _is_mpi_launcher_var(name):
+    """Whether ``name`` is an environment variable set by the MPI launcher.
+
+    A process spawned from a rank with these variables believes it is part of
+    the job, and its ``MPI_Init`` blocks waiting for a launcher that never
+    enrolls it.
+    """
+    return name.startswith(_MPI_LAUNCHER_PREFIXES) and name not in _OPAL_INSTALL_DIRS
+
+
 def _connect_kernel():
     """Launch the kernel subprocess and connect to it.
 
@@ -90,7 +134,7 @@ def _connect_kernel():
     env = {
         k: v
         for k, v in os.environ.items()
-        if not k.startswith(("OMPI_", "PMI_", "PMIX_", "OTEL_"))
+        if not _is_mpi_launcher_var(k) and not k.startswith("OTEL_")
     }
     env["_BSB_NEST_KERNEL_AUTHKEY"] = authkey.hex()
     env["OTEL_SDK_DISABLED"] = "true"

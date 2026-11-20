@@ -1,3 +1,22 @@
+## 8.1.2 (2026-11-20)
+
+This was a version bump only for bsb-nest to align it with other projects, there were no code changes.
+
+## 8.1.1 (2026-11-18)
+
+### 🩹 Fixes
+
+- **bsb-nest:** strip Open MPI 5 launcher variables from the NEST kernel env ([#310](https://github.com/dbbs-lab/bsb/issues/310))
+
+### ❤️ Thank You
+
+- Claude Opus 5.5
+- drodarie
+
+## 8.1.0 (2026-11-18)
+
+This was a version bump only for bsb-nest to align it with other projects, there were no code changes.
+
 ## 8.0.2 (2026-10-20)
 
 ### 🩹 Fixes

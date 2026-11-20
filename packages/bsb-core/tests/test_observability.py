@@ -63,10 +63,17 @@ def _run_trace_subprocess(code, *, timeout=10):
     # Strip MPI launcher env vars so the spawned child does not try to attach
     # to the parent rank's MPI runtime. Without this, an os._exit(1) inside a
     # subprocess of an MPI rank can cause OpenMPI to abort the whole job.
+    # Open MPI 5 (PRRTE) also exports PRTE_* and OPAL_*; OPAL_PREFIX is kept
+    # because it locates a relocated Open MPI install, not the job.
     env = {
         k: v
         for k, v in os.environ.items()
-        if not k.startswith(("OMPI_", "PMI_", "PMIX_", "PMI2_", "SLURM_"))
+        if (
+            not k.startswith(
+                ("OMPI_", "PMI_", "PMIX_", "PMI2_", "PRTE_", "OPAL_", "SLURM_")
+            )
+            or k == "OPAL_PREFIX"
+        )
         and k != "MPI_LOCALRANKID"
     }
     env.update(

@@ -8,6 +8,7 @@ from bsb import config
 from bsb.config import build_context
 
 from bsb_nest import get_nest_kernel_proxy
+from bsb_nest._kernel_proxy import _is_mpi_launcher_var
 
 # Name of the module produced from tests/data/nestml and the node model it provides.
 _MODULE = "bsbtestmodule"
@@ -54,8 +55,7 @@ def _stripped_mpi_env():
     plain processes; the parent's already-initialised MPI is unaffected.
     """
     stripped = {
-        k: os.environ.pop(k)
-        for k in [k for k in os.environ if k.startswith(("OMPI_", "PMI_", "PMIX_"))]
+        k: os.environ.pop(k) for k in [k for k in os.environ if _is_mpi_launcher_var(k)]
     }
     try:
         yield

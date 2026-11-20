@@ -406,7 +406,7 @@ class Scaffold:
         redo=False,
         force=False,
         fail_fast=True,
-        clear_files=False,
+        clear_all=False,
     ):
         """
         Run reconstruction steps in the scaffold sequence to obtain a full network.
@@ -419,34 +419,34 @@ class Scaffold:
         )
         todo_list_str = ", ".join(s.name for s in itertools.chain(p_strats, c_strats))
         report(f"Compiling the following strategies: {todo_list_str}", level=2)
-        flags = (clear, clear_files, redo, append)
+        flags = (clear, clear_all, redo, append)
         if any(_bad_flag(flag) for flag in flags):
             raise InputError(
-                "`clear`, `clear_files`, `redo` and `append` are strictly boolean flags. "
+                "`clear`, `clear_all`, `redo` and `append` are strictly boolean flags. "
                 "Pass the strategies to run to the skip/only options instead."
             )
         if sum(map(bool, flags)) > 1:
             raise InputError(
-                "`clear`, `clear_files`, `redo` and `append` are mutually exclusive."
+                "`clear`, `clear_all`, `redo` and `append` are mutually exclusive."
             )
         if existed:
             if not any(flags):
                 raise FileExistsError(
                     f"The `{self.storage.format}` storage"
                     + f" at `{self.storage.root}` already exists. Either move/delete it,"
-                    + " or pass one of the `clear`, `clear_files`, `append` or `redo`"
+                    + " or pass one of the `clear`, `clear_all`, `append` or `redo`"
                     + " arguments to pick what to do with the existing data."
                 )
-            if clear or clear_files:
-                if clear_files:
+            if clear or clear_all:
+                if clear_all:
                     report("Clearing data, files and morphologies", level=2)
                 else:
                     report(
                         "Clearing data, keeping stored files and morphologies"
-                        " (pass `clear_files` instead to clear them too)",
+                        " (pass `clear_all` instead to clear them too)",
                         level=2,
                     )
-                self.clear(keep_files=not clear_files)
+                self.clear(keep_files=not clear_all)
             elif redo:
                 # In order to properly redo things, we clear some placement and connection
                 # data, but since multiple placement/connection strategies can contribute

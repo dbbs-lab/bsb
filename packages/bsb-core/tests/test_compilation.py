@@ -236,7 +236,7 @@ class TestClearCompilation(
     RandomStorageFixture, NetworkFixture, unittest.TestCase, engine_name="hdf5"
 ):
     """
-    Check that `clear` keeps the stored files and morphologies, unless `clear_files`
+    Check that `clear` keeps the stored files and morphologies, unless `clear_all`
     is given.
     """
 
@@ -275,17 +275,17 @@ class TestClearCompilation(
             "should place 40 cells again after a clear",
         )
 
-    def test_clear_files(self):
-        self.network.compile(clear_files=True)
-        self.assertCached(False, "clear_files should remove the files and morphologies")
+    def test_clear_all(self):
+        self.network.compile(clear_all=True)
+        self.assertCached(False, "clear_all should remove the files and morphologies")
         self.assertIsNotNone(
             self.network.configuration.files["dependency"].get_stored_file(),
-            "clear_files should store the file dependencies again",
+            "clear_all should store the file dependencies again",
         )
         self.assertEqual(40, len(self.network.get_placement_set("test_cell")))
 
-    def test_clear_files_exclusive(self):
+    def test_clear_all_exclusive(self):
         for flag in ("clear", "append", "redo"):
             with self.subTest(flag=flag), self.assertRaises(InputError):
-                self.network.compile(clear_files=True, **{flag: True})
+                self.network.compile(clear_all=True, **{flag: True})
         self.assertCached(True, "a refused compile should not touch the storage")

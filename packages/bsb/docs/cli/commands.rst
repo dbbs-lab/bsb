@@ -82,7 +82,7 @@ These flags decide what to do with existing data.
   with new data. Files and morphologies already stored are kept, so that they are not
   fetched and processed again.
 
-* ``--clear-files``: Like ``--clear``, but also clear the stored files and
+* ``--clear-all``: Like ``--clear``, but also clear the stored files and
   morphologies. Use this when a morphology's :guilabel:`pipeline` or :guilabel:`parser`
   changed, since a stored morphology is only processed again when its source file
   changes.

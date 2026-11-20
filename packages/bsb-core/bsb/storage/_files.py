@@ -390,6 +390,13 @@ class FileDependencyNode:
             self.file = value
 
     def __boot__(self):
+        self.sync_store()
+
+    def sync_store(self):
+        """
+        Bind the file to the scaffold's file store, and store it there if it is missing
+        or outdated.
+        """
         self.file.file_store = self.scaffold.files
         if self.scaffold.is_main_process():
             self.file.update()

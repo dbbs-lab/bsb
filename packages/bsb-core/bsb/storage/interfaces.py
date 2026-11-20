@@ -887,6 +887,18 @@ class MorphologyRepository(Interface, engine_key="morphologies"):
         """
         pass
 
+    @abc.abstractmethod
+    def remove(self, name):  # pragma: nocover
+        """
+        Remove a stored morphology and its metadata.
+
+        :param name: Key of the stored morphology.
+        :type name: str
+        :raises ~bsb.exceptions.MorphologyRepositoryError: If no morphology is stored
+            under that name.
+        """
+        pass
+
     def __contains__(self, item):
         return self.has(item)
 

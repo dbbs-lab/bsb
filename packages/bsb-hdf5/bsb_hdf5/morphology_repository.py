@@ -210,7 +210,14 @@ class MorphologyRepository(Resource, IMorphologyRepository):
 
     @handles_handles("a")
     def remove(self, name, handle=HANDLED):
-        try:
-            del handle[f"{self._path}/{name}"]
-        except KeyError:
-            raise MorphologyRepositoryError(f"'{name}' doesn't exist.") from None
+        path = f"{self._path}/{name}"
+        all_meta = self.get_all_meta(handle=handle)
+        # A metadata entry without data is still removed, so the repository no longer
+        # lists a morphology it cannot load.
+        if path not in handle and name not in all_meta:
+            raise MorphologyRepositoryError(f"'{name}' doesn't exist.")
+        if path in handle:
+            del handle[path]
+        if name in all_meta:
+            del all_meta[name]
+            self.set_all_meta(all_meta, handle=handle)

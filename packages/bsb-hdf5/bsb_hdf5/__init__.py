@@ -73,7 +73,6 @@ def on_main(prep=None, ret=None):
 def on_main_until(until, prep=None, ret=None):
     def decorator(f):
         def wrapper(self, *args, **kwargs):
-            global _procpass
             r = None
             self.comm.barrier()
             if self.comm.get_rank() == 0:
@@ -336,7 +335,7 @@ class HDF5Engine(Engine):
         shutil.move(self._root, new_root)
         self._root = new_root
 
-    @on_main_until(lambda self, r: self.__class__(self.root, self.comm).exists())
+    @on_main_until(lambda self, new_root: os.path.exists(new_root))
     def copy(self, new_root):
         shutil.copy(self._root, new_root)
 
@@ -357,7 +356,7 @@ class HDF5Engine(Engine):
         with self._handle("a") as handle:
             handle.require_group("placement")
             del handle["placement"]
-            del handle.attrs["chunk_size"]
+            handle.attrs.pop("chunk_size", None)
             handle.require_group("placement")
             self._write_chunk_stats(handle, {})
             _bump_state_attrs(handle)

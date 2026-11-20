@@ -329,8 +329,10 @@ class Scaffold:
                 generated = [n for n in all_meta if pattern.match(n)]
                 if generated:
                     report(f"Removing {len(generated)} generated morphologies", level=2)
-                    for name in generated:
-                        self.morphologies.remove(name)
+                    # Remove them all under one write lock and file handle.
+                    with self.storage.write_scope():
+                        for name in generated:
+                            self.morphologies.remove(name)
 
     def clear_connectivity(self):
         """

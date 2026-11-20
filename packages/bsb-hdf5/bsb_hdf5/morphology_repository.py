@@ -210,12 +210,6 @@ class MorphologyRepository(Resource, IMorphologyRepository):
 
     @handles_handles("a")
     def remove(self, name, handle=HANDLED):
-        """
-        Remove a morphology and its metadata from the repository.
-
-        :param str name: Name of the morphology to remove.
-        :raises MorphologyRepositoryError: If the repository has no such morphology.
-        """
         path = f"{self._path}/{name}"
         all_meta = self.get_all_meta(handle=handle)
         # A metadata entry without data is still removed, so the repository no longer

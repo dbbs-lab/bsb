@@ -1,3 +1,15 @@
+## 8.1.2 (2026-11-20)
+
+### 🩹 Fixes
+
+- do not share the morphology hard cache between StoredMorphology instances ([#218](https://github.com/dbbs-lab/bsb/issues/218))
+- replace deprecated ndarray shape assignment in sanitize_ndarray ([6293d21](https://github.com/dbbs-lab/bsb/commit/6293d21))
+
+### ❤️ Thank You
+
+- Claude Opus 5.5
+- drodarie
+
 ## 8.1.1 (2026-11-18)
 
 ### 🩹 Fixes

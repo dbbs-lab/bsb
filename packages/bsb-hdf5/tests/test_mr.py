@@ -4,7 +4,14 @@ import unittest
 
 import h5py
 import numpy as np
-from bsb import MPI, Storage
+from bsb import (
+    MPI,
+    MissingMorphologyError,
+    Morphology,
+    MorphologyRepositoryError,
+    Storage,
+)
+from bsb_test import RandomStorageFixture
 
 
 class TestHandcrafted(unittest.TestCase):
@@ -143,3 +150,45 @@ class TestHandcrafted(unittest.TestCase):
         msg = "1 out of 5 branches was attached, 4 roots expected."
         self.assertEqual(4, len(m.roots), msg)
         self.assertEqual(5, len(m.branches), "Missing branch")
+
+
+class TestRemove(RandomStorageFixture, unittest.TestCase, engine_name="hdf5"):
+    def setUp(self):
+        super().setUp()
+        self.mr = self.storage.morphologies
+        if not MPI.get_rank():
+            self.mr.save("kept", Morphology.empty())
+            self.mr.save("removed", Morphology.empty())
+        MPI.barrier()
+
+    def tearDown(self):
+        # All ranks must be done reading before the next test writes.
+        MPI.barrier()
+        super().tearDown()
+
+    def test_remove_updates_meta(self):
+        if not MPI.get_rank():
+            self.mr.remove("removed")
+        MPI.barrier()
+        self.assertFalse(self.mr.has("removed"), "the data should be removed")
+        self.assertEqual(["kept"], self.mr.list(), "the metadata should be removed")
+        self.assertNotIn("removed", self.mr.get_all_meta())
+        with self.assertRaises(MissingMorphologyError):
+            self.mr.get_meta("removed")
+
+    def test_remove_missing(self):
+        with self.assertRaises(MorphologyRepositoryError):
+            self.mr.remove("missing")
+
+    def test_remove_meta_without_data(self):
+        if not MPI.get_rank():
+            self.mr.update_all_meta({"stale": {"name": "stale"}})
+            self.mr.remove("stale")
+        MPI.barrier()
+        self.assertNotIn("stale", self.mr.list(), "a stale entry should be removed")
+
+    def test_save_overwrite(self):
+        if not MPI.get_rank():
+            self.mr.save("removed", Morphology.empty(), overwrite=True)
+        MPI.barrier()
+        self.assertEqual(["kept", "removed"], sorted(self.mr.list()))

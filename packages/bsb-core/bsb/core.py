@@ -300,9 +300,37 @@ class Scaffold:
 
     def clear_placement(self):
         """
-        Clears the placement storage.
+        Clears the placement storage, and the morphologies generated during placement.
         """
         self.storage.clear_placement(self)
+        self._clear_generated_morphologies()
+
+    def _clear_generated_morphologies(self, strategies=None):
+        """
+        Remove the morphologies made by a
+        :class:`~bsb.placement.distributor.MorphologyGenerator` from the morphology
+        repository. Nothing refers to them once their placement data is cleared, and
+        they are generated again when placement runs.
+
+        Every process must call this method.
+
+        :param strategies: Placement strategies whose generated morphologies to remove.
+          If ``None``, remove those of every strategy, including strategies that are no
+          longer in the configuration.
+        :type strategies: list[~bsb.placement.strategy.PlacementStrategy] | None
+        """
+        from .placement.distributor import _generated_morphology_pattern
+
+        prefixes = None if strategies is None else [s.name for s in strategies]
+        pattern = _generated_morphology_pattern(prefixes)
+        with self._comm.try_main():
+            if self.is_main_process():
+                all_meta = self.morphologies.get_all_meta()
+                generated = [n for n in all_meta if pattern.match(n)]
+                if generated:
+                    report(f"Removing {len(generated)} generated morphologies", level=2)
+                    for name in generated:
+                        self.morphologies.remove(name)
 
     def clear_connectivity(self):
         """
@@ -815,6 +843,7 @@ class Scaffold:
         for ct in cell_types_affected:
             report(f"Clearing all data of {ct.name}", level=2)
             ct.clear()
+        self._clear_generated_morphologies(p_contrib)
 
         c_sets = set(itertools.chain(*(cs.get_output_names() for cs in c_contrib)))
         for cs in c_sets:

@@ -80,7 +80,9 @@ These flags decide what to do with existing data.
 
 * ``-w``, ``--clear``: Clear all network data found in the storage object, and overwrite
   with new data. Files and morphologies already stored are kept, so that they are not
-  fetched and processed again.
+  fetched and processed again. Morphologies made by a
+  :class:`~bsb.placement.distributor.MorphologyGenerator` are removed, since they are
+  generated again.
 
 * ``--clear-all``: Like ``--clear``, but also clear the stored files and
   morphologies. Use this when a morphology's :guilabel:`pipeline` or :guilabel:`parser`

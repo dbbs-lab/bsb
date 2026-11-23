@@ -103,6 +103,9 @@ The parameters ``morphology_labels`` here specifies which shapes of the ``shape_
 (corresponds to values stored in ``labels``).
 
 The ``affinity`` parameter controls the probability to form a connection.
+The :guilabel:`allow_autapses` parameter defaults to ``false`` for these strategies: when
+the presynaptic and postsynaptic cell types are the same, self connections are removed
+unless you set it to ``true``.
 Three different connectivity strategies based on ``ShapesComposition`` are available.
 
 MorphologyToShapeIntersection

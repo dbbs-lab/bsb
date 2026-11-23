@@ -46,10 +46,15 @@ Connections are defined in the configuration under the ``connectivity`` block:
     of the morphology to consider when forming connections (such as ``axon``,
     ``dendrites``, or any other label you've created)
 * :guilabel:`allow_autapses`: (optional) whether a cell may connect to itself, when the
-  presynaptic and postsynaptic populations share a cell type. Defaults to ``true``. Set
-  it to ``false`` to remove such self connections, for every strategy. Strategies
+  presynaptic and postsynaptic populations share a cell type. Defaults to ``true``,
+  except for the intersectional strategies
+  (:class:`VoxelIntersection <bsb:bsb.connectivity.detailed.voxel_intersection.VoxelIntersection>`
+  and
+  :class:`SegmentIntersection <bsb:bsb.connectivity.detailed.segment_intersection.SegmentIntersection>`)
+  and the :ref:`geometric shape strategies <geometric>`, where it defaults to
+  ``false``. Any strategy accepts either value. When it is ``false``, strategies
   drawing a fixed number of partners, such as
-  :class:`FixedIndegree <bsb:bsb.connectivity.general.FixedIndegree>`, then draw them
+  :class:`FixedIndegree <bsb:bsb.connectivity.general.FixedIndegree>`, draw them
   among the other cells only, so that the degree is still met.
 
 What each connection type does depends entirely on the selec

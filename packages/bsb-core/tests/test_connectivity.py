@@ -683,8 +683,11 @@ class TestVoxelIntersection(
                 strategy="bsb.connectivity.VoxelIntersection",
                 presynaptic=dict(cell_types=["test_cell_A"]),
                 postsynaptic=dict(cell_types=["test_cell_A"]),
-                allow_autapses=False,
             ),
+        )
+        self.assertFalse(
+            self.network.connectivity.self_intersect.allow_autapses,
+            "autapses should be excluded by default",
         )
         self.network.compile()
         pre_locs, post_locs = (
@@ -840,6 +843,25 @@ class TestAutapses(
         for cls in (AllToAll, CsvImportConnectivity):
             with self.subTest(strategy=cls.__name__):
                 self.assertTrue(cls.allow_autapses.default, "autapses should be kept")
+
+    def test_geometric_autapses_excluded_by_default(self):
+        from bsb.connectivity import (
+            MorphologyToShapeIntersection,
+            SegmentIntersection,
+            ShapeToMorphologyIntersection,
+            ShapeToShapeIntersection,
+            VoxelIntersection,
+        )
+
+        for cls in (
+            VoxelIntersection,
+            SegmentIntersection,
+            MorphologyToShapeIntersection,
+            ShapeToMorphologyIntersection,
+            ShapeToShapeIntersection,
+        ):
+            with self.subTest(strategy=cls.__name__):
+                self.assertFalse(cls.allow_autapses.default, "autapses should be removed")
 
 
 class TestFixedIndegree(
@@ -1350,8 +1372,11 @@ class TestSegmentIntersection(
                 presynaptic=dict(cell_types=["test_cell_A"]),
                 postsynaptic=dict(cell_types=["test_cell_A"]),
                 contact_distance=10.0,
-                allow_autapses=False,
             ),
+        )
+        self.assertFalse(
+            self.network.connectivity.self_intersect.allow_autapses,
+            "autapses should be excluded by default",
         )
         self.network.compile()
         pre_locs, post_locs = (

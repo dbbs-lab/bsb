@@ -108,6 +108,46 @@ class TestMorphologyDistributor(
             len(ps), len(morphologies), "expected 1 unique morphology per cell"
         )
 
+    def _generated_names(self):
+        return {n for n in self.network.morphologies.list() if n.startswith("a-")}
+
+    def _assert_regenerated(self, flag, first):
+        second = self._generated_names()
+        self.assertTrue(second, f"`{flag}` should generate the morphologies again")
+        self.assertFalse(
+            first & second, f"`{flag}` should remove the previously generated ones"
+        )
+        self.assertEqual(
+            len(self.network.get_placement_set("a")),
+            len(second),
+            "only the morphologies of the current placement should remain",
+        )
+        self.assertTrue(
+            self.network.morphologies.has("user_morpho"),
+            f"`{flag}` should keep the morphologies that were not generated",
+        )
+        # Every listed morphology must still be loadable.
+        for name in self.network.morphologies.list():
+            self.network.morphologies.load(name)
+
+    def _compile_twice(self, **kwargs):
+        self.network.placement.a.distribute.morphologies = ManyEmptyGenerator()
+        self.network.compile()
+        if not MPI.get_rank():
+            self.network.morphologies.save("user_morpho", Morphology.empty())
+        MPI.barrier()
+        first = self._generated_names()
+        self.network.compile(**kwargs)
+        return first
+
+    def test_clear_removes_generated(self):
+        first = self._compile_twice(clear=True)
+        self._assert_regenerated("clear", first)
+
+    def test_redo_removes_generated(self):
+        first = self._compile_twice(redo=True, only=["a"])
+        self._assert_regenerated("redo", first)
+
 
 class TestVolumetricRotations(
     RandomStorageFixture, NetworkFixture, unittest.TestCase, engine_name="hdf5"

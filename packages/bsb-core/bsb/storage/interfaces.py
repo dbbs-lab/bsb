@@ -887,6 +887,18 @@ class MorphologyRepository(Interface, engine_key="morphologies"):
         """
         pass
 
+    @abc.abstractmethod
+    def remove(self, name):  # pragma: nocover
+        """
+        Remove a stored morphology and its metadata.
+
+        :param name: Key of the stored morphology.
+        :type name: str
+        :raises ~bsb.exceptions.MorphologyRepositoryError: If no morphology is stored
+            under that name.
+        """
+        pass
+
     def __contains__(self, item):
         return self.has(item)
 
@@ -1282,6 +1294,10 @@ class StoredMorphology:
         self.name = name
         self._loader = loader
         self._meta = meta
+        # Per-instance hard cache of the label-filtered morphologies. It must not be
+        # shared between instances: they compare equal by name only, so a shared cache
+        # would serve a morphology of another storage, or an outdated one.
+        self._hard_cache = {}
 
     def __eq__(self, other):
         return self.name == other.name
@@ -1298,11 +1314,18 @@ class StoredMorphology:
     def cached_load(self, labels=None):
         if labels is not None:
             labels = tuple(labels)
-        return self._cached_load(labels)
+        try:
+            return self._hard_cache[labels]
+        except KeyError:
+            morpho = self.load().set_label_filter(labels).as_filtered()
+            self._hard_cache[labels] = morpho
+            return morpho
 
-    @functools.cache
-    def _cached_load(self, labels):
-        return self.load().set_label_filter(labels).as_filtered()
+    def clear_cache(self):
+        """
+        Clear the hard cache of this morphology loader.
+        """
+        self._hard_cache.clear()
 
 
 class GeneratedMorphology(StoredMorphology):

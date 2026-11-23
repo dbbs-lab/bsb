@@ -247,7 +247,7 @@ class Storage:
 
     def copy(self, new_root):
         """
-        Move the storage to a new root.
+        Copy the storage to a new root.
         """
         self._engine.copy(new_root)
 

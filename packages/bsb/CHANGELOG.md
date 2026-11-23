@@ -1,3 +1,22 @@
+## 8.1.3 (2026-11-20)
+
+### 🩹 Fixes
+
+- clear keeps file cache ([#304](https://github.com/dbbs-lab/bsb/pull/304))
+
+### ❤️ Thank You
+
+- Claude Opus 5.5
+- Dimitri RODARIE
+
+## 8.1.2 (2026-11-20)
+
+This was a version bump only for bsb to align it with other projects, there were no code changes.
+
+## 8.1.1 (2026-11-18)
+
+This was a version bump only for bsb to align it with other projects, there were no code changes.
+
 ## 8.1.0 (2026-11-18)
 
 ### 🚀 Features

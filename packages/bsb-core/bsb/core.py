@@ -272,19 +272,67 @@ class Scaffold:
         """
         return dict(self._storage._engine.metadata)
 
-    def clear(self):
+    def clear(self, keep_files=True):
         """
         Clears the storage.
 
-        This deletes any existing network data!
+        This deletes any existing network data! By default, the file store and the
+        morphology repository are kept, so that file dependencies and morphologies do
+        not have to be fetched and processed again.
+
+        :param bool keep_files: If False also clear the file store and the morphology
+          repository.
         """
-        self.storage.renew(self)
+        from .config import walk_nodes
+        from .storage._files import FileDependencyNode
+
+        if not keep_files:
+            self.storage.renew(self)
+            # The file dependencies were stored when the configuration booted, and the
+            # file store was just cleared: store them again.
+            with self._comm.try_all():
+                for node in walk_nodes(self.configuration):
+                    if isinstance(node, FileDependencyNode):
+                        node.sync_store()
+        else:
+            self.clear_connectivity()
+            self.clear_placement()
 
     def clear_placement(self):
         """
-        Clears the placement storage.
+        Clears the placement storage, and the morphologies generated during placement.
         """
         self.storage.clear_placement(self)
+        self._clear_generated_morphologies()
+
+    def _clear_generated_morphologies(self, strategies=None):
+        """
+        Remove the morphologies made by a
+        :class:`~bsb.placement.distributor.MorphologyGenerator` from the morphology
+        repository. Nothing refers to them once their placement data is cleared, and
+        they are generated again when placement runs.
+
+        Every process must call this method.
+
+        :param strategies: Placement strategies whose generated morphologies to remove.
+          If ``None``, remove those of every strategy, including strategies that are no
+          longer in the configuration.
+        :type strategies: list[~bsb.placement.strategy.PlacementStrategy] | None
+        """
+        from .placement.distributor import _generated_morphology_pattern
+
+        prefixes = None if strategies is None else [s.name for s in strategies]
+        pattern = _generated_morphology_pattern(prefixes)
+        with self._comm.try_main():
+            if self.is_main_process():
+                all_meta = self.morphologies.get_all_meta()
+                generated = [n for n in all_meta if pattern.match(n)]
+                if generated:
+                    report(f"Removing {len(generated)} generated morphologies", level=2)
+                    # Remove them all under one write lock and file handle.
+                    with self.storage.write_scope():
+                        for name in generated:
+                            self.morphologies.remove(name)
 
     def clear_connectivity(self):
         """
@@ -388,6 +436,7 @@ class Scaffold:
         redo=False,
         force=False,
         fail_fast=True,
+        clear_all=False,
     ):
         """
         Run reconstruction steps in the scaffold sequence to obtain a full network.
@@ -400,26 +449,34 @@ class Scaffold:
         )
         todo_list_str = ", ".join(s.name for s in itertools.chain(p_strats, c_strats))
         report(f"Compiling the following strategies: {todo_list_str}", level=2)
-        if _bad_flag(clear) or _bad_flag(redo) or _bad_flag(append):
+        flags = (clear, clear_all, redo, append)
+        if any(_bad_flag(flag) for flag in flags):
             raise InputError(
-                "`clear`, `redo` and `append` are strictly boolean flags. "
+                "`clear`, `clear_all`, `redo` and `append` are strictly boolean flags. "
                 "Pass the strategies to run to the skip/only options instead."
             )
-        if sum((bool(clear), bool(redo), bool(append))) > 1:
-            raise InputError("`clear`, `redo` and `append` are mutually exclusive.")
+        if sum(map(bool, flags)) > 1:
+            raise InputError(
+                "`clear`, `clear_all`, `redo` and `append` are mutually exclusive."
+            )
         if existed:
-            if not (clear or append or redo):
+            if not any(flags):
                 raise FileExistsError(
                     f"The `{self.storage.format}` storage"
                     + f" at `{self.storage.root}` already exists. Either move/delete it,"
-                    + " or pass one of the `clear`, `append` or `redo` arguments"
-                    + " to pick what to do with the existing data."
+                    + " or pass one of the `clear`, `clear_all`, `append` or `redo`"
+                    + " arguments to pick what to do with the existing data."
                 )
-            if clear:
-                report("Clearing data", level=2)
-                # Clear the placement and connectivity data, but leave any cached files
-                # and morphologies intact.
-                self.clear()
+            if clear or clear_all:
+                if clear_all:
+                    report("Clearing data, files and morphologies", level=2)
+                else:
+                    report(
+                        "Clearing data, keeping stored files and morphologies"
+                        " (pass `clear_all` instead to clear them too)",
+                        level=2,
+                    )
+                self.clear(keep_files=not clear_all)
             elif redo:
                 # In order to properly redo things, we clear some placement and connection
                 # data, but since multiple placement/connection strategies can contribute
@@ -788,6 +845,7 @@ class Scaffold:
         for ct in cell_types_affected:
             report(f"Clearing all data of {ct.name}", level=2)
             ct.clear()
+        self._clear_generated_morphologies(p_contrib)
 
         c_sets = set(itertools.chain(*(cs.get_output_names() for cs in c_contrib)))
         for cs in c_sets:

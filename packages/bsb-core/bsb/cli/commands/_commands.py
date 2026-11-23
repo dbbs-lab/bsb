@@ -56,6 +56,16 @@ class Clear(
     pass
 
 
+class ClearAll(
+    BsbOption,
+    name="clear_all",
+    cli=("clear-all",),
+    env=("BSB_CLEAR_ALL",),
+    flag=True,
+):
+    pass
+
+
 class Output(BsbOption, name="output", cli=("output", "o"), env=("BSB_OUTPUT_FILE",)):
     pass
 
@@ -159,6 +169,7 @@ class BsbCompile(BaseCommand, name="compile"):
             append=context.append,
             redo=context.redo,
             fail_fast=not context.ignore_errors,
+            clear_all=context.clear_all,
         )
 
     def get_options(self):
@@ -176,6 +187,7 @@ class BsbCompile(BaseCommand, name="compile"):
             "append": Append(),
             "redo": Redo(),
             "clear": Clear(),
+            "clear_all": ClearAll(),
             "output": Output(),
             "ignore_errors": IgnoreErrors(),
         }

@@ -1,3 +1,14 @@
+## 8.1.4 (2026-11-24)
+
+### 🩹 Fixes
+
+- **bsb-core:** set allow_autapses defaults per connection strategy ([#311](https://github.com/dbbs-lab/bsb/pull/311))
+
+### ❤️ Thank You
+
+- Claude Opus 5.5
+- Filippo @filimarc
+
 ## 8.1.3 (2026-11-20)
 
 ### 🩹 Fixes

@@ -35,6 +35,12 @@ class ShapeToMorphologyIntersection(ConnectionStrategy):
     """
     Ratio of conections to keep over the total number of apositions.
     """
+    allow_autapses: bool = config.attr(type=bool, default=False)
+    """
+    Whether a cell may connect to itself, when the presynaptic and postsynaptic
+    populations share a cell type. Defaults to ``False`` for geometric strategies: such
+    self connections are removed before they are stored.
+    """
 
     def get_region_of_interest(self, chunk):
         lpost, upost = self.postsynaptic._get_rect_ext(tuple(chunk.dimensions))

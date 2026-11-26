@@ -15,6 +15,7 @@ The timeout is ``BSB_TEST_TIMEOUT`` seconds per test (default 600). Set
 """
 
 import faulthandler as _faulthandler
+import functools as _functools
 import os as _os
 import sys as _sys
 import unittest as _unittest
@@ -53,30 +54,44 @@ def install(timeout=None):
         return
     if timeout is None:
         timeout = float(_os.environ.get("BSB_TEST_TIMEOUT", _DEFAULT_TIMEOUT))
+    _patch(_unittest.TestResult, timeout)
+    _installed = True
 
-    result_cls = _unittest.TestResult
+
+def _patch(result_cls, timeout):
+    """
+    Wrap the reporting methods of ``result_cls`` with the watchdog.
+
+    :param type result_cls: :class:`~unittest.TestResult` or a subclass of it.
+    :param float timeout: Seconds a single test may run before it counts as hung.
+    """
     start_test = result_cls.startTest
     stop_test = result_cls.stopTest
     add_error = result_cls.addError
     add_failure = result_cls.addFailure
     add_subtest = result_cls.addSubTest
 
+    @_functools.wraps(start_test)
     def startTest(self, test):
         _faulthandler.dump_traceback_later(timeout, exit=True)
         start_test(self, test)
 
+    @_functools.wraps(stop_test)
     def stopTest(self, test):
         stop_test(self, test)
         _faulthandler.cancel_dump_traceback_later()
 
+    @_functools.wraps(add_error)
     def addError(self, test, err):
         add_error(self, test, err)
         _abort(self, test, err)
 
+    @_functools.wraps(add_failure)
     def addFailure(self, test, err):
         add_failure(self, test, err)
         _abort(self, test, err)
 
+    @_functools.wraps(add_subtest)
     def addSubTest(self, test, subtest, err):
         add_subtest(self, test, subtest, err)
         if err is not None:
@@ -87,7 +102,6 @@ def install(timeout=None):
     result_cls.addError = addError
     result_cls.addFailure = addFailure
     result_cls.addSubTest = addSubTest
-    _installed = True
 
 
 __all__ = ["install"]

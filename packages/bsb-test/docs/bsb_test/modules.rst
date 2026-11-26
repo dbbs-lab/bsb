@@ -31,6 +31,14 @@ bsb_test.exceptions module
    :undoc-members:
    :show-inheritance:
 
+bsb_test.mpi_watchdog module
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. automodule:: bsb_test.mpi_watchdog
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 bsb_test.parallel module
 ^^^^^^^^^^^^^^^^^^^^^^^^
 

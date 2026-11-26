@@ -33,6 +33,7 @@ from .configs import (
     list_test_configs,
 )
 from .exceptions import FixtureError
+from .mpi_watchdog import install as _install_mpi_watchdog
 from .parallel import (
     MPI,
     internet_connection,
@@ -43,6 +44,10 @@ from .parallel import (
     skip_serial,
     timeout,
 )
+
+# Under MPI, abort every rank as soon as a test fails on one of them, instead of
+# leaving the others to hang in the next collective. See `bsb_test.mpi_watchdog`.
+_install_mpi_watchdog()
 
 
 class NetworkFixture:

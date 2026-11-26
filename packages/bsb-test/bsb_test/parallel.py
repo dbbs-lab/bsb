@@ -1,4 +1,5 @@
 import contextvars as _contextvars
+import functools as _functools
 import socket
 import threading as _threading
 import unittest as _unittest
@@ -47,7 +48,17 @@ def _excepthook(f):
 
 
 def timeout(timeout, abort=False):
+    """
+    Run the decorated function in a thread and raise if it does not finish in time.
+
+    :param float timeout: Seconds to wait for the function to finish.
+    :param bool abort: Under MPI, if the function raises or times out on any rank,
+      print the traceback and abort every rank, instead of raising. Without it, a
+      rank that fails before a collective leaves the other ranks waiting for ever.
+    """
+
     def decorator(f):
+        @_functools.wraps(f)
         def timed_f(*args, **kwargs):
             # Prevent loss of context in test body.
             _ctx = _contextvars.copy_context()
@@ -70,6 +81,8 @@ def timeout(timeout, abort=False):
                     e = _exc_threads[hash(thread)]
                     del _exc_threads[hash(thread)]
                     raise e
+            except _unittest.SkipTest:
+                raise
             except Exception as e:
                 if MPI.get_size() > 1 and abort:
                     import sys

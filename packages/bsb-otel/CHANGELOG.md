@@ -1,3 +1,14 @@
+## 8.1.5 (2026-11-26)
+
+### 🩹 Fixes
+
+- Race access bugs linked to reads and writes in the shared engine tests ([#314](https://github.com/dbbs-lab/bsb/pull/314))
+
+### ❤️ Thank You
+
+- Claude Opus 5.5
+- Dimitri RODARIE
+
 ## 8.1.4 (2026-11-24)
 
 This was a version bump only for bsb-otel to align it with other projects, there were no code changes.

@@ -10,6 +10,8 @@ for each possible pair of presynaptic and postsynaptic neurons.
 By default, all unique neuron pair create one connection.
 
 * ``affinity``: Probability of a pair of neuron to create a connection (default is 1.0, i.e. all connected).
+* :guilabel:`allow_autapses`: whether a cell may connect to itself when the presynaptic
+  and postsynaptic cell types are the same. Defaults to ``true``.
 
 :class:`FixedIndegree <bsb:bsb.connectivity.general.FixedIndegree>`
 ===================================================================
@@ -18,6 +20,8 @@ This strategy connects to each postsynaptic neuron, a fixed number of uniform ra
 presynaptic neurons.
 
 * ``indegree``: Number of neuron to connect for each postsynaptic neuron.
+* :guilabel:`allow_autapses`: whether a cell may connect to itself when the presynaptic
+  and postsynaptic cell types are the same. Defaults to ``true``.
 
 .. tab-set-code::
 
@@ -56,6 +60,8 @@ This strategy connects to each presynaptic neuron, a fixed number of uniform ran
 postsynaptic neurons.
 
 * ``outdegree``: Number of neuron to connect for each presynaptic neuron.
+* :guilabel:`allow_autapses`: whether a cell may connect to itself when the presynaptic
+  and postsynaptic cell types are the same. Defaults to ``true``.
 
 :class:`VoxelIntersection <bsb:bsb.connectivity.detailed.voxel_intersection.VoxelIntersection>`
 ===============================================================================================
@@ -73,6 +79,8 @@ cell type.
   downregulate the amount of cells that any cell connects with.
 * ``contacts``: A number or distribution determining the amount of synaptic contacts one
   cell will form on another after they have selected eachother as connection partners.
+* :guilabel:`allow_autapses`: whether a cell may connect to itself when the presynaptic
+  and postsynaptic cell types are the same. Defaults to ``false``.
 
 .. note::
   The affinity only affects the number of cells that are contacted, not the number of
@@ -190,6 +198,8 @@ so the two are interchangeable.
 * :guilabel:`favor_cache`: which side builds the segment trees, ``"pre"`` (default) or
   ``"post"``. The trees are cached per morphology, so favor the side with fewer unique
   morphologies.
+* :guilabel:`allow_autapses`: whether a cell may connect to itself when the presynaptic
+  and postsynaptic cell types are the same. Defaults to ``false``.
 
 .. tab-set-code::
 

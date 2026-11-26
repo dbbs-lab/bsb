@@ -726,9 +726,9 @@ class TestAutapses(
     RandomStorageFixture, NetworkFixture, unittest.TestCase, engine_name="hdf5"
 ):
     """
-    Connection strategies that connect a cell type to itself exclude self connections,
-    unless `allow_autapses` is set. The cells are spread over several chunks, so that
-    the pre- and postsynaptic placement sets do not share their local indices.
+    Connection strategies that connect a cell type to itself keep self connections,
+    unless `allow_autapses` is set to false. The cells are spread over several chunks,
+    so that the pre- and postsynaptic placement sets do not share their local indices.
     """
 
     def setUp(self):
@@ -767,8 +767,9 @@ class TestAutapses(
             strategy="bsb.connectivity.AllToAll",
             presynaptic=dict(cell_types=["cell_A"]),
             postsynaptic=dict(cell_types=["cell_A"]),
+            allow_autapses=False,
         )["conn"]
-        self._assert_autapses(conns, False, "expected no autapses by default")
+        self._assert_autapses(conns, False, "expected no autapses when disallowed")
         self.assertEqual(40 * 39, len(conns[0]), "expected all pairs but autapses")
 
     def test_all_to_all_allowed(self):
@@ -776,9 +777,8 @@ class TestAutapses(
             strategy="bsb.connectivity.AllToAll",
             presynaptic=dict(cell_types=["cell_A"]),
             postsynaptic=dict(cell_types=["cell_A"]),
-            allow_autapses=True,
         )["conn"]
-        self._assert_autapses(conns, True, "expected autapses when allowed")
+        self._assert_autapses(conns, True, "expected autapses by default")
         self.assertEqual(40 * 40, len(conns[0]), "expected all pairs")
 
     def test_different_types(self):
@@ -787,6 +787,7 @@ class TestAutapses(
             strategy="bsb.connectivity.AllToAll",
             presynaptic=dict(cell_types=["cell_A"]),
             postsynaptic=dict(cell_types=["cell_B"]),
+            allow_autapses=False,
         )["conn"]
         self.assertEqual(40 * 40, len(conns[0]), "expected all pairs")
 
@@ -833,15 +834,34 @@ class TestAutapses(
                 presynaptic=dict(cell_types=["cell_A", "cell_B"]),
                 postsynaptic=dict(cell_types=["cell_A", "cell_B"]),
                 indegree=80,
+                allow_autapses=False,
             )
 
-    def test_import_keeps_autapses(self):
-        from bsb.connectivity import CsvImportConnectivity
+    def test_autapses_allowed_by_default(self):
+        from bsb.connectivity import AllToAll, CsvImportConnectivity
 
-        self.assertTrue(
-            CsvImportConnectivity.allow_autapses.default,
-            "imported connectivity should be kept as given",
+        for cls in (AllToAll, CsvImportConnectivity):
+            with self.subTest(strategy=cls.__name__):
+                self.assertTrue(cls.allow_autapses.default, "autapses should be kept")
+
+    def test_geometric_autapses_excluded_by_default(self):
+        from bsb.connectivity import (
+            MorphologyToShapeIntersection,
+            SegmentIntersection,
+            ShapeToMorphologyIntersection,
+            ShapeToShapeIntersection,
+            VoxelIntersection,
         )
+
+        for cls in (
+            VoxelIntersection,
+            SegmentIntersection,
+            MorphologyToShapeIntersection,
+            ShapeToMorphologyIntersection,
+            ShapeToShapeIntersection,
+        ):
+            with self.subTest(strategy=cls.__name__):
+                self.assertFalse(cls.allow_autapses.default, "autapses should be removed")
 
 
 class TestFixedIndegree(
@@ -1353,6 +1373,10 @@ class TestSegmentIntersection(
                 postsynaptic=dict(cell_types=["test_cell_A"]),
                 contact_distance=10.0,
             ),
+        )
+        self.assertFalse(
+            self.network.connectivity.self_intersect.allow_autapses,
+            "autapses should be excluded by default",
         )
         self.network.compile()
         pre_locs, post_locs = (

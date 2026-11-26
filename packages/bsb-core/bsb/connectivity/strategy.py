@@ -197,11 +197,11 @@ class ConnectionStrategy(abc.ABC, HasDependencies, RngConsumer):
     Specifies how to name the output ConnectivitySets in which the connections between
     cell type pairs are stored.
     """
-    allow_autapses: bool = config.attr(type=bool, default=False)
+    allow_autapses: bool = config.attr(type=bool, default=True)
     """
     Whether a cell may connect to itself, when the presynaptic and postsynaptic
-    populations share a cell type. Defaults to ``False``: such self connections are
-    removed before they are stored.
+    populations share a cell type. Defaults to ``True``. Set to ``False`` to remove
+    such self connections before they are stored.
     """
 
     def __hash__(self):

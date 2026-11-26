@@ -1,3 +1,7 @@
+## 8.1.4 (2026-11-24)
+
+This was a version bump only for arborize to align it with other projects, there were no code changes.
+
 ## 8.1.3 (2026-11-20)
 
 This was a version bump only for arborize to align it with other projects, there were no code changes.

@@ -12,6 +12,12 @@ from ..strategy import roi_key
 
 class Intersectional:
     affinity = config.attr(type=types.fraction(), default=1)
+    allow_autapses: bool = config.attr(type=bool, default=False)
+    """
+    Whether a cell may connect to itself, when the presynaptic and postsynaptic
+    populations share a cell type. Defaults to ``False`` for geometric strategies: such
+    self connections are removed before they are stored.
+    """
 
     def get_region_of_interest(self, chunk):
         post_ps = [ct.get_placement_set() for ct in self.postsynaptic.cell_types]

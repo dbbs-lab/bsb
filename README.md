@@ -83,7 +83,7 @@ cd bsb
 From there, you NX and UV will automatically create an environment for each subpackage, 
 including all necessary libraries for running the unittests, linting the code and building the documentation.
 
-For more information, please refer to the [developers' documentation](https://bsb.readthedocs.io/en/latest/dev/dev-toc.html).
+For more information, please refer to the [developers' documentation](https://bsb.readthedocs.io/en/latest/dev/monorepo.html).
 
 ## Usage
 

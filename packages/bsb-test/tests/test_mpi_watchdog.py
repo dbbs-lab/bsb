@@ -21,6 +21,11 @@ def _run_mpi(body, **env):
         if not k.startswith(("OMPI_", "PMI_", "PMIX_", "PMI2_", "PRTE_"))
     }
     child_env.pop("BSB_TEST_NO_WATCHDOG", None)
+    # Python 3.14+ colours the unittest report when asked to, as Nx does through
+    # `FORCE_COLOR`. Keep the output plain so that it can be matched.
+    child_env.pop("FORCE_COLOR", None)
+    child_env["PYTHON_COLORS"] = "0"
+    child_env["NO_COLOR"] = "1"
     child_env.update(env)
     return subprocess.run(
         ["mpiexec", "-n", "2", sys.executable, "-c", script],
